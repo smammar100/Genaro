@@ -50,6 +50,31 @@ export function syntheticEmail(orgSlug: string, username: string): string {
   return `${normalizeUsername(username)}@${orgSlug}.${INTERNAL_EMAIL_DOMAIN}`;
 }
 
+/** True for an address minted by `syntheticEmail` (never a real inbox). */
+export function isSyntheticEmail(email: string | null | undefined): boolean {
+  return !!email && email.toLowerCase().endsWith(`.${INTERNAL_EMAIL_DOMAIN}`);
+}
+
+/**
+ * How to name an account on screen: its real email, or — for a username
+ * login — the username. The synthetic address behind a username account
+ * ("ali@car-capital-uk.staff.carcapital.uk") must never be shown; it reads
+ * like a bug and isn't something anyone can type to sign in (client, 18 Sep).
+ */
+export function accountHandle(user: {
+  email?: string | null;
+  username?: string | null;
+}): string {
+  if (user.username && (!user.email || isSyntheticEmail(user.email))) {
+    return user.username;
+  }
+  if (isSyntheticEmail(user.email)) {
+    // Legacy username account with no username column: the local part is it.
+    return user.email!.split("@")[0];
+  }
+  return user.email ?? user.username ?? "";
+}
+
 /**
  * Suggest a username from a person's name: "Ahmed Khan" -> "ahmed.khan".
  * Best-effort only — the caller still validates with `isValidUsername`.

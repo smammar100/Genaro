@@ -372,7 +372,8 @@ export function titleFromPath(pathname: string): string {
 /** Routes outside the sidebar that still need gating. */
 const EXTRA_ROUTE_CAPS: Array<{ href: string; caps: Capability[] }> = [
   { href: "/inventory/add-vehicle", caps: ["inventory:add"] },
-  { href: "/admin/settings", caps: ["admin:manage_settings"] },
+  // /admin/settings is open to every signed-in user for the "My profile" tab;
+  // the page itself hides the company-wide tabs without admin:manage_settings.
   {
     href: "/sales",
     caps: [
@@ -437,9 +438,12 @@ export function requiredCapsForPath(pathname: string): Capability[] | null {
  *
  *   Advert   — the AutoTrader publish/performance integration is not wired
  *              up, so the whole group would show empty or stale figures.
- *   Reports, Activity Log
- *            — backward-looking surfaces with no history to read now that the
- *              demo data has been cleared; they populate as trading begins.
+ *   Reports  — a backward-looking surface with no history to read now that the
+ *              demo data has been cleared; it populates as trading begins.
+ *
+ * Activity Log is deliberately NOT here any more: the client called it "very
+ * important" (18 Sep 2026) — it is how an owner sees who changed what, and it
+ * already filters by user, category and date.
  *
  * Master Calendar is deliberately NOT here. It was hidden with the other two
  * as a "reporting extra", which misread it: it shows what is booked next
@@ -451,7 +455,6 @@ export const MVP_HIDDEN_HREFS: ReadonlySet<string> = new Set([
   "/advert/performance",
   "/admin/advertisers",
   "/admin/reports",
-  "/admin/activity",
 ]);
 
 /**

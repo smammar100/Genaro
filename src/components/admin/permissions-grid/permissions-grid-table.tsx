@@ -11,6 +11,7 @@ import { capabilitiesForRoles } from "@/lib/roles";
 import { Trash2, SlidersHorizontal, KeyRound } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn, getInitials } from "@/lib/utils";
+import { accountHandle } from "@/lib/auth/username";
 import type { User, UUID } from "@/lib/types";
 import { PermissionCell } from "./permission-cell";
 import type { PermissionsMap } from "./types";
@@ -134,7 +135,7 @@ export function PermissionsGridTable({
                         )}
                       </div>
                       <span className="truncate text-xs text-muted-foreground">
-                        {u.username ?? u.email}
+                        {accountHandle(u)}
                       </span>
                     </div>
                     <span

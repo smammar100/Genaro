@@ -14,7 +14,7 @@ import {
   nonNegative,
   type FieldChange,
 } from "@/lib/field-edit";
-import { derivedCostPatch } from "@/lib/vehicle-costs";
+import { withDerivedCosts } from "@/lib/vehicle-costs";
 import { EditableCard, type EditableField } from "./editable-card";
 
 interface OverviewPricingCardProps {
@@ -72,27 +72,8 @@ export function OverviewPricingCard({
         throw new Error("no actor");
       }
 
-      const next = { ...vehicle, ...patch };
       // Price changes move profit, which is a stored column (GEN-88).
-      const withDerived: Partial<Vehicle> = {
-        ...patch,
-        ...derivedCostPatch({
-          buyingPrice: next.buyingPrice,
-          buyersFee: next.buyersFee,
-          inspectionCharge: next.inspectionCharge,
-          collectionFee: next.collectionFee,
-          deliveryFee: next.deliveryFee,
-          lateStorageFee: next.lateStorageFee,
-          loadingFee: next.loadingFee,
-          unloadingFee: next.unloadingFee,
-          stockingCharges: next.stockingCharges,
-          valueAddition: next.valueAddition,
-          warrantyCost: next.warrantyCost,
-          otherCharges: next.otherCharges,
-          sellingPrice: next.sellingPrice,
-          listingPrice: next.listingPrice,
-        }),
-      };
+      const withDerived = withDerivedCosts(vehicle, patch);
 
       try {
         await vehicleService.update(vehicle.id, withDerived, user.id, {

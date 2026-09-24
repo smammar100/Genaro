@@ -9,6 +9,8 @@ interface Props {
   stockingCharges: number;
   prepCosts: number;
   warranty: number;
+  /** App-only charges below the sheet's total buying price. */
+  otherCharges?: number;
   listingPrice: number | null;
   className?: string;
 }
@@ -25,11 +27,15 @@ export function CostSummaryReceipt({
   stockingCharges,
   prepCosts,
   warranty,
+  otherCharges = 0,
   listingPrice,
   className,
 }: Props) {
+  // Total buying = the master sheet's AI (price + fees + VAT paid). Other
+  // charges are not a sheet column, so they sit below it.
   const totalBuying = buyingPrice + feesAndCharges;
-  const baseCost = totalBuying + stockingCharges + prepCosts + warranty;
+  const baseCost =
+    totalBuying + otherCharges + stockingCharges + prepCosts + warranty;
   const profit = listingPrice !== null ? listingPrice - baseCost : null;
 
   return (
@@ -71,8 +77,11 @@ export function CostSummaryReceipt({
             <SubItem text="Negotiated purchase amount" />
 
             <Row label="+ Fees & Charges" value={feesAndCharges} />
-            <SubItem text="Buyer / inspection / collection / delivery" />
+            <SubItem text="BCA fees, collection, delivery + VAT paid" />
 
+            {otherCharges > 0 && (
+              <Row label="+ Other Charges" value={otherCharges} />
+            )}
             <Row label="+ Stocking" value={stockingCharges} />
             <Row label="+ Prep Costs" value={prepCosts} />
             <Row label="+ Warranty" value={warranty} />

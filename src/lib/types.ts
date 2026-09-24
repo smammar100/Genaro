@@ -146,6 +146,12 @@ export type VehicleStatus =
   | "returned";
 
 export type VehicleType = "car" | "van";
+/** Master sheet col BC — AVAILABLE / SOLD / RETURNED TO OWNER / DUPLICATE ENTRY. */
+export type SaleStatus =
+  | "available"
+  | "sold"
+  | "returned_to_owner"
+  | "duplicate_entry";
 export type BodyType =
   | "hatchback"
   | "saloon"
@@ -395,6 +401,50 @@ export interface Vehicle {
   atPrivateValuation: number | null;
   atPriceIndicator: string | null;
   atValuationAt: ISODateTime | null;
+
+  // ─── Master sheet fields (migration 0050) ────────────────────────────
+  // One per column of Car Capital's own master sheet that the record did not
+  // hold before. Column letters and meaning: docs/master-sheet-spec.md.
+  /** Col A — serial from the pre-app Excel sheet; null for app-added cars. */
+  legacySerialNumber: number | null;
+  /** Col N — name of the owner (BCA, a partner…). Not the seller. */
+  ownerDetails: string | null;
+  /** Col P — credit-note date when bought on a funding credit line. */
+  creditNoteDate: ISODate | null;
+  /** Cols V/X/Z/AB/AD/AF/AH — VAT actually paid on each acquisition fee. */
+  vatOnBuyersFee: number | null;
+  vatOnInspectionCharge: number | null;
+  /** Col Y — BCA EV / hybrid assured charge, and its VAT (Z). */
+  evAssuredCharge: number | null;
+  vatOnEvAssuredCharge: number | null;
+  /** Col AA — battery health report, and its VAT (AB). */
+  batteryReportFee: number | null;
+  vatOnBatteryReportFee: number | null;
+  vatOnLateStorageFee: number | null;
+  vatOnCollectionFee: number | null;
+  vatOnDeliveryFee: number | null;
+  /** Col AN — log book (V5) state, e.g. AVAILABLE / NOT AVAILABLE. */
+  logBook: string | null;
+  engineSizeKw: number | null;
+  numSeats: number | null;
+  formerKeepers: number | null;
+  massInService: number | null;
+  engineNumber: string | null;
+  otherItemsReceived: string | null;
+  /** Col BC — the sheet's AVAILABLE / SOLD status (not the pipeline status). */
+  saleStatus: SaleStatus;
+  /** Col BF — a finance-company deal we owe commission on. */
+  financeCompanyDeal: boolean | null;
+  /** Cols BH–BN — expenses at the point of sale. */
+  financeCompanyCharges: number | null;
+  partnerShare: number | null;
+  extendedWarrantyCost: number | null;
+  roadTaxCost: number | null;
+  insuranceCost: number | null;
+  otherJobsCost: number | null;
+  customerDeliveryCost: number | null;
+  /** Col BS. */
+  remarks: string | null;
 
   createdAt: ISODateTime;
   updatedAt: ISODateTime;

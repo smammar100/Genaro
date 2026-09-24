@@ -10,6 +10,7 @@ import { activityService } from "./activity-service";
 import { vehicleService } from "./vehicle-service";
 import { listingService } from "./listing-service";
 import { pipelineStageService } from "./pipeline-stage-service";
+import { withDerivedCosts } from "@/lib/vehicle-costs";
 
 const NS = "sales:";
 
@@ -194,8 +195,11 @@ export const salesService = {
         const received = new Date(v.receivedDate).getTime();
         await vehicleService.update(
           v.id,
-          {
+          // withDerivedCosts: the selling price moves gross earning.
+          withDerivedCosts(v, {
             status: "sold",
+            // Master sheet col BC (AVAILABLE / SOLD) follows the won deal.
+            saleStatus: "sold",
             dateSold: deal.completionDate ?? new Date().toISOString().slice(0, 10),
             // Deal price wins only when the vehicle has none recorded yet
             // (invoicing may already have written the definitive figure).
@@ -206,7 +210,7 @@ export const salesService = {
             daysInStock: Number.isNaN(received)
               ? v.daysInStock
               : Math.max(0, Math.floor((Date.now() - received) / 86_400_000)),
-          },
+          }),
           actorId,
         );
         // Only stamp "sold" on a listing that's actually published/live —

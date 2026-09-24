@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { withCache } from "@/lib/cache";
+import { invalidate, withCache } from "@/lib/cache";
 import type { Company, User, UUID } from "@/lib/types";
 
 const NS = "auth:";
@@ -67,6 +67,25 @@ export const authService = {
         return (data ?? []) as unknown as User[];
       },
     );
+  },
+
+  /**
+   * Change the signed-in user's own display name (Settings → My profile).
+   * Self-edits of `name` are allowed by RLS (migration 0025 only guards the
+   * privileged columns). Callers should `revalidate({ force: true })` after,
+   * so the sidebar and header pick up the new name.
+   */
+  async updateOwnName(userId: UUID, name: string): Promise<void> {
+    const trimmed = name.trim().replace(/\s+/g, " ");
+    if (!trimmed) throw new Error("Name can't be empty");
+    if (trimmed.length > 80) throw new Error("Name is too long");
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("users")
+      .update({ name: trimmed })
+      .eq("id", userId);
+    if (error) throw error;
+    invalidate(NS);
   },
 
   async getUsersForCompany(companyId: UUID): Promise<User[]> {

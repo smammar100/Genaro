@@ -2,11 +2,19 @@ import { createClient, type TableInsert, type TableUpdate } from "@/lib/supabase
 import { invalidate, withCache } from "@/lib/cache";
 import type {
   ActivityActionType,
+  TodoStatus,
   UUID,
   Vehicle,
   VehicleStatus,
 } from "@/lib/types";
 import { activityService } from "./activity-service";
+import {
+  EMPTY_MASTER_SHEET_FIELDS,
+  isValueAdditionLocked,
+  valueAdditionFromTodos,
+  type MasterSheetFieldKey,
+} from "@/lib/master-sheet";
+import { withDerivedCosts } from "@/lib/vehicle-costs";
 import {
   decodeCursor,
   keysetFilterDesc,
@@ -17,6 +25,13 @@ import {
 
 const NS = "vehicles:";
 
+/** Rows per request when reading a whole table — PostgREST's default cap. */
+const PAGE_ROWS = 1000;
+
+// `legacy_data` is deliberately NOT selected: it is the untouched copy of every
+// cell from the client's Excel row (up to 71 per car) kept for audit only, and
+// nothing renders it. With ~1,900 imported cars it would multiply the payload
+// of every getAll() — the dashboard, both sheets and the reports all call it.
 const SELECT = `
   id,
   companyId:company_id,
@@ -82,7 +97,6 @@ const SELECT = `
   prepAssignedTo:prep_assigned_to,
   heroImageUrl:hero_image_url,
   customFields:custom_fields,
-  legacyData:legacy_data,
   isDemo:is_demo,
   currentLocation:current_location,
   locationSince:location_since,
@@ -107,6 +121,35 @@ const SELECT = `
   atPrivateValuation:at_private_valuation,
   atPriceIndicator:at_price_indicator,
   atValuationAt:at_valuation_at,
+  legacySerialNumber:legacy_serial_number,
+  ownerDetails:owner_details,
+  creditNoteDate:credit_note_date,
+  vatOnBuyersFee:vat_on_buyers_fee,
+  vatOnInspectionCharge:vat_on_inspection_charge,
+  evAssuredCharge:ev_assured_charge,
+  vatOnEvAssuredCharge:vat_on_ev_assured_charge,
+  batteryReportFee:battery_report_fee,
+  vatOnBatteryReportFee:vat_on_battery_report_fee,
+  vatOnLateStorageFee:vat_on_late_storage_fee,
+  vatOnCollectionFee:vat_on_collection_fee,
+  vatOnDeliveryFee:vat_on_delivery_fee,
+  logBook:log_book,
+  engineSizeKw:engine_size_kw,
+  numSeats:num_seats,
+  formerKeepers:former_keepers,
+  massInService:mass_in_service,
+  engineNumber:engine_number,
+  otherItemsReceived:other_items_received,
+  saleStatus:sale_status,
+  financeCompanyDeal:finance_company_deal,
+  financeCompanyCharges:finance_company_charges,
+  partnerShare:partner_share,
+  extendedWarrantyCost:extended_warranty_cost,
+  roadTaxCost:road_tax_cost,
+  insuranceCost:insurance_cost,
+  otherJobsCost:other_jobs_cost,
+  customerDeliveryCost:customer_delivery_cost,
+  remarks,
   createdAt:created_at,
   updatedAt:updated_at
 `;
@@ -203,6 +246,36 @@ const CAMEL_TO_SNAKE: Record<string, string> = {
   atPrivateValuation: "at_private_valuation",
   atPriceIndicator: "at_price_indicator",
   atValuationAt: "at_valuation_at",
+  // Migration 0050 — master sheet fields (docs/master-sheet-spec.md)
+  legacySerialNumber: "legacy_serial_number",
+  ownerDetails: "owner_details",
+  creditNoteDate: "credit_note_date",
+  vatOnBuyersFee: "vat_on_buyers_fee",
+  vatOnInspectionCharge: "vat_on_inspection_charge",
+  evAssuredCharge: "ev_assured_charge",
+  vatOnEvAssuredCharge: "vat_on_ev_assured_charge",
+  batteryReportFee: "battery_report_fee",
+  vatOnBatteryReportFee: "vat_on_battery_report_fee",
+  vatOnLateStorageFee: "vat_on_late_storage_fee",
+  vatOnCollectionFee: "vat_on_collection_fee",
+  vatOnDeliveryFee: "vat_on_delivery_fee",
+  logBook: "log_book",
+  engineSizeKw: "engine_size_kw",
+  numSeats: "num_seats",
+  formerKeepers: "former_keepers",
+  massInService: "mass_in_service",
+  engineNumber: "engine_number",
+  otherItemsReceived: "other_items_received",
+  saleStatus: "sale_status",
+  financeCompanyDeal: "finance_company_deal",
+  financeCompanyCharges: "finance_company_charges",
+  partnerShare: "partner_share",
+  extendedWarrantyCost: "extended_warranty_cost",
+  roadTaxCost: "road_tax_cost",
+  insuranceCost: "insurance_cost",
+  otherJobsCost: "other_jobs_cost",
+  customerDeliveryCost: "customer_delivery_cost",
+  remarks: "remarks",
 };
 
 function vehicleToRow(
@@ -224,13 +297,27 @@ export const vehicleService = {
    */
   async getAll(companyId: UUID): Promise<Vehicle[]> {
     return withCache(`${NS}all:${companyId}`, async () => {
+      // PostgREST caps a response at the project's max-rows (1,000 by
+      // default). One un-ranged select silently dropped every car past the
+      // cap — invisible until the ~1,900-row legacy master sheet is imported,
+      // then the Master Sheet and every report would quietly under-count.
+      // Page in blocks of PAGE_ROWS under a stable order until a short page.
       const supabase = createClient();
-      const { data, error } = await supabase
-        .from("vehicles")
-        .select(SELECT)
-        .eq("company_id", companyId);
-      if (error) throw error;
-      return (data ?? []) as unknown as Vehicle[];
+      const rows: Vehicle[] = [];
+      for (let from = 0; ; from += PAGE_ROWS) {
+        const { data, error } = await supabase
+          .from("vehicles")
+          .select(SELECT)
+          .eq("company_id", companyId)
+          .order("created_at", { ascending: true })
+          .order("id", { ascending: true })
+          .range(from, from + PAGE_ROWS - 1);
+        if (error) throw error;
+        const page = (data ?? []) as unknown as Vehicle[];
+        rows.push(...page);
+        if (page.length < PAGE_ROWS) break;
+      }
+      return rows;
     });
   },
 
@@ -367,9 +454,13 @@ export const vehicleService = {
       | "isDemo"
       // Nobody owns a car's prep before it has even been inspected (GEN-63).
       | "prepAssignedTo"
-    >,
+      // Master sheet fields (0050) default to empty / AVAILABLE.
+      | MasterSheetFieldKey
+    > &
+      Partial<Pick<Vehicle, MasterSheetFieldKey>>,
     actorId: UUID,
   ): Promise<Vehicle> {
+    input = { ...EMPTY_MASTER_SHEET_FIELDS, ...input };
     const supabase = createClient();
     // 1. Reserve a stock ID atomically via RPC.
     const { data: stockId, error: rpcErr } = await supabase.rpc(
@@ -471,6 +562,47 @@ export const vehicleService = {
         : {},
     });
     return vehicle;
+  },
+
+  /**
+   * Re-sum TOTAL VALUE ADDITION (master sheet BB) from the car's Things to Do
+   * costs, and re-derive the stored totals that include it. Called after every
+   * to-do add / edit / delete. A legacy car keeps its imported figure
+   * (docs/master-sheet-spec.md). No-op when nothing changed, so it never writes
+   * an empty activity entry.
+   */
+  async recomputeValueAddition(
+    vehicleId: UUID,
+    actorId: UUID,
+  ): Promise<Vehicle | null> {
+    const v = await vehicleService.getById(vehicleId);
+    if (!v || isValueAdditionLocked(v)) return v;
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("todo_items")
+      .select("cost, status")
+      .eq("vehicle_id", vehicleId);
+    if (error) throw error;
+    const total = valueAdditionFromTodos(
+      (data ?? []) as { cost: number | null; status: TodoStatus }[],
+    );
+    if (Math.abs(total - v.valueAddition) < 0.005) return v;
+    return vehicleService.update(
+      vehicleId,
+      withDerivedCosts(v, { valueAddition: total }),
+      actorId,
+      {
+        description: `${v.registration}: value addition ${v.valueAddition} → ${total} (Things to Do)`,
+        changes: [
+          {
+            key: "valueAddition",
+            label: "Total value addition",
+            from: v.valueAddition,
+            to: total,
+          },
+        ],
+      },
+    );
   },
 
   /**

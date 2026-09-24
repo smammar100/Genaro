@@ -1,5 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
+  accountHandle,
+  isSyntheticEmail,
   syntheticEmail,
   normalizeUsername,
   isValidUsername,
@@ -53,5 +55,29 @@ describe("username helpers", () => {
 
   test("normalizeUsername trims and lower-cases", () => {
     expect(normalizeUsername("  Ahmed.Khan ")).toBe("ahmed.khan");
+  });
+
+  // Client, 18 Sep 2026: the generated address under a user card "looks weird".
+  test("isSyntheticEmail spots only minted addresses", () => {
+    expect(isSyntheticEmail(syntheticEmail("car-capital-uk", "ali"))).toBe(true);
+    expect(isSyntheticEmail("abbas@carcapital.uk")).toBe(false);
+    expect(isSyntheticEmail(null)).toBe(false);
+  });
+
+  test("accountHandle shows a real email, else the username", () => {
+    expect(accountHandle({ email: "abbas@carcapital.uk", username: null })).toBe(
+      "abbas@carcapital.uk",
+    );
+    expect(
+      accountHandle({
+        email: syntheticEmail("car-capital-uk", "ahmed.khan"),
+        username: "ahmed.khan",
+      }),
+    ).toBe("ahmed.khan");
+    // Username column missing: fall back to the synthetic local part.
+    expect(
+      accountHandle({ email: syntheticEmail("car-capital-uk", "ali"), username: null }),
+    ).toBe("ali");
+    expect(accountHandle({ email: null, username: "raza" })).toBe("raza");
   });
 });

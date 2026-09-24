@@ -1,14 +1,13 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { ShieldX, ImageIcon, Upload, X } from "lucide-react";
+import { ImageIcon, Upload, X } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import {
   companyService,
   type LogoKind,
 } from "@/lib/services/company-service";
-import { EmptyState } from "@/components/shared/empty-state";
 import { PipelineStageSettings } from "@/components/admin/pipeline-stage-settings";
 import { InspectionChecklistSettings } from "@/components/admin/inspection-checklist-settings";
 import { LeadChannelSettings } from "@/components/admin/lead-channel-settings";
@@ -19,6 +18,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BackupPanel } from "@/components/settings/backup-panel";
 import { toast } from "@/lib/toast";
+import { authService } from "@/lib/services/auth-service";
+import { accountHandle } from "@/lib/auth/username";
 
 export default function SettingsPage() {
   const baseId = useId();
@@ -111,24 +112,29 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="text-sm text-muted-foreground">
-          Company profile, defaults, and inspection checklist.
+          Your profile{canManage ? ", plus company profile, defaults, and inspection checklist" : ""}.
         </p>
       </div>
-      {!isLoading && !canManage ? (
-        <EmptyState
-          icon={ShieldX}
-          title="You don't have access"
-          description="Editing company settings requires the Manage Settings capability."
-        />
-      ) : (
-      <Tabs defaultValue="company">
+      {/* My profile is open to everyone; the company tabs need Manage
+          Settings. Until permissions load, show just the profile. */}
+      <Tabs defaultValue={canManage && !isLoading ? "company" : "profile"}>
         <TabsList>
-          <TabsTrigger value="company">Company</TabsTrigger>
-          <TabsTrigger value="inspection">Inspection Checklist</TabsTrigger>
-          <TabsTrigger value="pipeline">Sales Pipeline</TabsTrigger>
-          <TabsTrigger value="channels">Lead Channels</TabsTrigger>
-          <TabsTrigger value="backup">Backup</TabsTrigger>
+          <TabsTrigger value="profile">My profile</TabsTrigger>
+          {canManage && (
+            <>
+              <TabsTrigger value="company">Company</TabsTrigger>
+              <TabsTrigger value="inspection">Inspection Checklist</TabsTrigger>
+              <TabsTrigger value="pipeline">Sales Pipeline</TabsTrigger>
+              <TabsTrigger value="channels">Lead Channels</TabsTrigger>
+              <TabsTrigger value="backup">Backup</TabsTrigger>
+            </>
+          )}
         </TabsList>
+        <TabsContent value="profile" className="mt-3">
+          <ProfilePanel />
+        </TabsContent>
+        {canManage && (
+        <>
         <TabsContent value="company" className="mt-3">
           <Card className="grid gap-4 p-5 sm:grid-cols-2">
             <LogoField
@@ -217,9 +223,73 @@ export default function SettingsPage() {
         <TabsContent value="channels" className="mt-3">
           <LeadChannelSettings />
         </TabsContent>
+        </>
+        )}
       </Tabs>
-      )}
     </div>
+  );
+}
+
+/**
+ * Settings → My profile. Every user can change the name shown on their card,
+ * in the header and in the activity log. Email / username stay as they are:
+ * they are the sign-in identity, managed from Users & Permissions.
+ */
+function ProfilePanel() {
+  const fieldId = useId();
+  const { user, revalidate } = useAuth();
+  const [name, setName] = useState(user?.name ?? "");
+  const [saving, setSaving] = useState(false);
+  const trimmed = name.trim();
+  const unchanged = trimmed === (user?.name ?? "");
+
+  async function save() {
+    if (!user || !trimmed || unchanged) return;
+    setSaving(true);
+    try {
+      await authService.updateOwnName(user.id, trimmed);
+      await revalidate({ force: true });
+      toast.success("Name updated");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't update your name");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card className="grid max-w-xl gap-4 p-5">
+      <div>
+        <Label htmlFor={fieldId}>Your name</Label>
+        <p className="mb-2 text-xs text-muted-foreground">
+          Shown on your card, in the header and against everything you do in
+          the activity log.
+        </p>
+        <Input
+          id={fieldId}
+          value={name}
+          maxLength={80}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void save();
+          }}
+        />
+        {!trimmed && (
+          <p className="mt-1 text-xs text-destructive">Name can&apos;t be empty</p>
+        )}
+      </div>
+      <div>
+        <Label>Sign-in</Label>
+        <p className="text-sm text-muted-foreground">
+          {user ? accountHandle(user) : "—"}
+        </p>
+      </div>
+      <div className="flex justify-end">
+        <Button onClick={() => void save()} disabled={saving || !trimmed || unchanged}>
+          {saving ? "Saving…" : "Save"}
+        </Button>
+      </div>
+    </Card>
   );
 }
 

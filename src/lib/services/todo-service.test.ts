@@ -15,6 +15,7 @@ import type { TodoItem, TodoStatus, VehicleStatus } from "@/lib/types";
 const db = { current: null as unknown as SupabaseMock };
 const vehicle = { status: "being_prepared" as VehicleStatus };
 const changeStatus = vi.fn(async () => makeVehicle());
+const recomputeValueAddition = vi.fn(async () => makeVehicle());
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => db.current.client,
@@ -31,6 +32,8 @@ vi.mock("./vehicle-service", () => ({
     getById: vi.fn(async () => makeVehicle({ status: vehicle.status })),
     changeStatus: (...args: unknown[]) =>
       (changeStatus as unknown as (...a: unknown[]) => unknown)(...args),
+    recomputeValueAddition: (...args: unknown[]) =>
+      (recomputeValueAddition as unknown as (...a: unknown[]) => unknown)(...args),
   },
 }));
 
@@ -57,6 +60,7 @@ const todo = (over: Partial<TodoItem> = {}): TodoItem =>
 function seed(rows: TodoItem[], status: VehicleStatus = "being_prepared") {
   vehicle.status = status;
   changeStatus.mockClear();
+  recomputeValueAddition.mockClear();
   db.current = createSupabaseMock((call) => {
     if (call.table !== "todo_items") return undefined;
     const single = call.steps.some(
@@ -163,5 +167,46 @@ describe("update", () => {
     await todoService.update("todo-1", { cost: 120 }, "user-9");
     const update = db.current.calls.find((c) => stepArgs(c, "update"));
     expect(stepArgs(update!, "update")?.[0]).toEqual({ cost: 120 });
+  });
+});
+
+// Master sheet BB: TOTAL VALUE ADDITION is the Things to Do cost roll-up, so
+// every change that can move the sum must re-sum it.
+describe("value addition roll-up", () => {
+  it("re-sums after an item is added", async () => {
+    seed([todo({ cost: 80 })]);
+    await todoService.add({
+      vehicleId: "veh-0001",
+      description: "MOT",
+      vendorId: null,
+      cost: 80,
+      source: "manual",
+      createdBy: "user-9",
+    });
+    expect(recomputeValueAddition).toHaveBeenCalledWith("veh-0001", "user-9");
+  });
+
+  it("re-sums after a cost edit", async () => {
+    seed([todo()]);
+    await todoService.update("todo-1", { cost: 120 }, "user-9");
+    expect(recomputeValueAddition).toHaveBeenCalledWith("veh-0001", "user-9");
+  });
+
+  it("re-sums after a status change (cancelling drops the cost)", async () => {
+    seed([todo({ cost: 50 })]);
+    await todoService.update("todo-1", { status: "cancelled" }, "user-9");
+    expect(recomputeValueAddition).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not re-sum after a description-only edit", async () => {
+    seed([todo()]);
+    await todoService.update("todo-1", { description: "Tyres" }, "user-9");
+    expect(recomputeValueAddition).not.toHaveBeenCalled();
+  });
+
+  it("re-sums after an item is deleted", async () => {
+    seed([{ vehicle_id: "veh-0001" } as unknown as TodoItem]);
+    await todoService.remove("todo-1", "user-9");
+    expect(recomputeValueAddition).toHaveBeenCalledWith("veh-0001", "user-9");
   });
 });

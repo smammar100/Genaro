@@ -19,7 +19,6 @@ import { appointmentService } from "@/lib/services/appointment-service";
 import { claimService } from "@/lib/services/claim-service";
 import { warrantyService } from "@/lib/services/warranty-service";
 import { notificationService } from "@/lib/services/notification-service";
-import { activityService } from "@/lib/services/activity-service";
 import { maintenanceService } from "@/lib/services/maintenance-service";
 import type { UUID } from "@/lib/types";
 
@@ -34,7 +33,9 @@ export async function warmDashboardCache(
     leadService.getAll(companyId),
     appointmentService.getAll(companyId),
     maintenanceService.getAll(companyId),
-    activityService.getAll(companyId),
+    // Not activityService.getAll: nothing reads it (the Activity Log page pages
+    // through getPage), so warming it downloaded the ENTIRE audit trail — the
+    // fastest-growing table — on every sign-in for nothing.
     // Sidebar badges + KPIs need these immediately.
     claimService.getAll(companyId),
     claimService.getOpenCount(companyId),

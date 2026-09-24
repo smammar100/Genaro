@@ -21,6 +21,7 @@ import { teamService } from "@/lib/services/team-service";
 import type { User } from "@/lib/types";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "@/lib/toast";
+import { accountHandle } from "@/lib/auth/username";
 
 interface Props {
   user: User | null;
@@ -86,7 +87,7 @@ export function EditRolesDialog({ user, open, onOpenChange, onSaved }: Props) {
           <DialogTitle>Edit roles</DialogTitle>
           {user && (
             <DialogDescription>
-              Update the role bundle for <strong>{user.name}</strong> ({user.email}).
+              Update the role bundle for <strong>{user.name}</strong> ({accountHandle(user)}).
             </DialogDescription>
           )}
         </DialogHeader>

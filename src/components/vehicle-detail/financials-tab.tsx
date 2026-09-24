@@ -15,7 +15,11 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import { toast } from "@/lib/toast";
 import { describeChanges, nonNegative, type FieldChange } from "@/lib/field-edit";
-import { derivedCostPatch } from "@/lib/vehicle-costs";
+import { computeCostTotals, withDerivedCosts } from "@/lib/vehicle-costs";
+import {
+  expenseAtPointOfSale,
+  isValueAdditionLocked,
+} from "@/lib/master-sheet";
 import { ExternalInvoicesSection } from "./external-invoices-section";
 
 interface FinancialsTabProps {
@@ -24,24 +28,72 @@ interface FinancialsTabProps {
   onChanged?: () => void;
 }
 
-/** The twelve editable cost lines, in the order the expense ledger shows them. */
-const COST_FIELDS: EditableField<Vehicle>[] = [
-  { key: "buyingPrice", label: "Buying Price", kind: "currency" },
-  { key: "buyersFee", label: "Buyer's Fee", kind: "currency" },
-  { key: "inspectionCharge", label: "Inspection Charge", kind: "currency" },
-  { key: "collectionFee", label: "Collection Fee", kind: "currency" },
-  { key: "deliveryFee", label: "Delivery Fee", kind: "currency" },
-  { key: "lateStorageFee", label: "Late Storage Fee", kind: "currency" },
-  { key: "loadingFee", label: "Loading Fee", kind: "currency" },
-  { key: "unloadingFee", label: "Unloading Fee", kind: "currency" },
-  { key: "stockingCharges", label: "Stocking Charges", kind: "currency" },
-  { key: "valueAddition", label: "Prep / Value Addition", kind: "currency" },
-  { key: "warrantyCost", label: "Warranty Cost", kind: "currency" },
-  { key: "otherCharges", label: "Other Charges", kind: "currency" },
+/**
+ * Every cost line, in the order the expense ledger shows them: the master
+ * sheet's S–AH first (each fee followed by the VAT paid on it — together they
+ * are TOTAL BUYING PRICE), then the app-only costs below it. Labels follow the
+ * sheet (docs/master-sheet-spec.md).
+ */
+const COST_LINES: { key: keyof Vehicle & string; label: string }[] = [
+  { key: "buyingPrice", label: "Buying Price" },
+  { key: "vatOnBuyingPrice", label: "VAT on Buying Price" },
+  { key: "buyersFee", label: "BCA Buyer's Fee" },
+  { key: "vatOnBuyersFee", label: "VAT on Buyer's Fee" },
+  { key: "inspectionCharge", label: "BCA Essential Check / Assured" },
+  { key: "vatOnInspectionCharge", label: "VAT on Essential Check" },
+  { key: "evAssuredCharge", label: "BCA EV / Hybrid Assured" },
+  { key: "vatOnEvAssuredCharge", label: "VAT on EV / Hybrid Assured" },
+  { key: "batteryReportFee", label: "Battery Health Report" },
+  { key: "vatOnBatteryReportFee", label: "VAT on Battery Report" },
+  { key: "lateStorageFee", label: "Late Payment / Storage" },
+  { key: "vatOnLateStorageFee", label: "VAT on Late Payment / Storage" },
+  { key: "collectionFee", label: "Collection" },
+  { key: "vatOnCollectionFee", label: "VAT on Collection" },
+  { key: "deliveryFee", label: "Delivery / Transport" },
+  { key: "vatOnDeliveryFee", label: "VAT on Delivery" },
+  { key: "otherCharges", label: "Other Charges" },
+  { key: "loadingFee", label: "Loading Fee" },
+  { key: "unloadingFee", label: "Unloading Fee" },
+  { key: "stockingCharges", label: "Stocking Charges" },
+  { key: "valueAddition", label: "Total Value Addition" },
+  { key: "warrantyCost", label: "Warranty Cost" },
+];
+
+function costFields(vehicle: Vehicle): EditableField<Vehicle>[] {
+  const valueAdditionLocked = isValueAdditionLocked(vehicle);
+  return COST_LINES.map((f) => ({
+    key: f.key,
+    label: f.label,
+    kind: "currency" as const,
+    // Money is never negative here — a refund belongs in its own line, not as
+    // a negative cost that silently reduces the car's base cost.
+    validators: [nonNegative(f.label) as never],
+    // TOTAL VALUE ADDITION is the Things to Do roll-up on a car added in the
+    // app; typing over it would be undone by the next to-do edit. A legacy
+    // car's figure is the imported one and stays editable.
+    readOnly: f.key === "valueAddition" && !valueAdditionLocked,
+    hint:
+      f.key === "valueAddition" && !valueAdditionLocked
+        ? "Sum of the Things to Do costs."
+        : undefined,
+    render: (v: Vehicle) =>
+      formatCurrency((v[f.key] as number | null) ?? 0),
+  }));
+}
+
+/** Master sheet BH–BN — expenses at the point of sale (BO is their sum). */
+const POINT_OF_SALE_FIELDS: EditableField<Vehicle>[] = [
+  { key: "financeCompanyCharges", label: "Finance Company Charges / Commission" },
+  { key: "partnerShare", label: "Partner's Share" },
+  { key: "extendedWarrantyCost", label: "Extended Warranty" },
+  { key: "roadTaxCost", label: "Road Tax" },
+  { key: "insuranceCost", label: "Insurance" },
+  { key: "otherJobsCost", label: "Other Jobs" },
+  { key: "customerDeliveryCost", label: "Delivery to Customer" },
 ].map((f) => ({
-  ...(f as EditableField<Vehicle>),
-  // Money is never negative here — a refund belongs in its own line, not as a
-  // negative cost that silently reduces the car's base cost.
+  key: f.key as keyof Vehicle & string,
+  label: f.label,
+  kind: "currency" as const,
   validators: [nonNegative(f.label) as never],
   render: (v: Vehicle) =>
     formatCurrency((v[f.key as keyof Vehicle] as number | null) ?? 0),
@@ -109,26 +161,7 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
       toast.error("You must be signed in to edit financials.");
       throw new Error("no actor");
     }
-    const next = { ...vehicle, ...patch };
-    const withDerived: Partial<Vehicle> = {
-      ...patch,
-      ...derivedCostPatch({
-        buyingPrice: next.buyingPrice,
-        buyersFee: next.buyersFee,
-        inspectionCharge: next.inspectionCharge,
-        collectionFee: next.collectionFee,
-        deliveryFee: next.deliveryFee,
-        lateStorageFee: next.lateStorageFee,
-        loadingFee: next.loadingFee,
-        unloadingFee: next.unloadingFee,
-        stockingCharges: next.stockingCharges,
-        valueAddition: next.valueAddition,
-        warrantyCost: next.warrantyCost,
-        otherCharges: next.otherCharges,
-        sellingPrice: next.sellingPrice,
-        listingPrice: next.listingPrice,
-      }),
-    };
+    const withDerived = withDerivedCosts(vehicle, patch);
 
     try {
       await vehicleService.update(vehicle.id, withDerived, user.id, {
@@ -145,21 +178,9 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
 
   const retail = listing?.price ?? vehicle.listingPrice ?? 0;
 
-  const expenses: LedgerEntry[] = [
-    { name: "Buying Price", amount: vehicle.buyingPrice },
-    { name: "Buyer's Fee", amount: vehicle.buyersFee ?? 0 },
-    { name: "Inspection Charge", amount: vehicle.inspectionCharge ?? 0 },
-    { name: "Collection Fee", amount: vehicle.collectionFee ?? 0 },
-    { name: "Delivery Fee", amount: vehicle.deliveryFee ?? 0 },
-    { name: "Late Storage Fee", amount: vehicle.lateStorageFee ?? 0 },
-    { name: "Loading Fee", amount: vehicle.loadingFee ?? 0 },
-    { name: "Unloading Fee", amount: vehicle.unloadingFee ?? 0 },
-    { name: "Stocking Charges", amount: vehicle.stockingCharges },
-    { name: "Prep / Value Addition", amount: vehicle.valueAddition },
-    { name: "Warranty Cost", amount: vehicle.warrantyCost ?? 0 },
-    { name: "Other Charges", amount: vehicle.otherCharges ?? 0 },
-  ];
-  const expenseTotal = expenses.reduce((acc, e) => acc + e.amount, 0);
+  // Same figure the stored baseCost holds — one formula, vehicle-costs.ts.
+  const expenseTotal = computeCostTotals(vehicle).baseCost;
+  const pointOfSaleTotal = expenseAtPointOfSale(vehicle);
 
   // Add-on revenue lines (markups / commissions / fees) come from the vehicle's
   // sale invoice. When an invoice exists we list its real paid add-on lines; the
@@ -216,7 +237,7 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
           <EditableCard
             title="Money out · Expenses"
             record={vehicle}
-            fields={COST_FIELDS}
+            fields={costFields(vehicle)}
             onSave={saveCosts}
             canEdit={canEditCosts}
             className="[&_[data-testid]]:contents"
@@ -254,6 +275,26 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
         </div>
         <div className="mt-1 text-xs text-muted-foreground">
           Gross {formatCurrency(gross)} − margin VAT {formatCurrency(marginVat)}
+        </div>
+      </div>
+
+      {/* Master sheet BH–BN. Not part of the base cost — the sheet keeps
+          them as a separate "expense at point of sale" (BO). */}
+      <div className="flex flex-col gap-2">
+        <EditableCard
+          title="Expenses at point of sale"
+          record={vehicle}
+          fields={POINT_OF_SALE_FIELDS}
+          onSave={saveCosts}
+          canEdit={canEditCosts}
+        />
+        <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-2.5 text-sm">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Expense at point of sale
+          </span>
+          <span className="text-base font-semibold tabular-nums">
+            {formatCurrency(pointOfSaleTotal)}
+          </span>
         </div>
       </div>
 

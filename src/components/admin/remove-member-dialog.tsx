@@ -15,6 +15,7 @@ import { teamService } from "@/lib/services/team-service";
 import type { User } from "@/lib/types";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "@/lib/toast";
+import { accountHandle } from "@/lib/auth/username";
 
 interface Props {
   user: User | null;
@@ -59,7 +60,7 @@ export function RemoveMemberDialog({ user, open, onOpenChange, onRemoved }: Prop
               <DialogDescription className="text-sm">
                 {user ? (
                   <>
-                    <strong>{user.name}</strong> ({user.email}) will lose access to
+                    <strong>{user.name}</strong> ({accountHandle(user)}) will lose access to
                     Car Capital UK immediately. This action cannot be undone.
                   </>
                 ) : null}

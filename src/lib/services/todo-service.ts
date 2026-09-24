@@ -109,6 +109,7 @@ export const todoService = {
       });
     }
     await todoService.recomputeReadiness(input.vehicleId, input.createdBy);
+    await vehicleService.recomputeValueAddition(input.vehicleId, input.createdBy);
     return todo;
   },
 
@@ -163,6 +164,11 @@ export const todoService = {
     if (patch.status !== undefined) {
       await todoService.recomputeReadiness(todo.vehicleId, actorId);
     }
+    // A cost edit — or cancelling / un-cancelling a costed item — moves the
+    // car's TOTAL VALUE ADDITION (master sheet BB).
+    if (patch.cost !== undefined || patch.status !== undefined) {
+      await vehicleService.recomputeValueAddition(todo.vehicleId, actorId);
+    }
     return todo;
   },
 
@@ -182,6 +188,7 @@ export const todoService = {
     const vehicleId = (existing as { vehicle_id: string } | null)?.vehicle_id;
     if (vehicleId && actorId) {
       await todoService.recomputeReadiness(vehicleId, actorId);
+      await vehicleService.recomputeValueAddition(vehicleId, actorId);
     }
   },
 

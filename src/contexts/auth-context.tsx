@@ -269,16 +269,15 @@ export function AuthProvider({
           if (event === "TOKEN_REFRESHED") return;
 
           const nextId = nextSession?.user?.id ?? null;
-          // Tab refocus re-emits INITIAL_SESSION for the SAME user; re-hydrating
-          // then is pointless and caused the blank-on-tab-switch bug, so skip
-          // when nothing changed. BUT a deliberate SIGNED_IN (a real login,
-          // incl. switching accounts) must always re-hydrate so the new
-          // identity replaces the old — even if the id ref looks stale.
-          if (
-            nextId === userIdRef.current &&
-            event !== "SIGNED_OUT" &&
-            event !== "SIGNED_IN"
-          ) {
+          // Same user → nothing to re-read. This includes SIGNED_IN: supabase-js
+          // re-emits SIGNED_IN every time the tab becomes visible again (its
+          // visibility handler recovers the session and notifies), so treating
+          // it as "a real login" re-fetched the profile — and, through the new
+          // user object, the notifications and backup check — on every single
+          // tab switch. Measured: 4 requests per switch, every ~2s while a tab
+          // flickered. A genuine login or account switch still re-hydrates:
+          // signIn() clears the user first, so the ids differ by construction.
+          if (nextId === userIdRef.current && event !== "SIGNED_OUT") {
             return;
           }
 

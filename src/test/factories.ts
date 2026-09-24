@@ -12,6 +12,7 @@ import type {
   Warranty,
   WarrantyClaim,
 } from "@/lib/types";
+import { EMPTY_MASTER_SHEET_FIELDS } from "@/lib/master-sheet";
 
 export function makeVehicle(overrides: Partial<Vehicle> = {}): Vehicle {
   return {
@@ -104,6 +105,7 @@ export function makeVehicle(overrides: Partial<Vehicle> = {}): Vehicle {
     atPrivateValuation: 11800,
     atPriceIndicator: "GOOD",
     atValuationAt: "2026-06-01T08:00:00.000Z",
+    ...EMPTY_MASTER_SHEET_FIELDS,
     createdAt: "2026-05-10T09:00:00.000Z",
     updatedAt: "2026-06-01T08:00:00.000Z",
     ...overrides,

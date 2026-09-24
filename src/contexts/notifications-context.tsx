@@ -61,11 +61,16 @@ async function buildBackupReminder(
 
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  // Keyed on the ids, not the user object: a profile re-read (onboarding,
+  // settings, a revalidate) hands out a new object for the same person, and
+  // refetching the bell + backup check for that was pure waste.
+  const userId = user?.id ?? null;
+  const companyId = user?.companyId ?? null;
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const refresh = useCallback(async () => {
-    if (!user) {
+    if (!userId) {
       setNotifications([]);
       setUnreadCount(0);
       return;
@@ -73,8 +78,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     // Source the badge from the accurate count query rather than the
     // (capped) list the dropdown renders.
     const [list, count] = await Promise.all([
-      notificationService.getForUser(user.id),
-      notificationService.getUnreadCount(user.id),
+      notificationService.getForUser(userId),
+      notificationService.getUnreadCount(userId),
     ]);
 
     /**
@@ -85,13 +90,13 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
      * another device. Computing it from the last recorded backup means the
      * reminder is correct by construction and disappears on its own.
      */
-    const backupReminder = user.companyId
-      ? await buildBackupReminder(user.companyId, user.id)
+    const backupReminder = companyId
+      ? await buildBackupReminder(companyId, userId)
       : null;
 
     setNotifications(backupReminder ? [backupReminder, ...list] : list);
     setUnreadCount(count + (backupReminder ? 1 : 0));
-  }, [user]);
+  }, [userId, companyId]);
 
   useEffect(() => {
     void refresh();
@@ -101,7 +106,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   // without a manual reload. Cleanup is handled inside the hook on unmount.
   useRealtimeTable({
     table: "notifications",
-    companyId: user?.id ?? null,
+    companyId: userId,
     filterColumn: "user_id",
     invalidatePrefix: "notifications:",
     onChange: () => void refresh(),
@@ -120,10 +125,10 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   );
 
   const markAllRead = useCallback(async () => {
-    if (!user) return;
-    await notificationService.markAllRead(user.id);
+    if (!userId) return;
+    await notificationService.markAllRead(userId);
     await refresh();
-  }, [user, refresh]);
+  }, [userId, refresh]);
 
   return (
     <NotificationsContext.Provider

@@ -2391,6 +2391,35 @@ export type Database = {
           warranty_cost: number | null
           wheelplan: string | null
           year: number
+          battery_report_fee: number | null
+          credit_note_date: string | null
+          customer_delivery_cost: number | null
+          engine_number: string | null
+          engine_size_kw: number | null
+          ev_assured_charge: number | null
+          extended_warranty_cost: number | null
+          finance_company_charges: number | null
+          finance_company_deal: boolean | null
+          former_keepers: number | null
+          insurance_cost: number | null
+          legacy_serial_number: number | null
+          log_book: string | null
+          mass_in_service: number | null
+          num_seats: number | null
+          other_items_received: string | null
+          other_jobs_cost: number | null
+          owner_details: string | null
+          partner_share: number | null
+          remarks: string | null
+          road_tax_cost: number | null
+          vat_on_battery_report_fee: number | null
+          vat_on_buyers_fee: number | null
+          vat_on_collection_fee: number | null
+          vat_on_delivery_fee: number | null
+          vat_on_ev_assured_charge: number | null
+          vat_on_inspection_charge: number | null
+          vat_on_late_storage_fee: number | null
+          sale_status: string
         }
         Insert: {
           at_derivative_id?: string | null
@@ -2486,6 +2515,35 @@ export type Database = {
           warranty_cost?: number | null
           wheelplan?: string | null
           year: number
+          battery_report_fee?: number | null
+          credit_note_date?: string | null
+          customer_delivery_cost?: number | null
+          engine_number?: string | null
+          engine_size_kw?: number | null
+          ev_assured_charge?: number | null
+          extended_warranty_cost?: number | null
+          finance_company_charges?: number | null
+          finance_company_deal?: boolean | null
+          former_keepers?: number | null
+          insurance_cost?: number | null
+          legacy_serial_number?: number | null
+          log_book?: string | null
+          mass_in_service?: number | null
+          num_seats?: number | null
+          other_items_received?: string | null
+          other_jobs_cost?: number | null
+          owner_details?: string | null
+          partner_share?: number | null
+          remarks?: string | null
+          road_tax_cost?: number | null
+          vat_on_battery_report_fee?: number | null
+          vat_on_buyers_fee?: number | null
+          vat_on_collection_fee?: number | null
+          vat_on_delivery_fee?: number | null
+          vat_on_ev_assured_charge?: number | null
+          vat_on_inspection_charge?: number | null
+          vat_on_late_storage_fee?: number | null
+          sale_status?: string
         }
         Update: {
           at_derivative_id?: string | null
@@ -2581,6 +2639,35 @@ export type Database = {
           warranty_cost?: number | null
           wheelplan?: string | null
           year?: number
+          battery_report_fee?: number | null
+          credit_note_date?: string | null
+          customer_delivery_cost?: number | null
+          engine_number?: string | null
+          engine_size_kw?: number | null
+          ev_assured_charge?: number | null
+          extended_warranty_cost?: number | null
+          finance_company_charges?: number | null
+          finance_company_deal?: boolean | null
+          former_keepers?: number | null
+          insurance_cost?: number | null
+          legacy_serial_number?: number | null
+          log_book?: string | null
+          mass_in_service?: number | null
+          num_seats?: number | null
+          other_items_received?: string | null
+          other_jobs_cost?: number | null
+          owner_details?: string | null
+          partner_share?: number | null
+          remarks?: string | null
+          road_tax_cost?: number | null
+          vat_on_battery_report_fee?: number | null
+          vat_on_buyers_fee?: number | null
+          vat_on_collection_fee?: number | null
+          vat_on_delivery_fee?: number | null
+          vat_on_ev_assured_charge?: number | null
+          vat_on_inspection_charge?: number | null
+          vat_on_late_storage_fee?: number | null
+          sale_status?: string
         }
         Relationships: [
           {

@@ -8,6 +8,7 @@ import { useOnborda } from "onborda";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";
+import { accountHandle } from "@/lib/auth/username";
 import {
   SIDEBAR_GROUPS,
   MVP_HIDDEN_HREFS,
@@ -196,12 +197,13 @@ export function AppSidebar() {
             {company?.name ?? "Car Capital UK"}
           </span>
           {/* The signed-in user's email, not a second copy of the company name
-              (GEN-34). Falls back to a dash before hydration / when unknown. */}
+              (GEN-34) — or their username, never the synthetic address behind
+              a username login. Falls back to a dash before hydration. */}
           <span
             className="truncate text-[11px] text-nav-email"
             suppressHydrationWarning
           >
-            {user?.email ?? "—"}
+            {user ? accountHandle(user) || "—" : "—"}
           </span>
         </span>
       </Link>

@@ -20,6 +20,11 @@ import {
 import { EditableCard, type EditableField } from "./editable-card";
 import { Pill } from "./primitives";
 import { variantLabel } from "@/lib/vehicle-variant";
+import {
+  SALE_STATUS_OPTIONS,
+  logBookPatch,
+  optionLabel,
+} from "@/lib/master-sheet";
 
 interface DetailsTabProps {
   vehicle: Vehicle;
@@ -57,6 +62,8 @@ const PURCHASE_SOURCES = opts([
   "other",
 ]);
 const SERVICE_HISTORY = opts(["full", "partial", "none", "unknown"]);
+const LOCAL_IMPORT = opts(["local", "import"]);
+const SALE_STATUS = SALE_STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
 
 /**
  * Details tab — the full vehicle spec sheet. Four grouped cards (Identity /
@@ -78,8 +85,13 @@ export function DetailsTab({ vehicle, onChanged }: DetailsTabProps) {
         toast.error("You must be signed in to edit this vehicle.");
         throw new Error("no actor");
       }
+      // A log-book edit carries the V5 flag with it, so the two never disagree.
+      const full =
+        patch.logBook !== undefined
+          ? { ...patch, ...logBookPatch(patch.logBook) }
+          : patch;
       try {
-        await vehicleService.update(vehicle.id, patch, user.id, {
+        await vehicleService.update(vehicle.id, full, user.id, {
           description: `${vehicle.registration} — ${describeChanges(changes)}`,
           changes,
         });
@@ -183,6 +195,71 @@ export function DetailsTab({ vehicle, onChanged }: DetailsTabProps) {
       options: SERVICE_HISTORY,
       render: (v) => cap(v.serviceHistory),
     },
+  ];
+
+  // Master sheet columns without a home above (docs/master-sheet-spec.md).
+  const buying: EditableField<Vehicle>[] = [
+    {
+      key: "legacySerialNumber",
+      label: "Legacy S/N",
+      kind: "integer",
+      plain: true,
+      hint: "Only for a car from the old Excel sheet. Freezes its value addition.",
+    },
+    { key: "variantCode", label: "Variant Code", kind: "text", hint: "From the BCA invoice." },
+    { key: "localOrImport", label: "Local / Import", kind: "select", options: LOCAL_IMPORT },
+    { key: "ownedBy", label: "Owned By", kind: "text" },
+    { key: "ownerDetails", label: "Owner Details", kind: "text" },
+    {
+      key: "invoiceDate",
+      label: "Invoice Date",
+      kind: "date",
+      render: (v) => formatDate(v.invoiceDate),
+      validators: [validDate("Invoice date") as never],
+    },
+    {
+      key: "creditNoteDate",
+      label: "Credit Note Date",
+      kind: "date",
+      render: (v) => formatDate(v.creditNoteDate),
+      validators: [validDate("Credit note date") as never],
+    },
+  ];
+
+  const receiving: EditableField<Vehicle>[] = [
+    { key: "logBook", label: "Log Book", kind: "text", hint: "AVAILABLE also marks the V5 as received." },
+    { key: "engineSizeKw", label: "Engine", kind: "integer", suffix: "kW", validators: [nonNegative("Engine size") as never] },
+    { key: "numSeats", label: "Seats", kind: "integer", validators: [nonNegative("Seats") as never] },
+    { key: "formerKeepers", label: "Former Keepers", kind: "integer", validators: [nonNegative("Former keepers") as never] },
+    { key: "massInService", label: "Mass in Service", kind: "integer", suffix: "kg", validators: [nonNegative("Mass") as never] },
+    { key: "engineNumber", label: "Engine No.", kind: "text" },
+    { key: "otherItemsReceived", label: "Other Items Received", kind: "text" },
+  ];
+
+  const sales: EditableField<Vehicle>[] = [
+    {
+      key: "saleStatus",
+      label: "Available / Sold",
+      kind: "select",
+      options: SALE_STATUS,
+      render: (v) => optionLabel(SALE_STATUS, v.saleStatus) ?? "—",
+    },
+    {
+      key: "dateSold",
+      label: "Date Sold",
+      kind: "date",
+      render: (v) => formatDate(v.dateSold),
+      validators: [validDate("Date sold") as never],
+    },
+    { key: "sellingAgent", label: "Selling Agent / Lead From", kind: "text" },
+    {
+      key: "financeCompanyDeal",
+      label: "Finance Company Deal",
+      kind: "boolean",
+      render: (v) =>
+        v.financeCompanyDeal === null ? "—" : v.financeCompanyDeal ? "Yes" : "No",
+    },
+    { key: "remarks", label: "Remarks", kind: "text" },
   ];
 
   const docs: EditableField<Vehicle>[] = [
@@ -309,6 +386,30 @@ export function DetailsTab({ vehicle, onChanged }: DetailsTabProps) {
         icon={ShieldCheck}
         record={vehicle}
         fields={compliance}
+        onSave={save}
+        canEdit={canEdit}
+      />
+      <EditableCard
+        title="Buying (master sheet)"
+        icon={Truck}
+        record={vehicle}
+        fields={buying}
+        onSave={save}
+        canEdit={canEdit}
+      />
+      <EditableCard
+        title="Receiving (master sheet)"
+        icon={FileText}
+        record={vehicle}
+        fields={receiving}
+        onSave={save}
+        canEdit={canEdit}
+      />
+      <EditableCard
+        title="Sales data (master sheet)"
+        icon={Car}
+        record={vehicle}
+        fields={sales}
         onSave={save}
         canEdit={canEdit}
       />

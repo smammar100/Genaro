@@ -48,6 +48,9 @@ import { DataGridPagination } from "@/components/data-grid";
 import { LocationBadge } from "@/components/locations/location-badge";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { useIsNarrow } from "@/hooks/use-media-query";
+import { usePermissions } from "@/hooks/use-permissions";
+import { optionLabel } from "@/lib/master-sheet";
+import { affectsCostTotals, withDerivedCosts } from "@/lib/vehicle-costs";
 import {
   cycleSort,
   sortRows,
@@ -88,6 +91,31 @@ export interface ColDef {
   width: number;
   /** Override the raw value used for CSV export / edit seeding. */
   format?: (v: Vehicle) => string;
+  /**
+   * A derived (formula) column — the cell shows this instead of `v[key]` and is
+   * never editable. `key` then only names the field it derives from.
+   */
+  value?: (v: Vehicle) => unknown;
+  /**
+   * Fixed choices: the cell shows the option label (e.g. "AUTO" for
+   * `automatic`) and edits with a dropdown. CSV exports the label too.
+   */
+  options?: { value: string; label: string }[];
+  /** Free-text cell with type-ahead suggestions (no fixed list). */
+  suggestions?: string[];
+  /**
+   * Turn the edited value into the fields to write, when one cell maps onto
+   * more than its own field (vehicle type → type + body, log book → V5 flag).
+   */
+  toPatch?: (value: unknown, v: Vehicle) => Partial<Vehicle>;
+  /** Explicit edit switch; overrides the sheet's `editableKeys`. */
+  editable?: boolean;
+  /** Per-row edit gate, on top of the column's own switch. */
+  editableFor?: (v: Vehicle) => boolean;
+  /** Tooltip on a read-only cell of an otherwise editable column. */
+  readOnlyHint?: string;
+  /** Section this column belongs to; `"common"` shows in every section. */
+  section?: string;
   /** Custom cell renderer. When present the column is read-only and the
    *  null-dash placeholder is skipped (the renderer owns empty states). */
   render?: (v: Vehicle) => ReactNode;
@@ -139,18 +167,25 @@ const colHiddenKey = (csvName: string): string =>
 
 export type FilterKind = "text" | "num";
 export interface FilterField {
-  key: keyof Vehicle;
+  /** A Vehicle field, or — with `get` — any id unique among the fields. */
+  key: keyof Vehicle | (string & {});
   label: string;
   kind: FilterKind;
+  /** Read a derived value instead of `v[key]` (e.g. "Sold month"). */
+  get?: (v: Vehicle) => unknown;
+  /** Stored value → the words the user types (e.g. `automatic` → "AUTO"). */
+  options?: { value: string; label: string }[];
 }
 
 interface FilterCond {
   id: number;
-  key: keyof Vehicle;
+  key: FilterField["key"];
   label: string;
   kind: FilterKind;
   op: string;
   value: string;
+  get?: (v: Vehicle) => unknown;
+  options?: { value: string; label: string }[];
 }
 
 const TEXT_OPS = [
@@ -169,11 +204,13 @@ function opsFor(kind: FilterKind) {
 function opLabel(op: string): string {
   return [...TEXT_OPS, ...NUM_OPS].find((o) => o.v === op)?.l ?? op;
 }
-function kindOf(fields: FilterField[], key: keyof Vehicle): FilterKind {
+function kindOf(fields: FilterField[], key: FilterField["key"]): FilterKind {
   return fields.find((f) => f.key === key)?.kind ?? "text";
 }
 function matchCond(c: FilterCond, v: Vehicle): boolean {
-  const raw = v[c.key];
+  const stored = c.get ? c.get(v) : v[c.key as keyof Vehicle];
+  // Match on what the user sees ("AUTO"), not the stored value ("automatic").
+  const raw = c.options ? (optionLabel(c.options, stored) ?? stored) : stored;
   if (c.kind === "num") {
     const n = typeof raw === "number" ? raw : Number(raw);
     const fv = Number(c.value);
@@ -218,6 +255,7 @@ function csvEscape(s: string) {
 }
 
 function rawValue(col: ColDef, v: Vehicle): unknown {
+  if (col.value) return col.value(v);
   if (col.format) return col.format(v);
   if (col.key === "daysInStock") {
     // The stored column is unreliable (quick-add inserts 0 and it's never
@@ -248,8 +286,18 @@ function rawValue(col: ColDef, v: Vehicle): unknown {
  * money and mileage numerically, dates chronologically, everything else as
  * text. Without the per-type coercion, "£9,000" would sort above "£10,000".
  */
-function sortValueFor(col: ColDef, v: Vehicle): string | number | null {
+/**
+ * What the cell reads as: the option label for a fixed-choice column ("AUTO",
+ * not `automatic`), the raw value otherwise. Export, sort and search all use
+ * this so they agree with the screen.
+ */
+function displayValue(col: ColDef, v: Vehicle): unknown {
   const raw = rawValue(col, v);
+  return col.options ? optionLabel(col.options, raw) : raw;
+}
+
+function sortValueFor(col: ColDef, v: Vehicle): string | number | null {
+  const raw = displayValue(col, v);
   switch (col.type) {
     case "number":
     case "currency":
@@ -262,7 +310,7 @@ function sortValueFor(col: ColDef, v: Vehicle): string | number | null {
 }
 
 function cellCsv(col: ColDef, v: Vehicle): string {
-  const raw = rawValue(col, v);
+  const raw = displayValue(col, v);
   if (raw === null || raw === undefined) return "";
   if (typeof raw === "boolean") return raw ? "Y" : "N";
   return String(raw);
@@ -310,10 +358,11 @@ const DEFAULT_EDITABLE_KEYS = new Set<string>([
 ]);
 
 function isEditableCol(c: ColDef, editableKeys: Set<string>): boolean {
-  if (c.render) return false;
+  if (c.render || c.value) return false;
   if (c.key === "profit") return false;
   if (c.type === "vehicle" || c.type === "stockId" || c.type === "status")
     return false;
+  if (c.editable !== undefined) return c.editable;
   return editableKeys.has(String(c.key));
 }
 
@@ -329,10 +378,16 @@ function coerceCellValue(c: ColDef, draft: string): unknown {
   return t === "" ? null : t;
 }
 
+/** The fields one committed cell writes. */
+function cellPatch(c: ColDef, value: unknown, v: Vehicle): Partial<Vehicle> {
+  if (c.toPatch) return c.toPatch(value, v);
+  return { [c.key]: value } as Partial<Vehicle>;
+}
+
 function CellContent({ col, v }: { col: ColDef; v: Vehicle }) {
   if (col.render) return <>{col.render(v)}</>;
 
-  const raw = rawValue(col, v);
+  const raw = displayValue(col, v);
 
   if (raw === null || raw === undefined || raw === "") {
     return <span className="text-muted-foreground/40">—</span>;
@@ -463,7 +518,32 @@ export interface VehicleSheetProps {
   headerActions?: ReactNode;
   /** Optional footer rendered after the table (e.g. an add-vehicle modal). */
   children?: ReactNode;
+  /**
+   * Column groups offered as a switcher next to "Add filter" (Master Sheet:
+   * Buying / Receiving / Value Addition / Sales Data). Columns tagged
+   * `section: "common"` show in every group. Omit for no switcher.
+   */
+  sections?: { value: string; label: string }[];
 }
+
+/** localStorage key for the section a user last picked on a sheet. */
+const sectionKey = (csvName: string): string =>
+  `cc.vehicle-sheet.section.${csvName}`;
+
+/**
+ * Header-band tint per section, echoing the colour coding of the client's
+ * Excel sheet so a wide "All" view still reads as blocks.
+ */
+const SECTION_TONE: Record<string, string> = {
+  common: "bg-muted text-muted-foreground",
+  buying: "bg-sky-50 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300",
+  receiving:
+    "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
+  value_addition:
+    "bg-violet-50 text-violet-800 dark:bg-violet-950/40 dark:text-violet-300",
+  sales:
+    "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
+};
 
 export function VehicleSheet({
   title,
@@ -477,8 +557,41 @@ export function VehicleSheet({
   hideExport = false,
   headerActions,
   children,
+  sections,
 }: VehicleSheetProps) {
   const { company, user } = useAuth();
+  const { can, isSuperUser } = usePermissions();
+  // Same gate as the Financials ledger: a cost edit re-derives the totals.
+  const canEditCosts = isSuperUser || can("inventory:edit_costs");
+  /** Active section, or null for every column ("All"). */
+  const [section, setSection] = useState<string | null>(null);
+  useEffect(() => {
+    if (!sections) return;
+    try {
+      const saved = localStorage.getItem(sectionKey(csvName));
+      if (saved && sections.some((s) => s.value === saved)) {
+        // Post-mount restore, same reason as the hidden-columns effect below.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSection(saved);
+      }
+    } catch {
+      // Blocked storage: start on "All".
+    }
+  }, [csvName, sections]);
+  /** The grid's scroll container (set by `attachGridScroll`). */
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  function pickSection(next: string | null) {
+    setSection(next);
+    // A new section starts at its first column, not wherever the last one
+    // had been scrolled to.
+    gridRef.current?.scrollTo({ left: 0 });
+    try {
+      if (next) localStorage.setItem(sectionKey(csvName), next);
+      else localStorage.removeItem(sectionKey(csvName));
+    } catch {
+      // The in-memory choice still applies for this session.
+    }
+  }
   const router = useRouter();
   const pathname = usePathname();
   const [vehicles, setVehicles] = useState<Vehicle[] | null>(null);
@@ -532,7 +645,7 @@ export function VehicleSheet({
   const [filters, setFilters] = useState<FilterCond[]>([]);
   const [search, setSearch] = useState("");
   const [builderOpen, setBuilderOpen] = useState(false);
-  const [bField, setBField] = useState<keyof Vehicle>(
+  const [bField, setBField] = useState<FilterField["key"]>(
     filterFields[0]?.key ?? "make",
   );
   const [bOp, setBOp] = useState(
@@ -567,6 +680,7 @@ export function VehicleSheet({
    * window resize and the sidebar collapsing.
    */
   const attachGridScroll = useCallback((el: HTMLDivElement | null) => {
+    gridRef.current = el;
     if (!el) return;
     const ro = new ResizeObserver(() => updateEdges(el));
     ro.observe(el);
@@ -701,27 +815,41 @@ export function VehicleSheet({
     if (!user || !company) return;
     const value =
       valueOverride !== undefined ? valueOverride : coerceCellValue(c, draft);
-    const field = c.key as keyof Vehicle;
-    if (v[field] === value) {
+    const patch = cellPatch(c, value, v);
+    const changed = (Object.keys(patch) as (keyof Vehicle)[]).filter(
+      (k) => v[k] !== patch[k],
+    );
+    if (changed.length === 0) {
       cancelEdit();
       return;
     }
+    // A cost edit moves the stored totals (TOTAL BUYING PRICE, base cost,
+    // profit), so it needs the same permission as the Financials ledger and
+    // must write the re-derived figures in the same update.
+    if (affectsCostTotals(patch) && !canEditCosts) {
+      toast.error("You don't have permission to edit costs");
+      cancelEdit();
+      return;
+    }
+    const full = withDerivedCosts(v, patch);
     setSavingCell(true);
     const snapshot = vehicles;
     // Optimistic: patch the local row immediately.
     setVehicles((prev) =>
       prev
-        ? prev.map((row) =>
-            row.id === v.id ? { ...row, [field]: value } : row,
-          )
+        ? prev.map((row) => (row.id === v.id ? { ...row, ...full } : row))
         : prev,
     );
     try {
-      const updated = await vehicleService.update(
-        v.id,
-        { [field]: value } as Partial<Vehicle>,
-        user.id,
-      );
+      const updated = await vehicleService.update(v.id, full, user.id, {
+        description: `${v.registration}: ${c.label} updated`,
+        changes: changed.map((k) => ({
+          key: String(k),
+          label: c.label,
+          from: v[k],
+          to: patch[k],
+        })),
+      });
       // Replace with the authoritative row (also refreshes any derived
       // values the server recomputed).
       setVehicles((prev) =>
@@ -873,10 +1001,57 @@ export function VehicleSheet({
    * blank gaps where the columns were.
    */
   const cols = useMemo(() => {
-    const chosen = allCols.filter((c) => visible.has(colKey(c)));
+    const chosen = allCols.filter(
+      (c) =>
+        visible.has(colKey(c)) &&
+        // The section switcher narrows, never hides identifiers.
+        (!section || !c.section || c.section === "common" || c.section === section),
+    );
     if (userPickedColumns || !isNarrow) return chosen;
     return chosen.filter((c) => !c.mobileHide);
-  }, [allCols, visible, userPickedColumns, isNarrow]);
+  }, [allCols, visible, userPickedColumns, isNarrow, section]);
+
+  /**
+   * Left offset of a sticky column: the row-counter (40px) plus every sticky
+   * column rendered before it, so several leading columns can pin side by side.
+   */
+  const stickyLeft = (c: ColDef): number => {
+    let left = 40;
+    for (const other of cols) {
+      if (colKey(other) === colKey(c)) break;
+      if (other.sticky) left += widthFor(other);
+    }
+    return left;
+  };
+
+  /** Right edge of the pinned columns — where scrolled content starts. */
+  const stickyEdge = cols.reduce(
+    (edge, c) => (c.sticky ? edge + widthFor(c) : edge),
+    40,
+  );
+
+  /**
+   * Row-2 band of the Excel sheet: contiguous runs of columns in the same
+   * section, each labelled once. Only drawn when the sheet has sections.
+   */
+  const bands = useMemo(() => {
+    if (!sections) return [];
+    const out: { section: string; label: string; span: number }[] = [];
+    for (const c of cols) {
+      const s = c.section ?? "common";
+      const last = out[out.length - 1];
+      if (last && last.section === s) last.span += 1;
+      else
+        out.push({
+          section: s,
+          label:
+            sections.find((x) => x.value === s)?.label ??
+            (s === "common" ? "Common" : ""),
+          span: 1,
+        });
+    }
+    return out;
+  }, [cols, sections]);
 
   /** Active column sort, or null for the grid's natural order (GEN-92). */
   const [sort, setSort] = useState<SortState | null>(null);
@@ -932,6 +1107,8 @@ export function VehicleSheet({
         key: fld.key,
         label: fld.label,
         kind: fld.kind,
+        get: fld.get,
+        options: fld.options,
         op: bOp,
         value: bValue.trim(),
       },
@@ -1144,6 +1321,39 @@ export function VehicleSheet({
               >
                 <Plus className="h-3.5 w-3.5" /> Add filter
               </button>
+              {sections && (
+                // Section switcher (client ask: one grid, a column-group picker
+                // beside Add filter instead of more tabs).
+                <div
+                  role="radiogroup"
+                  aria-label="Section"
+                  className="inline-flex shrink-0 items-center rounded-md border border-border bg-muted/40 p-0.5"
+                >
+                  {[{ value: null, label: "All" }, ...sections].map((s) => {
+                    const on = section === s.value;
+                    return (
+                      <button
+                        key={s.value ?? "all"}
+                        type="button"
+                        role="radio"
+                        aria-checked={on}
+                        onClick={() => {
+                          pickSection(s.value);
+                          setPage(1);
+                        }}
+                        className={cn(
+                          "rounded px-2 py-1 text-xs font-medium transition-colors",
+                          on
+                            ? "bg-card text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
           {builderOpen && (
@@ -1160,7 +1370,7 @@ export function VehicleSheet({
                   value={String(bField)}
                   onChange={(e) => {
                     const key = (e.target as HTMLSelectElement)
-                      .value as keyof Vehicle;
+                      .value as FilterField["key"];
                     setBField(key);
                     setBOp(
                       kindOf(filterFields, key) === "num" ? "gte" : "is",
@@ -1287,6 +1497,33 @@ export function VehicleSheet({
                     scrolling — bg-card is opaque, and the header keeps its
                     borders + font-medium to read as a band without a tint. */}
                 <thead className="sticky top-0 z-20 bg-card">
+                  {bands.length > 0 && (
+                    <tr aria-hidden>
+                      <th className="sticky left-0 z-30 border-b border-r bg-card" />
+                      {bands.map((b, i) => (
+                        <th
+                          key={`${b.section}-${i}`}
+                          colSpan={b.span}
+                          className={cn(
+                            "h-5 border-b border-r px-2 text-left text-2xs font-semibold uppercase tracking-wide",
+                            SECTION_TONE[b.section] ?? SECTION_TONE.common,
+                          )}
+                        >
+                          {/* Sticks beside the pinned columns so the name of a
+                              wide section stays readable while scrolling it. */}
+                          <span
+                            className="sticky block w-max"
+                            // The pinned band sits under the pinned columns;
+                            // every other band sticks just to their right.
+                            style={{ left: b.section === "common" ? 48 : stickyEdge + 8 }}
+                          >
+                            {b.label}
+                          </span>
+                        </th>
+                      ))}
+                      <th className="border-b" />
+                    </tr>
+                  )}
                   <tr>
                     <th className="sticky left-0 z-30 border-b border-r bg-card shadow-[2px_0_4px_-2px_var(--shadow-color)]">
                       <div className="flex h-8 items-center justify-center">
@@ -1308,7 +1545,7 @@ export function VehicleSheet({
                           c.sticky &&
                             "sticky z-30 bg-card shadow-[2px_0_4px_-2px_var(--shadow-color)]",
                         )}
-                        style={c.sticky ? { left: 40 } : undefined}
+                        style={c.sticky ? { left: stickyLeft(c) } : undefined}
                         aria-sort={
                           sort?.column === colKey(c)
                             ? sort.direction === "asc"
@@ -1324,9 +1561,21 @@ export function VehicleSheet({
                             setSort((prev) => cycleSort(prev, colKey(c)))
                           }
                           aria-label={`Sort by ${c.label}`}
-                          className="flex h-8 w-full min-w-0 cursor-pointer items-center gap-1 pr-1 text-left text-xs hover:text-foreground"
+                          title={c.label}
+                          className={cn(
+                            "flex w-full min-w-0 cursor-pointer items-center gap-1 pr-1 text-left text-xs hover:text-foreground",
+                            // Sheets with sections carry the client's long Excel
+                            // headers ("BCA ESSENTIAL CHECK / BCA ASSURED
+                            // CHARGE"): let them wrap to two lines, not clip.
+                            sections ? "min-h-10 py-1" : "h-8",
+                          )}
                         >
-                          <span className="min-w-0 truncate font-medium text-foreground">
+                          <span
+                            className={cn(
+                              "min-w-0 font-medium text-foreground",
+                              sections ? "line-clamp-2 leading-tight" : "truncate",
+                            )}
+                          >
                             {c.label}
                           </span>
                           {sort?.column === colKey(c) ? (
@@ -1418,7 +1667,13 @@ export function VehicleSheet({
                           </div>
                         </td>
                         {cols.map((c) => {
-                          const editable = isEditableCol(c, editableKeys);
+                          const columnEditable = isEditableCol(c, editableKeys);
+                          const editable =
+                            columnEditable && (c.editableFor?.(v) ?? true);
+                          const lockedHint =
+                            columnEditable && !editable
+                              ? c.readOnlyHint
+                              : undefined;
                           const isEditingThis =
                             editing?.id === v.id && editing?.key === colKey(c);
                           const alignEnd =
@@ -1443,7 +1698,7 @@ export function VehicleSheet({
                                   "bg-[color-mix(in_srgb,var(--primary)_5%,var(--card))]",
                                 !c.sticky && "group-hover/row:bg-muted/40",
                               )}
-                              style={c.sticky ? { left: 40 } : undefined}
+                              style={c.sticky ? { left: stickyLeft(c) } : undefined}
                             >
                               <div
                                 className={cn(
@@ -1454,7 +1709,35 @@ export function VehicleSheet({
                                   alignEnd ? "justify-end" : "justify-start",
                                 )}
                               >
-                                {isEditingThis ? (
+                                {isEditingThis && c.options ? (
+                                  // Fixed choices edit with a dropdown in the
+                                  // same flush style; picking commits at once.
+                                  <select
+                                    autoFocus
+                                    value={draft}
+                                    disabled={savingCell}
+                                    aria-label={c.label}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={(e) =>
+                                      void commitEdit(v, c, e.target.value || null)
+                                    }
+                                    onBlur={cancelEdit}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Escape") {
+                                        e.preventDefault();
+                                        cancelEdit();
+                                      }
+                                    }}
+                                    className="-mx-1 h-7 w-full min-w-0 rounded bg-primary/10 px-1 text-xs text-foreground outline-none disabled:opacity-60"
+                                  >
+                                    <option value="">—</option>
+                                    {c.options.map((o) => (
+                                      <option key={o.value} value={o.value}>
+                                        {o.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : isEditingThis ? (
                                   // Plain input, not the shadcn <Input>: that
                                   // renders a bordered wrapper whose font
                                   // (sm:text-sm) and baked-in padding can't be
@@ -1476,6 +1759,13 @@ export function VehicleSheet({
                                     }
                                     value={draft}
                                     disabled={savingCell}
+                                    aria-label={c.label}
+                                    list={
+                                      c.suggestions
+                                        ? `${csvName}-${colKey(c)}-suggestions`
+                                        : undefined
+                                    }
+                                    step={c.type === "currency" ? "0.01" : undefined}
                                     onClick={(e) => e.stopPropagation()}
                                     onChange={(e) => setDraft(e.target.value)}
                                     onBlur={() => void commitEdit(v, c)}
@@ -1518,6 +1808,18 @@ export function VehicleSheet({
                                   >
                                     <CellContent col={c} v={v} />
                                   </button>
+                                ) : lockedHint ? (
+                                  <span
+                                    title={lockedHint}
+                                    className="flex w-full min-w-0 cursor-help items-center"
+                                    style={
+                                      alignEnd
+                                        ? { justifyContent: "flex-end" }
+                                        : undefined
+                                    }
+                                  >
+                                    <CellContent col={c} v={v} />
+                                  </span>
                                 ) : (
                                   <CellContent col={c} v={v} />
                                 )}
@@ -1638,6 +1940,16 @@ export function VehicleSheet({
           </Card>
         )}
       </div>
+      {/* Type-ahead lists for the free-text cells that have suggestions. */}
+      {allCols
+        .filter((c) => c.suggestions)
+        .map((c) => (
+          <datalist key={colKey(c)} id={`${csvName}-${colKey(c)}-suggestions`}>
+            {c.suggestions!.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
+        ))}
       {children}
     </>
   );

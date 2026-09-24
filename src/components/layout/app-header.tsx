@@ -11,6 +11,7 @@ import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import { useReplayTour } from "@/components/onboarding/onboarding-tour";
 import { useIsWelcomeScreen } from "@/hooks/use-has-vehicles";
 import { toast } from "@/lib/toast";
+import { accountHandle } from "@/lib/auth/username";
 
 export function AppHeader() {
   const router = useRouter();
@@ -50,7 +51,7 @@ export function AppHeader() {
           {user?.name ?? ""}
         </span>
       </nord-button>
-      <nord-dropdown-group heading={user?.email ?? undefined}>
+      <nord-dropdown-group heading={user ? accountHandle(user) || undefined : undefined}>
         <nord-dropdown-item onClick={() => router.push("/admin/settings")}>
           Settings
         </nord-dropdown-item>
@@ -101,6 +102,11 @@ export function AppHeader() {
             type="search"
             label="Search"
             hideLabel
+            // Server-rendered: React writes `hideLabel` as a `hidelabel`
+            // attribute Nord ignores, and hydration never re-sets the property,
+            // so the "Search" caption showed above the box. The real attribute
+            // works from the first paint.
+            {...{ "hide-label": "" }}
             size="s"
             placeholder="Search reg or stock ID…"
             value={searchValue}
