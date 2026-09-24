@@ -145,7 +145,7 @@ export function VehicleCell({ vehicle }: { vehicle: Vehicle | null | undefined }
       <VehicleImage
         vehicle={vehicle}
         variant="thumb"
-        className="h-9 w-12 shrink-0 rounded"
+        className="size-10 shrink-0 rounded-lg border border-[#e3e3e3]"
       />
       <div className="flex min-w-0 flex-col gap-0.5 leading-tight">
         <RegPlate registration={vehicle.registration} size="sm" />

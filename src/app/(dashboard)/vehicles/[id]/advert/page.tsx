@@ -49,7 +49,12 @@ export default function VehicleAdvertPage({
 
   if (vehicle === null) {
     return (
-      <div className="p-6 text-sm text-muted-foreground">Vehicle not found.</div>
+      <div className="rounded-xl border bg-card p-10 text-center">
+        <p className="text-sm font-semibold text-foreground">Vehicle not found</p>
+        <p className="mt-1 text-[13px] text-muted-foreground">
+          It may have been deleted or the link is out of date.
+        </p>
+      </div>
     );
   }
 

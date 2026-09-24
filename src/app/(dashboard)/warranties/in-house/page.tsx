@@ -11,6 +11,7 @@ import type { Vehicle, Warranty, WarrantyClaim, WarrantyStatus } from "@/lib/typ
 import { useRealtimeTable } from "@/hooks/use-realtime-table";
 import { effectiveWarrantyStatus } from "@/lib/warranty-status";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -134,62 +135,64 @@ export default function InHouseWarrantiesPage() {
   }, [warranties, vehicles, claims, filter, query]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-xl font-semibold">
             In-House Warranties
           </h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+          <p className="mt-0.5 max-w-2xl text-[13px] text-muted-foreground">
             Warranties Car Capital provides to buyers directly. Track active
             cover, expiry dates, and any claims.
           </p>
         </div>
         <Button type="button" onClick={() => setNewWarrantyOpen(true)}>
-          <Plus className="mr-1.5 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           New warranty
         </Button>
       </header>
 
       <KpiStrip refreshKey={refreshKey} />
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <FilterChips
-          options={filterOptions}
-          activeValue={filter}
-          onChange={setFilter}
-        />
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search customer, vehicle…"
-            className="h-9 w-64 pl-8"
+      <Card className="gap-0 overflow-hidden rounded-xl p-0 shadow-[0_1px_0_rgba(0,0,0,.05)]">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+          <FilterChips
+            options={filterOptions}
+            activeValue={filter}
+            onChange={setFilter}
           />
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search customer, vehicle…"
+              className="h-8 w-64 pl-8"
+            />
+          </div>
         </div>
-      </div>
 
-      {!rows ? (
-        <Skeleton className="h-72" />
-      ) : rows.length === 0 ? (
-        <EmptyState
-          icon={ShieldCheck}
-          title="No in-house warranties"
-          description={
-            query
-              ? "Try a different search term or clear the filter."
-              : "Create a warranty when you sell a vehicle with Car Capital cover."
-          }
-        />
-      ) : (
-        <WarrantyTable
-          rows={rows}
-          variant="in-house"
-          onRowClick={(w) => setSheetWarranty(w)}
-          onFileClaim={(w) => setFileClaimFor(w)}
-        />
-      )}
+        {!rows ? (
+          <Skeleton className="m-4 h-72" />
+        ) : rows.length === 0 ? (
+          <EmptyState
+            icon={ShieldCheck}
+            title="No in-house warranties"
+            description={
+              query
+                ? "Try a different search term or clear the filter."
+                : "Create a warranty when you sell a vehicle with Car Capital cover."
+            }
+          />
+        ) : (
+          <WarrantyTable
+            rows={rows}
+            variant="in-house"
+            onRowClick={(w) => setSheetWarranty(w)}
+            onFileClaim={(w) => setFileClaimFor(w)}
+          />
+        )}
+      </Card>
 
       <NewWarrantyDialog
         open={newWarrantyOpen}

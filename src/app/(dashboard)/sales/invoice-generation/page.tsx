@@ -154,7 +154,7 @@ function Section({
   const [open, setOpen] = useState(true);
   const Icon = SECTION_ICON[letter];
   return (
-    <Card className="p-0">
+    <Card className="rounded-xl p-0 shadow-[0_1px_0_rgba(0,0,0,.05)]">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -170,7 +170,7 @@ function Section({
           className={cn("h-4 w-4 transition-transform", !open && "-rotate-90")}
         />
       </button>
-      {open && <div className="border-t px-4 py-4">{children}</div>}
+      {open && <div className="border-t border-border px-4 py-4">{children}</div>}
     </Card>
   );
 }
@@ -705,13 +705,13 @@ function InvoiceGenerationForm() {
   }
 
   return (
-    <div className="flex flex-col gap-6 xl:flex-row">
+    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 xl:flex-row">
       <div className="flex flex-1 flex-col gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-xl font-semibold">
             {editing ? "Edit Invoice" : "Generate Invoice"}
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="mt-0.5 text-[13px] text-muted-foreground">
             Create a legal, two-page sales invoice for a deal. Your draft saves
             automatically as you go.
           </p>
@@ -1478,7 +1478,7 @@ function InvoiceGenerationForm() {
 
       {/* Sticky cost summary */}
       <div className="xl:w-72">
-        <Card className="xl:sticky xl:top-4 p-4">
+        <Card className="rounded-xl p-4 shadow-[0_1px_0_rgba(0,0,0,.05)] xl:sticky xl:top-4">
           <h2 className="text-sm font-semibold">Cost Summary</h2>
           <div className="mt-3 flex flex-col gap-1.5 text-sm">
             <Row label="Vehicle (Sales Price)" v={totals.salesPrice} />

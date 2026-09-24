@@ -50,18 +50,15 @@ export function DashboardUpcomingAppointments() {
   }, [appts]);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-line bg-white">
-      <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-[#e3e3e3] bg-card shadow-[0_1px_0_rgba(0,0,0,.05)]">
+      <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2">
         <div className="flex items-baseline gap-2">
-          <h2 className="text-[14px] font-semibold tracking-[-0.01em]">
+          <h2 className="text-sm font-semibold text-foreground">
             Appointments
           </h2>
-          <span className="text-[12px] text-muted-text">
-            {upcoming === null ? "—" : `${upcoming.length} upcoming`}
-          </span>
         </div>
         <Link
-          className="text-[12px] text-accent-navy no-underline hover:underline"
+          className="text-[13px] text-[#005bd3] no-underline hover:underline"
           href="/sales/appointments"
         >
           View all
@@ -73,10 +70,17 @@ export function DashboardUpcomingAppointments() {
           <Skeleton className="h-40" />
         </div>
       ) : upcoming.length === 0 ? (
-        <p className="px-6 py-10 text-center text-[13px] leading-[1.55] text-body-text">
-          Nothing is booked from today onwards. Appointments made from a lead or
-          a vehicle page appear here as soon as they are confirmed.
-        </p>
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 py-8 text-center">
+          <p className="text-[13px] text-muted-foreground">
+            No upcoming appointments
+          </p>
+          <Link
+            className="text-[13px] text-[#005bd3] no-underline hover:underline"
+            href="/sales/appointments"
+          >
+            Book appointment
+          </Link>
+        </div>
       ) : (
         // No dividers between rows: spacing separates them (rule 1).
         <ul className="flex flex-1 list-none flex-col justify-between py-2 pb-3">
@@ -89,11 +93,11 @@ export function DashboardUpcomingAppointments() {
                 key={a.id}
               >
                 {/* The one shadow in the system lives on this chip. */}
-                <span className="flex w-[34px] shrink-0 flex-col overflow-hidden rounded-[5px] border border-line bg-white shadow-chip">
-                  <span className="grid h-[13px] place-items-center bg-accent-navy text-[8px] font-semibold uppercase tracking-[0.07em] text-white">
+                <span className="flex w-[34px] shrink-0 flex-col overflow-hidden rounded-lg border border-[#e3e3e3] bg-card">
+                  <span className="grid h-[13px] place-items-center bg-[#f1f1f1] text-[9px] font-semibold text-[#4a4a4a]">
                     {wd}
                   </span>
-                  <span className="grid h-[25px] place-items-center text-[15px] font-semibold tracking-[-0.02em] text-ink tabular-nums">
+                  <span className="grid h-[25px] place-items-center text-[15px] font-semibold text-foreground tabular-nums">
                     {dd}
                   </span>
                 </span>
@@ -101,11 +105,11 @@ export function DashboardUpcomingAppointments() {
                   <span className="truncate text-[13px] font-medium">
                     {a.customerName}
                   </span>
-                  <span className="truncate text-[12px] text-muted-text">
+                  <span className="truncate text-[12px] text-muted-foreground">
                     {v ? `${v.registration} · ${v.make} ${v.model}` : "—"}
                   </span>
                 </span>
-                <span className="shrink-0 whitespace-nowrap text-[12px] font-medium text-body-text tabular-nums">
+                <span className="shrink-0 whitespace-nowrap text-[12px] font-medium text-[#4a4a4a] tabular-nums">
                   {fmtTime(a.time)}
                 </span>
               </li>

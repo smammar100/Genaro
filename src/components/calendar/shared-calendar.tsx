@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import {
   CalendarDays,
   Car,
@@ -28,7 +28,11 @@ import type {
   Vehicle,
   WorkshopJob,
 } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { VehiclePicker } from "@/components/shared/vehicle-picker";
 import { notify } from "@/lib/toast";
 
@@ -715,14 +719,14 @@ export function SharedCalendar({
 
   return (
     <>
-      <div className="flex h-[calc(100dvh-230px)] min-h-[540px] w-full flex-col overflow-hidden rounded-lg border border-border bg-card">
+      <div className="flex h-[calc(100dvh-230px)] min-h-[540px] w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_0_rgba(0,0,0,0.05)]">
         {/* Toolbar row 1 — navigation, view switch, CTA */}
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
           <div className="flex min-w-0 items-center gap-2">
             <button
               type="button"
               onClick={() => setAnchor(new Date())}
-              className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-muted"
+              className="h-7 rounded-lg border border-[#8a8a8a]/50 px-3 text-[13px] font-medium hover:bg-[#f7f7f7]"
             >
               Today
             </button>
@@ -731,7 +735,7 @@ export function SharedCalendar({
                 type="button"
                 aria-label="Previous"
                 onClick={() => navigate(-1)}
-                className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-[#f1f1f1] hover:text-foreground"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -739,20 +743,20 @@ export function SharedCalendar({
                 type="button"
                 aria-label="Next"
                 onClick={() => navigate(1)}
-                className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-[#f1f1f1] hover:text-foreground"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
             <h2 className="truncate text-sm font-semibold">{label}</h2>
             {view === "day" && toISO(anchor) === todayISO && (
-              <span className="shrink-0 rounded bg-primary px-1.5 py-0.5 text-2xs font-medium text-primary-foreground">
+              <span className="shrink-0 rounded-lg bg-[#ebebeb] px-2 py-0.5 text-xs font-medium text-foreground">
                 Today
               </span>
             )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <div className="flex items-center rounded-md border border-border p-0.5">
+            <div className="flex items-center gap-0.5 rounded-lg p-0.5">
               {(["day", "week", "month"] as const).map((v) => (
                 <button
                   key={v}
@@ -760,21 +764,19 @@ export function SharedCalendar({
                   onClick={() => setView(v)}
                   aria-pressed={view === v}
                   className={cn(
-                    "rounded px-2.5 py-1 text-xs font-medium capitalize transition-colors",
+                    "h-7 rounded-lg px-3 text-[13px] capitalize transition-colors",
                     view === v
-                      ? "bg-muted text-foreground"
-                      : "text-muted-foreground hover:text-foreground",
+                      ? "bg-[#ebebeb] font-medium text-foreground"
+                      : "text-[#4a4a4a] hover:bg-[#f1f1f1]",
                   )}
                 >
                   {v}
                 </button>
               ))}
             </div>
-            <nord-button
-              variant="primary"
-              size="s"
+            <Button
+              size="sm"
               type="button"
-              suppressHydrationWarning
               onClick={() =>
                 openCreate({
                   date: toISO(anchor),
@@ -783,15 +785,15 @@ export function SharedCalendar({
                 })
               }
             >
-              <Plus slot="start" className="h-4 w-4" />
+              <Plus className="h-4 w-4" />
               {ctaLabel}
-            </nord-button>
+            </Button>
           </div>
         </div>
 
         {/* Toolbar row 2 — source filter chips + live summary */}
         {showFilters ? (
-          <div className="flex items-center gap-2 border-b border-border bg-muted/40 px-4 py-2">
+          <div className="flex items-center gap-2 border-b border-border bg-[#f7f7f7] px-4 py-2">
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Filter className="h-3.5 w-3.5" />
               Filter
@@ -1072,7 +1074,7 @@ function WeekView({
 
       <div className="sticky top-12 z-20 flex min-h-7 shrink-0 border-b border-border bg-card">
         <div className="flex w-12 shrink-0 items-center justify-end pr-1.5">
-          <span className="text-2xs uppercase text-muted-foreground">all-day</span>
+          <span className="text-2xs text-muted-foreground">All day</span>
         </div>
         {days.map((d, i) => {
           const iso = toISO(d);
@@ -1256,7 +1258,7 @@ function DayView({
     <div className="flex min-h-0 flex-1 flex-col">
       {allDay.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 border-b border-border px-3 py-1.5">
-          <span className="shrink-0 text-2xs uppercase text-muted-foreground">
+          <span className="shrink-0 text-xs text-muted-foreground">
             all-day
           </span>
           {allDay.map((e) => (
@@ -1378,7 +1380,7 @@ function DayView({
                   );
                 })}
                 {laneAll.length === 0 && (
-                  <div className="pointer-events-none absolute inset-x-2 top-2 rounded-md border border-dashed border-border py-2 text-center">
+                  <div className="pointer-events-none absolute inset-x-2 top-2 rounded-lg bg-[#f7f7f7] py-2 text-center">
                     <span className="text-2xs text-muted-foreground/60">
                       No {KIND_META[kind].singular}s, click a slot to add
                     </span>
@@ -1579,11 +1581,8 @@ function EventForm({
   );
 
   // Date and Time share identical custom-control markup (label typography +
-  // h-9 box) so they top-align in the two-column grid. A Nord <nord-select> for
-  // Time sat at a different height than the native date input, leaving the two
-  // fields misaligned; nord-input has no native date type, so match the other
-  // way — render Time as a plain styled <select> mirroring the date field
-  // (GEN-30).
+  // h-9 box) so they top-align in the two-column grid — Time is a plain styled
+  // <select> mirroring the native date input (GEN-30).
   const dateField = (labelText: string) => (
     <div className="flex flex-col gap-1">
       <label htmlFor="mc-date" className="text-xs font-medium text-foreground">
@@ -1628,7 +1627,7 @@ function EventForm({
           type="button"
           aria-label="Close"
           onClick={onClose}
-          className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-[#f1f1f1] hover:text-foreground"
         >
           <X className="h-4 w-4" />
         </button>
@@ -1636,50 +1635,47 @@ function EventForm({
 
       <div className="flex flex-col gap-3.5 p-4">
         {kinds.length > 1 && (
-          <nord-select
-            expand
-            label="Calendar"
-            value={fields.kind}
-            disabled={kindLocked || undefined}
-            onChange={(e) =>
-              set("kind", (e.target as HTMLSelectElement).value as Kind)
-            }
-            suppressHydrationWarning
-          >
-            {kinds.map((k) => (
-              <option key={k} value={k}>
-                {KIND_META[k].label}
-              </option>
-            ))}
-          </nord-select>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="mc-kind" className="text-xs">
+              Calendar
+            </Label>
+            <select
+              id="mc-kind"
+              value={fields.kind}
+              disabled={kindLocked}
+              onChange={(e) => set("kind", e.target.value as Kind)}
+              suppressHydrationWarning
+              className="h-9 w-full rounded-lg border border-border bg-card px-3 text-[13px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-64"
+            >
+              {kinds.map((k) => (
+                <option key={k} value={k}>
+                  {KIND_META[k].label}
+                </option>
+              ))}
+            </select>
+          </div>
         )}
 
         {fields.kind === "appt" && (
           <>
-            <nord-input
-              expand
+            <LabeledInput
               label="Customer name"
               type="text"
               value={fields.customerName}
-              onInput={(e) => set("customerName", (e.target as HTMLInputElement).value)}
-              suppressHydrationWarning
+              onChange={(v) => set("customerName", v)}
             />
             <div className="grid grid-cols-2 gap-3">
-              <nord-input
-                expand
+              <LabeledInput
                 label="Phone"
                 type="tel"
                 value={fields.customerPhone}
-                onInput={(e) => set("customerPhone", (e.target as HTMLInputElement).value)}
-                suppressHydrationWarning
+                onChange={(v) => set("customerPhone", v)}
               />
-              <nord-input
-                expand
+              <LabeledInput
                 label="Email"
                 type="email"
                 value={fields.customerEmail}
-                onInput={(e) => set("customerEmail", (e.target as HTMLInputElement).value)}
-                suppressHydrationWarning
+                onChange={(v) => set("customerEmail", v)}
               />
             </div>
             {vehicleSelect}
@@ -1687,101 +1683,81 @@ function EventForm({
               {dateField("Date")}
               {timeSelect}
             </div>
-            <nord-textarea
-              expand
+            <LabeledTextarea
               label="Special requirements"
               value={fields.notes}
-              onInput={(e) => set("notes", (e.target as HTMLTextAreaElement).value)}
-              suppressHydrationWarning
+              onChange={(v) => set("notes", v)}
             />
           </>
         )}
 
         {fields.kind === "workshop" && (
           <>
-            <nord-input
-              expand
+            <LabeledInput
               label="Customer name"
               type="text"
               value={fields.customerName}
-              onInput={(e) => set("customerName", (e.target as HTMLInputElement).value)}
-              suppressHydrationWarning
+              onChange={(v) => set("customerName", v)}
             />
-            <nord-input
-              expand
+            <LabeledInput
               label="Phone"
               type="tel"
               value={fields.customerPhone}
-              onInput={(e) => set("customerPhone", (e.target as HTMLInputElement).value)}
-              suppressHydrationWarning
+              onChange={(v) => set("customerPhone", v)}
             />
             <div className="grid grid-cols-2 gap-3">
-              <nord-input
-                expand
+              <LabeledInput
                 label="Vehicle reg"
                 type="text"
                 placeholder="BD70 KLM"
                 value={fields.vehicleReg}
-                onInput={(e) => set("vehicleReg", (e.target as HTMLInputElement).value)}
-                suppressHydrationWarning
+                onChange={(v) => set("vehicleReg", v)}
               />
-              <nord-input
-                expand
+              <LabeledInput
                 label="Vehicle description"
                 type="text"
                 placeholder="BMW 3 Series"
                 value={fields.vehicleDescription}
-                onInput={(e) =>
-                  set("vehicleDescription", (e.target as HTMLInputElement).value)
-                }
-                suppressHydrationWarning
+                onChange={(v) => set("vehicleDescription", v)}
               />
             </div>
-            <nord-input
-              expand
+            <LabeledInput
               label="Job description"
               type="text"
               placeholder="MOT prep, brake inspection…"
               value={fields.description}
-              onInput={(e) => set("description", (e.target as HTMLInputElement).value)}
-              suppressHydrationWarning
+              onChange={(v) => set("description", v)}
             />
             <div className="grid grid-cols-2 gap-3">
               {dateField("Date")}
               {timeSelect}
             </div>
-            <nord-textarea
-              expand
+            <LabeledTextarea
               label="Notes"
               value={fields.notes}
-              onInput={(e) => set("notes", (e.target as HTMLTextAreaElement).value)}
-              suppressHydrationWarning
+              onChange={(v) => set("notes", v)}
             />
           </>
         )}
 
         {fields.kind === "maint" && (
           <>
-            <nord-input
-              expand
+            <LabeledInput
               label="Description"
               type="text"
               placeholder="Cambelt change, MOT due…"
               value={fields.description}
-              onInput={(e) => set("description", (e.target as HTMLInputElement).value)}
-              suppressHydrationWarning
+              onChange={(v) => set("description", v)}
             />
             {vehicleSelect}
             <div className="grid grid-cols-2 gap-3">
               {dateField("Due date")}
               {timeSelect}
             </div>
-            <nord-textarea
-              expand
+            <LabeledTextarea
               label="Notes"
               value={fields.notes}
-              onInput={(e) => set("notes", (e.target as HTMLTextAreaElement).value)}
-              suppressHydrationWarning
+              onChange={(v) => set("notes", v)}
             />
           </>
         )}
@@ -1792,26 +1768,75 @@ function EventForm({
       </div>
 
       <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
-        <nord-button size="s" type="button" suppressHydrationWarning onClick={onClose}>
+        <Button variant="outline" size="sm" type="button" onClick={onClose}>
           Cancel
-        </nord-button>
-        <nord-button
-          variant="primary"
-          size="s"
-          type="button"
-          disabled={saving || undefined}
-          suppressHydrationWarning
-          onClick={submit}
-        >
+        </Button>
+        <Button size="sm" type="button" disabled={saving} onClick={submit}>
           {submitLabel === "Add event" ? (
-            <Plus slot="start" className="h-4 w-4" />
+            <Plus className="h-4 w-4" />
           ) : (
-            <Pencil slot="start" className="h-3.5 w-3.5" />
+            <Pencil className="h-3.5 w-3.5" />
           )}
           {saving ? "Saving…" : submitLabel}
-        </nord-button>
+        </Button>
       </div>
     </>
+  );
+}
+
+/** Text field with a visible label above it (ids via useId). */
+function LabeledInput({
+  label,
+  type,
+  placeholder,
+  value,
+  onChange,
+}: {
+  label: string;
+  type: "text" | "tel" | "email";
+  placeholder?: string;
+  value: string;
+  onChange: (value: string) => void;
+}): React.ReactElement {
+  const id = useId();
+  return (
+    <div className="flex flex-col gap-1">
+      <Label htmlFor={id} className="text-xs">
+        {label}
+      </Label>
+      <Input
+        id={id}
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </div>
+  );
+}
+
+/** Multi-line field with a visible label above it (ids via useId). */
+function LabeledTextarea({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}): React.ReactElement {
+  const id = useId();
+  return (
+    <div className="flex flex-col gap-1">
+      <Label htmlFor={id} className="text-xs">
+        {label}
+      </Label>
+      <Textarea
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </div>
   );
 }
 
@@ -1855,7 +1880,7 @@ function EventDetails({
           type="button"
           aria-label="Close"
           onClick={onClose}
-          className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-[#f1f1f1] hover:text-foreground"
         >
           <X className="h-4 w-4" />
         </button>
@@ -1901,13 +1926,13 @@ function EventDetails({
           Delete via {KIND_META[ev.kind].manageHint}
         </span>
         <div className="flex shrink-0 gap-2">
-          <nord-button size="s" type="button" suppressHydrationWarning onClick={onEdit}>
-            <Pencil slot="start" className="h-3.5 w-3.5" />
+          <Button variant="outline" size="sm" type="button" onClick={onEdit}>
+            <Pencil className="h-3.5 w-3.5" />
             Edit
-          </nord-button>
-          <nord-button size="s" type="button" suppressHydrationWarning onClick={onClose}>
+          </Button>
+          <Button variant="outline" size="sm" type="button" onClick={onClose}>
             Close
-          </nord-button>
+          </Button>
         </div>
       </div>
     </>

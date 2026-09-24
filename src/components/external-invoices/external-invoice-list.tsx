@@ -183,7 +183,7 @@ export function ExternalInvoiceList({ kind }: Props) {
           /admin/invoicing so the three tabs read as one page (GEN-46). */}
       <div className="overflow-hidden rounded-lg border bg-card">
         <table className="w-full border-collapse text-sm">
-          <thead className="bg-muted/40 text-xs text-muted-foreground">
+          <thead className="bg-[#f7f7f7] text-xs text-[#4a4a4a]">
             <tr>
               <th className="px-3 py-2.5 text-left font-medium">Date</th>
               <th className="px-3 py-2.5 text-left font-medium">Vendor</th>
@@ -204,7 +204,7 @@ export function ExternalInvoiceList({ kind }: Props) {
                 return (
                   <tr
                     key={r.id}
-                    className="border-t transition-colors hover:bg-muted/30"
+                    className="border-t transition-colors hover:bg-[#f7f7f7]"
                   >
                     <td className="px-3 py-2 align-top text-xs tabular-nums">
                       {formatDate(r.invoiceDate)}

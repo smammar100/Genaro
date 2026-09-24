@@ -47,7 +47,6 @@ interface LiveRow extends Listing {
 /* --------------------------------------------------------------- primitives */
 
 function StatCard({
-  icon: Icon,
   label,
   value,
   sub,
@@ -58,13 +57,12 @@ function StatCard({
   sub?: string;
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-xl border bg-card p-4">
-      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Icon className="size-3.5" />
+    <div className="flex flex-col gap-1 rounded-xl border bg-card px-4 py-3 shadow-[0_1px_0_rgba(0,0,0,.05)]">
+      <span className="text-[13px] font-medium text-muted-foreground underline decoration-dotted decoration-muted-foreground/50 underline-offset-4">
         {label}
       </span>
-      <span className="text-2xl font-semibold tabular-nums">{value}</span>
-      {sub ? <span className="text-2xs text-muted-foreground">{sub}</span> : null}
+      <span className="text-xl font-bold tabular-nums">{value}</span>
+      {sub ? <span className="text-xs text-muted-foreground">{sub}</span> : null}
     </div>
   );
 }
@@ -79,7 +77,7 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-4 rounded-xl border bg-card p-4">
+    <div className="flex flex-col gap-4 rounded-xl border bg-card px-4 py-3 shadow-[0_1px_0_rgba(0,0,0,.05)]">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold">{title}</h2>
         {action}
@@ -222,10 +220,10 @@ export default function PerformancePage() {
   );
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Performance</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-xl font-semibold">Performance</h1>
+        <p className="text-[13px] text-muted-foreground">
           How your adverts are doing across every marketplace channel:
           enquiries, channel reach and the listings that need attention.
         </p>
@@ -253,7 +251,7 @@ export default function PerformancePage() {
           <Panel
             title="Enquiries over time"
             action={
-              <span className="text-2xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 last {stats.trendDays} days · {stats.leadsTotal} lead{stats.leadsTotal === 1 ? "" : "s"}
               </span>
             }
@@ -270,23 +268,23 @@ export default function PerformancePage() {
           {/* Channel scorecards — real per-marketplace attribution */}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {channelStats.map((c) => (
-              <div key={c.key} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+              <div key={c.key} className="flex flex-col gap-3 rounded-xl border bg-card px-4 py-3 shadow-[0_1px_0_rgba(0,0,0,.05)]">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <span className={cn("size-2.5 rounded-full", c.dot)} />
                   {c.label}
                 </div>
                 <div className="flex items-end justify-between">
                   <div>
-                    <div className="text-2xl font-semibold tabular-nums">{c.enquiries}</div>
-                    <div className="text-2xs text-muted-foreground">enquiries</div>
+                    <div className="text-xl font-bold tabular-nums">{c.enquiries}</div>
+                    <div className="text-xs text-muted-foreground">enquiries</div>
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-semibold tabular-nums">{c.liveCount}</div>
-                    <div className="text-2xs text-muted-foreground">live</div>
+                    <div className="text-xs text-muted-foreground">live</div>
                   </div>
                 </div>
                 <div>
-                  <div className="mb-1 flex justify-between text-2xs text-muted-foreground">
+                  <div className="mb-1 flex justify-between text-xs text-muted-foreground">
                     <span>Share of enquiries</span>
                     <span>{shareOf(c.enquiries)}%</span>
                   </div>
@@ -297,8 +295,8 @@ export default function PerformancePage() {
                     />
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 border-t pt-2 text-2xs text-muted-foreground">
-                  <Trophy className="size-3.5 shrink-0 text-amber-500" />
+                <div className="flex items-center gap-1.5 border-t pt-2 text-xs text-muted-foreground">
+                  <Trophy className="size-3.5 shrink-0 text-muted-foreground" />
                   {c.top && c.top.vehicle && c.topEnq > 0 ? (
                     <>
                       Top:&nbsp;
@@ -314,19 +312,19 @@ export default function PerformancePage() {
             {/* Non-marketplace leads (walk-in, referral, repeat customer…) so
                 the channel cards always sum to the Total enquiries KPI. */}
             {otherEnq > 0 && (
-              <div className="flex flex-col gap-3 rounded-xl border border-dashed bg-card p-4">
+              <div className="flex flex-col gap-3 rounded-xl border bg-card px-4 py-3 shadow-[0_1px_0_rgba(0,0,0,.05)]">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <span className="size-2.5 rounded-full bg-muted-foreground/50" />
                   Other sources
                 </div>
                 <div className="flex items-end justify-between">
                   <div>
-                    <div className="text-2xl font-semibold tabular-nums">{otherEnq}</div>
-                    <div className="text-2xs text-muted-foreground">enquiries</div>
+                    <div className="text-xl font-bold tabular-nums">{otherEnq}</div>
+                    <div className="text-xs text-muted-foreground">enquiries</div>
                   </div>
                 </div>
                 <div>
-                  <div className="mb-1 flex justify-between text-2xs text-muted-foreground">
+                  <div className="mb-1 flex justify-between text-xs text-muted-foreground">
                     <span>Share of enquiries</span>
                     <span>{shareOf(otherEnq)}%</span>
                   </div>
@@ -337,7 +335,7 @@ export default function PerformancePage() {
                     />
                   </div>
                 </div>
-                <div className="border-t pt-2 text-2xs text-muted-foreground">
+                <div className="border-t pt-2 text-xs text-muted-foreground">
                   Walk-ins, referrals &amp; other non-marketplace leads
                 </div>
               </div>
@@ -346,7 +344,7 @@ export default function PerformancePage() {
 
           {/* Leaderboards */}
           <div className="grid gap-3 lg:grid-cols-2">
-            <Panel title="Top performing adverts" action={<Trophy className="size-4 text-amber-500" />}>
+            <Panel title="Top performing adverts" action={<Trophy className="size-4 text-muted-foreground" />}>
               <div className="flex flex-col">
                 {topAdverts.map((l, i) => (
                   <div key={l.id} className="flex items-center gap-3 border-b py-2 last:border-0">
@@ -368,10 +366,10 @@ export default function PerformancePage() {
               </div>
             </Panel>
 
-            <Panel title="Needs attention" action={<TriangleAlert className="size-4 text-rose-500" />}>
+            <Panel title="Needs attention" action={<TriangleAlert className="size-4 text-muted-foreground" />}>
               {needsAttention.length === 0 ? (
                 <div className="py-6 text-center text-sm text-muted-foreground">
-                  Every live advert is fresh and getting enquiries. 🎉
+                  Every live advert is fresh and getting enquiries.
                 </div>
               ) : (
                 <div className="flex flex-col">
@@ -391,10 +389,10 @@ export default function PerformancePage() {
                         </span>
                         <span
                           className={cn(
-                            "shrink-0 rounded-full px-2 py-0.5 text-2xs font-medium",
+                            "shrink-0 rounded-lg px-2 py-0.5 text-xs font-medium",
                             noEnq
-                              ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
-                              : "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+                              ? "bg-[rgb(255,235,120)] text-[rgb(79,71,0)]"
+                              : "bg-[rgb(254,209,215)] text-[rgb(142,11,33)]",
                           )}
                         >
                           {noEnq ? "No enquiries" : `${days}d stale`}

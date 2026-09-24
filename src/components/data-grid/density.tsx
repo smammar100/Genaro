@@ -57,21 +57,21 @@ export function DataGridDensityToggle({
           <Rows3 className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-44 p-1">
+      <PopoverContent align="end" className="w-44 p-1.5">
         {DENSITY_OPTIONS.map((opt) => (
           <button
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
             className={cn(
-              "flex w-full items-center rounded px-2 py-1.5 text-sm hover:bg-muted",
-              density === opt.value && "font-medium text-foreground",
-              density !== opt.value && "text-muted-foreground",
+              "flex h-8 w-full items-center rounded-lg px-2 text-[13px] hover:bg-[#f1f1f1]",
+              density === opt.value && "bg-[#f1f1f1] font-medium text-foreground",
+              density !== opt.value && "text-[#303030]",
             )}
           >
             {opt.label}
             {density === opt.value ? (
-              <span className="ml-auto text-xs text-primary">●</span>
+              <span className="ml-auto text-xs text-foreground">✓</span>
             ) : null}
           </button>
         ))}

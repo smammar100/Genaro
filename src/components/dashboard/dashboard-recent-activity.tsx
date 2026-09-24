@@ -40,32 +40,32 @@ function categorize(type: ActivityActionType): {
     type.startsWith("lead") ||
     type.startsWith("appointment")
   )
-    return { Icon: TrendingUp, tag: "Sales", tint: "text-[var(--color-navy-500)]" };
+    return { Icon: TrendingUp, tag: "Sales", tint: "text-[#4a4a4a]" };
   if (type.startsWith("inspection"))
     return {
       Icon: ClipboardCheck,
       tag: "Inspection",
-      tint: "text-[var(--color-navy-500)]",
+      tint: "text-[#4a4a4a]",
     };
   if (type.startsWith("maintenance") || type.startsWith("workshop"))
     return {
       Icon: Wrench,
       tag: "Workshop",
-      tint: "text-[var(--color-navy-500)]",
+      tint: "text-[#4a4a4a]",
     };
   if (type.startsWith("photo") || type.startsWith("listing"))
-    return { Icon: Camera, tag: "Advert", tint: "text-[var(--color-navy-500)]" };
+    return { Icon: Camera, tag: "Advert", tint: "text-[#4a4a4a]" };
   if (type.startsWith("warranty"))
     return {
       Icon: ShieldCheck,
       tag: "Warranty",
-      tint: "text-[var(--color-navy-500)]",
+      tint: "text-[#4a4a4a]",
     };
   if (type.includes("invoice") || type === "cost_updated")
     return {
       Icon: Receipt,
       tag: "Finance",
-      tint: "text-[var(--color-navy-500)]",
+      tint: "text-[#4a4a4a]",
     };
   if (
     type.startsWith("user") ||
@@ -100,16 +100,15 @@ export function DashboardRecentActivity() {
   }, [company]);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-line bg-white">
-      <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-[#e3e3e3] bg-card shadow-[0_1px_0_rgba(0,0,0,.05)]">
+      <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2">
         <div className="flex items-baseline gap-2">
-          <h2 className="text-[14px] font-semibold tracking-[-0.01em]">
+          <h2 className="text-sm font-semibold text-foreground">
             Latest news
           </h2>
-          <span className="text-[12px] text-muted-text">today</span>
         </div>
         <Link
-          className="text-[12px] text-accent-navy no-underline hover:underline"
+          className="text-[13px] text-[#005bd3] no-underline hover:underline"
           href="/admin/activity"
         >
           View all
@@ -121,7 +120,7 @@ export function DashboardRecentActivity() {
           <Skeleton className="h-40" />
         </div>
       ) : entries.length === 0 ? (
-        <p className="px-6 py-10 text-center text-[13px] leading-[1.55] text-body-text">
+        <p className="px-6 py-10 text-center text-[13px] leading-[1.55] text-[#4a4a4a]">
           Nothing has happened today. Every sale, inspection, workshop job and
           listing change lands here as it is recorded.
         </p>
@@ -135,22 +134,22 @@ export function DashboardRecentActivity() {
             return (
               <li key={e.id}>
                 <Link
-                  className="flex gap-2.5 px-4 py-[5px] no-underline"
+                  className="flex gap-2.5 px-4 py-1.5 no-underline hover:bg-[#f7f7f7]"
                   href={href}
                 >
                   {/* The design puts a 54x40 photo here. Activity entries carry
                       no image, so the category icon fills the same slot at the
                       same size rather than leaving a hole or inventing art. */}
-                  <span className="grid h-10 w-[54px] shrink-0 place-items-center rounded-[5px] bg-line-soft">
+                  <span className="grid h-10 w-[54px] shrink-0 place-items-center rounded-lg bg-[#f1f1f1]">
                     <Icon className={cn("h-4 w-4", tint)} />
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-accent-navy">
+                      <span className="text-xs font-medium text-[#4a4a4a]">
                         {tag}
                       </span>
                       <span className="block size-[3px] rounded-full bg-[#D4D4D8]" />
-                      <span className="text-[11px] text-faint">
+                      <span className="text-[11px] text-muted-foreground">
                         {timeAgo(e.createdAt)}
                       </span>
                     </span>

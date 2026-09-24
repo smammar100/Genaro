@@ -217,7 +217,7 @@ export function MoveDialog({
                         ? "cursor-not-allowed border-dashed border-border bg-muted/40 text-muted-foreground"
                         : isActive
                           ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary"
-                          : "border-border text-foreground hover:border-foreground/30 hover:bg-muted/50",
+                          : "border-border text-foreground hover:border-foreground/30 hover:bg-[#f7f7f7]",
                     )}
                   >
                     <Icon

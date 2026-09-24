@@ -74,10 +74,10 @@ const LOCATION_TONE: Record<
   { dot: string; surface: string; ring: string; text: string }
 > = {
   forecourt: {
-    dot: "bg-emerald-500",
-    surface: "bg-emerald-50 dark:bg-emerald-950/20",
+    dot: "bg-[#014b40]",
+    surface: "bg-[#affebf] dark:bg-emerald-950/20",
     ring: "ring-emerald-200 dark:ring-emerald-900/30",
-    text: "text-emerald-900 dark:text-emerald-100",
+    text: "text-[#014b40] dark:text-emerald-100",
   },
   yard: {
     dot: "bg-slate-500",
@@ -86,16 +86,16 @@ const LOCATION_TONE: Record<
     text: "text-slate-900 dark:text-slate-100",
   },
   garage: {
-    dot: "bg-red-500",
-    surface: "bg-red-50 dark:bg-red-950/20",
+    dot: "bg-[#8e0b21]",
+    surface: "bg-[#fed1d7] dark:bg-red-950/20",
     ring: "ring-red-200 dark:ring-red-900/30",
-    text: "text-red-900 dark:text-red-100",
+    text: "text-[#8e0b21] dark:text-red-100",
   },
   staff: {
-    dot: "bg-amber-500",
-    surface: "bg-amber-50 dark:bg-amber-950/20",
+    dot: "bg-[#4f4700]",
+    surface: "bg-[#fff1c2] dark:bg-amber-950/20",
     ring: "ring-amber-200 dark:ring-amber-900/30",
-    text: "text-amber-900 dark:text-amber-100",
+    text: "text-[#4f4700] dark:text-amber-100",
   },
 };
 
@@ -266,28 +266,25 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
       {/* Hero card — current location at a glance */}
       <div
         className={cn(
-          "flex flex-wrap items-center justify-between gap-4 rounded-2xl border p-4 ring-1",
-          tone.surface,
-          tone.ring,
+          "flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-card p-4",
         )}
       >
         <div className="flex items-center gap-4">
           <span
             className={cn(
-              "flex size-10 items-center justify-center rounded-full bg-white shadow-sm",
-              tone.text,
+              "flex size-10 items-center justify-center rounded-lg bg-[#f1f1f1] text-foreground",
             )}
           >
             <MapPin className="size-5" />
           </span>
           <div>
             <div className="flex items-center gap-2">
-              <span className={cn("text-base font-semibold", tone.text)}>
+              <span className="text-sm font-semibold text-foreground">
                 {VEHICLE_LOCATION_LABELS[vehicle.currentLocation]}
               </span>
               <span className={cn("size-2 rounded-full", tone.dot)} aria-hidden />
               {vehicle.outForTestDrive ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-white/60 px-2 py-0.5 text-xs font-medium text-foreground/80">
+                <span className="inline-flex items-center gap-1 rounded-lg bg-black/[0.06] px-2 py-0.5 text-xs font-medium text-[#303030]">
                   <Clock className="size-3" /> Out for test drive
                 </span>
               ) : null}

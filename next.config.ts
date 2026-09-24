@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
         hostname: "**.supabase.co",
         pathname: "/storage/v1/object/public/**",
       },
+      // Demo cars' hero photos (scripts/demo-car-photos.mts).
+      { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
   experimental: {

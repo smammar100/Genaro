@@ -143,6 +143,10 @@ function colKey(c: ColDef): string {
 
 const PAGE_SIZE = 25;
 
+/** Compact Shopify-style field for the filter builder row. */
+const FIELD_CLASS =
+  "h-8 rounded-lg border border-border bg-card px-2.5 text-[13px] text-foreground outline-none focus-visible:border-foreground focus-visible:ring-1 focus-visible:ring-foreground";
+
 // Column-resize bounds (GEN-20). Columns never shrink below MIN so a header
 // stays clickable, nor grow past MAX so one column can't run off the screen.
 const MIN_COL_W = 48;
@@ -358,7 +362,9 @@ const DEFAULT_EDITABLE_KEYS = new Set<string>([
 ]);
 
 function isEditableCol(c: ColDef, editableKeys: Set<string>): boolean {
-  if (c.render || c.value) return false;
+  // A custom display is read-only unless the column opts back in (the reg
+  // column shows a thumbnail + plate but is still typed into).
+  if ((c.render || c.value) && c.editable !== true) return false;
   if (c.key === "profit") return false;
   if (c.type === "vehicle" || c.type === "stockId" || c.type === "status")
     return false;
@@ -404,7 +410,7 @@ function CellContent({ col, v }: { col: ColDef; v: Vehicle }) {
           <VehicleImage
             vehicle={v}
             variant="thumb"
-            className="h-9 w-12 shrink-0 rounded"
+            className="size-10 shrink-0 rounded-lg border border-[#e3e3e3]"
           />
           <RegPlate registration={v.registration} size="sm" />
         </div>
@@ -1210,9 +1216,9 @@ export function VehicleSheet({
       <div className="flex h-[calc(100dvh-8rem)] flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+            <h1 className="text-xl font-semibold text-foreground">{title}</h1>
             {helper}
-            <p className="text-sm text-muted-foreground">
+            <p className="text-[13px] text-muted-foreground">
               {summary(filtered?.length ?? null, selected.size)}
             </p>
           </div>
@@ -1259,7 +1265,7 @@ export function VehicleSheet({
               </PopoverContent>
             </Popover>
             {!hideExport && (
-              <Button size="sm" onClick={exportCsv} disabled={!filtered}>
+              <Button size="sm" variant="outline" onClick={exportCsv} disabled={!filtered}>
                 <Download className="mr-1.5 h-4 w-4" />
                 Export CSV
               </Button>
@@ -1269,20 +1275,20 @@ export function VehicleSheet({
         </div>
 
         {/* Variation C — filter-chip bar: applied chips + add-condition builder */}
-        <div className="flex flex-col gap-2 rounded-lg border border-border bg-card px-4 py-2.5">
+        <div className="flex flex-col gap-2 rounded-xl border border-[#e3e3e3] bg-card px-3 py-2 shadow-[0_1px_0_rgba(0,0,0,.05)]">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              Where
+            <span className="text-[13px] font-medium text-[#4a4a4a]">
+              Filters
             </span>
             {filters.length === 0 && (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-[13px] text-muted-foreground">
                 No filters applied
               </span>
             )}
             {filters.map((f) => (
               <span
                 key={f.id}
-                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#ebebeb] px-2 py-0.5 text-xs font-medium text-[#303030]"
               >
                 <span className="text-muted-foreground">{f.label}</span>
                 <span className="text-muted-foreground">{opLabel(f.op)}</span>
@@ -1311,13 +1317,13 @@ export function VehicleSheet({
                     setSearch(e.target.value);
                     setPage(1);
                   }}
-                  className="h-8 w-56 pl-7 text-xs"
+                  className="h-8 w-56 rounded-lg pl-7 text-[13px]"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => setBuilderOpen((o) => !o)}
-                className="inline-flex shrink-0 items-center gap-1 rounded-md border border-dashed border-border px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent/40"
+                className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-[13px] font-medium text-[#303030] hover:bg-[#f1f1f1]"
               >
                 <Plus className="h-3.5 w-3.5" /> Add filter
               </button>
@@ -1327,7 +1333,7 @@ export function VehicleSheet({
                 <div
                   role="radiogroup"
                   aria-label="Section"
-                  className="inline-flex shrink-0 items-center rounded-md border border-border bg-muted/40 p-0.5"
+                  className="inline-flex shrink-0 items-center gap-0.5"
                 >
                   {[{ value: null, label: "All" }, ...sections].map((s) => {
                     const on = section === s.value;
@@ -1342,10 +1348,10 @@ export function VehicleSheet({
                           setPage(1);
                         }}
                         className={cn(
-                          "rounded px-2 py-1 text-xs font-medium transition-colors",
+                          "h-7 rounded-lg px-3 text-[13px] transition-colors",
                           on
-                            ? "bg-card text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground",
+                            ? "bg-[#ebebeb] font-medium text-[#101010]"
+                            : "text-[#4a4a4a] hover:bg-[#f1f1f1]",
                         )}
                       >
                         {s.label}
@@ -1357,82 +1363,61 @@ export function VehicleSheet({
             </div>
           </div>
           {builderOpen && (
-            <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed border-border bg-muted/20 p-2">
-              <span className="text-xs font-medium text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 rounded-lg bg-[#f7f7f7] p-2">
+              <span className="text-[13px] font-medium text-[#4a4a4a]">
                 Add condition
               </span>
-              <div className="w-40">
-                <nord-select
-                  size="s"
-                  hideLabel
-                  label="Field"
-                  expand
-                  value={String(bField)}
-                  onChange={(e) => {
-                    const key = (e.target as HTMLSelectElement)
-                      .value as FilterField["key"];
-                    setBField(key);
-                    setBOp(
-                      kindOf(filterFields, key) === "num" ? "gte" : "is",
-                    );
-                  }}
-                  suppressHydrationWarning
-                >
-                  {filterFields.map((f) => (
-                    <option key={String(f.key)} value={String(f.key)}>
-                      {f.label}
-                    </option>
-                  ))}
-                </nord-select>
-              </div>
-              <div className="w-32">
-                <nord-select
-                  size="s"
-                  hideLabel
-                  label="Operator"
-                  expand
-                  value={bOp}
-                  onChange={(e) =>
-                    setBOp((e.target as HTMLSelectElement).value)
-                  }
-                  suppressHydrationWarning
-                >
-                  {opsFor(kindOf(filterFields, bField)).map((o) => (
-                    <option key={o.v} value={o.v}>
-                      {o.l}
-                    </option>
-                  ))}
-                </nord-select>
-              </div>
-              <div className="w-48">
-                <nord-input
-                  size="s"
-                  hideLabel
-                  label="Value"
-                  placeholder="Value…"
-                  expand
-                  value={bValue}
-                  onInput={(e) =>
-                    setBValue((e.target as HTMLInputElement).value)
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") addFilter();
-                  }}
-                  suppressHydrationWarning
-                />
-              </div>
-              <nord-button
-                size="s"
+              <select
+                aria-label="Field"
+                value={String(bField)}
+                onChange={(e) => {
+                  const key = e.target.value as FilterField["key"];
+                  setBField(key);
+                  setBOp(kindOf(filterFields, key) === "num" ? "gte" : "is");
+                }}
+                className={cn(FIELD_CLASS, "w-44")}
+              >
+                {filterFields.map((f) => (
+                  <option key={String(f.key)} value={String(f.key)}>
+                    {f.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="Operator"
+                value={bOp}
+                onChange={(e) => setBOp(e.target.value)}
+                className={cn(FIELD_CLASS, "w-28")}
+              >
+                {opsFor(kindOf(filterFields, bField)).map((o) => (
+                  <option key={o.v} value={o.v}>
+                    {o.l}
+                  </option>
+                ))}
+              </select>
+              <input
+                aria-label="Value"
+                placeholder="Value…"
+                value={bValue}
+                onChange={(e) => setBValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") addFilter();
+                }}
+                className={cn(FIELD_CLASS, "w-48")}
+              />
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={() => {
                   setBuilderOpen(false);
                   setBValue("");
                 }}
               >
                 Cancel
-              </nord-button>
-              <nord-button size="s" variant="primary" onClick={addFilter}>
+              </Button>
+              <Button size="sm" onClick={addFilter}>
                 Add filter
-              </nord-button>
+              </Button>
             </div>
           )}
         </div>
@@ -1499,13 +1484,13 @@ export function VehicleSheet({
                 <thead className="sticky top-0 z-20 bg-card">
                   {bands.length > 0 && (
                     <tr aria-hidden>
-                      <th className="sticky left-0 z-30 border-b border-r bg-card" />
+                      <th className="sticky left-0 z-30 border-b bg-[#f7f7f7]" />
                       {bands.map((b, i) => (
                         <th
                           key={`${b.section}-${i}`}
                           colSpan={b.span}
                           className={cn(
-                            "h-5 border-b border-r px-2 text-left text-2xs font-semibold uppercase tracking-wide",
+                            "h-5 border-b px-2 text-left text-2xs font-semibold uppercase tracking-wide",
                             SECTION_TONE[b.section] ?? SECTION_TONE.common,
                           )}
                         >
@@ -1525,7 +1510,7 @@ export function VehicleSheet({
                     </tr>
                   )}
                   <tr>
-                    <th className="sticky left-0 z-30 border-b border-r bg-card shadow-[2px_0_4px_-2px_var(--shadow-color)]">
+                    <th className="sticky left-0 z-30 border-b bg-[#f7f7f7] shadow-[2px_0_4px_-2px_var(--shadow-color)]">
                       <div className="flex h-8 items-center justify-center">
                         <Checkbox
                           checked={
@@ -1541,9 +1526,9 @@ export function VehicleSheet({
                       <th
                         key={colKey(c)}
                         className={cn(
-                          "relative border-b border-r px-2 text-left font-medium",
+                          "relative border-b bg-[#f7f7f7] px-2 text-left font-medium",
                           c.sticky &&
-                            "sticky z-30 bg-card shadow-[2px_0_4px_-2px_var(--shadow-color)]",
+                            "sticky z-30 bg-[#f7f7f7] shadow-[2px_0_4px_-2px_var(--shadow-color)]",
                         )}
                         style={c.sticky ? { left: stickyLeft(c) } : undefined}
                         aria-sort={
@@ -1639,7 +1624,7 @@ export function VehicleSheet({
                             // bg-card is opaque AND matches the white grid
                             // surface (GEN-62). Drop shadow marks the
                             // sticky boundary.
-                            "sticky left-0 z-10 border-b border-r bg-card text-center",
+                            "sticky left-0 z-10 border-b bg-card text-center",
                             "shadow-[2px_0_4px_-2px_var(--shadow-color)]",
                             // Sticky cells can't use the row's translucent
                             // tints (they'd bleed), so mix the SAME tints
@@ -1652,17 +1637,11 @@ export function VehicleSheet({
                           onClick={(e) => e.stopPropagation()}
                         >
                           <div className="flex h-11 items-center justify-center">
-                            <span className="text-xs tabular-nums text-muted-foreground group-hover/row:hidden group-has-[[data-state=checked]]/row:hidden">
-                              {idx + 1}
-                            </span>
-                            <Checkbox
+                                                        <Checkbox
                               checked={isSelected}
                               onCheckedChange={() => toggleRow(v.id)}
                               aria-label={`Select row ${idx + 1}`}
-                              className={cn(
-                                "hidden group-hover/row:inline-flex",
-                                isSelected && "inline-flex",
-                              )}
+                              
                             />
                           </div>
                         </td>
@@ -1682,7 +1661,7 @@ export function VehicleSheet({
                             <td
                               key={colKey(c)}
                               className={cn(
-                                "border-b border-r px-2",
+                                "border-b px-2",
                                 // Sticky data cells: SOLID bg + shadow.
                                 // Inner sticky cells' shadows are occluded
                                 // by the next sticky cell's solid bg via

@@ -10,10 +10,10 @@ export default function MaintenanceCalendarPage() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="text-xl font-semibold">
           Maintenance Calendar
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-[13px] text-muted-foreground">
           All maintenance and inspection jobs on one calendar, colour-coded by
           status. Click a slot to add or an event to open it.
         </p>

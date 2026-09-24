@@ -85,7 +85,7 @@ export default function VendorsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Vendors</h1>
+        <h1 className="text-xl font-semibold">Vendors</h1>
         <p className="text-sm text-muted-foreground">
           Your suppliers in one place: the service garages you send work to and
           the trade partners who supply your stock.
@@ -363,10 +363,10 @@ function GaragesTab({
           description="Add the garages and parts suppliers you work with."
         />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full min-w-[640px] border-collapse text-sm [&_td]:border-r [&_td]:border-border [&_td:last-child]:border-r-0 [&_th]:border-r [&_th]:border-border [&_th:last-child]:border-r-0">
+        <div className="overflow-x-auto rounded-xl border border-border bg-card">
+          <table className="w-full min-w-[640px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border bg-[#f7f7f7] text-left text-xs text-[#4a4a4a]">
                 <th className="px-3 py-2.5 font-medium">Name</th>
                 <th className="px-3 py-2.5 font-medium">Phone</th>
                 <th className="px-3 py-2.5 font-medium">Speciality</th>
@@ -388,7 +388,7 @@ function GaragesTab({
                       active: row.active,
                     })
                   }
-                  className="cursor-pointer border-b border-border hover:bg-muted/50"
+                  className="cursor-pointer border-b border-border hover:bg-[#f7f7f7]"
                 >
                   <td className="whitespace-nowrap px-3 py-2.5">
                     <span className="flex items-center gap-2.5">
@@ -698,10 +698,10 @@ function DealerPartnersTab({
           description="Add the trade partners who supply you stock. (Requires database migration 0002.)"
         />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full min-w-[640px] border-collapse text-sm [&_td]:border-r [&_td]:border-border [&_td:last-child]:border-r-0 [&_th]:border-r [&_th]:border-border [&_th:last-child]:border-r-0">
+        <div className="overflow-x-auto rounded-xl border border-border bg-card">
+          <table className="w-full min-w-[640px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border bg-[#f7f7f7] text-left text-xs text-[#4a4a4a]">
                 <th className="px-3 py-2.5 font-medium">Contact</th>
                 <th className="px-3 py-2.5 font-medium">Phone</th>
                 <th className="px-3 py-2.5 font-medium">Company</th>
@@ -716,7 +716,7 @@ function DealerPartnersTab({
                   onClick={() =>
                     router.push(`/admin/vendors/dealer-partners/${row.id}`)
                   }
-                  className="cursor-pointer border-b border-border hover:bg-muted/50"
+                  className="cursor-pointer border-b border-border hover:bg-[#f7f7f7]"
                 >
                   <td className="whitespace-nowrap px-3 py-2.5">
                     <span className="flex items-center gap-2.5">
@@ -778,28 +778,28 @@ function KpiCard({
         </span>
         <Icon className="h-4 w-4 text-muted-foreground" />
       </div>
-      <div className="mt-1.5 text-2xl font-semibold tabular-nums">{value}</div>
+      <div className="mt-1.5 text-xl font-bold tabular-nums">{value}</div>
       <div className="mt-0.5 text-xs text-muted-foreground">{sub}</div>
     </div>
   );
 }
 
 const SPEC_CLS: Record<string, string> = {
-  mechanical: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
+  mechanical: "bg-[#d5ebff] text-[#003a5a]",
   general: "bg-muted text-foreground/75",
   electrical:
-    "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+    "bg-[#ffeb78] text-[#4f4700]",
   tyres: "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300",
   bodywork:
-    "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
-  mot: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    "bg-[#d5ebff] text-[#003a5a]",
+  mot: "bg-[#affebf] text-[#014b40]",
 };
 
 function SpecChip({ s }: { s: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide",
+        "inline-flex items-center rounded-md px-1.5 py-0.5 text-[13px] font-medium",
         SPEC_CLS[s] ?? "bg-muted text-foreground/75",
       )}
     >

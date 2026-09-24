@@ -84,16 +84,16 @@ export function DataGridGroupHeaderRow({
     <tr>
       <td
         colSpan={span}
-        className="sticky left-0 border-b bg-muted/70 px-2"
+        className="sticky left-0 border-b bg-[#f7f7f7] px-3"
       >
         <button
           type="button"
           onClick={onToggle}
-          className="flex h-9 w-full items-center gap-1.5 text-left text-xs font-semibold"
+          className="flex h-8 w-full items-center gap-1.5 text-left text-[13px] font-semibold"
         >
           <Chevron className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          <span className="uppercase tracking-wide">{label}</span>
-          <span className="rounded bg-background px-1.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+          <span>{label}</span>
+          <span className="rounded-lg bg-[#ebebeb] px-2 py-0.5 text-xs font-medium tabular-nums text-[#303030]">
             {count}
           </span>
         </button>

@@ -323,8 +323,8 @@ export default function DealsPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Completed Sale</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-xl font-semibold">Completed Sale</h1>
+        <p className="mt-0.5 text-[13px] text-muted-foreground">
           Your completed sales history. For deals still in progress, see the{" "}
           <Link href="/sales/pipeline" className="text-primary hover:underline">
             Sales Pipeline

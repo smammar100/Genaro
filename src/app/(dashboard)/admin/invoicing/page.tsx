@@ -356,7 +356,7 @@ export default function InvoicingPage() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Invoicing</h1>
+          <h1 className="text-xl font-semibold">Invoicing</h1>
           <p className="text-sm text-muted-foreground">
             Every invoice in one place: the company ledger (sales, refunds and
             recorded purchase invoices), auction purchase bills, and external
@@ -524,7 +524,7 @@ export default function InvoicingPage() {
       {filter === "refund" && (
         <Card className="flex flex-wrap gap-6 p-4 text-sm">
           <div>
-            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <div className="text-[13px] font-medium text-muted-foreground">
               Refunds this month
             </div>
             <div className="mt-0.5 font-semibold tabular-nums">
@@ -532,7 +532,7 @@ export default function InvoicingPage() {
             </div>
           </div>
           <div>
-            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <div className="text-[13px] font-medium text-muted-foreground">
               Refunds YTD
             </div>
             <div className="mt-0.5 font-semibold tabular-nums">
@@ -540,7 +540,7 @@ export default function InvoicingPage() {
             </div>
           </div>
           <div>
-            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <div className="text-[13px] font-medium text-muted-foreground">
               Total refund invoices
             </div>
             <div className="mt-0.5 font-semibold tabular-nums">
@@ -559,10 +559,10 @@ export default function InvoicingPage() {
           description="Switch tabs or create one."
         />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border">
+        <div className="overflow-x-auto rounded-xl border border-border bg-card">
           <table className="w-full min-w-[760px] text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/40 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border bg-[#f7f7f7] text-left text-xs text-[#4a4a4a]">
                 <th className="px-3 py-2.5 font-medium">Invoice #</th>
                 <th className="px-3 py-2.5 font-medium">Type</th>
                 <th className="px-3 py-2.5 font-medium">Party</th>
@@ -827,7 +827,7 @@ function KpiCard({
         <Icon className="h-4 w-4 text-muted-foreground" />
       </div>
       <div
-        className={cn("mt-1.5 text-2xl font-semibold tabular-nums", tone)}
+        className={cn("mt-1.5 text-xl font-bold tabular-nums", tone)}
       >
         {value}
       </div>
@@ -844,11 +844,11 @@ const INV_STATUS: Record<string, { label: string; cls: string }> = {
   },
   sent: {
     label: "Sent",
-    cls: "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
+    cls: "bg-[#d5ebff] text-[#003a5a]",
   },
   paid: {
     label: "Paid",
-    cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    cls: "bg-[#affebf] text-[#014b40]",
   },
   cancelled: {
     label: "Cancelled",
@@ -880,7 +880,7 @@ function TypeChip({ type }: { type: InvoiceType }) {
     );
   }
   return (
-    <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide text-foreground/75">
+    <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[13px] font-medium text-foreground/75">
       {type}
     </span>
   );
@@ -914,7 +914,7 @@ function Stat({
 }) {
   return (
     <div className="rounded-md border bg-background p-3">
-      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <div className="text-[13px] font-medium text-muted-foreground">
         {label}
       </div>
       <div

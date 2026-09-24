@@ -9,7 +9,7 @@ import {
 import { AddVehicleButton } from "@/components/vehicles/add-vehicle-button";
 import { DaysInStockChip } from "@/components/shared/days-in-stock-chip";
 import { PageHelper } from "@/components/layout/page-helper";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, titleCase } from "@/lib/utils";
 import { variantLabel } from "@/lib/vehicle-variant";
 
 // All Vehicles renders the same module as the Master Sheet (sticky
@@ -40,7 +40,7 @@ const COLS: ColDef[] = [
     render: (v) => (
       <div className="flex flex-col leading-tight">
         <span className="truncate font-medium">
-          {v.make} {v.model}
+          {titleCase(`${v.make} ${v.model}`)}
         </span>
         <span className="text-xs text-muted-foreground tabular-nums">
           {v.year}

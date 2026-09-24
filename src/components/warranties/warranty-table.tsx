@@ -89,7 +89,7 @@ export function WarrantyTable({
   onMarkPurchased,
 }: WarrantyTableProps) {
   return (
-    <div className="overflow-hidden rounded-md border bg-card">
+    <div className="overflow-hidden bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -123,7 +123,6 @@ export function WarrantyTable({
               }}
               className={cn(
                 "cursor-pointer",
-                isExpiring(row) && "bg-amber-50/50 dark:bg-amber-500/[0.04]",
               )}
             >
               <TableCell className="font-medium">
@@ -255,7 +254,7 @@ function RowActions({
           type="button"
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-7 w-7 rounded-lg hover:bg-[#f1f1f1]"
           onClick={(e) => e.stopPropagation()}
           aria-label="Row actions"
         >
@@ -296,7 +295,7 @@ export function ClaimsTable({
   onRowClick?: (claim: ClaimsRow) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-md border bg-card">
+    <div className="overflow-hidden bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -334,7 +333,7 @@ export function ClaimsTable({
               <TableCell>
                 <div className="text-sm">{row.customerName}</div>
                 {row.isComplaint && (
-                  <div className="text-xs font-medium uppercase tracking-wide text-destructive">
+                  <div className="text-[13px] font-medium text-destructive">
                     Complaint
                   </div>
                 )}

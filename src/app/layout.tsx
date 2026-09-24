@@ -1,28 +1,30 @@
 import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
+import { Inter } from "next/font/google";
 import { GeistMono } from "geist/font/mono";
 import { Suspense } from "react";
-// Nord base (design tokens + Inter webfont + FOUC guard for undefined
-// <nord-*> elements) MUST load before globals.css so our token bridge and
-// `.dark` overrides win the cascade. Order = cascade order in the prod build.
-import "@nordhealth/css";
 import "./globals.css";
+// After globals so `.polaris` wins over the :root token layer (same
+// specificity, later source). Generated from @shopify/polaris-tokens.
+import "./polaris-theme.css";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from "@/contexts/auth-context";
 import { NotificationsProvider } from "@/contexts/notifications-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
-import { NordRegister } from "@/components/nord/nord-register";
-import { NordToaster } from "@/components/nord/nord-toaster";
+import { Toaster } from "@/components/ui/toaster";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { getInitialAuth } from "@/lib/auth-initial";
 import { AuthBoundary } from "@/components/layout/auth-boundary";
 
-// UI font is Geist Sans (self-hosted via the `geist` package, exposing
-// --font-geist-sans); globals.css points both --font-sans AND Nord's
-// --n-font-family at it so Tailwind text and <nord-*> components match.
-// Geist Mono (--font-geist-mono) covers code / monospaced values.
+// UI font is Inter — the Shopify admin's typeface (self-hosted by next/font,
+// exposed as --font-inter; polaris-theme.css makes it --font-sans).
+// Geist Mono (--font-geist-mono) covers stock IDs, regs and other codes.
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Car Capital UK",
@@ -68,7 +70,9 @@ export default async function RootLayout({
       className={cn(
         "h-full",
         "antialiased",
-        GeistSans.variable,
+        // Shopify Polaris visual language, app-wide (src/app/polaris-theme.css).
+        "polaris",
+        inter.variable,
         GeistMono.variable,
         "font-sans",
       )}
@@ -99,8 +103,6 @@ export default async function RootLayout({
           disableTransitionOnChange
           forcedTheme="light"
         >
-          {/* Registers the <nord-*> custom elements on the client. */}
-          <NordRegister />
           <Suspense
             fallback={
               <AuthProvider initialUser={null} initialCompany={null}>
@@ -112,7 +114,7 @@ export default async function RootLayout({
           >
             <AuthBoundary authPromise={authPromise}>{children}</AuthBoundary>
           </Suspense>
-          <NordToaster />
+          <Toaster />
         </ThemeProvider>
         <SpeedInsights />
         <Analytics />

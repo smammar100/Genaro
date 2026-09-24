@@ -117,19 +117,23 @@ export default function MaintenanceInspectionListPage() {
   }, [rows]);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Inspection Queue</h1>
-        <p className="text-sm text-muted-foreground">
+    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+        <h1 className="text-xl font-semibold">Inspection Queue</h1>
+        <p className="text-[13px] text-muted-foreground">
           Vehicles waiting on their 20-point inspection. Run a check and cars
           move through automatically once it is done.
         </p>
+        </div>
       </div>
 
       {!rows ? (
         <Skeleton className="h-72" />
       ) : (
-        <Tabs defaultValue="pending">
+        <Card className="gap-0 overflow-hidden p-0">
+        <Tabs defaultValue="pending" className="gap-0">
+          <div className="flex items-center gap-2 border-b px-2 py-1.5">
           <TabsList>
             <TabsTrigger value="pending">
               Pending
@@ -144,13 +148,15 @@ export default function MaintenanceInspectionListPage() {
               </Badge>
             </TabsTrigger>
           </TabsList>
+          </div>
 
-          <TabsContent value="pending" className="mt-4">
+          <TabsContent value="pending" className="mt-0">
             {pending.length === 0 ? (
               <EmptyState
                 icon={ClipboardCheck}
                 title="No vehicles awaiting inspection"
                 description="All current stock has cleared the inspection step."
+                className="rounded-none border-0"
               />
             ) : (
               <QueueTable
@@ -163,12 +169,13 @@ export default function MaintenanceInspectionListPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="completed" className="mt-4">
+          <TabsContent value="completed" className="mt-0">
             {completed.length === 0 ? (
               <EmptyState
                 icon={ClipboardCheck}
                 title="No completed inspections yet"
                 description="Inspected vehicles will appear here."
+                className="rounded-none border-0"
               />
             ) : (
               <QueueTable
@@ -181,6 +188,7 @@ export default function MaintenanceInspectionListPage() {
             )}
           </TabsContent>
         </Tabs>
+        </Card>
       )}
 
       <InspectionSidePanel
@@ -208,16 +216,16 @@ function waitInfo(receivedDate: string): {
   if (days > 30)
     return {
       days,
-      cls: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+      cls: "bg-[rgb(254,209,215)] text-[rgb(142,11,33)]",
       urgent: true,
     };
   if (days > 14)
     return {
       days,
-      cls: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+      cls: "bg-[rgb(255,235,120)] text-[rgb(79,71,0)]",
       urgent: true,
     };
-  return { days, cls: "bg-muted text-muted-foreground", urgent: false };
+  return { days, cls: "bg-black/[0.06] text-[#303030]", urgent: false };
 }
 
 const SQUARE_TONE: Record<SquareKind, string> = {
@@ -282,9 +290,9 @@ function ProgressSquares({
 }
 
 const MOT_TONE: Record<string, string> = {
-  expired: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
-  expiring: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-  unknown: "bg-muted text-muted-foreground",
+  expired: "bg-[rgb(254,209,215)] text-[rgb(142,11,33)]",
+  expiring: "bg-[rgb(255,235,120)] text-[rgb(79,71,0)]",
+  unknown: "bg-black/[0.06] text-[#303030]",
 };
 
 /** MOT expiry flag (GEN-75) — silent for a valid, not-soon-expiring MOT. */
@@ -294,7 +302,7 @@ function MotBadge({ motExpiry }: { motExpiry: string | null }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium",
         MOT_TONE[flag.tone],
       )}
     >
@@ -318,7 +326,7 @@ function QueueTable({
   onOpen: (v: Vehicle) => void;
 }) {
   return (
-    <Card className="overflow-hidden p-0">
+    <div className="overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
@@ -390,7 +398,7 @@ function QueueTable({
                 <TableCell className="hidden sm:table-cell">
                   <span
                     className={cn(
-                      "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+                      "inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium",
                       wait.cls,
                     )}
                   >
@@ -420,12 +428,12 @@ function QueueTable({
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {flagged > 0 ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-[rgb(254,209,215)] px-2 py-0.5 text-xs font-medium text-[rgb(142,11,33)]">
                       <AlertTriangle className="size-3" />
                       {flagged}
                     </span>
                   ) : (
-                    <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+                    <span className="inline-flex items-center rounded-lg bg-black/[0.06] px-2 py-0.5 text-xs font-medium tabular-nums text-[#303030]">
                       0
                     </span>
                   )}
@@ -448,6 +456,6 @@ function QueueTable({
           })}
         </TableBody>
       </Table>
-    </Card>
+    </div>
   );
 }

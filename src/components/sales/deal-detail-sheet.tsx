@@ -113,7 +113,7 @@ export function DealDetailSheet({
             <div className="mt-4 flex flex-col gap-5 px-4 pb-6">
               {/* Vehicle */}
               <section>
-                <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <h3 className="mb-1.5 text-sm font-semibold text-foreground">
                   Vehicle
                 </h3>
                 {vehicle ? (
@@ -135,7 +135,7 @@ export function DealDetailSheet({
 
               {/* Customer */}
               <section>
-                <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <h3 className="mb-1 text-sm font-semibold text-foreground">
                   Customer
                 </h3>
                 <Row label="Name" value={deal.customerName} />
@@ -145,7 +145,7 @@ export function DealDetailSheet({
 
               {/* Deal */}
               <section>
-                <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <h3 className="mb-1 text-sm font-semibold text-foreground">
                   Deal
                 </h3>
                 <Row
@@ -194,7 +194,7 @@ export function DealDetailSheet({
               {/* Notes — timestamped, attributed running log (GEN-74) */}
               <section>
                 <div className="mb-1.5 flex items-center justify-between">
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <h3 className="text-sm font-semibold text-foreground">
                     Notes
                   </h3>
                   <span className="text-2xs text-muted-foreground">

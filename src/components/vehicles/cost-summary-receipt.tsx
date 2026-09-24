@@ -145,8 +145,8 @@ function Row({
         className={cn(
           "py-1 text-right align-baseline text-sm tabular-nums text-foreground",
           bold && "font-semibold",
-          tone === "positive" && "text-emerald-600",
-          tone === "negative" && "text-rose-600",
+          tone === "positive" && "text-[#014b40]",
+          tone === "negative" && "text-[#8e0b21]",
           tone === "muted" && "text-muted-foreground/60",
         )}
       >

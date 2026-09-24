@@ -52,21 +52,21 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-xl bg-primary text-primary-foreground text-sm font-semibold tracking-widest">
+    <div className="flex min-h-screen items-center justify-center bg-[#f1f1f1] px-4 py-12 dark:bg-background">
+      <div className="w-full max-w-[400px] rounded-xl border border-[#e3e3e3] bg-white p-8 shadow-[0_1px_0_rgba(0,0,0,.05)] dark:bg-card">
+        <div className="mb-6">
+          <div className="mb-6 grid size-9 place-items-center rounded-lg bg-[#101010] text-xs font-bold text-white">
             CC
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-xl font-semibold text-[#101010] dark:text-foreground">
             Reset password
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-[13px] text-muted-foreground">
             We&apos;ll email you a link to choose a new password.
           </p>
         </div>
 
-        <Card className="p-6">
+        <Card className="gap-0 border-0 bg-transparent p-0 shadow-none ring-0">
           {sent ? (
             <div className="flex flex-col gap-3">
               <p className="text-sm">
@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
               </p>
               <Link
                 href="/login"
-                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                className="text-sm font-medium text-[#005bd3] underline-offset-4 hover:underline"
               >
                 Back to sign in
               </Link>

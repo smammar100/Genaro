@@ -138,12 +138,12 @@ export default function PhotoProcessingPage() {
 
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="text-xl font-semibold">
           Photo Processing
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-[13px] text-muted-foreground">
           Prepare vehicle photos for advertising. Remove backgrounds, apply
           backdrops, and generate AI images.
         </p>
@@ -165,7 +165,7 @@ export default function PhotoProcessingPage() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search reg, stock ID or model…"
-                className="h-8 pl-7 text-xs"
+                className="h-8 pl-7 text-[13px]"
               />
             </div>
             <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
@@ -183,13 +183,13 @@ export default function PhotoProcessingPage() {
                   setBgRemoved(false);
                 }}
                 className={cn(
-                  "flex items-center gap-2 rounded-md p-2 text-left transition-colors",
-                  selected === v.id ? "bg-muted" : "hover:bg-muted/60",
+                  "flex items-center gap-2 rounded-lg p-2 text-left transition-colors",
+                  selected === v.id ? "bg-secondary" : "hover:bg-muted",
                 )}
               >
                 <RegPlate registration={v.registration} size="sm" />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-xs font-medium">
+                  <div className="truncate text-[13px] font-[550]">
                     {v.make} {v.model}
                   </div>
                   <div className="text-xs text-muted-foreground">
@@ -204,12 +204,12 @@ export default function PhotoProcessingPage() {
           <Card className="flex flex-col gap-4 p-4">
             {vehicle && (
               <>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <h3 className="text-sm font-semibold">
                       {vehicle.make} {vehicle.model}
                     </h3>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-[13px] text-muted-foreground">
                       {vehicle.imagesCount} photos · {vehicle.stockId}
                     </p>
                   </div>
@@ -254,15 +254,15 @@ export default function PhotoProcessingPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 space-y-4">
+                <div className="space-y-4">
                     <div className="grid gap-3 sm:grid-cols-3">
-                      <div className="relative overflow-hidden rounded-md border">
+                      <div className="relative overflow-hidden rounded-lg border">
                         <VehicleImage
                           vehicle={vehicle}
                           variant="card"
                           className="h-44 rounded-none"
                         />
-                        <div className="flex items-center justify-between border-t bg-background px-2 py-1.5 text-xs">
+                        <div className="flex items-center justify-between border-t bg-card px-2 py-1.5 text-xs">
                           <span className="font-medium">Original</span>
                           <Badge variant="secondary" className="text-xs">
                             AI hero
@@ -294,7 +294,7 @@ export default function PhotoProcessingPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <Label htmlFor={bgProcessingId} className="text-xs">Background processing</Label>
+                      <Label htmlFor={bgProcessingId} className="text-[13px] font-medium">Background processing</Label>
                       <Switch
                         id={bgProcessingId}
                         checked={bgRemoved}
@@ -306,7 +306,7 @@ export default function PhotoProcessingPage() {
                     </div>
 
                     <div>
-                      <p className="mb-2 block text-xs">
+                      <p className="mb-2 block text-[13px] font-medium">
                         Replacement background
                       </p>
                       <div className="grid grid-cols-5 gap-2 sm:grid-cols-10">
@@ -316,10 +316,10 @@ export default function PhotoProcessingPage() {
                             type="button"
                             onClick={() => setBg(b.id)}
                             className={cn(
-                              "flex flex-col items-center gap-1 rounded-md p-1 text-xs transition",
+                              "flex flex-col items-center gap-1 rounded-lg p-1 text-xs transition",
                               bg === b.id
-                                ? "ring-2 ring-primary"
-                                : "ring-1 ring-border hover:ring-primary/50",
+                                ? "ring-2 ring-foreground"
+                                : "ring-1 ring-border hover:ring-foreground/40",
                             )}
                             title={b.label}
                           >
@@ -359,7 +359,7 @@ function ImageTile({
   overlay?: React.ReactNode;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-md border">
+    <div className="relative overflow-hidden rounded-lg border">
       <div
         className={cn(
           "relative flex h-44 w-full items-center justify-center",
@@ -389,7 +389,7 @@ function ImageTile({
           </span>
         )}
       </div>
-      <div className="flex items-center justify-between border-t bg-background px-2 py-1.5 text-xs">
+      <div className="flex items-center justify-between border-t bg-card px-2 py-1.5 text-xs">
         <span className="font-medium">{label}</span>
         <Badge variant="secondary" className="text-xs">
           {badge}

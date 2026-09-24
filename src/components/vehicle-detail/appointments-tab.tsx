@@ -173,9 +173,9 @@ function WorkflowLegend() {
             className={cn(
               "inline-flex cursor-default items-center gap-1 rounded-full border px-2 py-0.5",
               s.tone === "good" &&
-                "border-emerald-300 text-emerald-700 dark:border-emerald-500/40 dark:text-emerald-300",
+                "border-transparent text-[#014b40] dark:border-emerald-500/40 dark:text-emerald-300",
               s.tone === "bad" &&
-                "border-rose-300 text-rose-700 dark:border-rose-500/40 dark:text-rose-300",
+                "border-transparent text-[#8e0b21] dark:border-rose-500/40 dark:text-rose-300",
               s.tone === "default" && "border-border text-muted-foreground",
             )}
           >
@@ -329,12 +329,12 @@ function EnquiriesTable({
 
 function LostReasonInsight() {
   return (
-    <div className="flex items-start gap-2.5 rounded-lg border border-violet-200/70 bg-violet-50/70 px-3 py-2.5 dark:border-violet-500/20 dark:bg-violet-500/5">
-      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-600 text-white">
+    <div className="flex items-start gap-2.5 rounded-lg border border-transparent bg-[#f1f1f1] px-3 py-2.5 dark:border-violet-500/20 dark:bg-violet-500/5">
+      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#303030] text-white">
         <Zap className="h-3.5 w-3.5" />
       </span>
       <div>
-        <div className="text-2xs font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300">
+        <div className="text-xs font-semibold text-muted-foreground">
           Top finding this period
         </div>
         <p className="mt-0.5 text-xs leading-relaxed">
@@ -369,7 +369,7 @@ function ReasonBars() {
           <div className="truncate text-xs font-medium">{r.label}</div>
           <div className="h-2 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-violet-500"
+              className="h-full rounded-full bg-[#303030]"
               style={{ width: `${(r.pct / max) * 100}%` }}
             />
           </div>

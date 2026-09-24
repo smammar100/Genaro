@@ -1,18 +1,11 @@
 /**
- * App-wide toast helper. Backed by the Nord <nord-toast-group> via the
- * imperative bridge in `@/components/nord/nord-toaster`.
- *
- * The `notify.*` API (and durations) is kept identical to the previous sonner
- * implementation so existing call sites don't change. A `toast` object is also
- * exported as a drop-in for the files that imported `toast` directly from
- * `sonner` — swap `from "sonner"` to `from "@/lib/toast"` per section.
- *
- * Nord toasts ship only two variants (`default`, `danger`), and Nord guidance
- * is to keep toasts non-interactive. So success/info/warning all render as the
- * default variant (nuance carried by the message), errors render as `danger`,
- * and the legacy `retry` action is accepted but not rendered as a toast button.
+ * App-wide toast helper, backed by the Shopify-style <Toaster/>
+ * (src/components/ui/toaster.tsx). `notify.*` and the sonner-shaped `toast`
+ * object keep their APIs so call sites don't change. Errors render in critical
+ * red; success/info/warning share the dark default (the message carries the
+ * nuance), matching the Shopify admin.
  */
-import { addToast, removeToast } from "@/components/nord/nord-toaster";
+import { addToast, removeToast } from "@/components/ui/toaster";
 
 interface ErrorOptions {
   retry?: () => void;

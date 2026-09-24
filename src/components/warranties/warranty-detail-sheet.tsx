@@ -146,7 +146,7 @@ export function WarrantyDetailSheet({
             <div className="flex flex-col gap-3">
               {/* Vehicle */}
               <Card className="flex flex-col gap-2 p-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <h4 className="text-sm font-semibold text-foreground">
                   Vehicle
                 </h4>
                 {vehicle ? (
@@ -177,7 +177,7 @@ export function WarrantyDetailSheet({
 
               {/* Customer */}
               <Card className="flex flex-col gap-1 p-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <h4 className="text-sm font-semibold text-foreground">
                   Customer
                 </h4>
                 <div className="text-sm font-medium">{warranty.customerName}</div>
@@ -189,7 +189,7 @@ export function WarrantyDetailSheet({
 
               {/* Coverage */}
               <Card className="flex flex-col gap-2 p-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <h4 className="text-sm font-semibold text-foreground">
                   Coverage
                 </h4>
                 <div className="flex items-center justify-between">
@@ -235,7 +235,7 @@ export function WarrantyDetailSheet({
 
               {/* Pricing */}
               <Card className="flex flex-col gap-1 p-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <h4 className="text-sm font-semibold text-foreground">
                   Pricing
                 </h4>
                 <div className="flex items-center justify-between text-sm">
@@ -290,7 +290,7 @@ export function WarrantyDetailSheet({
                       "border-amber-400/60 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-500/5",
                   )}
                 >
-                  <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <h4 className="text-sm font-semibold text-foreground">
                     Purchase status
                   </h4>
                   {warranty.purchaseStatus === "pending" ? (
@@ -335,7 +335,7 @@ export function WarrantyDetailSheet({
 
               {/* Claims */}
               <Card className="flex flex-col gap-2 p-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <h4 className="text-sm font-semibold text-foreground">
                   Claims ({claims.length})
                 </h4>
                 {claims.length === 0 ? (

@@ -1,5 +1,7 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
+
 import { useEffect, useId, useMemo, useState } from "react";
 import {
   Banknote,
@@ -505,7 +507,7 @@ export default function ReturnsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-xl font-semibold">
             Returns and Cancellations
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -717,7 +719,7 @@ export default function ReturnsPage() {
                       className="min-h-16"
                     />
                   </div>
-                  <div className="rounded-md border bg-muted/30 p-3">
+                  <div className="rounded-lg border bg-[#f7f7f7] p-3">
                     <p className="mb-2 text-xs font-medium text-muted-foreground">
                       Refund bank details (where the refund is paid back)
                     </p>
@@ -884,9 +886,9 @@ export default function ReturnsPage() {
                           <span className="font-mono text-sm font-semibold">
                             {selected.vehicle?.registration ?? "—"}
                           </span>
-                          <nord-badge variant={meta.variant}>
+                          <Badge variant={meta.variant === "danger" ? "error" : meta.variant}>
                             {meta.label}
-                          </nord-badge>
+                          </Badge>
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {selected.vehicle

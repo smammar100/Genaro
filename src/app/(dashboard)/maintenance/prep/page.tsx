@@ -150,10 +150,10 @@ export default function PrepAndRepairPage() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-xl font-semibold">
             Prep &amp; Repair
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             Every car between inspection and sale. Cars arrive here
             automatically when their inspection completes, and leave once
             their Things to Do list is clear.
@@ -181,12 +181,12 @@ export default function PrepAndRepairPage() {
             return (
               <div
                 key={status.value}
-                className="flex min-h-32 flex-col gap-2 rounded-xl border border-border bg-card p-2.5"
+                className="flex min-h-32 flex-col gap-2 rounded-xl bg-muted p-2"
               >
-                <div className="flex items-center gap-1.5 border-b border-border/60 pb-2">
+                <div className="flex items-center gap-1.5 px-1.5 pt-1 pb-0.5">
                   <Icon className={cn("h-3.5 w-3.5", tone)} />
-                  <h2 className="text-sm font-semibold">{status.label}</h2>
-                  <span className="rounded-full bg-background px-1.5 text-xs font-medium tabular-nums text-muted-foreground">
+                  <h2 className="text-[13px] font-semibold">{status.label}</h2>
+                  <span className="rounded-md bg-secondary px-1.5 ring-1 ring-border text-xs font-medium tabular-nums text-muted-foreground">
                     {list.length}
                   </span>
                   <span className="ml-auto truncate text-xs text-muted-foreground">
@@ -301,8 +301,8 @@ function PrepCard({
   const percent = total === 0 ? 100 : Math.round((done / total) * 100);
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-lg border bg-card shadow-xs transition-shadow hover:shadow-md">
-      <div className="flex items-center justify-between gap-2 border-b bg-muted/50 px-3 py-2">
+    <article className="flex flex-col overflow-hidden rounded-lg border bg-card shadow-[0_1px_0_rgba(0,0,0,.05)] transition-colors hover:border-foreground/25">
+      <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
         <Link
           href={vehicleDetailHref(vehicle.id, pathname)}
           className="min-w-0 truncate"
@@ -325,7 +325,7 @@ function PrepCard({
       <button
         type="button"
         onClick={onOpen}
-        className="flex flex-col gap-2 p-3 text-left transition-colors hover:bg-muted/30"
+        className="flex flex-col gap-2 p-3 text-left transition-colors hover:bg-muted"
       >
         <span className="flex items-center gap-1.5 text-sm font-medium">
           <Car className="size-3.5 shrink-0 text-muted-foreground" />

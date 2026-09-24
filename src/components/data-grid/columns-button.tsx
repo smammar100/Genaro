@@ -76,19 +76,19 @@ export function DataGridColumnsButton<T>({
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm">
-          <SlidersHorizontal className="mr-2 h-4 w-4" />
+          <SlidersHorizontal className="mr-1.5 h-4 w-4" />
           Columns
-          <span className="ml-1.5 text-xs text-muted-foreground tabular-nums">
+          <span className="ml-1 text-xs text-[#616161] tabular-nums">
             {visibleCount}/{columns.length}
           </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 p-0">
-        <div className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">
+        <div className="border-b border-border px-3 py-2 text-[13px] font-semibold text-foreground">
           Show columns
         </div>
         <ScrollArea className="max-h-[320px]">
-          <div className="flex flex-col gap-1 p-2">
+          <div className="flex flex-col gap-0.5 p-1.5">
             {columns.map((col) => {
               const keyStr = String(col.key);
               const isHidden = hiddenKeys.has(keyStr);
@@ -96,7 +96,7 @@ export function DataGridColumnsButton<T>({
               return (
                 <label
                   key={keyStr}
-                  className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted"
+                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] hover:bg-[#f1f1f1]"
                 >
                   <Checkbox
                     checked={!isHidden}

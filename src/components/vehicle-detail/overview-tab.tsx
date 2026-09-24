@@ -190,7 +190,7 @@ function EmptyOverview({
 }) {
   return (
     <div className="grid place-items-center rounded-xl border border-dashed bg-card px-6 py-16 text-center">
-      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+      <span className="grid h-14 w-14 place-items-center rounded-xl bg-[#f1f1f1] text-foreground">
         <Rocket className="h-7 w-7" />
       </span>
       <div className="mt-4 text-lg font-semibold">
@@ -253,7 +253,7 @@ function AdvertCompletenessPanel({
       <div className="px-4 pb-3">
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
           <div
-            className="h-full rounded-full bg-emerald-500 transition-[width] duration-500"
+            className="h-full rounded-full bg-[#014b40] transition-[width] duration-500"
             style={{ width: `${(setCount / checks.length) * 100}%` }}
           />
         </div>
@@ -268,8 +268,8 @@ function AdvertCompletenessPanel({
 }
 
 const STATE_MARK_STYLES: Record<AdvertCheck["state"], string> = {
-  done: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
-  warn: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
+  done: "bg-[#affebf] text-[#014b40] dark:bg-emerald-500/20 dark:text-emerald-300",
+  warn: "bg-[#fff1c2] text-[#4f4700] dark:bg-amber-500/20 dark:text-amber-300",
   miss: "bg-muted text-muted-foreground",
 };
 
@@ -506,15 +506,15 @@ function PriceMeter({
   const ratio = webPrice / retail;
   const verdict =
     ratio <= 0.97
-      ? { label: "Below market", cls: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300" }
+      ? { label: "Below market", cls: "bg-[#d5ebff] text-[#003a5a] dark:bg-sky-500/15 dark:text-sky-300" }
       : ratio <= 1.03
-        ? { label: "Within market", cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" }
-        : { label: "Above market", cls: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" };
+        ? { label: "Within market", cls: "bg-[#affebf] text-[#014b40] dark:bg-emerald-500/15 dark:text-emerald-300" }
+        : { label: "Above market", cls: "bg-[#fff1c2] text-[#4f4700] dark:bg-amber-500/15 dark:text-amber-300" };
 
   return (
     <div className="border-t px-4 pb-4 pt-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="text-[13px] font-medium text-muted-foreground">
           Your price vs market
         </span>
         <span
@@ -526,7 +526,7 @@ function PriceMeter({
           {verdict.label}
         </span>
       </div>
-      <div className="relative h-2 rounded-full bg-gradient-to-r from-sky-400 via-emerald-400 to-rose-400">
+      <div className="relative h-2 rounded-full bg-[#e3e3e3]">
         <div
           className="absolute -top-1 size-4 -translate-x-1/2 rounded-full border-2 border-background bg-foreground shadow"
           style={{ left: `${pos}%` }}
@@ -554,7 +554,7 @@ function ValuationCell({
 }) {
   return (
     <div className="px-4 py-3">
-      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <div className="text-[13px] font-medium text-muted-foreground">
         {label}
       </div>
       <div
@@ -594,14 +594,14 @@ function MarketplacePanel({ listing }: { listing: Listing | null }) {
       key: "ebay",
       name: "eBay Motors",
       meta: "Not configured",
-      iconBg: "bg-rose-600 text-white",
+      iconBg: "bg-[#8e0b21] text-white",
       iconText: "eB",
     },
     {
       key: "facebook",
       name: "Facebook",
       meta: "Not configured",
-      iconBg: "bg-blue-600 text-white",
+      iconBg: "bg-[#003a5a] text-white",
       iconText: "fb",
     },
   ];

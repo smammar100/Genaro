@@ -84,7 +84,7 @@ export function ListingTab({ vehicle }: ListingTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start gap-2 rounded-lg bg-violet-50 px-3 py-2 text-xs leading-relaxed text-violet-900 dark:bg-violet-500/10 dark:text-violet-200">
+      <div className="flex items-start gap-2 rounded-lg bg-[#f1f1f1] px-3 py-2 text-xs leading-relaxed text-[#303030] dark:bg-violet-500/10 dark:text-violet-200">
         <Megaphone className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         <span>
           Mapped to AutoTrader&apos;s taxonomy: get it wrong and the advert is

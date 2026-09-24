@@ -10,62 +10,44 @@ import type {
   VehicleStatus,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { StatusRing, type StatusRingVariant } from "./status-ring";
-
-/**
- * VehicleStatus is the app's one true lifecycle, so it gets the
- * progress-ring icon (per the order-status reference). The 10 states
- * map monotonically onto the ring: `received` hasn't started (dashed
- * pending), the middle states fill the wedge progressively, `sold` is
- * the full disc (done), and `returned` is the exclamation (issue).
- */
-const VEHICLE_STATUS_RING: Record<
-  VehicleStatus,
-  { variant: StatusRingVariant; fill?: number }
-> = {
-  received: { variant: "pending" },
-  inspection_pending: { variant: "progress", fill: 0 },
-  being_prepared: { variant: "progress", fill: 0.3 },
-  photos_pending: { variant: "progress", fill: 0.45 },
-  photos_ready: { variant: "progress", fill: 0.6 },
-  ready: { variant: "progress", fill: 0.75 },
-  listed: { variant: "progress", fill: 0.85 },
-  reserved: { variant: "progress", fill: 0.95 },
-  sold: { variant: "progress", fill: 1 },
-  returned: { variant: "issue" },
-};
+import { ChevronDown } from "lucide-react";
 
 const COLOR_CLASSES: Record<string, string> = {
-  blue: "bg-sky-100 text-sky-900 border-sky-200 dark:bg-sky-950/40 dark:text-sky-200 dark:border-sky-900",
+  blue: "bg-[#d5ebff] text-[#003a5a] border-transparent",
   yellow:
-    "bg-yellow-100 text-yellow-900 border-yellow-200 dark:bg-yellow-950/40 dark:text-yellow-200 dark:border-yellow-900",
+    "bg-[#ffeb78] text-[#4f4700] border-transparent",
   orange:
-    "bg-orange-100 text-orange-900 border-orange-200 dark:bg-orange-950/40 dark:text-orange-200 dark:border-orange-900",
+    "bg-[#ffd6a4] text-[#5e2e00] border-transparent",
   green:
-    "bg-emerald-100 text-emerald-900 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900",
+    "bg-[#affebf] text-[#014b40] border-transparent",
   purple:
-    "bg-purple-100 text-purple-900 border-purple-200 dark:bg-purple-950/40 dark:text-purple-200 dark:border-purple-900",
-  pink: "bg-pink-100 text-pink-900 border-pink-200 dark:bg-pink-950/40 dark:text-pink-200 dark:border-pink-900",
-  gray: "bg-zinc-100 text-zinc-900 border-zinc-200 dark:bg-zinc-900/40 dark:text-zinc-200 dark:border-zinc-700",
-  red: "bg-rose-100 text-rose-900 border-rose-200 dark:bg-rose-950/40 dark:text-rose-200 dark:border-rose-900",
+    "bg-[#f0e8ff] text-[#5700d1] border-transparent",
+  pink: "bg-[#ffe3f3] text-[#8d0448] border-transparent",
+  gray: "bg-[#ebebeb] text-[#303030] border-transparent",
+  red: "bg-[#fed1d7] text-[#8e0b21] border-transparent",
 };
 
 interface VehicleStatusBadgeProps {
   status: VehicleStatus;
   className?: string;
+  /** Show a caret — for a badge that opens a status menu. */
+  withChevron?: boolean;
 }
 
-export function VehicleStatusBadge({ status, className }: VehicleStatusBadgeProps) {
+export function VehicleStatusBadge({
+  status,
+  className,
+  withChevron,
+}: VehicleStatusBadgeProps) {
   const meta = VEHICLE_STATUSES.find((s) => s.value === status);
   if (!meta) return <Badge variant="outline">{status}</Badge>;
-  const ring = VEHICLE_STATUS_RING[status];
   return (
     <Badge
       variant="outline"
-      className={cn("gap-1.5", COLOR_CLASSES[meta.color], className)}
+      className={cn(COLOR_CLASSES[meta.color], className)}
     >
-      {ring && <StatusRing variant={ring.variant} fill={ring.fill} />}
       {meta.label}
+      {withChevron && <ChevronDown aria-hidden className="-mr-0.5 size-3" />}
     </Badge>
   );
 }

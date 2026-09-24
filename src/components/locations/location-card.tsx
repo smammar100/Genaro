@@ -105,7 +105,7 @@ export function LocationCard({
   const days = daysSince(vehicle.locationSince);
   return (
     <div className="rounded-2xl border bg-card p-4">
-      <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <div className="mb-3 flex items-center gap-2 text-[13px] font-medium text-muted-foreground">
         <MapPin className="size-3.5" /> Location
       </div>
 

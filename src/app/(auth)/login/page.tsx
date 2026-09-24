@@ -15,7 +15,7 @@ import {
   DEFAULT_ORG_SLUG,
 } from "@/lib/auth/username";
 import { Button } from "@/components/ui/button";
-import { NordInputField } from "@/components/nord/form";
+import { InputField } from "@/components/forms/input-field";
 
 const schema = z.object({
   identifier: z.string().min(1, "Enter your username or email"),
@@ -102,18 +102,17 @@ function LoginInner() {
   const handleFormSubmit = form.handleSubmit(onSubmit);
 
   return (
-    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
-      {/* Left — sign-in form */}
-      <div className="flex items-center justify-center bg-background px-6 py-12">
-        <div className="w-full max-w-[360px]">
-          <div className="grid h-12 w-12 place-items-center rounded-xl bg-primary text-sm font-bold tracking-widest text-primary-foreground shadow-sm">
+    // Shopify-style sign-in: one centred white card on a #f1f1f1 page.
+    <div className="flex min-h-screen items-center justify-center bg-[#f1f1f1] px-4 py-12 dark:bg-background">
+      <div className="w-full max-w-[400px] rounded-xl border border-[#e3e3e3] bg-white p-8 shadow-[0_1px_0_rgba(0,0,0,.05)] dark:bg-card">
+          <div className="mb-6 grid size-9 place-items-center rounded-lg bg-[#101010] text-xs font-bold text-white">
             CC
           </div>
-          <h1 className="mt-6 text-2xl font-semibold tracking-tight">
-            Sign in to your account
+          <h1 className="text-xl font-semibold text-[#101010] dark:text-foreground">
+            Log in
           </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Welcome back, let&apos;s get to work.
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Continue to Car Capital UK
           </p>
 
           {/* A deactivated account is signed out mid-session, which without
@@ -122,15 +121,15 @@ function LoginInner() {
           {signedOutReason === "deactivated" && (
             <div
               role="status"
-              className="mt-5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-left text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200"
+              className="mt-5 rounded-lg bg-[#fff1c2] px-3 py-2.5 text-left text-[13px] text-[#4f4700] dark:bg-amber-950/30 dark:text-amber-200"
             >
               This account has been deactivated. Ask an administrator to restore
               your access.
             </div>
           )}
 
-          <form onSubmit={handleFormSubmit} className="mt-7 flex flex-col gap-4">
-            <NordInputField
+          <form onSubmit={handleFormSubmit} className="mt-6 flex flex-col gap-4">
+            <InputField
               control={form.control}
               name="identifier"
               label="Username or email"
@@ -138,7 +137,7 @@ function LoginInner() {
               autoComplete="username"
               placeholder="username"
             />
-            <NordInputField
+            <InputField
               control={form.control}
               name="password"
               label="Password"
@@ -155,7 +154,7 @@ function LoginInner() {
             </Button>
             <Link
               href="/forgot-password"
-              className="self-center text-xs text-muted-foreground underline-offset-4 hover:underline"
+              className="self-center text-[13px] text-[#005bd3] underline-offset-4 hover:underline"
             >
               Forgot password?
             </Link>
@@ -170,28 +169,6 @@ function LoginInner() {
               .
             </p>
           )}
-        </div>
-      </div>
-
-      {/* Right — branded car panel (Unsplash). Hidden on small screens. */}
-      <div className="relative hidden lg:block">
-        {/* UK car on a UK street with a UK plate (Unsplash, free license). */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="https://images.unsplash.com/photo-1676802584541-dc901dcaa815?auto=format&fit=crop&w=1400&q=80"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/10" />
-        <div className="absolute inset-x-0 bottom-0 p-10 text-white">
-          <div className="text-3xl font-semibold leading-tight">
-            Run your forecourt, end to end.
-          </div>
-          <p className="mt-3 max-w-md text-sm text-white/85">
-            Inventory, inspections, sales and warranties: one platform for the
-            whole dealership.
-          </p>
-        </div>
       </div>
     </div>
   );

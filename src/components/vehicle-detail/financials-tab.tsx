@@ -243,7 +243,7 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
             className="[&_[data-testid]]:contents"
           />
           <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-2.5 text-sm">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <span className="text-[13px] font-medium text-muted-foreground">
               Total expenses
             </span>
             <span className="text-base font-semibold tabular-nums">
@@ -266,11 +266,11 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
       </div>
 
       {/* Net result */}
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 text-center dark:border-emerald-900/40 dark:bg-emerald-500/5">
-        <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <div className="rounded-xl border bg-[#f7f7f7] p-5 text-center dark:bg-muted">
+        <div className="text-[13px] font-medium text-muted-foreground">
           Net profit after margin VAT
         </div>
-        <div className="mt-1 text-3xl font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
+        <div className="mt-1 text-3xl font-semibold tabular-nums text-[#014b40] dark:text-emerald-400">
           {net > 0 ? formatCurrency(Math.round(net)) : "—"}
         </div>
         <div className="mt-1 text-xs text-muted-foreground">
@@ -289,7 +289,7 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
           canEdit={canEditCosts}
         />
         <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-2.5 text-sm">
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="text-[13px] font-medium text-muted-foreground">
             Expense at point of sale
           </span>
           <span className="text-base font-semibold tabular-nums">
@@ -411,7 +411,7 @@ function LedgerCard({
         })}
       </div>
       <div className="flex items-center justify-between border-t bg-muted/40 px-4 py-3">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="text-[13px] font-medium text-muted-foreground">
           {tone === "bad" ? "Total expenses" : "Total revenue"}
         </span>
         <span className="text-base font-semibold tabular-nums">
@@ -458,7 +458,7 @@ function AutoTraderCard({
       }
     >
       {showBar && (
-        <div className="relative mb-3 mt-1 h-2 rounded-full bg-gradient-to-r from-sky-400 via-emerald-400 to-rose-400">
+        <div className="relative mb-3 mt-1 h-2 rounded-full bg-[#e3e3e3]">
           <div
             className="absolute -top-1 size-4 -translate-x-1/2 rounded-full border-2 border-background bg-foreground shadow"
             style={{ left: `${pos}%` }}
@@ -502,13 +502,13 @@ function VatStat({
 }) {
   return (
     <div>
-      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <div className="text-[13px] font-medium text-muted-foreground">
         {label}
       </div>
       <div
         className={cn(
           "mt-1 text-base font-semibold tabular-nums",
-          tone === "good" && "text-emerald-700 dark:text-emerald-400",
+          tone === "good" && "text-[#014b40] dark:text-emerald-400",
         )}
       >
         {value > 0 ? formatCurrency(value) : "—"}

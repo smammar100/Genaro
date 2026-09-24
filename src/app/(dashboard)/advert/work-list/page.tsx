@@ -82,27 +82,27 @@ const LISTING_STATUS_META: Record<
 > = {
   draft: {
     label: "Draft",
-    cls: "bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300",
+    cls: "bg-black/[0.06] text-[#303030]",
     dot: "bg-slate-400",
   },
   live: {
     label: "Live",
-    cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    cls: "bg-[rgb(175,254,191)] text-[rgb(1,75,64)]",
     dot: "bg-emerald-500",
   },
   reserved: {
     label: "Reserved",
-    cls: "bg-pink-100 text-pink-700 dark:bg-pink-500/15 dark:text-pink-300",
+    cls: "bg-[rgb(213,235,255)] text-[rgb(0,58,90)]",
     dot: "bg-pink-500",
   },
   sold: {
     label: "Sold",
-    cls: "bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300",
+    cls: "bg-black/[0.06] text-[#303030]",
     dot: "bg-gray-400",
   },
   archived: {
     label: "Archived",
-    cls: "bg-muted text-muted-foreground",
+    cls: "bg-black/[0.06] text-[#616161]",
     dot: "bg-muted-foreground/50",
   },
 };
@@ -112,7 +112,7 @@ function ListingStatusPill({ status }: { status: ListingStatus }) {
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium",
+        "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-0.5 text-xs font-medium",
         m.cls,
       )}
     >
@@ -132,12 +132,12 @@ function PreviewStat({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border bg-muted/20 p-3">
-      <div className="mb-1.5 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+    <div className="rounded-lg bg-muted px-3 py-2.5">
+      <div className="mb-1 inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
         <Icon className="size-3.5" />
         {label}
       </div>
-      <div className="text-base font-semibold">{children}</div>
+      <div className="text-sm font-semibold">{children}</div>
     </div>
   );
 }
@@ -424,19 +424,19 @@ export default function ListingsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Work List</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-xl font-semibold">Work List</h1>
+          <p className="text-[13px] text-muted-foreground">
             Vehicles ready to advertise. Build each advert, set pricing, and
             publish it to your sales channels.
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-1.5 h-4 w-4" /> Create Listing
+            <Button size="sm">
+              <Plus className="mr-1 h-3.5 w-3.5" /> Create Listing
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
@@ -548,7 +548,7 @@ export default function ListingsPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <p className="text-sm font-medium leading-none">
+                  <p className="text-[13px] font-medium leading-none">
                     Publish channels
                   </p>
                   <div className="flex flex-wrap gap-x-5 gap-y-2.5">
@@ -590,8 +590,8 @@ export default function ListingsPage() {
       {/* Master-detail: searchable listing list (left) + advert preview (right) */}
       <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start">
         {/* LEFT — reg search, filters, and the scrollable listing list */}
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-2 rounded-lg border bg-card p-3 shadow-sm">
+        <div className="flex flex-col overflow-hidden rounded-xl border bg-card shadow-[0_1px_0_rgba(0,0,0,.05)]">
+          <div className="flex flex-col gap-2 border-b p-2">
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -599,7 +599,7 @@ export default function ListingsPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by reg, stock or title…"
                 aria-label="Search listings by registration, stock ID or title"
-                className="pl-8"
+                className="h-8 pl-8 text-[13px]"
               />
             </div>
             <div className="flex gap-2">
@@ -619,7 +619,7 @@ export default function ListingsPage() {
                   setStatusFilter(v as ListingStatus | "all")
                 }
               >
-                <SelectTrigger className="flex-1">
+                <SelectTrigger className="h-8 flex-1 text-[13px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -641,7 +641,7 @@ export default function ListingsPage() {
                 value={channelFilter}
                 onValueChange={(v) => setChannelFilter(v as Channel | "all")}
               >
-                <SelectTrigger className="flex-1">
+                <SelectTrigger className="h-8 flex-1 text-[13px]">
                   <SelectValue placeholder="Channel" />
                 </SelectTrigger>
                 <SelectContent>
@@ -657,7 +657,7 @@ export default function ListingsPage() {
           </div>
 
           {!filtered ? (
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 p-2">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-[78px] rounded-lg" />
               ))}
@@ -667,12 +667,13 @@ export default function ListingsPage() {
               icon={Megaphone}
               title="No listings yet"
               description="Mark a vehicle as ready, then create a listing."
+              className="rounded-none border-0"
             />
           ) : (
             <div
               role="listbox"
               aria-label="Listings"
-              className="flex max-h-[calc(100dvh-15rem)] flex-col gap-1.5 overflow-y-auto pr-1"
+              className="flex max-h-[calc(100dvh-15rem)] flex-col overflow-y-auto"
             >
               {filtered.map((l) => {
                 const isActive = l.id === selectedId;
@@ -684,10 +685,10 @@ export default function ListingsPage() {
                     aria-selected={isActive}
                     onClick={() => setSelectedId(l.id)}
                     className={cn(
-                      "flex w-full shrink-0 gap-3 rounded-lg border bg-card p-3 text-left transition-colors",
+                      "flex w-full shrink-0 gap-3 border-t px-3 py-2.5 text-left transition-colors first:border-t-0",
                       isActive
-                        ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                        : "border-border hover:bg-muted/50",
+                        ? "bg-secondary"
+                        : "hover:bg-muted",
                     )}
                   >
                     {l.vehicle ? (
@@ -704,21 +705,21 @@ export default function ListingsPage() {
                     <div className="flex min-w-0 flex-1 flex-col">
                       {/* Meta row — stock ID + status */}
                       <div className="flex items-center justify-between gap-2">
-                        <span className="truncate font-mono text-2xs text-muted-foreground">
+                        <span className="truncate font-mono text-xs text-muted-foreground">
                           {l.vehicle?.stockId ?? "—"}
                         </span>
                         <ListingStatusPill status={l.status} />
                       </div>
                       {/* Title */}
-                      <span className="mt-0.5 truncate text-sm font-medium">
+                      <span className="mt-0.5 truncate text-[13px] font-semibold">
                         {l.title}
                       </span>
                       {/* Price + enquiries · days */}
                       <div className="mt-1.5 flex items-center justify-between gap-2">
-                        <span className="text-sm font-semibold tabular-nums">
+                        <span className="text-[13px] tabular-nums">
                           {formatCurrency(l.price)}
                         </span>
-                        <span className="inline-flex shrink-0 items-center gap-1 text-2xs text-muted-foreground">
+                        <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
                           <MessageSquare className="size-3" />
                           {enquiriesByVehicle[l.vehicleId]?.total ?? 0}
                           {l.vehicle ? ` · ${l.vehicle.daysInStock}d` : ""}
@@ -737,9 +738,9 @@ export default function ListingsPage() {
           {!filtered ? (
             <Skeleton className="h-[460px] rounded-xl" />
           ) : !selected ? (
-            <div className="flex h-[320px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-card text-center text-muted-foreground">
+            <div className="flex h-[320px] flex-col items-center justify-center gap-2 rounded-xl border bg-card text-center text-muted-foreground shadow-[0_1px_0_rgba(0,0,0,.05)]">
               <Megaphone className="size-6" />
-              <p className="text-sm">Select a listing to preview its advert.</p>
+              <p className="text-[13px]">Select a listing to preview its advert.</p>
             </div>
           ) : (
             (() => {
@@ -751,7 +752,7 @@ export default function ListingsPage() {
                 canPublishAT &&
                 !selected.atStockId;
               return (
-                <div className="flex flex-col gap-4 rounded-xl border bg-card p-5 shadow-sm">
+                <div className="flex flex-col gap-4 rounded-xl border bg-card p-4 shadow-[0_1px_0_rgba(0,0,0,.05)]">
                   {/* Header — plate, stock, status, title, price, AT indicator */}
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -767,12 +768,12 @@ export default function ListingsPage() {
                         </span>
                         <ListingStatusPill status={selected.status} />
                       </div>
-                      <h2 className="mt-1.5 text-lg font-semibold leading-snug">
+                      <h2 className="mt-1.5 text-base font-semibold leading-snug">
                         {selected.title}
                       </h2>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-semibold tabular-nums">
+                      <div className="text-xl font-bold tabular-nums">
                         {formatCurrency(selected.price)}
                       </div>
                       <div className="mt-1 flex justify-end">
@@ -804,7 +805,7 @@ export default function ListingsPage() {
 
                   {/* Publish channels — wired to the live toggle service */}
                   <div>
-                    <div className="mb-2 text-xs font-medium text-muted-foreground">
+                    <div className="mb-2 text-sm font-semibold">
                       Publish channels
                     </div>
                     <div className="grid gap-2 sm:grid-cols-2">
@@ -816,16 +817,16 @@ export default function ListingsPage() {
                             className={cn(
                               "flex items-center justify-between rounded-lg border px-3 py-2.5",
                               on
-                                ? "border-primary/30 bg-primary/5"
-                                : "bg-muted/20",
+                                ? "bg-card"
+                                : "bg-muted",
                             )}
                           >
-                            <span className="text-sm font-medium">
+                            <span className="text-[13px] font-medium">
                               {CHANNEL_LABELS[c]}
                             </span>
                             <div className="flex items-center gap-2">
                               {c === "autotrader" && selected.atStockId ? (
-                                <span className="inline-flex items-center gap-1 text-2xs font-medium text-emerald-600 dark:text-emerald-400">
+                                <span className="inline-flex items-center gap-1 text-xs font-medium text-[rgb(1,75,64)]">
                                   <Check className="size-3" /> Synced
                                 </span>
                               ) : null}
@@ -845,14 +846,14 @@ export default function ListingsPage() {
 
                   {/* AutoTrader sync state — preserves Synced #id / Error */}
                   {selected.atStockId ? (
-                    <div className="inline-flex items-center gap-1.5 rounded-md bg-emerald-100 px-2.5 py-1.5 text-xs font-medium text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300">
+                    <div className="inline-flex items-center gap-1.5 rounded-lg bg-[rgb(175,254,191)] px-2.5 py-1.5 text-xs font-medium text-[rgb(1,75,64)]">
                       <Check className="size-3.5" />
                       Synced to AutoTrader · Stock ID{" "}
                       {selected.atStockId.slice(0, 8)}
                     </div>
                   ) : selected.atLastError ? (
                     <div
-                      className="inline-flex items-start gap-1.5 rounded-md bg-rose-100 px-2.5 py-1.5 text-xs font-medium text-rose-800 dark:bg-rose-500/15 dark:text-rose-300"
+                      className="inline-flex items-start gap-1.5 rounded-lg bg-[rgb(254,209,215)] px-2.5 py-1.5 text-xs font-medium text-[rgb(142,11,33)]"
                       title={selected.atLastError}
                     >
                       <TriangleAlert className="mt-px size-3.5 shrink-0" />

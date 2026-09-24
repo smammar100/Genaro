@@ -28,7 +28,7 @@ export function AlertDialogBackdrop({
   return (
     <AlertDialogPrimitive.Backdrop
       className={cn(
-        "fixed inset-0 z-[900] bg-black/32 backdrop-blur-sm transition-opacity duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
+        "fixed inset-0 z-[900] bg-black/50 transition-opacity duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
         className,
       )}
       data-slot="alert-dialog-backdrop"
@@ -73,9 +73,9 @@ export function AlertDialogPopup({
       >
         <AlertDialogPrimitive.Popup
           className={cn(
-            "relative row-start-2 flex max-h-full min-h-0 w-full min-w-0 max-w-lg origin-center flex-col rounded-2xl border bg-popover not-dark:bg-clip-padding text-popover-foreground opacity-[calc(1-var(--nested-dialogs))] shadow-lg/5 transition-[scale,opacity,translate] duration-200 ease-in-out will-change-transform before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-2xl)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] data-ending-style:opacity-0 data-starting-style:opacity-0 sm:scale-[calc(1-0.1*var(--nested-dialogs))] sm:data-ending-style:scale-98 sm:data-starting-style:scale-98 dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
+            "relative row-start-2 flex max-h-full min-h-0 w-full min-w-0 max-w-lg origin-center flex-col overflow-hidden rounded-xl bg-popover text-[13px] text-popover-foreground opacity-[calc(1-var(--nested-dialogs))] shadow-[0_0_0_1px_rgba(0,0,0,0.08),0_20px_20px_-8px_rgba(26,26,26,0.28)] outline-none transition-[scale,opacity,translate] duration-200 ease-out will-change-transform data-ending-style:opacity-0 data-starting-style:opacity-0 sm:scale-[calc(1-0.1*var(--nested-dialogs))] sm:data-ending-style:scale-98 sm:data-starting-style:scale-98",
             bottomStickOnMobile &&
-              "max-sm:max-w-none max-sm:origin-bottom max-sm:rounded-none max-sm:border-x-0 max-sm:border-t max-sm:border-b-0 max-sm:data-ending-style:translate-y-4 max-sm:data-starting-style:translate-y-4 max-sm:before:hidden max-sm:before:rounded-none",
+              "max-sm:max-w-none max-sm:origin-bottom max-sm:rounded-b-none max-sm:data-ending-style:translate-y-4 max-sm:data-starting-style:translate-y-4",
             className,
           )}
           data-slot="alert-dialog-popup"
@@ -93,7 +93,7 @@ export function AlertDialogHeader({
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 p-6 text-center max-sm:pb-4 sm:text-left",
+        "flex flex-col gap-2 px-4 pt-4 pb-4 text-left",
         className,
       )}
       data-slot="alert-dialog-header"
@@ -112,9 +112,9 @@ export function AlertDialogFooter({
   return (
     <div
       className={cn(
-        "flex flex-col-reverse gap-2 px-6 sm:flex-row sm:justify-end sm:rounded-b-[calc(var(--radius-2xl)-1px)]",
-        variant === "default" && "border-t bg-muted/72 py-4",
-        variant === "bare" && "pb-6",
+        "flex flex-col-reverse gap-2 px-4 sm:flex-row sm:items-center sm:justify-end",
+        variant === "default" && "border-t border-border bg-popover py-3",
+        variant === "bare" && "pb-4",
         className,
       )}
       data-slot="alert-dialog-footer"
@@ -130,7 +130,7 @@ export function AlertDialogTitle({
   return (
     <AlertDialogPrimitive.Title
       className={cn(
-        "font-heading font-semibold text-base text-balance leading-none",
+        "font-semibold text-sm text-balance leading-5 text-foreground",
         className,
       )}
       data-slot="alert-dialog-title"
@@ -145,7 +145,7 @@ export function AlertDialogDescription({
 }: AlertDialogPrimitive.Description.Props): React.ReactElement {
   return (
     <AlertDialogPrimitive.Description
-      className={cn("text-muted-foreground text-sm text-pretty", className)}
+      className={cn("text-muted-foreground text-[13px] leading-5 text-pretty", className)}
       data-slot="alert-dialog-description"
       {...props}
     />

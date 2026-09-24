@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
@@ -13,6 +13,9 @@ import { CommandPalette } from "@/components/layout/command-palette";
 import { Button } from "@/components/ui/button";
 import { OnboardingTour } from "@/components/onboarding/onboarding-tour";
 import { useIsWelcomeScreen } from "@/hooks/use-has-vehicles";
+import { cn } from "@/lib/utils";
+
+const RAIL_HIDDEN_KEY = "cc.shell.rail-hidden";
 
 export default function DashboardLayout({
   children,
@@ -20,6 +23,27 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, loading, error, revalidate } = useAuth();
+  /** Mobile nav drawer (the rail is docked from lg up). */
+  const [navOpen, setNavOpen] = useState(false);
+  /** Desktop: rail hidden by the user (remembered per browser). */
+  const [railHidden, setRailHidden] = useState(false);
+  useEffect(() => {
+    try {
+      // Post-mount read: localStorage doesn't exist during SSR.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRailHidden(localStorage.getItem(RAIL_HIDDEN_KEY) === "1");
+    } catch {
+      // Blocked storage: rail shown.
+    }
+  }, []);
+  function setRailHiddenPersisted(hidden: boolean) {
+    setRailHidden(hidden);
+    try {
+      localStorage.setItem(RAIL_HIDDEN_KEY, hidden ? "1" : "0");
+    } catch {
+      // The in-memory choice still applies.
+    }
+  }
   const router = useRouter();
   const pathname = usePathname();
   // The first-run screen owns the whole window: no rail beside it, because
@@ -102,27 +126,41 @@ export default function DashboardLayout({
     return null;
   }
 
-  // Nord layout owns the sidebar/header chrome + responsive nav toggle, peek,
-  // and collapse persistence (persist-nav-state) — replacing the old custom
-  // 2×2 grid shell + sidebar-state-context. PageShell keeps content padding, so
-  // the layout's own padding is disabled.
+  // Shopify admin shell: a dark ground running the full height, the nav rail
+  // on it (a drawer below lg), and the page as one white rounded panel inset
+  // 4px top/right/bottom — measured from admin.shopify.com (Sep 2026).
   return (
     <OnboardingTour>
-      <nord-layout
-        padding="none"
-        persistNavState
-        className={isWelcome ? "layout-on-navy" : undefined}
-      >
-        {!isWelcome && <AppSidebar />}
-        <AppHeader />
-        <PageShell>
-          <RouteGuard>{children}</RouteGuard>
-        </PageShell>
-        <CommandPalette />
-        <Suspense fallback={null}>
-          <GridOverlay />
-        </Suspense>
-      </nord-layout>
+      <div className="flex min-h-dvh bg-sidebar">
+        {!isWelcome && (
+          <div className={cn(railHidden && "lg:hidden")}>
+            <AppSidebar
+              open={navOpen}
+              onClose={() => setNavOpen(false)}
+              onHide={() => setRailHiddenPersisted(true)}
+            />
+          </div>
+        )}
+        <div className={cn("min-w-0 flex-1 p-1", !railHidden && !isWelcome && "lg:pl-0")}>
+          <main
+            data-app-panel=""
+            className="flex min-h-[calc(100dvh-0.5rem)] flex-col rounded-2xl bg-card"
+          >
+            <AppHeader
+              onOpenNav={() => setNavOpen(true)}
+              railHidden={railHidden && !isWelcome}
+              onShowRail={() => setRailHiddenPersisted(false)}
+            />
+            <PageShell>
+              <RouteGuard>{children}</RouteGuard>
+            </PageShell>
+          </main>
+        </div>
+      </div>
+      <CommandPalette />
+      <Suspense fallback={null}>
+        <GridOverlay />
+      </Suspense>
     </OnboardingTour>
   );
 }

@@ -967,13 +967,23 @@ export function ArrivalForm() {
   const go = (n: number) => setStep(Math.min(STEPS.length - 1, Math.max(0, n)));
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Add Vehicle</h1>
-        <p className="text-sm text-muted-foreground">
+    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
+      {/* Shopify "Add product" page header: back arrow + title. */}
+      <div className="flex items-start gap-2">
+        <Link
+          href="/vehicles"
+          aria-label="Back to vehicles"
+          className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg text-[#4a4a4a] hover:bg-[#f1f1f1]"
+        >
+          <ArrowLeft className="size-4" />
+        </Link>
+        <div>
+        <h1 className="text-xl font-semibold text-foreground">Add vehicle</h1>
+        <p className="text-[13px] text-muted-foreground">
           Guided arrival form. Typing the registration auto-checks your stock
           book and pre-fills make / year / colour / fuel from DVLA.
         </p>
+        </div>
       </div>
 
       {/* The step rail only earns its 220px on a wide screen; below xl the
@@ -993,8 +1003,8 @@ export function ArrivalForm() {
                   type="button"
                   onClick={() => go(i)}
                   className={cn(
-                    "flex items-start gap-3 rounded-lg border-l-2 px-3 py-2.5 text-left transition-colors",
-                    on ? "border-primary bg-muted/60" : "border-transparent hover:bg-muted/40",
+                    "flex items-start gap-3 rounded-lg px-3 py-2 text-left text-[13px] transition-colors",
+                    on ? "bg-[#ebebeb] font-medium" : "hover:bg-[#f1f1f1]",
                   )}
                 >
                   <span
@@ -1003,7 +1013,7 @@ export function ArrivalForm() {
                       on
                         ? "bg-primary text-primary-foreground"
                         : done
-                          ? "bg-emerald-500 text-white"
+                          ? "bg-[#affebf] text-[#014b40]"
                           : "bg-muted text-muted-foreground",
                     )}
                   >
@@ -1053,7 +1063,7 @@ export function ArrivalForm() {
             {step === 0 && (
               <div className="flex flex-col gap-5">
                 {/* Reg lookup hero */}
-                <div className="rounded-xl border bg-gradient-to-br from-primary/5 to-transparent p-4 sm:p-5">
+                <div className="rounded-xl border bg-[#f7f7f7] p-4 sm:p-5">
                   <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
                     <div className="min-w-0">
                       <Label htmlFor={registrationFieldId}>
@@ -1111,20 +1121,20 @@ export function ArrivalForm() {
                       </p>
                     )}
                     {dvlaState === "found" && (
-                      <p className="flex items-center gap-1 text-xs text-emerald-600">
+                      <p className="flex items-center gap-1 text-xs text-[#014b40]">
                         <CheckCircle2 className="h-3 w-3" /> Matched: make / model /
                         derivative, tax, MOT &amp; valuation auto-filled from DVLA +
                         AutoTrader.
                       </p>
                     )}
                     {dvlaState === "not_found" && (
-                      <p className="flex items-center gap-1 text-xs text-amber-600">
+                      <p className="flex items-center gap-1 text-xs text-[#4f4700]">
                         <AlertTriangle className="h-3 w-3" /> The number is incorrect;
                         please try again, or fill the form in manually.
                       </p>
                     )}
                     {dvlaState === "duplicate" && duplicate && (
-                      <p className="flex flex-wrap items-center gap-1 text-xs text-sky-700 dark:text-sky-400">
+                      <p className="flex flex-wrap items-center gap-1 text-xs text-[#003a5a] dark:text-sky-400">
                         <Info className="h-3 w-3" />
                         <span>
                           This car is already in your stock book as{" "}
@@ -1307,7 +1317,7 @@ export function ArrivalForm() {
                   <Card className="flex flex-col gap-3 p-5">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <h2 className="text-sm font-semibold">AutoTrader valuation</h2>
-                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      <span className="text-[13px] font-medium text-muted-foreground">
                         Based on {Number(form.getValues("mileage")).toLocaleString()} mi
                       </span>
                     </div>
@@ -1758,7 +1768,7 @@ export function ArrivalForm() {
                 {missingImportant.length > 0 ? (
                   // Never blocks the save (client, 18 Sep 2026) — it only says
                   // what is still blank so it can be filled in later.
-                  <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                  <div className="flex items-start gap-3 rounded-lg border border-transparent bg-[#fff1c2] p-3 text-sm text-[#4f4700] dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
                     <AlertTriangle className="mt-0.5 size-4 shrink-0" />
                     <span>
                       Not filled in yet: {missingImportant.join(", ")}. You can
@@ -1767,8 +1777,8 @@ export function ArrivalForm() {
                     </span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm dark:border-emerald-900 dark:bg-emerald-950/30">
-                    <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                  <div className="flex items-center gap-3 rounded-lg border border-transparent bg-[#affebf] p-3 text-sm dark:border-emerald-900 dark:bg-emerald-950/30">
+                    <CheckCircle2 className="size-4 shrink-0 text-[#014b40]" />
                     Everything important is filled in. The cost receipt on the
                     right reflects what will be saved.
                   </div>
@@ -1937,13 +1947,11 @@ function StepHeader({
   hint?: string;
 }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-        <Icon className="size-4" />
-      </span>
+    <div className="flex items-start gap-2">
+      <Icon className="mt-0.5 size-4 shrink-0 text-[#4a4a4a]" />
       <div>
-        <h2 className="text-sm font-semibold">{title}</h2>
-        {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+        {hint && <p className="text-[13px] text-muted-foreground">{hint}</p>}
       </div>
     </div>
   );
@@ -1984,7 +1992,7 @@ function FieldShell({
       <div className="flex items-center justify-between">
         <Label htmlFor={htmlFor}>{label}</Label>
         {auto && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-1.5 py-0.5 text-2xs font-medium text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
+          <span className="inline-flex items-center gap-1 rounded-lg bg-[#ebebeb] px-2 py-0.5 text-xs font-medium text-[#303030] dark:bg-muted dark:text-foreground">
             <Sparkles className="size-2.5" /> DVLA
           </span>
         )}
@@ -2004,18 +2012,18 @@ function ReviewCard({
   rows: [string, string][];
 }) {
   return (
-    <div className="rounded-lg border border-border p-3">
+    <div className="rounded-lg border border-[#e3e3e3] p-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-sm font-medium">{title}</span>
+        <span className="text-sm font-semibold">{title}</span>
         <button
           type="button"
           onClick={onEdit}
-          className="text-xs text-primary hover:underline"
+          className="text-[13px] text-[#005bd3] hover:underline"
         >
           Edit
         </button>
       </div>
-      <div className="grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-x-6 gap-y-1 text-[13px] sm:grid-cols-2">
         {rows.map(([k, v]) => (
           <div key={k} className="flex justify-between gap-2">
             <span className="text-muted-foreground">{k}</span>
@@ -2040,10 +2048,10 @@ function ValuationCell({
     <div
       className={cn(
         "rounded-md border bg-card px-3 py-2",
-        highlight && "border-emerald-300/60 bg-emerald-50/60 dark:bg-emerald-500/5",
+        highlight && "bg-[#f7f7f7] ring-1 ring-foreground/20",
       )}
     >
-      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <div className="text-[13px] font-medium text-muted-foreground">
         {label}
       </div>
       <div className="mt-0.5 text-base font-semibold tabular-nums">

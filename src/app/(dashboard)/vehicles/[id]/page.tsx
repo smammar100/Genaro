@@ -3,7 +3,6 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import { todoService } from "@/lib/services/todo-service";
 import { vendorService } from "@/lib/services/vendor-service";
@@ -13,7 +12,10 @@ import type { Vehicle, VehicleStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { VehicleHeaderCard } from "@/components/vehicle-detail/vehicle-header-card";
+import {
+  VehicleHeaderCard,
+  VehicleSummaryAside,
+} from "@/components/vehicle-detail/vehicle-header-card";
 import { VehicleDetailShell } from "@/components/vehicle-detail/vehicle-detail-shell";
 import { titleFromPath } from "@/components/layout/sidebar-config";
 import { toast } from "@/lib/toast";
@@ -148,17 +150,23 @@ export default function VehicleDetailPage({
   if (vehicle === undefined) {
     return (
       <div className="flex flex-col gap-4">
-        <Skeleton className="h-12 w-72" />
-        <Skeleton className="h-[60vh] w-full" />
+        <Skeleton className="h-8 w-72" />
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+          <Skeleton className="h-[60vh] w-full rounded-xl" />
+          <Skeleton className="h-72 w-full rounded-xl" />
+        </div>
       </div>
     );
   }
   if (vehicle === null) {
     return (
-      <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
-        Vehicle not found.
-        <div className="mt-3">
-          <Button asChild size="sm" variant="outline">
+      <div className="rounded-xl border bg-card p-10 text-center">
+        <p className="text-sm font-semibold text-foreground">Vehicle not found</p>
+        <p className="mt-1 text-[13px] text-muted-foreground">
+          It may have been deleted or the link is out of date.
+        </p>
+        <div className="mt-4">
+          <Button asChild size="sm">
             <Link href={back.href}>Back to {back.label}</Link>
           </Button>
         </div>
@@ -167,29 +175,32 @@ export default function VehicleDetailPage({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <Button asChild variant="ghost" size="sm" className="-ml-2 self-start">
-        <Link href={back.href}>
-          <ChevronLeft className="mr-1 h-4 w-4" /> Back to {back.label}
-        </Link>
-      </Button>
-
+    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
       <VehicleHeaderCard
         vehicle={vehicle}
+        back={back}
         onStatusChange={(s) => void handleStatusChange(s)}
         onRemoveFromWebsite={() => void handleRemoveFromWebsite()}
         onNavigate={setTab}
       />
 
-      <VehicleDetailShell
-        vehicle={vehicle}
-        value={tab}
-        onValueChange={setTab}
-        onVehiclePatch={patchVehicle}
-        onVehicleRefetch={() => void refetchVehicle()}
-        exporting={exporting}
-        onExportPdf={() => void handleExportPdf()}
-      />
+      {/* Shopify product-detail body: main cards left, narrow summary right. */}
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="min-w-0">
+          <VehicleDetailShell
+            vehicle={vehicle}
+            value={tab}
+            onValueChange={setTab}
+            onVehiclePatch={patchVehicle}
+            onVehicleRefetch={() => void refetchVehicle()}
+            exporting={exporting}
+            onExportPdf={() => void handleExportPdf()}
+          />
+        </div>
+        <aside className="xl:sticky xl:top-4">
+          <VehicleSummaryAside vehicle={vehicle} onNavigate={setTab} />
+        </aside>
+      </div>
 
       {confirmDialog}
     </div>

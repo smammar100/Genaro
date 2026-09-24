@@ -19,19 +19,19 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-card/40 p-10 text-center",
+        "flex flex-col items-center justify-center gap-3 rounded-xl bg-card px-6 py-10 text-center",
         className,
       )}
     >
       {Icon ? (
-        <div className="grid h-10 w-10 place-items-center rounded-full bg-muted text-muted-foreground">
-          <Icon className="h-5 w-5" />
+        <div className="grid h-10 w-10 place-items-center text-[#8a8a8a]">
+          <Icon className="h-8 w-8" strokeWidth={1.5} />
         </div>
       ) : null}
       <div className="flex flex-col gap-1">
-        <h3 className="text-sm font-semibold">{title}</h3>
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
         {description ? (
-          <p className="max-w-sm text-xs text-muted-foreground">{description}</p>
+          <p className="max-w-sm text-[13px] leading-5 text-[#616161]">{description}</p>
         ) : null}
       </div>
       {action}

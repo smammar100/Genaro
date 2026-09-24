@@ -139,3 +139,18 @@ export function getInitials(name: string): string {
  */
 export const hitTarget =
   "after:absolute after:top-1/2 after:left-1/2 after:size-full after:min-h-10 after:min-w-10 after:-translate-x-1/2 after:-translate-y-1/2 pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11";
+
+/**
+ * Display casing for vehicle names typed in capitals ("NISSAN QASHQAI" →
+ * "Nissan Qashqai"). Short all-caps words (BMW, GTI, SE) stay as typed.
+ */
+export function titleCase(text: string): string {
+  return text
+    .split(/\s+/)
+    .map((w) =>
+      w.length <= 3 && /^[A-Z0-9-]+$/.test(w)
+        ? w
+        : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(),
+    )
+    .join(" ");
+}

@@ -11,7 +11,7 @@ export default function MasterCalendarPage() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Master Calendar</h1>
+        <h1 className="text-xl font-semibold">Master Calendar</h1>
         <p className="text-sm text-muted-foreground">
           Every customer appointment, workshop walk-in, and maintenance due in
           one shared view. Click a slot to book or an event to open it.

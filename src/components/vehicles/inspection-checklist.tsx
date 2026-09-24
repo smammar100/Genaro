@@ -211,7 +211,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
             <div className="flex flex-wrap items-center gap-2 font-medium">
               <span>{completed}/{total} completed</span>
               {flagged > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#fed1d7] px-2 py-0.5 text-xs font-medium text-[#8e0b21] dark:bg-rose-500/15 dark:text-rose-300">
                   <AlertTriangle className="size-3" />
                   {flagged} flagged
                 </span>
@@ -225,7 +225,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
                   <Loader2 className="size-3 animate-spin" /> Saving…
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                <span className="inline-flex items-center gap-1 text-[#014b40] dark:text-emerald-400">
                   <Check className="size-3" /> All changes saved
                 </span>
               )}
@@ -247,8 +247,8 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
       </Card>
 
       {lastCompleted ? (
-        <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm dark:border-emerald-900/40 dark:bg-emerald-950/20">
-          <Check className="size-4 shrink-0 text-emerald-600" />
+        <div className="flex items-center gap-2 rounded-lg border border-transparent bg-[#affebf] px-4 py-2.5 text-sm dark:border-emerald-900/40 dark:bg-emerald-950/20">
+          <Check className="size-4 shrink-0 text-[#014b40]" />
           <span>
             Inspection completed
             {lastCompleted.flagged > 0
@@ -268,8 +268,8 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
             const dot = !status
               ? "bg-muted-foreground/30"
               : isNegative
-                ? "bg-rose-500"
-                : "bg-emerald-500";
+                ? "bg-[#8e0b21]"
+                : "bg-[#014b40]";
             return (
               /*
                 One row needs ~418px laid out horizontally (fixed 160px label
@@ -289,7 +289,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
                 className={cn(
                   "flex flex-col gap-2 px-4 py-3",
                   "sm:flex-row sm:items-center sm:gap-3 sm:py-2",
-                  isNegative && "bg-rose-50/60 dark:bg-rose-950/20",
+                  isNegative && "bg-[#fed1d7] dark:bg-rose-950/20",
                 )}
               >
                 <div className="flex min-w-0 items-center gap-3 sm:contents">
@@ -335,7 +335,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
                       }
                       className={cn(
                         "h-10 text-xs sm:h-8",
-                        isNegative && "border-rose-300 dark:border-rose-800",
+                        isNegative && "border-transparent dark:border-rose-800",
                       )}
                     />
                   </div>

@@ -23,46 +23,6 @@
   pointer-events: auto;
 }
 
-/* The first-run header sits ON the navy welcome screen, so it gives up its
-   white fill and its shadow and lets the navy run to the top edge. Done with
-   Nord's own custom properties rather than by overriding the host background —
-   the component paints from these tokens internally, and setting them is the
-   supported seam. Foregrounds are forced to the on-navy set for the same
-   reason the sidebar carries its own: the page tokens resolve to ink, which is
-   invisible here. Unlayered, so it outranks Nord's own :host rules. */
-nord-header.header-on-navy {
-  --n-header-background-color: transparent;
-  --n-box-shadow-header: none;
-  /* The 1px rule under the header is `border-block-end: 1px solid
-     var(--n-color-border)` on `.n-header` inside the shadow DOM. Blanking the
-     token it reads is the only way to reach it from out here. */
-  --n-color-border: transparent;
-  color: #fff;
-}
-
-/* The account button carries Nord's own light button fill, which reads as a
-   white chip floating on the navy. Both tokens are overridden so it becomes a
-   quiet outline instead — still obviously a control, no longer a bright patch
-   in the corner. */
-nord-header.header-on-navy nord-button {
-  --n-button-background-color: rgb(255 255 255 / 0.08);
-  --n-button-color: #fff;
-}
-nord-header.header-on-navy nord-button:hover {
-  --n-button-background-color: rgb(255 255 255 / 0.16);
-}
-
-/* A transparent header is not enough on its own. The near-white strip behind
-   it is painted by `.n-layout-main` INSIDE nord-layout's shadow DOM, which no
-   selector from here can reach — setting a background on the host does nothing,
-   because that inner element covers it. The one seam the component offers is
-   `--n-layout-background-color`, which it resolves into the private property
-   those panels actually paint from, and custom properties inherit through the
-   shadow boundary. */
-nord-layout.layout-on-navy {
-  --n-layout-background-color: var(--color-navy-900);
-}
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -260,37 +220,25 @@ nord-layout.layout-on-navy {
   }
 }
 /* ── Genaro token layer ──────────────────────────────────────────────
-   Every semantic token resolves to a Genaro brand value (declared in the
-   @theme block at the foot of this file), and Nord's own `--n-color-*` vars
-   are re-pointed at the same values so the <nord-*> web components move with
-   the Tailwind utilities instead of drifting away from them.
+   The base values every semantic token resolves to (Genaro brand values,
+   declared in the @theme block at the foot of this file). The app runs with
+   `.polaris` on <html>, and polaris-theme.css — imported after this file —
+   re-points these tokens at Shopify Polaris, so this layer is the fallback.
 
    LIGHT ONLY. The Genaro package defines one light system and no dark
    variants, so there is no `.dark` block and no theme toggle. Inventing dark
    values would be fiction, not design. `dark:` utilities still exist in
    ~67 component files; they are inert (the class is never applied) and are
    left for a separate mechanical cleanup rather than a risky sweep here.
-
-   Nord's stylesheet is imported BEFORE this file, so these re-declarations
-   win on source order at equal specificity. */
+ */
 :root {
   color-scheme: light;
 
-  /* Geist Sans app-wide (self-hosted via the `geist` package; layout.tsx sets
-     --font-geist-sans). Overriding --n-font-family too keeps the <nord-*>
-     web components (sidebar, header, selects) on the same typeface. */
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --n-font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  /* Inter app-wide (self-hosted by next/font in layout.tsx as --font-inter) —
+     the Shopify admin's typeface. */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
-  /* Genaro fixes 6px for inputs and buttons; the rest of the scale is set
-     explicitly in @theme inline rather than derived, so rounded-sm/lg/xl/2xl
-     land on the spec's own 4 / 8 / 10 / 12 instead of ±1px approximations. */
   --radius: 6px;
-  --n-border-radius: 6px;
-  /* Nord sizes its inputs, selects and textareas off the -s step (3px), not
-     off --n-border-radius, so the input radius has to be set here or the
-     fields stay 3px while every button around them is 6px. */
-  --n-border-radius-s: 6px;
 
   /* ---------------------------------------------------------- semantic */
 
@@ -354,103 +302,6 @@ nord-layout.layout-on-navy {
   --sidebar-border: var(--color-navy-700);
   --sidebar-ring: var(--color-accent-blue);
 
-  /* ------------------------------------------------- Nord bridge (in) */
-  /* The <nord-*> components read these directly from their shadow roots, so
-     they have to be re-pointed here or the components keep Nord's blue-grey
-     palette while everything around them turns navy. */
-
-  --n-color-accent: var(--color-navy-900);
-  --n-color-accent-secondary: var(--color-navy-700);
-  --n-color-text: var(--color-ink);
-  --n-color-text-weak: var(--color-body-text);
-  --n-color-text-weaker: var(--color-muted-text);
-  --n-color-text-weakest: var(--color-faint);
-  --n-color-text-on-accent: #ffffff;
-  --n-color-text-link: var(--color-accent-blue);
-
-  --n-color-text-error: var(--color-status-blocked);
-  --n-color-text-danger: var(--color-status-blocked);
-  --n-color-text-success: var(--color-status-clear);
-  --n-color-text-warning: var(--color-status-warning);
-  --n-color-text-warning-strong: #713f12;
-  --n-color-text-info: var(--color-navy-500);
-  --n-color-text-progress: var(--color-navy-500);
-  --n-color-text-neutral: var(--color-muted-text);
-  --n-color-text-neutral-strong: var(--color-ink);
-  --n-color-text-highlight: #581c87;
-
-  --n-color-background: var(--color-page);
-  --n-color-surface: #ffffff;
-  --n-color-surface-raised: #ffffff;
-  --n-color-surface-lowered: var(--color-surface);
-  --n-color-overlay: rgb(24 32 58 / 0.45);
-
-  --n-color-border: var(--color-line);
-  /* Genaro states one border colour for everything, so "strong" resolves to
-     the same hairline: Nord uses it for input outlines, which the spec draws
-     at #E4E4E7 like every other border. */
-  --n-color-border-strong: var(--color-line);
-  --n-color-border-hover: var(--color-faint);
-  --n-color-border-neutral: var(--color-line);
-  --n-color-border-warning: var(--color-status-warning-edge);
-  --n-color-border-danger: var(--color-status-blocked-edge);
-  --n-color-border-success: var(--color-status-clear-edge);
-  --n-color-border-info: #bfdbfe;
-  --n-color-border-progress: #bfdbfe;
-  --n-color-border-highlight: #e9d5ff;
-
-  --n-color-status-danger: var(--color-status-blocked);
-  --n-color-status-warning: var(--color-stage-parts);
-  --n-color-status-success: var(--color-status-clear);
-  --n-color-status-info: var(--color-navy-500);
-  --n-color-status-progress: var(--color-navy-500);
-  --n-color-status-neutral: var(--color-surface);
-  --n-color-status-notification: var(--color-status-blocked);
-  --n-color-status-highlight: #7e22ce;
-
-  --n-color-status-danger-weak: var(--color-status-blocked-bg);
-  --n-color-status-warning-weak: var(--color-status-warning-bg);
-  --n-color-status-success-weak: var(--color-status-clear-bg);
-  --n-color-status-info-weak: #dbeafe;
-  --n-color-status-progress-weak: #dbeafe;
-  --n-color-status-neutral-weak: var(--color-page);
-  --n-color-status-highlight-weak: #f3e8ff;
-
-  --n-color-active: var(--color-line-soft);
-  --n-color-button: #ffffff;
-  --n-color-button-hover: var(--color-surface);
-  --n-color-icon: var(--color-muted-text);
-  --n-color-icon-hover: var(--color-ink);
-  --n-color-header: #ffffff;
-
-  /* Nav rail: navy ground, lighter navy for the active/hover item, and the
-     muted slate the spec uses for its group headings. */
-  --n-color-nav-surface: var(--color-navy-900);
-  --n-color-nav-hover: var(--color-navy-700);
-  --n-color-nav-heading: #6b7a99;
-
-  --n-input-background: #ffffff;
-  --n-input-background-inactive: var(--color-surface);
-  --n-textarea-background: #ffffff;
-  --n-textarea-background-inactive: var(--color-surface);
-
-  /* Elevation is almost absent in this system: a card is 1px of border on
-     white. Nord's card/header shadows collapse to the border alone; only the
-     genuinely floating layers (modal, popout, nav drawer) keep a soft cast,
-     because a menu that does not lift off the page reads as part of it. */
-  --n-box-shadow: none;
-  --n-box-shadow-card: 0 0 0 1px var(--color-line);
-  --n-box-shadow-header: 0 0 0 1px var(--color-line);
-  --n-box-shadow-modal: 0 0 0 1px var(--color-line),
-    0 24px 38px 3px rgb(24 32 58 / 0.12), 0 9px 46px 8px rgb(24 32 58 / 0.08);
-  --n-box-shadow-popout: 0 0 0 1px var(--color-line),
-    0 4px 12px rgb(24 32 58 / 0.1);
-  /* No light ring on the nav: the rail is navy, so a #E4E4E7 hairline reads as
-     a bright stroke drawn along its edge rather than a seam. The drawer keeps
-     its soft cast (it floats over the page), and the docked rail gets no
-     border at all — navy against the #F4F4F5 page already separates them. */
-  --n-box-shadow-nav: 0 5px 17px rgb(24 32 58 / 0.24);
-  --n-layout-nav-border-color: transparent;
 }
 
 @layer base {
@@ -473,7 +324,7 @@ nord-layout.layout-on-navy {
     line-height: 1.45;
     /* Never let the browser fake a weight or style it doesn't have a file
        for — a synthesized bold/italic silently ships as a slightly-wrong
-       typeface. With this off, a missing Geist weight fails visibly instead
+       typeface. With this off, a missing Inter weight fails visibly instead
        (GEN-57). */
     font-synthesis: none;
   }
@@ -502,58 +353,6 @@ nord-layout.layout-on-navy {
     background-color: --alpha(var(--color-primary) / 24%);
   }
 
-  /* Nord ships `transition: all` on <nord-button> (verified:
-     getComputedStyle(btn).transitionProperty === "all"). That animates width,
-     height and every other property it touches, so any state change can drive
-     a layout recalculation. Author rules targeting the host outrank the
-     component's own :host rules, so we can narrow it to the properties Nord
-     actually animates without forking the component.
-
-     The same rule adds the press state the app was missing entirely — there
-     was not one :active transform anywhere, which is why buttons felt dead on
-     click. `scale` is used rather than `transform` so it can't collide with
-     any transform Nord sets, and 0.96 is the floor: below 0.95 reads as
-     exaggerated. */
-  nord-button {
-    transition-property: color, background-color, border-color, box-shadow,
-      opacity, scale;
-    transition-duration: 150ms;
-    transition-timing-function: ease-out;
-  }
-
-  nord-button:active:not([disabled]):not([loading]) {
-    scale: 0.96;
-  }
-
-  /* Touch targets (GEN-93).
-     Nord sizes <nord-button> from its own shadow root — size="s" renders at
-     ~28px, well under the 44px a finger needs, and the size prop is mapped
-     from our own `size` variants so call sites cannot fix it individually.
-
-     The Select trigger solves this with a ::after overlay that grows the hit
-     area without touching the visual height, but that technique is not
-     available here: a shadow host's ::before/::after do not render at all,
-     because the shadow tree replaces the host's child boxes. Verified — the
-     pseudo-element resolved to `content: none`.
-
-     So the height itself grows, and only on a coarse pointer. Desktop is
-     untouched; on a phone the buttons are genuinely taller, which is the
-     correct trade when the alternative is a 28px target. */
-  @media (pointer: coarse) {
-    nord-button {
-      min-height: 44px;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    nord-button {
-      transition-duration: 0s;
-    }
-    nord-button:active:not([disabled]):not([loading]) {
-      scale: 1;
-    }
-  }
-
   code,
   kbd,
   samp,
@@ -569,86 +368,29 @@ nord-layout.layout-on-navy {
   }
 }
 
-/* Toast positioning fix.
-   Nord's <nord-toast-group> centers its toasts via a `::slotted(nord-toast)
-   { margin-inline: auto }` rule in the group's shadow root. But every Nord
-   component (including each <nord-toast>) ships a `:host { all: unset }` base
-   reset, and that inner-tree reset zeroes the slotted margin — so cards pin to
-   the inline-start (left) edge of the fixed, full-width toast container,
-   landing directly on top of the left sidebar's lower nav items and swallowing
-   their clicks (pointer-events: auto). A document-level !important rule
-   outranks the shadow `:host` reset and restores the intended centering, which
-   moves the cards clear of the sidebar. */
-@layer base {
-  /* Nord gives the group `position: fixed; pointer-events: none`, but every
-     Nord component also ships a `:host { all: unset }` base reset, and that
-     wipes it — so the toast layer falls back into normal document flow at the
-     end of <body> and its cards land on whatever happens to be there. First
-     time round that was the sidebar's nav items; after the centering fix below
-     it became the middle of the form, where a "Draft restored" toast sat on top
-     of a textarea and made it unclickable (GEN-123). Re-assert the container at
-     document level, which outranks the shadow `:host` reset. */
-  nord-toast-group {
-    position: fixed !important;
-    inset-inline: 0 !important;
-    inset-block-end: 0 !important;
-    z-index: 950 !important;
-    /* The layer spans the viewport, so it must never take a click. Only the
-       toast cards themselves are interactive. */
-    pointer-events: none !important;
-  }
-
-  nord-toast {
-    margin-inline: auto !important;
-    pointer-events: auto;
-  }
-}
-
-/* Sidebar header rule.
-   Nord draws a border-bottom on the `slot[name="header"]` inside
-   <nord-navigation>'s shadow root, coloured by --n-color-border (#e4e4e7).
-   That grey is meant for a light surface; against the navy sidebar it reads
-   as a bright white line cutting under the company name. The slot carries no
-   `part`, so ::part() cannot reach it — but the custom property inherits
-   through the shadow boundary, and this is the only bordered element in the
-   navigation's shadow tree, so scoping the override to the host removes just
-   that line.
-
-   Deliberately unlayered: Nord sets this property in its own `:host` rule,
-   which is also unlayered and so outranks anything inside @layer base. */
-nord-navigation {
-  --n-color-border: transparent;
-}
-
 @utility container {
   @apply mx-auto max-w-[1416px] px-4 lg:px-6;
 }
 
 /* App overlay stacking tier (GEN-31).
    Overlays (dialogs, sheets, drawers, popovers, menus, selects, tooltips, the
-   command palette, calendar modals) portal to <body>, but Nord's fixed sidebar
-   sits at z-index 400 (--n-index-nav) and the top bar at 500. A bare Tailwind
-   `z-50` therefore renders backdrops BELOW the sidebar, leaving it lit and
-   clickable while a modal is open. Every overlay layer uses `z-[900]` (Nord's
-   modal tier) so backdrops cover the whole viewport — including the sidebar —
-   and trap interaction. They share one value so they keep stacking amongst
-   themselves by portal/DOM order, exactly as they did at z-50. */
+   command palette, calendar modals) portal to <body> and all use `z-[900]`,
+   above the mobile nav drawer (z-50), so a backdrop always covers the whole
+   viewport and traps interaction. They share one value so they keep stacking
+   amongst themselves by portal/DOM order. */
 
 /* ══════════════════════════════════════════════════════════════════════════
    GENARO BRAND TOKENS — Direction 05 "Grille"
    ══════════════════════════════════════════════════════════════════════════
    From the "Genaro branding guidelines" handoff (2026-08-22). These are
-   ABSOLUTE brand values, not theme-relative ones: unlike every token above —
-   which resolves through Nord's --n-color-* vars and flips with `.dark` —
-   each of these is one fixed hex in every context. The brand package defines
+   ABSOLUTE brand values, not theme-relative ones: each is one fixed hex in
+   every context. The brand package defines
    a single light system; it specifies no dark variants, so inventing them
    here would be fiction.
 
-   This block deliberately sits ALONGSIDE the Nord mapping rather than
-   replacing it. The app still resolves `bg-card`, `text-muted-foreground`,
-   `bg-primary` etc. through Nord, so nothing in the product changes shade
-   today. Re-pointing the semantic layer at these values is the migration
-   (handoff open item 1) and is a separate, app-wide change.
+   The semantic layer (bg-card, text-muted-foreground…) now resolves to
+   Shopify Polaris via polaris-theme.css; these remain for the few places that
+   name a brand colour directly.
 
    Consumed by /styleguide, which documents them. */
 @theme {
@@ -674,6 +416,9 @@ nord-navigation {
      re-checking against the brand owner when the final artwork lands. */
   --color-nav-heading: #798aac;
   --color-nav-email: #8b9ab8;
+  /* Sidebar item text and the initials mark — tokens so a theme can move them. */
+  --color-nav-item: var(--color-navy-200);
+  --color-nav-mark: var(--color-navy-500);
 
   --color-ink: #18181b;
   --color-body-text: #52525b;

@@ -221,7 +221,7 @@ export function TodoTab({
     >
       <div className="flex flex-col gap-4">
         {allDone ? (
-          <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+          <div className="flex items-center gap-2 rounded-lg border border-transparent bg-[#affebf] px-4 py-2.5 text-sm text-[#014b40] dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
             <Check className="size-4 shrink-0" />
             All prep work is complete, this car is ready to move to Sales.
           </div>
@@ -284,7 +284,7 @@ export function TodoTab({
         })}
 
         <div className="flex items-center justify-between rounded-lg bg-muted/40 px-4 py-3">
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="text-[13px] font-medium text-muted-foreground">
             Grand Total
           </span>
           <span className="text-base font-semibold tabular-nums">

@@ -3,12 +3,14 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { PanelLeft, Settings } from "lucide-react";
+import { accountHandle } from "@/lib/auth/username";
+import { GlobalSearch, NotificationsMenu, UserMenu } from "./account-menus";
+import { HealthIndicator } from "./health-indicator";
 import { useOnborda } from "onborda";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";
-import { accountHandle } from "@/lib/auth/username";
 import {
   SIDEBAR_GROUPS,
   MVP_HIDDEN_HREFS,
@@ -20,28 +22,30 @@ import {
 import { SIDEBAR_BADGES } from "./sidebar-badges";
 import { useGuidedSteps } from "@/hooks/use-guided-steps";
 
-// localStorage key for the user's persisted expand/collapse choices (GEN-29).
-const COLLAPSED_STORAGE_KEY = "cc.sidebar.collapsed-groups";
-// Every collapsible group label — the default "all collapsed" state.
-const ALL_GROUP_LABELS: string[] = SIDEBAR_GROUPS.map((g) => g.label).filter(
-  (label): label is string => label !== null,
-);
-
-// The rail is navy, so these carry their own on-navy foregrounds rather than
-// the page tokens (--foreground is ink, which is invisible here).
-//
-// Active = a lighter navy fill and a 3px blue left marker, per the Genaro nav
-// spec. Crucially NOT the blue as a fill, so it never reads like the primary
-// "Add Vehicle" CTA (rule 2).
-// 34px is a comfortable desktop row but an awkward touch target, so on a
-// coarse pointer the row grows to the 44px a finger needs (GEN-93).
+// Shopify admin nav rows, as measured on admin.shopify.com (Sep 2026): 30px
+// tall, 12px radius, 13px text at -1% tracking, 82%-white on the dark rail;
+// the active row is a 10%-white pill in medium weight. On a coarse pointer the
+// row grows to the 44px a finger needs (GEN-93).
 const ITEM_BASE =
-  "relative flex h-[34px] items-center gap-2.5 rounded-md px-2 text-[13px] no-underline transition-colors pointer-coarse:h-11";
-const ITEM_ACTIVE =
-  "bg-sidebar-accent font-medium text-white before:absolute before:top-0 before:bottom-0 before:left-0 before:w-[3px] before:rounded-r before:bg-accent-blue";
-const ITEM_INACTIVE = "text-navy-200 hover:bg-sidebar-accent hover:text-white";
+  "relative flex h-[30px] items-center gap-2 rounded-xl pl-2 pr-1 text-[13px] tracking-[-0.01em] no-underline transition-colors pointer-coarse:h-11 [&_svg]:text-current";
+const ITEM_ACTIVE = "bg-white/10 font-medium text-[#f7f7f7]";
+const ITEM_INACTIVE = "text-white/80 hover:bg-white/[0.06] hover:text-[#f7f7f7]";
+// Sub-rows sit under their section, text aligned with the section's label
+// (34px in — measured from the Shopify admin) and without an icon.
+const SUB_BASE =
+  "relative flex h-[30px] items-center rounded-xl pl-[34px] pr-1 text-[13px] tracking-[-0.01em] no-underline transition-colors pointer-coarse:h-11";
 
-export function AppSidebar() {
+export function AppSidebar({
+  open = false,
+  onClose,
+  onHide,
+}: {
+  /** Mobile drawer state (the rail is always shown from lg up). */
+  open?: boolean;
+  onClose?: () => void;
+  /** Desktop: hide the rail (the page header offers the way back). */
+  onHide?: () => void;
+} = {}) {
   const pathname = usePathname();
   const { user, company } = useAuth();
   const { can, isSuperUser } = usePermissions();
@@ -74,26 +78,6 @@ export function AppSidebar() {
   // sidebar loads compact; the group holding the active route is force-expanded
   // at render time. Deterministic on server + first client paint (no persisted
   // read here) so there's no hydration mismatch or active-group expand flicker.
-  const [collapsed, setCollapsed] = React.useState<Set<string>>(
-    () => new Set(ALL_GROUP_LABELS),
-  );
-
-  // Hydrate the user's persisted choices after mount. localStorage is
-  // unavailable during SSR, so reading it in the initializer above would risk a
-  // hydration mismatch; applying it in an effect keeps the first paint stable.
-  React.useEffect(() => {
-    try {
-      const raw = localStorage.getItem(COLLAPSED_STORAGE_KEY);
-      // Deliberate post-mount setState: reading localStorage in the initializer
-      // would diverge from the server render and cause a hydration mismatch, so
-      // we hydrate the persisted state here instead. Runs once.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (raw) setCollapsed(new Set(JSON.parse(raw) as string[]));
-    } catch {
-      // Corrupt/blocked storage → keep the all-collapsed default.
-    }
-  }, []);
-
   // Capability gating (unchanged): an item shows for super-users, items with no
   // gate, or items where the user holds ANY required capability. A group renders
   // only if at least one item is visible.
@@ -128,127 +112,190 @@ export function AppSidebar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleGroups, pathname]);
 
-  function toggleGroup(label: string): void {
-    setCollapsed((prev) => {
-      const next = new Set(prev);
-      if (next.has(label)) next.delete(label);
-      else next.add(label);
-      // Persist the manual choice so it survives reloads/navigation (GEN-29).
-      try {
-        localStorage.setItem(COLLAPSED_STORAGE_KEY, JSON.stringify([...next]));
-      } catch {
-        // Ignore storage failures — in-memory state still updates.
-      }
-      return next;
-    });
-  }
-
-  const renderItems = (items: SidebarItem[]) => (
-    <ul className="mt-0.5 flex flex-col gap-0.5">
-      {items.map((item) => {
-        const Icon = item.icon;
-        const on = isActive(item.href);
-        const Badge = SIDEBAR_BADGES[item.href];
-        return (
-          <li key={item.href}>
-            <Link
-              id={navTourId(item.href)}
-              href={item.href}
-              aria-current={on ? "page" : undefined}
-              className={cn(ITEM_BASE, on ? ITEM_ACTIVE : ITEM_INACTIVE)}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              <span className="flex-1 truncate">{item.label}</span>
-              {Badge ? <Badge /> : null}
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
+  /** A top-level row: icon + label (Dashboard, and each section). */
+  const row = (opts: {
+    key: string;
+    href: string;
+    label: string;
+    Icon: SidebarItem["icon"];
+    active: boolean;
+    id?: string;
+    badge?: React.ReactNode;
+  }) => (
+    <li key={opts.key} className="shrink-0">
+      <Link
+        id={opts.id}
+        href={opts.href}
+        aria-current={opts.active ? "page" : undefined}
+        className={cn(ITEM_BASE, opts.active ? ITEM_ACTIVE : ITEM_INACTIVE)}
+      >
+        <opts.Icon className="size-4 shrink-0" />
+        <span className="flex-1 truncate">{opts.label}</span>
+        {opts.badge}
+      </Link>
+    </li>
   );
 
-  return (
-    <nord-navigation slot="nav">
-      <Link
-        id="tour-brand"
-        slot="header"
-        href="/dashboard"
-        // Nord's header slot has no inset (unlike the body), so add left padding
-        // to align the brand with the nav items below it.
-        className="flex min-w-0 items-center gap-2 py-1 pl-5 pr-3 no-underline"
-      >
-        {company?.logoMarkUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={company.logoMarkUrl}
-            alt={`${company.name} logo`}
-            className="size-[34px] shrink-0 rounded-md object-contain"
-          />
-        ) : (
-          <span className="grid size-[34px] shrink-0 place-items-center rounded-md bg-navy-500 text-[13px] font-semibold text-white">
-            CC
-          </span>
-        )}
-        <span className="flex min-w-0 flex-col leading-tight">
-          <span
-            className="truncate text-[13px] font-semibold text-white"
-            suppressHydrationWarning
+  /** A section's pages, shown indented under it while you are inside it. */
+  const subRows = (items: SidebarItem[]) =>
+    items.map((item) => {
+      const on = isActive(item.href);
+      const Badge = SIDEBAR_BADGES[item.href];
+      return (
+        <li key={item.href} className="shrink-0">
+          <Link
+            id={navTourId(item.href)}
+            href={item.href}
+            aria-current={on ? "page" : undefined}
+            className={cn(
+              SUB_BASE,
+              on ? "bg-white/10 font-medium text-[#f7f7f7]" : "text-[#a6a6a6] hover:bg-white/[0.06] hover:text-[#f7f7f7]",
+            )}
           >
-            {company?.name ?? "Car Capital UK"}
-          </span>
-          {/* The signed-in user's email, not a second copy of the company name
-              (GEN-34) — or their username, never the synthetic address behind
-              a username login. Falls back to a dash before hydration. */}
-          <span
-            className="truncate text-[11px] text-nav-email"
-            suppressHydrationWarning
-          >
-            {user ? accountHandle(user) || "—" : "—"}
-          </span>
-        </span>
-      </Link>
+            <span className="flex-1 truncate">{item.label}</span>
+            {Badge ? <Badge /> : null}
+          </Link>
+        </li>
+      );
+    });
 
-      <div id="tour-nav" className="flex flex-col gap-1.5 px-1 pb-2 pt-1">
-        {visibleGroups.map((group) => {
-          if (group.label === null) {
-            return (
-              <div key="__top">{renderItems(group.items)}</div>
-            );
-          }
-          // Active group is always open so the current page stays visible;
-          // otherwise honour the collapsed set (defaults to collapsed).
-          //
-          // While the tour runs it OVERRIDES both, opening its target group and
-          // closing everything else — it is not merely a third opener. A user
-          // who has expanded several groups makes the rail taller than the
-          // viewport, and a rail that scrolls desyncs the spotlight (see
-          // tourGroupLabel). Deciding the state outright is the only way to
-          // guarantee a short rail whatever the user had saved; their own
-          // choices are untouched in `collapsed` and return when it ends.
-          const isOpen = tourRunning
-            ? group.label === tourGroupLabel
-            : group.label === activeGroupLabel || !collapsed.has(group.label);
-          return (
-            <div key={group.label}>
-              <button
-                type="button"
-                onClick={() => toggleGroup(group.label as string)}
-                aria-expanded={isOpen}
-                className="flex w-full items-center gap-1 rounded px-2 py-1.5 pointer-coarse:min-h-11 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-nav-heading transition-colors hover:text-white"
-              >
-                <span className="flex-1 text-left">{group.label}</span>
-                <ChevronDown
-                  className={cn(
-                    "h-3.5 w-3.5 shrink-0 transition-transform",
-                    !isOpen && "-rotate-90",
-                  )}
-                />
-              </button>
-              {isOpen && renderItems(group.items)}
-            </div>
-          );
-        })}
+  return (
+    <>
+    {/* Mobile: the rail is a drawer over a scrim; from lg up it is docked. */}
+    {open && (
+      <div
+        aria-hidden
+        onClick={onClose}
+        className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+      />
+    )}
+    <aside
+      data-app-rail=""
+      aria-label="Main navigation"
+      onClick={(e) => {
+        // Following a link closes the mobile drawer.
+        if ((e.target as HTMLElement).closest("a")) onClose?.();
+      }}
+      className={cn(
+        "fixed inset-y-0 left-0 z-50 flex w-[220px] flex-col bg-sidebar text-sidebar-foreground transition-transform lg:sticky lg:top-0 lg:z-auto lg:h-dvh lg:translate-x-0",
+        open ? "translate-x-0" : "-translate-x-full",
+      )}
+    >
+      <div className="flex h-12 shrink-0 items-center gap-1 pl-4 pr-2 pt-3">
+        <Link
+          id="tour-brand"
+          href="/dashboard"
+          data-nav-brand=""
+          className="flex min-w-0 flex-1 items-center gap-2 no-underline"
+        >
+          {company?.logoMarkUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={company.logoMarkUrl}
+              alt=""
+              className="size-7 shrink-0 rounded-md object-contain"
+            />
+          ) : (
+            <span className="grid size-7 shrink-0 place-items-center rounded-md bg-nav-mark text-[11px] font-semibold text-white">
+              CC
+            </span>
+          )}
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span
+              className="truncate text-[13px] font-semibold text-[#f7f7f7]"
+              suppressHydrationWarning
+            >
+              {company?.name ?? "Car Capital UK"}
+            </span>
+            {/* The signed-in user's email — or their username, never the
+                synthetic address behind a username login (GEN-34). */}
+            <span
+              className="truncate text-[11px] text-[#a6a6a6]"
+              suppressHydrationWarning
+            >
+              {user ? accountHandle(user) || "—" : "—"}
+            </span>
+          </span>
+        </Link>
+        {/* Shopify admin's rail toggle. Desktop hides the rail; on a phone the
+            rail is a drawer, so the same icon closes it. */}
+        <button
+          type="button"
+          onClick={() => (open ? onClose?.() : onHide?.())}
+          aria-label="Hide navigation"
+          title="Hide navigation"
+          className="grid size-8 shrink-0 place-items-center rounded-xl text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white"
+        >
+          <PanelLeft className="size-4" />
+        </button>
       </div>
-    </nord-navigation>
+
+      {/* Shopify-admin layout: search heads the rail. */}
+      <GlobalSearch className="px-3 pb-2 pt-2" />
+
+      {/* Flat, Shopify-admin style: one row per section; a section's pages
+          appear indented beneath it only while you are in it (or while the
+          tour points into it — the tour can only spotlight a row that exists,
+          and keeping one section open keeps the rail short enough never to
+          scroll under the spotlight). */}
+      <nav id="tour-nav" className="min-h-0 flex-1 overflow-y-auto px-3 pb-2 pt-1">
+        <ul className="flex flex-col">
+          {visibleGroups.map((group) => {
+            if (group.label === null) {
+              return group.items.map((item) =>
+                row({
+                  key: item.href,
+                  id: navTourId(item.href),
+                  href: item.href,
+                  label: item.label,
+                  Icon: item.icon,
+                  active: isActive(item.href),
+                }),
+              );
+            }
+            const inside = group.label === activeGroupLabel;
+            const open = tourRunning ? group.label === tourGroupLabel : inside;
+            return (
+              <React.Fragment key={group.label}>
+                {row({
+                  key: `g:${group.label}`,
+                  href: group.items[0].href,
+                  label: group.label,
+                  Icon: group.icon ?? group.items[0].icon,
+                  // The section row lights up only when no sub-row can — a
+                  // single-page section, or while it is merely the tour target.
+                  active: inside && group.items.length === 1,
+                })}
+                {open && group.items.length > 1 && subRows(group.items)}
+              </React.Fragment>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* Foot of the rail, as in the Shopify admin: Settings, then the
+          account with its notifications bell. */}
+      <div className="flex flex-col gap-1 px-3 pb-3 pt-2">
+        <Link
+          href="/admin/settings"
+          aria-current={pathname.startsWith("/admin/settings") ? "page" : undefined}
+          className={cn(
+            ITEM_BASE,
+            pathname.startsWith("/admin/settings") ? ITEM_ACTIVE : ITEM_INACTIVE,
+          )}
+        >
+          <Settings className="h-4 w-4 shrink-0" />
+          <span className="flex-1 truncate">Settings</span>
+        </Link>
+        <div className="flex min-w-0 items-center justify-between gap-1" data-nav-account="">
+          <div className="min-w-0 flex-1">
+            <UserMenu align="start" />
+          </div>
+          <HealthIndicator />
+          <NotificationsMenu />
+        </div>
+      </div>
+    </aside>
+    </>
   );
 }

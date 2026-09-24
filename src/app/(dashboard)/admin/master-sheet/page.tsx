@@ -6,6 +6,8 @@ import {
   type FilterField,
 } from "@/components/vehicles/vehicle-sheet";
 import type { Vehicle } from "@/lib/types";
+import { VehicleImage } from "@/components/shared/vehicle-image";
+import { RegPlate } from "@/components/shared/reg-plate";
 import {
   AUCTION_HOUSE_SUGGESTIONS,
   FUEL_OPTIONS,
@@ -83,10 +85,20 @@ const COLS: ColDef[] = [
     key: "registration",
     label: "REG. NUMBER",
     type: "text",
-    width: 110,
+    width: 170,
     sticky: true,
     section: COMMON,
     editable: true,
+    render: (v) => (
+      <div className="flex items-center gap-2">
+        <VehicleImage
+          vehicle={v}
+          variant="thumb"
+          className="size-10 shrink-0 rounded-lg border border-[#e3e3e3]"
+        />
+        <RegPlate registration={v.registration} size="sm" />
+      </div>
+    ),
     toPatch: (value) => ({
       registration: String(value ?? "").trim().toUpperCase() || "UNREGISTERED",
     }),

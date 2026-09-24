@@ -214,7 +214,7 @@ export function AdvertEditor({
   return (
     <div className="flex flex-col gap-4">
       {/* Sticky action header */}
-      <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-background/90 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+      <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 shadow-[0_1px_0_rgba(0,0,0,.05)]">
         <div className="flex min-w-0 items-center gap-3">
           <Button asChild variant="ghost" size="icon" className="shrink-0">
             <Link href={`/vehicles/${vehicle.id}`} aria-label="Back to vehicle">
@@ -487,7 +487,7 @@ export function AdvertEditor({
             >
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <label className="text-[13px] font-medium">
                     Advertised Price
                   </label>
                   <div className="relative mt-1">
@@ -504,10 +504,10 @@ export function AdvertEditor({
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <label className="text-[13px] font-medium">
                     Floor (minimum)
                   </label>
-                  <div className="mt-1 flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm tabular-nums text-muted-foreground">
+                  <div className="mt-1 flex h-8 items-center rounded-lg border bg-muted px-3 text-[13px] tabular-nums text-muted-foreground">
                     {vehicle.minimumSalePrice
                       ? formatCurrency(vehicle.minimumSalePrice)
                       : "Not set"}
@@ -519,7 +519,7 @@ export function AdvertEditor({
                 {CHANNELS.map((c) => (
                   <label
                     key={c.key}
-                    className="flex cursor-pointer items-center justify-between gap-3 rounded-md border px-3 py-2"
+                    className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 py-2"
                   >
                     <div className="min-w-0">
                       <div className="text-sm font-medium">{c.label}</div>
@@ -540,7 +540,7 @@ export function AdvertEditor({
           </section>
 
           {/* Footer save bar */}
-          <div className="flex items-center justify-between rounded-xl border bg-muted/30 px-4 py-3">
+          <div className="flex items-center justify-between rounded-xl border bg-card px-4 py-3 shadow-[0_1px_0_rgba(0,0,0,.05)]">
             <span className="text-xs text-muted-foreground">
               {done} of {total} advert fields ready · saved as{" "}
               <span className="font-medium text-foreground">{status}</span>
@@ -577,7 +577,7 @@ export function AdvertEditor({
           >
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-emerald-500 transition-[width] duration-500"
+                className="h-full rounded-full bg-[#303030] transition-[width] duration-500"
                 style={{ width: `${pct}%` }}
               />
             </div>
@@ -614,15 +614,15 @@ function CharField({
   return (
     <div className="grid gap-1.5 sm:grid-cols-[180px_1fr] sm:gap-4">
       <div className="pt-1.5">
-        <div className="text-sm font-medium">{label}</div>
-        {help && <p className="mt-0.5 text-xs text-muted-foreground">{help}</p>}
+        <div className="text-[13px] font-medium">{label}</div>
+        {help && <p className="mt-0.5 text-[13px] text-muted-foreground">{help}</p>}
       </div>
       <div>
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className={cn("h-9", over && "border-destructive")}
+          className={cn("h-8", over && "border-destructive")}
         />
         <div
           className={cn(
@@ -648,13 +648,13 @@ function TaxInput({
 }) {
   return (
     <div>
-      <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <label className="text-[13px] font-medium">
         {label}
       </label>
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 h-9"
+        className="mt-1 h-8"
       />
     </div>
   );
@@ -684,7 +684,7 @@ function CheckRow({ check }: { check: AdvertCheck }) {
         )}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-xs font-medium leading-snug">{check.name}</div>
+        <div className="text-[13px] font-medium leading-snug">{check.name}</div>
         <div className="truncate text-xs text-muted-foreground">
           {check.meta}
         </div>

@@ -25,21 +25,21 @@ import { LocationBadge } from "./location-badge";
 // Flat status pill tones — kept in sync with the Master Sheet / All
 // Vehicles grids so a car's status reads identically across inventory.
 const STATUS_TONE: Record<VehicleStatus, string> = {
-  received: "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300",
+  received: "bg-[#d5ebff] text-[#003a5a]",
   inspection_pending:
     "bg-yellow-50 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-300",
   being_prepared:
-    "bg-orange-50 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300",
+    "bg-[#ffeb78] text-[#4f4700]",
   photos_pending:
     "bg-yellow-50 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-300",
   photos_ready:
     "bg-lime-50 text-lime-700 dark:bg-lime-950/30 dark:text-lime-300",
-  ready: "bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-300",
+  ready: "bg-[#affebf] text-[#014b40]",
   listed:
-    "bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-300",
+    "bg-[#d5ebff] text-[#003a5a]",
   reserved: "bg-pink-50 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300",
   sold: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
-  returned: "bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-300",
+  returned: "bg-[#fed1d7] text-[#8e0b21]",
 };
 
 function StatusPill({ status }: { status: string }) {
@@ -301,7 +301,7 @@ export function LocationTab({
             return (
               <li
                 key={r.id}
-                className="flex items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/30"
+                className="flex items-center gap-4 px-4 py-3 transition-colors hover:bg-[#f7f7f7]"
               >
                 <RegPlate registration={r.registration} size="sm" />
                 <div className="min-w-0 flex-1">

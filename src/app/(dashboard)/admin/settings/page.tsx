@@ -1,7 +1,20 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { ImageIcon, Upload, X } from "lucide-react";
+import {
+  Building2,
+  ClipboardCheck,
+  DatabaseBackup,
+  ImageIcon,
+  KeyRound,
+  Megaphone,
+  Upload,
+  UserRound,
+  Workflow,
+  X,
+} from "lucide-react";
+import { Section, SectionStack } from "@/components/ui/section";
+import { ResourceList, ResourceListItem } from "@/components/ui/resource-list";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import {
@@ -110,33 +123,59 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-xl font-semibold">Settings</h1>
+        <p className="text-[13px] text-muted-foreground">
           Your profile{canManage ? ", plus company profile, defaults, and inspection checklist" : ""}.
         </p>
       </div>
       {/* My profile is open to everyone; the company tabs need Manage
           Settings. Until permissions load, show just the profile. */}
-      <Tabs defaultValue={canManage && !isLoading ? "company" : "profile"}>
-        <TabsList>
-          <TabsTrigger value="profile">My profile</TabsTrigger>
-          {canManage && (
-            <>
-              <TabsTrigger value="company">Company</TabsTrigger>
-              <TabsTrigger value="inspection">Inspection Checklist</TabsTrigger>
-              <TabsTrigger value="pipeline">Sales Pipeline</TabsTrigger>
-              <TabsTrigger value="channels">Lead Channels</TabsTrigger>
-              <TabsTrigger value="backup">Backup</TabsTrigger>
-            </>
-          )}
-        </TabsList>
-        <TabsContent value="profile" className="mt-3">
+      <Tabs
+        // Remount once permissions settle so the default tab can change
+        // (Base UI ignores a changed defaultValue on a mounted Tabs).
+        key={canManage && !isLoading ? "manage" : "self"}
+        orientation="vertical"
+        defaultValue={canManage && !isLoading ? "company" : "profile"}
+        className="items-start gap-4 data-[orientation=vertical]:flex-col md:data-[orientation=vertical]:flex-row"
+      >
+        <Card className="w-full shrink-0 p-2 md:sticky md:top-4 md:w-60">
+          <TabsList className="w-full flex-col items-stretch">
+            <TabsTrigger value="profile" className="h-8 gap-2 px-2">
+                  <UserRound className="size-4 text-[#4a4a4a]" />
+                  My profile</TabsTrigger>
+            {canManage && (
+              <>
+                <TabsTrigger value="company" className="h-8 gap-2 px-2">
+                  <Building2 className="size-4 text-[#4a4a4a]" />
+                  Company</TabsTrigger>
+                <TabsTrigger value="inspection" className="h-8 gap-2 px-2">
+                  <ClipboardCheck className="size-4 text-[#4a4a4a]" />
+                  Inspection Checklist</TabsTrigger>
+                <TabsTrigger value="pipeline" className="h-8 gap-2 px-2">
+                  <Workflow className="size-4 text-[#4a4a4a]" />
+                  Sales Pipeline</TabsTrigger>
+                <TabsTrigger value="channels" className="h-8 gap-2 px-2">
+                  <Megaphone className="size-4 text-[#4a4a4a]" />
+                  Lead Channels</TabsTrigger>
+                <TabsTrigger value="backup" className="h-8 gap-2 px-2">
+                  <DatabaseBackup className="size-4 text-[#4a4a4a]" />
+                  Backup</TabsTrigger>
+              </>
+            )}
+          </TabsList>
+        </Card>
+        <div className="mx-auto w-full min-w-0 max-w-[784px] flex-1">
+        <TabsContent value="profile">
           <ProfilePanel />
         </TabsContent>
         {canManage && (
         <>
-        <TabsContent value="company" className="mt-3">
-          <Card className="grid gap-4 p-5 sm:grid-cols-2">
+        <TabsContent value="company">
+          <SectionStack>
+          <AnnotatedSection
+            title="Branding"
+            description="Logos used on invoices and in the sidebar."
+          >
             <LogoField
               label="Full logo"
               hint="Shown on generated invoices (logo + wordmark). PNG or JPG; large images are automatically resized."
@@ -155,6 +194,11 @@ export default function SettingsPage() {
               onSelect={(e) => void handleLogoSelect(e, "mark")}
               onClear={() => setLogoMarkUrl(null)}
             />
+          </AnnotatedSection>
+          <AnnotatedSection
+            title="Company details"
+            description="Name, address and tax details shown on invoices."
+          >
             <div className="sm:col-span-2">
               <Label htmlFor={nameId}>Name</Label>
               <Input id={nameId} value={name} onChange={(e) => setName(e.target.value)} />
@@ -180,9 +224,14 @@ export default function SettingsPage() {
                 maxLength={4}
               />
             </div>
+          </AnnotatedSection>
+          <AnnotatedSection
+            title="Working hours"
+            description="Controls the Appointment Book calendar range."
+          >
             <div>
               <Label htmlFor={hoursStartId}>Working hours start</Label>
-              <p className="mb-2 text-xs text-muted-foreground">
+              <p className="mb-2 text-[13px] text-muted-foreground">
                 Drives the visible range on the Appointment Book calendar.
               </p>
               <Input
@@ -194,7 +243,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <Label htmlFor={hoursEndId}>Working hours end</Label>
-              <p className="mb-2 text-xs text-muted-foreground">
+              <p className="mb-2 text-[13px] text-muted-foreground">
                 Appointments can be booked up to one hour before this time.
               </p>
               <Input
@@ -204,29 +253,52 @@ export default function SettingsPage() {
                 onChange={(e) => setHoursEnd(e.target.value)}
               />
             </div>
-            <div className="sm:col-span-2 flex justify-end">
-              <Button onClick={handleSave} disabled={saving}>
-                {saving ? "Saving…" : "Save"}
-              </Button>
-            </div>
-          </Card>
+          </AnnotatedSection>
+          <div className="flex justify-end">
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "Saving…" : "Save"}
+            </Button>
+          </div>
+          </SectionStack>
         </TabsContent>
-        <TabsContent value="inspection" className="mt-3">
+        <TabsContent value="inspection">
           <InspectionChecklistSettings />
         </TabsContent>
-        <TabsContent value="backup" className="mt-3">
+        <TabsContent value="backup">
           <BackupPanel />
         </TabsContent>
-        <TabsContent value="pipeline" className="mt-3">
+        <TabsContent value="pipeline">
           <PipelineStageSettings />
         </TabsContent>
-        <TabsContent value="channels" className="mt-3">
+        <TabsContent value="channels">
           <LeadChannelSettings />
         </TabsContent>
         </>
         )}
+        </div>
       </Tabs>
     </div>
+  );
+}
+
+/** Shopify Settings section: heading + description outside, fields in a card. */
+function AnnotatedSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Section
+      title={title}
+      description={description}
+      cardClassName="grid gap-4 px-4 py-4 sm:grid-cols-2"
+    >
+      {children}
+    </Section>
   );
 }
 
@@ -258,10 +330,14 @@ function ProfilePanel() {
   }
 
   return (
-    <Card className="grid max-w-xl gap-4 p-5">
+    <AnnotatedSection
+      title="My profile"
+      description="How you appear to your team."
+    >
+      <div className="grid gap-4 sm:col-span-2">
       <div>
         <Label htmlFor={fieldId}>Your name</Label>
-        <p className="mb-2 text-xs text-muted-foreground">
+        <p className="mb-2 text-[13px] text-muted-foreground">
           Shown on your card, in the header and against everything you do in
           the activity log.
         </p>
@@ -280,16 +356,21 @@ function ProfilePanel() {
       </div>
       <div>
         <Label>Sign-in</Label>
-        <p className="text-sm text-muted-foreground">
-          {user ? accountHandle(user) : "—"}
-        </p>
+        <ResourceList className="mt-1">
+          <ResourceListItem
+            icon={<KeyRound />}
+            title={user ? accountHandle(user) : "—"}
+            description="Managed from Users & Permissions"
+          />
+        </ResourceList>
       </div>
       <div className="flex justify-end">
         <Button onClick={() => void save()} disabled={saving || !trimmed || unchanged}>
           {saving ? "Saving…" : "Save"}
         </Button>
       </div>
-    </Card>
+      </div>
+    </AnnotatedSection>
   );
 }
 
@@ -316,10 +397,10 @@ function LogoField({
   return (
     <div className="sm:col-span-2">
       <Label htmlFor={fieldId}>{label}</Label>
-      <p className="mb-2 text-xs text-muted-foreground">{hint}</p>
+      <p className="mb-2 text-[13px] text-muted-foreground">{hint}</p>
       <div className="flex items-center gap-4">
         <div
-          className={`grid shrink-0 place-items-center overflow-hidden rounded-md ${url ? "" : "border bg-muted/30"} ${previewClassName}`}
+          className={`grid shrink-0 place-items-center overflow-hidden rounded-lg ${url ? "" : "border bg-[#f7f7f7]"} ${previewClassName}`}
         >
           {url ? (
             // eslint-disable-next-line @next/next/no-img-element

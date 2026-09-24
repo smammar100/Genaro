@@ -11,8 +11,8 @@ export default function AppointmentsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Appointments</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-xl font-semibold">Appointments</h1>
+        <p className="mt-0.5 text-[13px] text-muted-foreground">
           All booked customer test drives and viewings. Schedule new ones and
           see what is coming up.
         </p>

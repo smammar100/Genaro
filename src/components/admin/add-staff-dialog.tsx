@@ -375,7 +375,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                   {filtered.map((cap) => (
                     <label
                       key={cap}
-                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/30"
+                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-[#f7f7f7]"
                     >
                       <Checkbox
                         checked={caps.has(cap)}

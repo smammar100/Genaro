@@ -74,12 +74,12 @@ export function ComplianceCard({
     <Card className="flex flex-col gap-3 p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
-          <ShieldCheck className="size-4 text-emerald-600" />
+          <ShieldCheck className="size-4 text-[#014b40]" />
           Compliance &amp; Verification
         </h2>
         <div className="flex items-center gap-2">
           {sources ? (
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <span className="text-[13px] font-medium text-muted-foreground">
               DVLA {sources.dvla === "ok" ? "✓" : "✗"} · DVSA{" "}
               {sources.dvsa === "ok" ? "✓" : sources.dvsa === "missing_credentials" ? "—" : "✗"}{" "}
               · AT{" "}
@@ -247,14 +247,14 @@ function StatusTile({
 }) {
   const badgeClass =
     tone === "good"
-      ? "border-transparent bg-emerald-100 text-emerald-800"
+      ? "border-transparent bg-[#affebf] text-[#014b40]"
       : tone === "bad"
-        ? "border-transparent bg-rose-100 text-rose-800"
+        ? "border-transparent bg-[#fed1d7] text-[#8e0b21]"
         : "border-transparent bg-muted text-muted-foreground";
   return (
     <div className="flex items-center justify-between gap-3 rounded-md border bg-card px-3 py-2">
       <div>
-        <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="text-[13px] font-medium text-muted-foreground">
           {label}
         </div>
         <div className="mt-0.5 text-xs text-muted-foreground">{subtitle}</div>
@@ -293,7 +293,7 @@ function EditableField({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <label className="text-[13px] font-medium text-muted-foreground">
         {label}
       </label>
       <Input

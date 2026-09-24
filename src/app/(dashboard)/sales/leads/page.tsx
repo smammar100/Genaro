@@ -595,11 +595,11 @@ export default function LeadsPage() {
     : null;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-xl font-semibold">Leads</h1>
+          <p className="mt-0.5 text-[13px] text-muted-foreground">
             Every new buyer enquiry in one list. Capture, assign, and follow up
             so no lead goes cold.
           </p>
@@ -607,7 +607,7 @@ export default function LeadsPage() {
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="mr-1.5 h-4 w-4" />
+              <Plus className="h-4 w-4" />
               Create Lead
             </Button>
           </DialogTrigger>
@@ -757,7 +757,7 @@ export default function LeadsPage() {
         <div className="grid gap-4 lg:grid-cols-[320px_1fr] lg:items-start">
           {/* LEFT — search, status + source filters, scrollable lead list */}
           <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-2 rounded-lg border bg-card p-3 shadow-sm">
+            <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-[0_1px_0_rgba(0,0,0,.05)]">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -848,10 +848,10 @@ export default function LeadsPage() {
                       aria-selected={isActive}
                       onClick={() => setSelectedId(l.id)}
                       className={cn(
-                        "flex w-full shrink-0 items-center gap-2.5 rounded-lg border bg-card p-2.5 text-left transition-colors",
+                        "flex w-full shrink-0 items-center gap-2.5 rounded-lg border border-border p-2.5 text-left transition-colors",
                         isActive
-                          ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                          : "border-border hover:bg-muted/50",
+                          ? "bg-[#f1f1f1] dark:bg-muted"
+                          : "bg-card hover:bg-[#f7f7f7] dark:hover:bg-muted/50",
                       )}
                     >
                       <Avatar size="sm">
@@ -897,12 +897,12 @@ export default function LeadsPage() {
           {/* RIGHT — full follow-up panel for the selected lead */}
           <div className="lg:sticky lg:top-4">
             {!selected ? (
-              <div className="flex h-[320px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-card text-center text-muted-foreground">
+              <div className="flex h-[320px] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-card text-center text-muted-foreground">
                 <UserPlus className="size-6" />
                 <p className="text-sm">Select a lead to follow up.</p>
               </div>
             ) : (
-              <div className="flex flex-col gap-4 rounded-xl border bg-card p-5 shadow-sm">
+              <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 shadow-[0_1px_0_rgba(0,0,0,.05)]">
                 {/* Header */}
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -1026,7 +1026,7 @@ export default function LeadsPage() {
                       disabled={creatingDeal || !selected.vehicleId}
                       onClick={() => void handleCreateDeal()}
                     >
-                      <Plus className="mr-1.5 h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                       {creatingDeal ? "Opening…" : "Create deal in pipeline"}
                     </Button>
                     <Button

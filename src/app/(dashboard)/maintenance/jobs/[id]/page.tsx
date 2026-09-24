@@ -17,7 +17,7 @@ import type {
   Vehicle,
 } from "@/lib/types";
 import { MAINTENANCE_STATUSES } from "@/lib/constants";
-import { Card } from "@/components/ui/card";
+import { Section, SectionStack } from "@/components/ui/section";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -121,20 +121,19 @@ export default function MaintenanceJobDetailPage({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-[784px] flex-col gap-4 pt-2">
       <Button asChild variant="ghost" size="sm" className="-ml-2 self-start">
         <Link href="/maintenance">
           <ChevronLeft className="mr-1 h-4 w-4" /> Back to maintenance
         </Link>
       </Button>
 
-      <Card className="flex flex-col gap-3 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
+            <h1 className="text-xl font-semibold">
               Maintenance Job
             </h1>
-            <p className="text-sm text-muted-foreground">{job.description}</p>
+            <p className="text-[13px] text-muted-foreground">{job.description}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {vehicle && <RegPlate registration={vehicle.registration} />}
@@ -173,15 +172,22 @@ export default function MaintenanceJobDetailPage({
           </div>
         </div>
 
-        <div className="grid gap-2 text-xs sm:grid-cols-3">
+      <SectionStack className="mt-4">
+      <Section
+        title="Job details"
+        description="Costs and due date for this job."
+      >
+        <div className="grid gap-2 text-[13px] sm:grid-cols-3">
           <KV label="Estimated cost" value={formatCurrency(job.estimatedCost)} />
           <KV label="Actual cost" value={formatCurrency(job.actualCost)} />
           <KV label="Due date" value={job.dueDate ?? "—"} />
         </div>
-      </Card>
+      </Section>
 
-      <Card className="flex flex-col gap-3 p-5">
-        <h2 className="text-sm font-semibold">Notes &amp; Activity</h2>
+      <Section
+        title="Notes & Activity"
+        description="Updates, quotes and parts logged against this job."
+      >
         <div className="flex flex-col gap-2">
           <div className="flex gap-2">
             <Select value={noteType} onValueChange={(v) => setNoteType(v as JobNoteType)}>
@@ -216,10 +222,10 @@ export default function MaintenanceJobDetailPage({
               const author = users.find((u) => u.id === n.userId);
               const nt = NOTE_TYPES.find((t) => t.value === n.noteType);
               return (
-                <div key={n.id} className="rounded border bg-muted/30 p-3 text-sm">
+                <div key={n.id} className="rounded-lg border p-3 text-[13px]">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs uppercase">
+                      <Badge variant="secondary" className="text-xs">
                         {nt?.label ?? n.noteType}
                       </Badge>
                       <span className="text-xs font-medium">
@@ -236,15 +242,16 @@ export default function MaintenanceJobDetailPage({
             })}
           </div>
         )}
-      </Card>
+      </Section>
+      </SectionStack>
     </div>
   );
 }
 
 function KV({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded border p-2">
-      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+    <div className="rounded-lg bg-muted p-3">
+      <div className="text-[13px] font-medium text-muted-foreground">{label}</div>
       <div className="mt-1 font-medium">{value}</div>
     </div>
   );

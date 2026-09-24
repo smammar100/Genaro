@@ -155,7 +155,7 @@ export default function AdvertisersPage() {
     <div className="space-y-4">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold">
+          <h1 className="flex items-center gap-2 text-xl font-semibold">
             <Building2 className="size-5" /> Advertisers
           </h1>
           <p className="text-sm text-muted-foreground">

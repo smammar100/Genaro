@@ -73,7 +73,7 @@ export function FeaturePicker({ selected, onChange }: FeaturePickerProps) {
     <div className="flex flex-col gap-3">
       {/* Header: count + clear all */}
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="text-[13px] font-medium">
           {selected.length} feature{selected.length === 1 ? "" : "s"} selected
         </span>
         {selected.length > 0 && (
@@ -88,7 +88,7 @@ export function FeaturePicker({ selected, onChange }: FeaturePickerProps) {
       </div>
 
       {/* Category tabs with selected-count badges */}
-      <div className="flex flex-wrap gap-1 rounded-lg bg-muted/50 p-1">
+      <div className="flex flex-wrap gap-1">
         {FEATURE_CATEGORIES.map((cat) => {
           const n = selectedInCat(cat);
           return (
@@ -100,10 +100,10 @@ export function FeaturePicker({ selected, onChange }: FeaturePickerProps) {
                 setQuery("");
               }}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition",
+                "inline-flex h-7 items-center gap-1.5 rounded-lg px-3 text-[13px] transition",
                 active === cat
-                  ? "bg-background shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "bg-[#ebebeb] font-medium text-foreground"
+                  : "text-[#4a4a4a] hover:bg-[#f1f1f1]",
               )}
             >
               <span
@@ -114,7 +114,7 @@ export function FeaturePicker({ selected, onChange }: FeaturePickerProps) {
               />
               {cat}
               {n > 0 && (
-                <span className="rounded-full bg-primary/15 px-1.5 text-2xs font-semibold text-primary">
+                <span className="rounded-md bg-black/[0.06] px-1.5 text-xs font-medium text-[#303030]">
                   {n}
                 </span>
               )}
@@ -138,7 +138,7 @@ export function FeaturePicker({ selected, onChange }: FeaturePickerProps) {
           <button
             type="button"
             onClick={() => (allInViewOn ? removeMany(items) : addMany(items))}
-            className="shrink-0 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium transition hover:bg-muted"
+            className="shrink-0 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium transition hover:bg-muted"
           >
             {allInViewOn ? "Clear all in view" : "Select all in view"}
           </button>
@@ -174,11 +174,11 @@ export function FeaturePicker({ selected, onChange }: FeaturePickerProps) {
 
       {/* Running selected summary */}
       <div className="border-t border-border pt-3">
-        <div className="mb-1.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="mb-1.5 text-[13px] font-medium">
           Selected ({selected.length})
         </div>
         {selected.length === 0 ? (
-          <div className="rounded-md border border-dashed px-3 py-3 text-center text-xs text-muted-foreground">
+          <div className="rounded-lg bg-muted px-3 py-3 text-center text-xs text-muted-foreground">
             No features selected, pick from the categories above.
           </div>
         ) : (

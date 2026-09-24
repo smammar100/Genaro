@@ -18,6 +18,7 @@ import type {
 } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -36,7 +37,7 @@ import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import { toast } from "@/lib/toast";
 import { DragHandle } from "@/components/shared/drag-handle";
 
-// Per-stage accent (column top-bar + dot). The shipped stages keep the colours
+// Per-stage accent dot (Shopify-style: no coloured column top-bars). The shipped stages keep the colours
 // they've always had; user-added stages cycle through the rest by position, so
 // a new column never renders unstyled (GEN-65).
 const STAGE_META: Record<string, { dot: string; bar: string }> = {
@@ -169,10 +170,10 @@ export default function SalesPipelinePage() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-xl font-semibold">
             Sales Pipeline
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="mt-0.5 text-[13px] text-muted-foreground">
             Track every deal from new lead to completed sale. Stages are
             yours to shape: rename, reorder, add or remove them in Settings.
           </p>
@@ -222,7 +223,7 @@ export default function SalesPipelinePage() {
           description="Convert a lead into an appointment, then a deal will appear."
         />
       ) : (
-        <div className="grid auto-cols-[244px] grid-flow-col gap-3 overflow-x-auto pb-2">
+        <div className="grid auto-cols-[260px] grid-flow-col gap-3 overflow-x-auto pb-2">
           {stages.map((stage, stageIndex) => {
             const list = grouped[stage.slug] ?? [];
             const meta = metaFor(stage.slug, stageIndex);
@@ -230,7 +231,7 @@ export default function SalesPipelinePage() {
             return (
               <div
                 key={stage.slug}
-                className="flex flex-col gap-2 rounded-lg transition-shadow"
+                className="flex flex-col gap-2 rounded-xl bg-[#f7f7f7] p-2 transition-shadow dark:bg-muted/40"
                 onDragOver={(e) => {
                   e.preventDefault();
                   e.currentTarget.classList.add("ring-1", "ring-primary");
@@ -245,23 +246,16 @@ export default function SalesPipelinePage() {
                   if (dealId) void handleMove(dealId, stage.slug);
                 }}
               >
-                <div
-                  className={cn(
-                    "flex flex-col gap-0.5 rounded-md border border-t-2 bg-card px-2.5 py-2",
-                    meta.bar,
-                  )}
-                >
+                <div className="flex flex-col gap-0.5 px-1.5 pt-1">
                   <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
+                    <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold">
                       <span className={cn("size-2 rounded-full", meta.dot)} />
                       {stage.label}
                     </span>
-                    <span className="rounded-full bg-background px-1.5 text-2xs font-medium tabular-nums text-muted-foreground">
-                      {list.length}
-                    </span>
+                    <Badge className="tabular-nums">{list.length}</Badge>
                   </div>
                   {total > 0 ? (
-                    <span className="text-2xs tabular-nums text-muted-foreground">
+                    <span className="text-xs tabular-nums text-muted-foreground">
                       {fmtTotal(total)}
                     </span>
                   ) : null}
@@ -269,7 +263,7 @@ export default function SalesPipelinePage() {
 
                 <div className="flex min-h-[3rem] flex-col gap-2">
                   {list.length === 0 ? (
-                    <div className="rounded-lg border border-dashed p-3 text-center text-2xs text-muted-foreground">
+                    <div className="rounded-lg border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
                       No deals
                     </div>
                   ) : (
@@ -294,7 +288,7 @@ export default function SalesPipelinePage() {
                       return (
                         <Card
                           key={d.id}
-                          className="group/card relative cursor-grab overflow-hidden border bg-card p-0 transition-shadow hover:shadow-md active:cursor-grabbing"
+                          className="group/card relative cursor-grab overflow-hidden rounded-[10px] border border-border bg-card p-0 shadow-none transition-colors hover:border-[#c9c9c9] active:cursor-grabbing"
                           draggable
                           onDragStart={(e) => {
                             e.dataTransfer.setData("text/deal-id", d.id);

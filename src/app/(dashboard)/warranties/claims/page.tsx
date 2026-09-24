@@ -10,6 +10,7 @@ import { warrantyService } from "@/lib/services/warranty-service";
 import type { Vehicle, Warranty, WarrantyClaim } from "@/lib/types";
 import { useRealtimeTable } from "@/hooks/use-realtime-table";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { DataGridSearchBar } from "@/components/data-grid";
@@ -140,58 +141,60 @@ export default function ClaimsPage() {
   }, [claims, vehicles, warranties, filter, query]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Claims</h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+          <h1 className="text-xl font-semibold">Claims</h1>
+          <p className="mt-0.5 max-w-2xl text-[13px] text-muted-foreground">
             Customer claims raised against active warranties. Track each one from
             raised through to resolution.
           </p>
         </div>
         <Button type="button" onClick={() => setNewClaimOpen(true)}>
-          <Plus className="mr-1.5 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           File claim
         </Button>
       </header>
 
       <KpiStrip refreshKey={refreshKey} />
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <FilterChips
-          options={filterOptions}
-          activeValue={filter}
-          onChange={setFilter}
-        />
-        <DataGridSearchBar
-          value={query}
-          onChange={setQuery}
-          placeholder="Search customer, vehicle, issue…"
-          className="w-72"
-        />
-      </div>
+      <Card className="gap-0 overflow-hidden rounded-xl p-0 shadow-[0_1px_0_rgba(0,0,0,.05)]">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+          <FilterChips
+            options={filterOptions}
+            activeValue={filter}
+            onChange={setFilter}
+          />
+          <DataGridSearchBar
+            value={query}
+            onChange={setQuery}
+            placeholder="Search customer, vehicle, issue…"
+            className="w-72"
+          />
+        </div>
 
-      {!rows ? (
-        <Skeleton className="h-72" />
-      ) : rows.length === 0 ? (
-        <EmptyState
-          icon={ShieldAlert}
-          title="No claims match"
-          description={
-            query
-              ? "Try a different search term or clear the filter."
-              : "Customer claims will appear here when filed against a warranty."
-          }
-        />
-      ) : (
-        <ClaimsTable
-          rows={rows}
-          onRowClick={(c) => {
-            const w = warranties.find((x) => x.id === c.warrantyId);
-            if (w) setSheetWarranty(w);
-          }}
-        />
-      )}
+        {!rows ? (
+          <Skeleton className="m-4 h-72" />
+        ) : rows.length === 0 ? (
+          <EmptyState
+            icon={ShieldAlert}
+            title="No claims match"
+            description={
+              query
+                ? "Try a different search term or clear the filter."
+                : "Customer claims will appear here when filed against a warranty."
+            }
+          />
+        ) : (
+          <ClaimsTable
+            rows={rows}
+            onRowClick={(c) => {
+              const w = warranties.find((x) => x.id === c.warrantyId);
+              if (w) setSheetWarranty(w);
+            }}
+          />
+        )}
+      </Card>
 
       <NewClaimDialog
         open={newClaimOpen}

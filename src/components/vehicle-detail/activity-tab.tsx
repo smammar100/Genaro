@@ -101,19 +101,19 @@ const CAT_LABEL: Record<Cat, string> = {
 
 const CAT_PILL: Record<Cat, string> = {
   status: "bg-zinc-100 text-zinc-600 dark:bg-zinc-500/15 dark:text-zinc-300",
-  costs: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-  photos: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
-  listing: "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
-  enquiries: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  costs: "bg-[#fff1c2] text-[#4f4700] dark:bg-amber-500/15 dark:text-amber-300",
+  photos: "bg-[#d5ebff] text-[#003a5a] dark:bg-sky-500/15 dark:text-sky-300",
+  listing: "bg-[#f1f1f1] text-[#303030] dark:bg-violet-500/15 dark:text-violet-300",
+  enquiries: "bg-[#affebf] text-[#014b40] dark:bg-emerald-500/15 dark:text-emerald-300",
   other: "bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300",
 };
 
 const TONE_BUBBLE: Record<Tone, string> = {
-  violet: "bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300",
-  amber: "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300",
-  emerald: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300",
-  rose: "bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300",
-  sky: "bg-sky-100 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300",
+  violet: "bg-[#f1f1f1] text-[#303030] dark:bg-violet-500/15 dark:text-violet-300",
+  amber: "bg-[#fff1c2] text-[#4f4700] dark:bg-amber-500/15 dark:text-amber-300",
+  emerald: "bg-[#affebf] text-[#014b40] dark:bg-emerald-500/15 dark:text-emerald-300",
+  rose: "bg-[#fed1d7] text-[#8e0b21] dark:bg-rose-500/15 dark:text-rose-300",
+  sky: "bg-[#d5ebff] text-[#003a5a] dark:bg-sky-500/15 dark:text-sky-300",
   slate: "bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300",
 };
 
@@ -255,7 +255,7 @@ export function ActivityTab({ vehicleId }: ActivityTabProps) {
         <div className="flex flex-col gap-3 px-4 pb-4">
           {grouped.map(([day, dayEntries]) => (
             <div key={day}>
-              <div className="mb-1.5 text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <div className="mb-1.5 text-xs font-semibold text-muted-foreground">
                 {day}
               </div>
               <div className="overflow-hidden rounded-xl border border-border bg-background">

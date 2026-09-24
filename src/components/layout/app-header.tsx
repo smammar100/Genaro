@@ -1,176 +1,80 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
-import { useState } from "react";
-import { titleFromPath } from "./sidebar-config";
-import { HealthIndicator } from "./health-indicator";
-import { useAuth } from "@/contexts/auth-context";
-import { useNotifications } from "@/contexts/notifications-context";
-import { vehicleService } from "@/lib/services/vehicle-service";
-import { vehicleDetailHref } from "@/lib/vehicle-nav";
-import { useReplayTour } from "@/components/onboarding/onboarding-tour";
+import { createElement } from "react";
+import { usePathname } from "next/navigation";
+import { Menu, PanelLeft } from "lucide-react";
+import { iconFromPath, titleFromPath } from "./sidebar-config";
+import { UserMenu } from "./account-menus";
 import { useIsWelcomeScreen } from "@/hooks/use-has-vehicles";
-import { toast } from "@/lib/toast";
-import { accountHandle } from "@/lib/auth/username";
+import { cn } from "@/lib/utils";
 
-export function AppHeader() {
-  const router = useRouter();
+/**
+ * The slim title bar at the top of the page panel, as in the Shopify admin:
+ * the page's nav icon and name at 13px/600. On a phone it also carries the
+ * button that opens the rail as a drawer; on desktop, while the rail is
+ * hidden, the button that brings it back. Search, notifications, the account
+ * and the connection dot live in the rail.
+ */
+export function AppHeader({
+  onOpenNav,
+  railHidden = false,
+  onShowRail,
+}: {
+  onOpenNav?: () => void;
+  /** Desktop rail hidden — show the toggle that brings it back. */
+  railHidden?: boolean;
+  onShowRail?: () => void;
+}) {
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
-  const replayTour = useReplayTour();
   const isWelcome = useIsWelcomeScreen(pathname);
-  const { notifications, unreadCount, markRead, markAllRead } =
-    useNotifications();
-  const [searchValue, setSearchValue] = useState("");
+  const PageIcon = iconFromPath(pathname);
 
-  async function onSearchSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = searchValue.trim();
-    if (!trimmed) return;
-    const v = await vehicleService.getByRegistration(trimmed);
-    if (v) {
-      router.push(vehicleDetailHref(v.id, pathname));
-      setSearchValue("");
-    } else {
-      router.push(`/vehicles?q=${encodeURIComponent(trimmed)}`);
-    }
-  }
-
-  function handleSignOut() {
-    signOut();
-    toast.success("Signed out");
-    router.push("/login");
-  }
-
-  // The user menu, shared by both headers below so the two cannot drift.
-  const userMenu = (
-    <nord-dropdown>
-      <nord-button slot="toggle" variant="plain">
-        <nord-avatar slot="start" size="s" name={user?.name ?? "User"} />
-        <span className="hidden sm:inline" suppressHydrationWarning>
-          {user?.name ?? ""}
-        </span>
-      </nord-button>
-      <nord-dropdown-group heading={user ? accountHandle(user) || undefined : undefined}>
-        <nord-dropdown-item onClick={() => router.push("/admin/settings")}>
-          Settings
-        </nord-dropdown-item>
-        <nord-dropdown-item onClick={replayTour}>
-          Replay the tour
-        </nord-dropdown-item>
-      </nord-dropdown-group>
-      <nord-dropdown-item onClick={handleSignOut}>Sign out</nord-dropdown-item>
-    </nord-dropdown>
-  );
-
-  // First-run screen: the bar carries the account and nothing else, over a
-  // transparent ground so the navy runs unbroken to the top edge.
-  //
-  // Everything else here would be a lie on that screen — the page title names
-  // a dashboard that is not being shown, and search and notifications both
-  // reach into a system with nothing in it yet.
+  // First-run screen: no rail to hold the account menu, so the row carries it.
   if (isWelcome) {
     return (
-      <nord-header slot="header" className="header-on-navy">
-        <span />
-        <div slot="end" className="flex items-center">
-          {userMenu}
-        </div>
-      </nord-header>
+      <header className="flex h-14 shrink-0 items-center justify-end px-5">
+        <UserMenu />
+      </header>
     );
   }
 
   return (
-    <nord-header slot="header" className="relative">
-      <h1 className="truncate text-base font-semibold">
+    <header
+      className={cn(
+        "flex h-11 shrink-0 items-center gap-2 border-b border-[#ebebeb] px-4",
+      )}
+    >
+      <button
+        type="button"
+        onClick={onOpenNav}
+        aria-label="Open navigation"
+        className="-ml-1.5 grid size-8 place-items-center rounded-lg text-foreground hover:bg-accent lg:hidden"
+      >
+        <Menu className="size-5" />
+      </button>
+      {railHidden && (
+        <button
+          type="button"
+          onClick={onShowRail}
+          aria-label="Show navigation"
+          title="Show navigation"
+          className="-ml-1.5 hidden size-8 place-items-center rounded-lg text-foreground hover:bg-accent lg:grid"
+        >
+          <PanelLeft className="size-4" />
+        </button>
+      )}
+      {PageIcon
+        ? createElement(PageIcon, {
+            "aria-hidden": true,
+            className: "size-4 shrink-0 text-[#4a4a4a]",
+          })
+        : null}
+      <h1
+        data-header-title=""
+        className="min-w-0 flex-1 truncate text-[13px] font-semibold text-foreground"
+      >
         {titleFromPath(pathname)}
       </h1>
-
-      <div slot="end" className="flex items-center gap-2">
-        {/* Centred on the whole bar from lg up: absolute, so the title on one
-            side and the controls on the other can change width without
-            dragging it off-centre (the host is relative for this). It stays a
-            normal end-slot item below lg — the gap between title and controls
-            there is ~200px, too narrow for a centred box to sit in without
-            overlapping them. */}
-        <form
-          id="tour-search"
-          onSubmit={onSearchSubmit}
-          className="hidden md:block lg:absolute lg:left-1/2 lg:top-1/2 lg:w-64 xl:w-80 lg:-translate-x-1/2 lg:-translate-y-1/2"
-        >
-          <nord-input
-            type="search"
-            label="Search"
-            hideLabel
-            // Server-rendered: React writes `hideLabel` as a `hidelabel`
-            // attribute Nord ignores, and hydration never re-sets the property,
-            // so the "Search" caption showed above the box. The real attribute
-            // works from the first paint.
-            {...{ "hide-label": "" }}
-            size="s"
-            placeholder="Search reg or stock ID…"
-            value={searchValue}
-            onInput={(e) =>
-              setSearchValue((e.target as HTMLInputElement).value)
-            }
-            suppressHydrationWarning
-          />
-        </form>
-
-        <HealthIndicator />
-
-        {/* The dark-mode toggle was removed with the Genaro migration: the
-            brand defines a single light system, so there is no second theme to
-            switch to.
-
-            Nord renders these square icon buttons at 36x36, under the 40px
-            desktop / 44px touch floor for a hit target. The ::before bleeds the
-            clickable area out to 44x44 without affecting layout. Neighbours sit
-            8px apart, so -4px per side makes the two areas meet exactly and
-            never overlap — the largest non-colliding extension. */}
-        <nord-dropdown>
-          <nord-button
-            className="relative before:absolute before:-inset-1"
-            slot="toggle"
-            square
-            variant="plain"
-            aria-label="Notifications"
-            hideDropdownIcon
-          >
-            <nord-icon name="navigation-notifications" />
-          </nord-button>
-          <nord-dropdown-group
-            heading={
-              unreadCount > 0
-                ? `Notifications (${unreadCount} unread)`
-                : "Notifications"
-            }
-          >
-            {notifications.length === 0 ? (
-              <nord-dropdown-item disabled>No notifications</nord-dropdown-item>
-            ) : (
-              notifications.slice(0, 5).map((n) => (
-                <nord-dropdown-item
-                  key={n.id}
-                  onClick={() => {
-                    if (!n.read) void markRead(n.id);
-                    if (n.link) router.push(n.link);
-                  }}
-                >
-                  {n.title}
-                </nord-dropdown-item>
-              ))
-            )}
-          </nord-dropdown-group>
-          {notifications.length > 0 && (
-            <nord-dropdown-item onClick={() => void markAllRead()}>
-              Mark all as read
-            </nord-dropdown-item>
-          )}
-        </nord-dropdown>
-
-        {userMenu}
-      </div>
-    </nord-header>
+    </header>
   );
 }

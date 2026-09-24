@@ -210,7 +210,7 @@ export default function DealerPartnerDetailPage({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-[1000px] flex-col gap-4">
       <Link
         href="/admin/vendors?tab=dealer-partners"
         className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -225,7 +225,7 @@ export default function DealerPartnerDetailPage({
           <Card className="flex flex-col gap-3 p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h1 className="text-2xl font-semibold tracking-tight">
+                <h1 className="text-xl font-semibold">
                   {partner.companyName ?? partner.name}
                 </h1>
                 <p className="text-sm text-muted-foreground">

@@ -31,7 +31,7 @@ import type {
 import { MAINTENANCE_STATUSES } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Chip, RowActionButton } from "@/components/ui/resource-list";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -66,9 +66,9 @@ const STATUS_META: Record<
 
 type Urgency = "overdue" | "today" | "week" | "later" | "done";
 const URGENCY_TONE: Record<Exclude<Urgency, "later" | "done">, string> = {
-  overdue: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
-  today: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-  week: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
+  overdue: "bg-[rgb(254,209,215)] text-[rgb(142,11,33)]",
+  today: "bg-[rgb(255,235,120)] text-[rgb(79,71,0)]",
+  week: "bg-[rgb(213,235,255)] text-[rgb(0,58,90)]",
 };
 const URGENCY_LABEL: Record<Exclude<Urgency, "later" | "done">, string> = {
   overdue: "Overdue",
@@ -99,7 +99,7 @@ function UrgencyBadge({ urgency }: { urgency: Urgency }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium",
         URGENCY_TONE[urgency],
       )}
     >
@@ -202,10 +202,10 @@ export default function MaintenancePage() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-xl font-semibold">
             Maintenance Pipeline
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             Track every repair and prep job through its stages, from booked to
             completed, across all your stock.
           </p>
@@ -259,16 +259,16 @@ export default function MaintenancePage() {
                   setOverLane(null);
                 }}
                 className={cn(
-                  "flex min-h-32 flex-col gap-2 rounded-xl border border-border bg-card p-2.5 transition-colors",
+                  "flex min-h-32 flex-col gap-2 rounded-xl bg-muted p-2 transition-colors",
                   dragId &&
                     overLane === status.value &&
                     "bg-primary/5 ring-2 ring-primary/40",
                 )}
               >
-                <div className="flex items-center gap-1.5 border-b border-border/60 pb-2">
+                <div className="flex items-center gap-1.5 px-1.5 pt-1 pb-0.5">
                   <Icon className={cn("h-3.5 w-3.5", tone)} />
-                  <h3 className="text-sm font-semibold">{status.label}</h3>
-                  <span className="rounded-full bg-background px-1.5 text-xs font-medium tabular-nums text-muted-foreground">
+                  <h3 className="text-[13px] font-semibold">{status.label}</h3>
+                  <span className="rounded-md bg-secondary px-1.5 text-xs font-medium tabular-nums text-muted-foreground ring-1 ring-border">
                     {list.length}
                   </span>
                 </div>
@@ -277,7 +277,7 @@ export default function MaintenancePage() {
                     <button
                       type="button"
                       onClick={() => setAddOpen(true)}
-                      className="flex shrink-0 items-center justify-center gap-1 rounded-lg border border-dashed border-border py-3 text-xs text-muted-foreground transition hover:bg-background hover:text-foreground"
+                      className="flex shrink-0 items-center justify-center gap-1 rounded-lg border border-dashed border-border py-3 text-xs text-muted-foreground transition hover:bg-card hover:text-foreground"
                     >
                       <Plus className="h-3 w-3" /> Add job
                     </button>
@@ -304,7 +304,7 @@ export default function MaintenancePage() {
                             setOverLane(null);
                           }}
                           className={cn(
-                            "group/card relative flex shrink-0 cursor-grab flex-col overflow-hidden rounded-lg border bg-card shadow-xs transition-shadow hover:shadow-md active:cursor-grabbing",
+                            "group/card relative flex shrink-0 cursor-grab flex-col overflow-hidden rounded-lg border bg-card shadow-[0_1px_0_rgba(0,0,0,.05)] transition-colors hover:border-foreground/25 active:cursor-grabbing",
                             urgency === "overdue" &&
                               "border-rose-200 dark:border-rose-500/30",
                             dragId === j.id && "opacity-50",
@@ -318,7 +318,7 @@ export default function MaintenancePage() {
                               nothing. */}
                           <DragHandle className="absolute left-0 top-1/2 z-10 -translate-y-1/2 [&_svg]:size-3" />
                           {/* Accent header — reg + job # */}
-                          <div className="flex items-center justify-between gap-2 border-b bg-muted/50 px-3 py-2">
+                          <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
                             <div className="flex min-w-0 items-baseline gap-2">
                               {v ? (
                                 <>
@@ -333,7 +333,7 @@ export default function MaintenancePage() {
                                       width, the id yields what is left. */}
                                   <Link
                                     href={vehicleDetailHref(v.id, pathname)}
-                                    className="shrink-0 font-mono text-base font-bold tracking-tight hover:underline"
+                                    className="shrink-0 font-mono text-sm font-semibold hover:underline"
                                   >
                                     {formatRegPlate(v.registration)}
                                   </Link>
@@ -348,7 +348,7 @@ export default function MaintenancePage() {
                               ) : (
                                 <Link
                                   href={`/maintenance/jobs/${j.id}`}
-                                  className="font-mono text-base font-bold tracking-tight hover:underline"
+                                  className="font-mono text-sm font-semibold hover:underline"
                                 >
                                   #{shortId(j.id)}
                                 </Link>
@@ -357,13 +357,9 @@ export default function MaintenancePage() {
                             <div className="flex shrink-0 items-center gap-1">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <button
-                                    type="button"
-                                    className="grid size-6 place-items-center rounded text-muted-foreground transition-colors hover:text-foreground"
-                                    aria-label="Job actions"
-                                  >
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </button>
+                                  <RowActionButton aria-label="Job actions">
+                                    <MoreHorizontal />
+                                  </RowActionButton>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem
@@ -396,7 +392,7 @@ export default function MaintenancePage() {
                           <div
                             role="button"
                             tabIndex={0}
-                            className="flex cursor-pointer flex-col gap-2 p-3 transition-colors hover:bg-muted/30"
+                            className="flex cursor-pointer flex-col gap-2 p-3 transition-colors hover:bg-muted"
                             onClick={(e) => {
                               // A completed drag doesn't fire a click, but guard
                               // anyway; also ignore clicks bubbling from any
@@ -418,32 +414,24 @@ export default function MaintenancePage() {
                             }}
                           >
                             {cardTotal ? (
-                              <span className="text-base font-semibold tabular-nums">
+                              <span className="text-sm font-semibold tabular-nums">
                                 {formatCurrency(cardTotal)}
                               </span>
                             ) : null}
 
-                            <p className="line-clamp-2 text-sm font-medium leading-snug">
+                            <p className="line-clamp-2 text-[13px] leading-snug">
                               {j.description}
                             </p>
 
                             {(vendor || v) && (
                               <div className="flex flex-wrap gap-1">
                                 {vendor && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="rounded-full px-2 py-0.5 text-xs font-normal"
-                                  >
-                                    {vendor.name}
-                                  </Badge>
+                                  <Chip>{vendor.name}</Chip>
                                 )}
                                 {v && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="rounded-full px-2 py-0.5 text-xs font-normal"
-                                  >
+                                  <Chip>
                                     {v.make} {v.model}
-                                  </Badge>
+                                  </Chip>
                                 )}
                               </div>
                             )}

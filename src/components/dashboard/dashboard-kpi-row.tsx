@@ -326,37 +326,34 @@ export function DashboardKpiRow() {
   if (visibleKpis.length === 0) return null;
 
   return (
-    // One bordered box divided into cells by 1px gaps that let the container's
-    // own background show through, rather than six separate cards: the strip
-    // reads as a single instrument panel, and there are no stacked hairlines
-    // between neighbouring cells.
-    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-3 xl:grid-cols-6">
+    // Shopify Home metric strip: ONE card, one row of metrics split by
+    // vertical dividers; wraps to 2 / 3 columns on narrower screens.
+    <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-[#e3e3e3] bg-card p-1 shadow-[0_1px_0_rgba(0,0,0,.05)] sm:grid-cols-3 xl:flex xl:items-stretch xl:divide-x xl:divide-[#e3e3e3]">
       {visibleKpis.map((k) => {
         const delta = stats && k.delta ? k.delta(stats) : null;
         return (
           <Link
-            className="flex flex-col gap-2 bg-white px-[18px] pt-4 pb-[18px] no-underline transition-colors hover:bg-surface"
+            className="flex min-w-0 flex-1 flex-col gap-1 rounded-lg px-3 py-2 no-underline transition-colors hover:bg-[#f7f7f7]"
             href={k.href}
             key={k.key}
           >
-            <span className="truncate text-[11px] font-medium uppercase tracking-[0.06em] text-muted-text">
+            <span className="truncate text-[13px] font-medium text-muted-foreground underline decoration-[#b5b5b5] decoration-dotted underline-offset-4">
               {k.label}
             </span>
             <span className="flex items-baseline gap-2">
               {stats === null ? (
-                <Skeleton className="h-[30px] w-14" />
+                <Skeleton className="h-7 w-14" />
               ) : (
-                <span className="text-[30px] font-medium leading-none tracking-[-0.03em] tabular-nums">
+                <span className="text-xl font-bold leading-7 text-foreground tabular-nums">
                   {k.value(stats)}
                 </span>
               )}
-              {delta ? (
+              {delta && delta.dir !== "flat" ? (
                 <span
                   className={cn(
                     "text-[12px] font-medium tabular-nums",
-                    delta.dir === "up" && "text-status-clear",
-                    delta.dir === "down" && "text-status-blocked",
-                    delta.dir === "flat" && "text-muted-text",
+                    delta.dir === "up" && "text-[#014b40]",
+                    delta.dir === "down" && "text-[#8e0b21]",
                   )}
                 >
                   {delta.text}

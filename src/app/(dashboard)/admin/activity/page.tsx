@@ -79,15 +79,15 @@ const ACTION_TYPES: ActivityActionType[] = [
 
 // Each action type maps to an icon + a soft color tint for its timeline node.
 const TINT = {
-  blue: "bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300",
-  sky: "bg-sky-100 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300",
-  violet: "bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300",
-  emerald: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300",
-  rose: "bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300",
-  amber: "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300",
-  teal: "bg-teal-100 text-teal-600 dark:bg-teal-500/15 dark:text-teal-300",
-  indigo: "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300",
-  orange: "bg-orange-100 text-orange-600 dark:bg-orange-500/15 dark:text-orange-300",
+  blue: "bg-[#f1f1f1] text-[#4a4a4a]",
+  sky: "bg-[#f1f1f1] text-[#4a4a4a]",
+  violet: "bg-[#f1f1f1] text-[#4a4a4a]",
+  emerald: "bg-[#f1f1f1] text-[#4a4a4a]",
+  rose: "bg-[#f1f1f1] text-[#4a4a4a]",
+  amber: "bg-[#f1f1f1] text-[#4a4a4a]",
+  teal: "bg-[#f1f1f1] text-[#4a4a4a]",
+  indigo: "bg-[#f1f1f1] text-[#4a4a4a]",
+  orange: "bg-[#f1f1f1] text-[#4a4a4a]",
   slate: "bg-muted text-muted-foreground",
 } as const;
 
@@ -267,7 +267,7 @@ export default function ActivityLogPage() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Activity Log</h1>
+        <h1 className="text-xl font-semibold">Activity Log</h1>
         <p className="text-sm text-muted-foreground">
           A company-wide audit trail of every action taken across the system.
           Filter by category, user, or date.
@@ -294,7 +294,7 @@ export default function ActivityLogPage() {
         <Card className="flex flex-col gap-6 p-5">
           {groups.map(([label, items]) => (
             <div key={label}>
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
                 {label}
               </h2>
               <ol className="flex flex-col">

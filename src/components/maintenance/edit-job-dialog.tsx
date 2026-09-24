@@ -72,7 +72,7 @@ function CostInput({
   placeholder?: string;
 }) {
   return (
-    <div className="flex h-9 items-center rounded-md border bg-background px-3 transition-colors focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30">
+    <div className="flex h-8 items-center rounded-lg border border-[#8a8a8a] bg-card px-3 transition-colors focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30">
       <span className="text-sm text-muted-foreground">£</span>
       <input
         type="number"
@@ -82,7 +82,7 @@ function CostInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="ml-1.5 w-full bg-transparent text-sm tabular-nums outline-none placeholder:text-muted-foreground"
+        className="ml-1.5 w-full bg-transparent text-[13px] tabular-nums outline-none placeholder:text-muted-foreground"
       />
     </div>
   );
@@ -299,7 +299,7 @@ export function EditJobDialog({
 
         {/* Description */}
         <div className="px-5 pb-4">
-          <label className="text-xs font-medium text-muted-foreground">
+          <label className="text-[13px] font-medium">
             Description
           </label>
           <Textarea
@@ -311,7 +311,7 @@ export function EditJobDialog({
           />
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t bg-muted/40 px-5 py-3">
+        <div className="flex items-center justify-end gap-2 border-t px-5 py-3">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

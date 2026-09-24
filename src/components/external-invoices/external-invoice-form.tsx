@@ -341,7 +341,7 @@ export function ExternalInvoiceForm({
                     "rounded-md border px-3 py-1.5 text-sm transition-colors " +
                     (kind === k
                       ? "border-foreground bg-foreground text-background"
-                      : "border-border text-muted-foreground hover:bg-muted/40")
+                      : "border-border text-muted-foreground hover:bg-[#f7f7f7]")
                   }
                 >
                   {INVOICE_KIND_LABELS[k]}
@@ -418,7 +418,7 @@ export function ExternalInvoiceForm({
               Vehicle <span className="text-destructive">*</span>
             </Label>
             {fixedVehicleId ? (
-              <div className="flex items-center gap-2.5 rounded-md border bg-muted/30 px-3 py-2">
+              <div className="flex items-center gap-2.5 rounded-lg border bg-[#f7f7f7] px-3 py-2">
                 {selectedVehicle ? (
                   <>
                     <RegPlate registration={selectedVehicle.registration} size="sm" />
@@ -428,7 +428,7 @@ export function ExternalInvoiceForm({
                     <span className="text-xs text-muted-foreground">
                       · {selectedVehicle.stockId}
                     </span>
-                    <span className="ml-auto text-2xs font-medium uppercase tracking-wide text-muted-foreground">
+                    <span className="ml-auto text-xs font-medium text-muted-foreground">
                       Locked
                     </span>
                   </>

@@ -1,21 +1,6 @@
 "use client";
 
-import {
-  Calendar as CalendarIcon,
-  Car,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  ChevronsUpDown,
-  Hash,
-  Phone,
-  Plus,
-  PoundSterling,
-  Tag,
-  Type,
-  User as UserIcon,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronsUpDown, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -45,36 +30,11 @@ import {
   VehicleStatusCell,
   WarrantyStatusCell,
 } from "./cells";
-import type { ColumnDef, ColType, SelectionState } from "./types";
+import type { ColumnDef, SelectionState } from "./types";
 import { DENSITY_ROW_HEIGHT, type Density } from "./density";
 
 /** Row height fallback (matches the legacy h-13 = 3.25rem). */
 const ROW_H = "var(--dg-row-h, 3.25rem)";
-
-const TYPE_ICON: Record<ColType, LucideIcon> = {
-  vehicle: Car,
-  user: UserIcon,
-  text: Type,
-  phone: Phone,
-  number: Hash,
-  currency: PoundSterling,
-  date: CalendarIcon,
-  dateRange: CalendarIcon,
-  boolean: Check,
-  select: Tag,
-  channels: Tag,
-  vehicleStatus: Tag,
-  salesStage: Tag,
-  leadStatus: Tag,
-  appointmentStatus: Tag,
-  appointmentOutcome: Tag,
-  warrantyStatus: Tag,
-  invoiceStatus: Tag,
-  returnStatus: Tag,
-  returnResolution: Tag,
-  atIndicator: Tag,
-  custom: Type,
-};
 
 function alignFor(col: ColumnDef<unknown>): "left" | "right" | "center" {
   if (col.align) return col.align;
@@ -221,7 +181,7 @@ export function DataGridHeaderRow<T>({
       <tr>
         {selection ? (
           <th
-            className="sticky left-0 z-30 border-b border-r bg-card shadow-[2px_0_4px_-2px_var(--shadow-color)]"
+            className="sticky left-0 z-30 border-b bg-[#f7f7f7] shadow-[2px_0_4px_-2px_var(--shadow-color)]"
             style={{ width: 40 }}
           >
             <div className="flex h-8 items-center justify-center">
@@ -234,7 +194,6 @@ export function DataGridHeaderRow<T>({
           </th>
         ) : null}
         {cols.map((c) => {
-          const Icon = c.headerIcon ?? TYPE_ICON[c.type];
           const align = alignFor(c as ColumnDef<unknown>);
           // In fluid mode, widths become min-widths so columns can grow to
           // fill the available width via the table's `w-full` rule. In
@@ -260,8 +219,7 @@ export function DataGridHeaderRow<T>({
             : ChevronsUpDown;
           const inner = (
             <>
-              <Icon className="h-3 w-3 shrink-0" />
-              <span className="truncate text-foreground">{c.label}</span>
+              <span className="truncate text-[#4a4a4a]">{c.label}</span>
               {isSortable ? (
                 <SortIcon
                   className={cn(
@@ -287,9 +245,9 @@ export function DataGridHeaderRow<T>({
                     : undefined
               }
               className={cn(
-                "border-b border-r px-3 text-left font-medium",
+                "border-b bg-[#f7f7f7] px-3 text-left font-medium",
                 c.sticky &&
-                  "sticky z-30 bg-card shadow-[2px_0_4px_-2px_var(--shadow-color)]",
+                  "sticky z-30 bg-[#f7f7f7] shadow-[2px_0_4px_-2px_var(--shadow-color)]",
               )}
               style={{ ...widthStyle, ...stickyStyle }}
             >
@@ -389,7 +347,7 @@ export function DataGridRow<T>({
             // pinned and scrollable content.
             // bg-card keeps it opaque AND white (GEN-62); the row's tints
             // are mixed into --card so sticky cells match the normal ones.
-            "sticky left-0 z-10 border-b border-r bg-card text-center",
+            "sticky left-0 z-10 border-b bg-card text-center",
             "shadow-[2px_0_4px_-2px_var(--shadow-color)]",
             isSelected &&
               "bg-[color-mix(in_srgb,var(--primary)_5%,var(--card))]",
@@ -400,18 +358,11 @@ export function DataGridRow<T>({
             className="flex items-center justify-center"
             style={{ height: ROW_H }}
           >
-            <span className="text-xs tabular-nums text-muted-foreground group-hover/row:hidden group-has-[[data-state=checked]]/row:hidden">
-              {index + 1}
-            </span>
-            <Checkbox
+                        <Checkbox
               checked={isSelected}
               onCheckedChange={() => selection.toggle(rowId)}
               aria-label={`Select row ${index + 1}`}
-              className={cn(
-                "hidden group-hover/row:inline-flex",
-                isSelected && "inline-flex",
-              )}
-              onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
             />
           </div>
         </td>
@@ -422,7 +373,7 @@ export function DataGridRow<T>({
           <td
             key={c.key}
             className={cn(
-              "border-b border-r px-3",
+              "border-b px-3",
               // Sticky data cells: SOLID bg + drop shadow. States mix the
               // row's tints into --card so they stay opaque (no bleed) while
               // matching the normal cells exactly (GEN-62).

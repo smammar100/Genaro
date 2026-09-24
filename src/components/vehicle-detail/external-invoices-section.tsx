@@ -197,10 +197,10 @@ export function ExternalInvoicesSection({ vehicleId }: Props) {
                 {/* Kind chip */}
                 <span
                   className={cn(
-                    "inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide",
+                    "inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-xs font-medium",
                     r.invoiceKind === "auction_purchase"
-                      ? "bg-amber-100 text-amber-800"
-                      : "bg-indigo-100 text-indigo-800",
+                      ? "bg-[#fff1c2] text-[#4f4700]"
+                      : "bg-[#f1f1f1] text-[#303030]",
                   )}
                 >
                   {INVOICE_KIND_LABELS[r.invoiceKind]}
@@ -327,7 +327,7 @@ function InvoiceStat({
       )}
     >
       <div className="flex items-center justify-between">
-        <span className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="text-xs font-medium text-muted-foreground">
           {label}
         </span>
         <Icon className="size-4 text-muted-foreground" />

@@ -26,22 +26,23 @@ import { cn } from "@/lib/utils";
 
 type PillTone = "good" | "warn" | "bad" | "info" | "purple" | "neutral";
 
+// Polaris badge tones (success / warning / critical / info / neutral).
 const PILL_CLASSES: Record<PillTone, string> = {
-  good: "bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200",
-  warn: "bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-200",
-  bad: "bg-rose-100 text-rose-900 dark:bg-rose-500/20 dark:text-rose-200",
-  info: "bg-blue-100 text-blue-900 dark:bg-blue-500/20 dark:text-blue-200",
-  purple: "bg-violet-100 text-violet-900 dark:bg-violet-500/20 dark:text-violet-200",
-  neutral: "bg-muted text-muted-foreground",
+  good: "bg-[#affebf] text-[#014b40]",
+  warn: "bg-[#ffeb78] text-[#4f4700]",
+  bad: "bg-[#fed1d7] text-[#8e0b21]",
+  info: "bg-[#d5ebff] text-[#003a5a]",
+  purple: "bg-[#f1ebff] text-[#5700d1]",
+  neutral: "bg-black/[0.06] text-[#303030]",
 };
 
 const DOT_CLASSES: Record<PillTone, string> = {
-  good: "bg-emerald-500",
-  warn: "bg-amber-500",
-  bad: "bg-rose-500",
-  info: "bg-blue-500",
-  purple: "bg-violet-500",
-  neutral: "bg-muted-foreground",
+  good: "bg-[#014b40]",
+  warn: "bg-[#4f4700]",
+  bad: "bg-[#8e0b21]",
+  info: "bg-[#003a5a]",
+  purple: "bg-[#5700d1]",
+  neutral: "bg-[#616161]",
 };
 
 interface PillProps {
@@ -51,12 +52,12 @@ interface PillProps {
   children: ReactNode;
 }
 
-export function Pill({ tone = "neutral", dot = true, className, children }: PillProps) {
+export function Pill({ tone = "neutral", dot = false, className, children }: PillProps) {
   return (
     <Badge
       variant="secondary"
       className={cn(
-        "inline-flex items-center gap-1.5 capitalize",
+        "inline-flex items-center gap-1.5 first-letter:uppercase",
         PILL_CLASSES[tone],
         className,
       )}
@@ -90,32 +91,29 @@ export function KpiCard({ icon: Icon, label, value, hint, accent }: KpiCardProps
   return (
     <Card
       size="sm"
-      className={cn(
-        "gap-2 transition-colors",
-        accent === "amber" &&
-          "border-amber-400/60 bg-amber-50 ring-amber-400/30 dark:border-amber-500/40 dark:bg-amber-500/5",
-        accent === "destructive" &&
-          "border-destructive/40 bg-destructive/5 ring-destructive/30",
-      )}
+      // Polaris metric card: plain white card. "Needs attention" is carried
+      // by the hint text tone, never by coloured borders or tinted surfaces.
+      className="gap-2"
     >
       <CardContent className="flex flex-col gap-1 p-0">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="text-[13px] font-medium text-muted-foreground underline decoration-dotted decoration-[#b5b5b5] underline-offset-4">
             {label}
           </span>
-          {Icon && (
-            <Icon
-              className={cn(
-                "h-4 w-4",
-                accent === "amber" && "text-amber-600",
-                accent === "destructive" && "text-destructive",
-                !accent && "text-muted-foreground",
-              )}
-            />
-          )}
+          {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
         </div>
-        <div className="text-2xl font-semibold tabular-nums">{value}</div>
-        {hint && <div className="text-xs text-muted-foreground">{hint}</div>}
+        <div className="text-xl font-bold tabular-nums">{value}</div>
+        {hint && (
+          <div
+            className={cn(
+              "text-xs text-muted-foreground",
+              accent === "amber" && "text-[#4f4700]",
+              accent === "destructive" && "text-[#8e0b21]",
+            )}
+          >
+            {hint}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -134,9 +132,7 @@ interface SectionDividerProps {
 export function SectionDivider({ label, trailing }: SectionDividerProps) {
   return (
     <div className="mt-6 mb-3 flex items-center gap-3">
-      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </span>
+      <span className="text-sm font-semibold text-foreground">{label}</span>
       <div className="h-px flex-1 bg-border" />
       {trailing}
     </div>
@@ -168,11 +164,11 @@ export function Panel({
   className,
 }: PanelProps) {
   return (
-    <Card size="sm" className={cn("gap-3", className)}>
+    <Card size="sm" className={cn("gap-4", className)}>
       {(title || action) && (
         <CardHeader className="flex flex-row items-start justify-between gap-3 p-0">
           <div className="flex flex-col gap-1">
-            {title && <CardTitle>{title}</CardTitle>}
+            {title && <CardTitle className="text-sm font-semibold">{title}</CardTitle>}
             {subtitle && <CardDescription>{subtitle}</CardDescription>}
           </div>
           {action && <div className="shrink-0">{action}</div>}
@@ -227,12 +223,12 @@ interface FieldProps {
 export function Field({ label, children, numeric, muted, className }: FieldProps) {
   return (
     <div className={className}>
-      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <div className="text-[13px] font-medium text-muted-foreground">
         {label}
       </div>
       <div
         className={cn(
-          "mt-1 text-sm",
+          "mt-1 text-[13px] text-foreground",
           numeric && "tabular-nums",
           muted && "text-muted-foreground",
         )}

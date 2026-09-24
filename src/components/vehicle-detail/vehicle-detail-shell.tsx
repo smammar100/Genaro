@@ -90,7 +90,7 @@ export function VehicleDetailShell({
           spreads all 8 tabs to equal widths across the whole content
           area — no stranded pill, no bare gap after "Activity".
           overflow-x-auto keeps it scrollable on narrow viewports. */}
-      <TabsList className="w-full overflow-x-auto">
+      <TabsList className="max-w-full justify-start overflow-x-auto">
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="details">Details</TabsTrigger>
         <TabsTrigger value="location">Location</TabsTrigger>
@@ -169,7 +169,7 @@ export function VehicleDetailShell({
 function CountBadge({ value }: { value: number | null }) {
   if (value == null || value <= 0) return null;
   return (
-    <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-2xs font-medium tabular-nums text-muted-foreground">
+    <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-black/[0.06] px-1.5 text-2xs font-medium tabular-nums text-muted-foreground">
       {value}
     </span>
   );

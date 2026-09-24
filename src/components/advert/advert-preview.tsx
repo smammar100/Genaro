@@ -48,7 +48,7 @@ export function AdvertPreview({
     .join(" · ");
 
   return (
-    <div className="overflow-hidden rounded-xl border bg-card shadow-xs/5">
+    <div className="overflow-hidden rounded-xl border bg-card shadow-[0_1px_0_rgba(0,0,0,.05)]">
       <div className="relative aspect-[16/10] w-full bg-muted">
         {photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -65,7 +65,7 @@ export function AdvertPreview({
           />
         )}
         {advert.attentionGrabber.trim() && (
-          <span className="absolute left-2 top-2 rounded-md bg-rose-600 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-white shadow">
+          <span className="absolute left-2 top-2 rounded-lg bg-[rgb(254,209,215)] px-2 py-0.5 text-xs font-medium text-[rgb(142,11,33)]">
             {advert.attentionGrabber}
           </span>
         )}
@@ -83,7 +83,7 @@ export function AdvertPreview({
         </div>
 
         {advert.keySellingPoint.trim() && (
-          <div className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200">
+          <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-[rgb(175,254,191)] px-2 py-0.5 text-xs font-medium text-[rgb(1,75,64)]">
             <Sparkles className="h-3 w-3" /> {advert.keySellingPoint}
           </div>
         )}

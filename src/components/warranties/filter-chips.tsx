@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export interface FilterOption<T extends string> {
@@ -28,30 +27,27 @@ export function FilterChips<T extends string>({
   className,
 }: FilterChipsProps<T>) {
   return (
-    <div className={cn("flex flex-wrap items-center gap-2", className)}>
+    <div className={cn("flex flex-wrap items-center gap-1", className)}>
       {options.map((opt) => {
         const active = opt.value === activeValue;
         return (
-          <Button
+          <button
             key={opt.value}
             type="button"
-            size="sm"
-            variant={active ? "default" : "outline"}
+            aria-pressed={active}
             onClick={() => onChange(opt.value)}
-            className="h-8 gap-1.5"
+            className={cn(
+              "inline-flex h-7 items-center gap-1.5 rounded-lg px-3 text-[13px] transition-colors",
+              active
+                ? "bg-[#ebebeb] font-medium text-foreground"
+                : "text-[#4a4a4a] hover:bg-[#f1f1f1]",
+            )}
           >
             <span>{opt.label}</span>
             {typeof opt.count === "number" && (
-              <span
-                className={cn(
-                  "text-xs",
-                  active ? "opacity-80" : "text-muted-foreground",
-                )}
-              >
-                {opt.count}
-              </span>
+              <span className="text-xs text-muted-foreground">{opt.count}</span>
             )}
-          </Button>
+          </button>
         );
       })}
     </div>

@@ -29,6 +29,7 @@ import type {
 } from "@/lib/types";
 import { MAINTENANCE_STATUSES } from "@/lib/constants";
 import { Card } from "@/components/ui/card";
+import { ResourceList, ResourceListItem } from "@/components/ui/resource-list";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +53,7 @@ import {
 import { EmptyState } from "@/components/shared/empty-state";
 import { MaintenanceStatusBadge } from "@/components/shared/status-badge";
 import { RegPlate } from "@/components/shared/reg-plate";
-import { cn, formatCurrency, formatDate, formatTime12, getInitials } from "@/lib/utils";
+import { cn, formatCurrency, formatDate, formatTime12 } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 
 const schema = z.object({
@@ -225,10 +226,10 @@ export default function WorkshopPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Workshop</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-xl font-semibold">Workshop</h1>
+          <p className="text-[13px] text-muted-foreground">
             External, walk-in customer service jobs, kept separate from internal
             stock preparation.
           </p>
@@ -244,8 +245,8 @@ export default function WorkshopPage() {
           }}
         >
           <DialogTrigger asChild>
-            <Button onClick={openAdd}>
-              <Plus className="mr-1.5 h-4 w-4" /> Add Workshop Job
+            <Button size="sm" onClick={openAdd}>
+              <Plus className="mr-1 h-3.5 w-3.5" /> Add Workshop Job
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
@@ -269,7 +270,7 @@ export default function WorkshopPage() {
                   <Input
                     id={regId}
                     {...form.register("vehicleReg")}
-                    className="uppercase font-mono"
+                    className="font-mono"
                     placeholder="AB12 CDE"
                   />
                 </div>
@@ -366,51 +367,39 @@ export default function WorkshopPage() {
           return (
             <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
               {/* Job list */}
-              <div className="flex flex-col gap-1.5">
-                {jobs.map((j) => {
-                  const isSel = selected?.id === j.id;
-                  return (
-                    <button
-                      key={j.id}
-                      type="button"
-                      onClick={() => setSelectedId(j.id)}
-                      className={cn(
-                        "flex items-center gap-2.5 rounded-lg border bg-card p-2.5 text-left transition-colors",
-                        isSel
-                          ? "border-primary bg-primary/5"
-                          : "hover:bg-muted/40",
-                      )}
-                    >
-                      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-primary/10 text-2xs font-semibold text-primary">
-                        {getInitials(j.customerName)}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-sm font-medium">
-                            {j.customerName}
-                          </span>
+              <Card className="gap-0 self-start p-2">
+                <ResourceList aria-label="Workshop jobs">
+                  {jobs.map((j) => {
+                    const isSel = selected?.id === j.id;
+                    return (
+                      <ResourceListItem
+                        key={j.id}
+                        aria-current={isSel ? "true" : undefined}
+                        className={cn(isSel && "bg-[#f1f1f1]")}
+                        onClick={() => setSelectedId(j.id)}
+                        icon={<UserIcon />}
+                        title={j.customerName}
+                        description={`${j.vehicleReg} · ${formatTime12(j.scheduledTime)}`}
+                        trailing={
                           <span
                             className={cn(
                               "size-2 shrink-0 rounded-full",
                               STATUS_DOT[j.status],
                             )}
                           />
-                        </div>
-                        <div className="truncate text-xs text-muted-foreground">
-                          {j.vehicleReg} · {formatTime12(j.scheduledTime)}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                        }
+                      />
+                    );
+                  })}
+                </ResourceList>
+              </Card>
 
               {/* Booking detail */}
               {selected && (
-                <Card className="p-5">
+                <Card className="p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <h2 className="text-lg font-semibold">
+                      <h2 className="text-sm font-semibold">
                         {selected.customerName}
                       </h2>
                       {selected.customerPhone ? (
@@ -544,12 +533,12 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border bg-muted/20 p-3">
-      <div className="mb-1 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+    <div className="rounded-lg bg-muted p-3">
+      <div className="mb-1 inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
         <Icon className="size-3.5" />
         {label}
       </div>
-      <div className="text-sm">{children}</div>
+      <div className="text-[13px]">{children}</div>
     </div>
   );
 }

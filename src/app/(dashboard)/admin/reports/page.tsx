@@ -428,7 +428,7 @@ export default function ReportsPage() {
       {/* Header + primary export CTA */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-xl font-semibold">
             Reports &amp; Analytics
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -697,7 +697,7 @@ function Kpi({
 }) {
   return (
     <Card className="p-4">
-      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <div className="text-[13px] font-medium text-muted-foreground">
         {label}
       </div>
       <div className="mt-1 text-xl font-semibold tabular-nums">{value}</div>

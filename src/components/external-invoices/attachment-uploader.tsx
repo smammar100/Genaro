@@ -158,7 +158,7 @@ export function AttachmentUploader({
             "flex w-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed bg-card px-3 py-6 text-sm text-muted-foreground transition-colors",
             dragOver
               ? "border-foreground/40 bg-muted/60"
-              : "hover:bg-muted/40",
+              : "hover:bg-[#f7f7f7]",
             disabled && "cursor-not-allowed opacity-60",
           )}
         >

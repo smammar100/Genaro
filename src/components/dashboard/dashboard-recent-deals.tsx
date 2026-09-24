@@ -9,7 +9,7 @@ import { vehicleService } from "@/lib/services/vehicle-service";
 import type { SalesDeal, SalesStage, Vehicle } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VehicleImage } from "@/components/shared/vehicle-image";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, titleCase } from "@/lib/utils";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";
 
 interface DealRow extends SalesDeal {
@@ -26,14 +26,14 @@ interface DealRow extends SalesDeal {
 /** Stage badge colours, lifted from Dashboard Home.dc.html. Deal stage is a
  *  position in a sequence, so the set is wider than the three status hues. */
 const STAGE: Record<SalesStage, { label: string; bg: string; fg: string }> = {
-  new_lead: { label: "New lead", bg: "#E0F2FE", fg: "#0C4A6E" },
-  contacted: { label: "Contacted", bg: "#E0F2FE", fg: "#0C4A6E" },
-  test_drive: { label: "Test drive", bg: "#FEF9C3", fg: "#713F12" },
-  offer_made: { label: "Offer made", bg: "#FEF9C3", fg: "#713F12" },
-  deposit_taken: { label: "Deposit taken", bg: "#F3E8FF", fg: "#581C87" },
-  collection_delivery: { label: "Collection", bg: "#F3E8FF", fg: "#581C87" },
-  completed_sale: { label: "Completed", bg: "#D1FAE5", fg: "#064E3B" },
-  lost: { label: "Lost", bg: "#FEE2E2", fg: "#7F1D1D" },
+  new_lead: { label: "New lead", bg: "#d5ebff", fg: "#003a5a" },
+  contacted: { label: "Contacted", bg: "#d5ebff", fg: "#003a5a" },
+  test_drive: { label: "Test drive", bg: "#ffeb78", fg: "#4f4700" },
+  offer_made: { label: "Offer made", bg: "#ffeb78", fg: "#4f4700" },
+  deposit_taken: { label: "Deposit taken", bg: "#ebebeb", fg: "#303030" },
+  collection_delivery: { label: "Collection", bg: "#ebebeb", fg: "#303030" },
+  completed_sale: { label: "Completed", bg: "#affebf", fg: "#014b40" },
+  lost: { label: "Lost", bg: "#fed1d7", fg: "#8e0b21" },
 };
 
 function fmtDate(iso: string): string {
@@ -94,20 +94,15 @@ export function DashboardRecentDeals() {
   const shownTotal = (rows ?? []).reduce((sum, r) => sum + (r.total ?? 0), 0);
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-lg border border-line bg-white">
-      <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+    <div className="flex flex-col overflow-hidden rounded-xl border border-[#e3e3e3] bg-card shadow-[0_1px_0_rgba(0,0,0,.05)]">
+      <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2">
         <div className="flex items-baseline gap-2">
-          <h2 className="text-[14px] font-semibold tracking-[-0.01em]">
+          <h2 className="text-sm font-semibold text-foreground">
             Recent deals
           </h2>
-          <span className="text-[12px] text-muted-text">
-            {rows === null
-              ? "—"
-              : `${rows.length} most recent · ${formatCurrency(shownTotal)} agreed`}
-          </span>
         </div>
         <Link
-          className="text-[12px] text-accent-navy no-underline hover:underline"
+          className="text-[13px] text-[#005bd3] no-underline hover:underline"
           href="/sales/deals"
         >
           View all deals
@@ -119,7 +114,7 @@ export function DashboardRecentDeals() {
           <Skeleton className="h-64" />
         </div>
       ) : rows.length === 0 ? (
-        <p className="px-6 py-10 text-center text-[13px] leading-[1.55] text-body-text">
+        <p className="px-6 py-10 text-center text-[13px] leading-[1.55] text-[#4a4a4a]">
           No deals have moved this week. A deal appears here as soon as a lead
           is contacted, a test drive is booked, or a deposit is taken.
         </p>
@@ -129,7 +124,7 @@ export function DashboardRecentDeals() {
             <thead>
               {/* One bottom border on the header; the rows below carry none —
                   they are separated by the alternating tone instead. */}
-              <tr className="border-b border-line bg-surface text-left text-[11px] uppercase tracking-[0.05em] text-muted-text">
+              <tr className="border-y border-[#e3e3e3] bg-[#f7f7f7] text-left text-xs text-[#4a4a4a]">
                 <th className="py-2 pr-3 pl-4 font-medium">Vehicle</th>
                 <th className="px-3 py-2 font-medium">Customer</th>
                 <th className="px-3 py-2 font-medium">Stage</th>
@@ -140,14 +135,13 @@ export function DashboardRecentDeals() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, i) => {
+              {rows.map((r) => {
                 const stage = STAGE[r.stage];
                 return (
                   <tr
                     className={cn(
-                      "cursor-pointer transition-colors hover:bg-line-soft",
-                      i % 2 === 1 && "bg-surface",
-                    )}
+                      "cursor-pointer border-t border-[#e3e3e3] transition-colors first:border-t-0 hover:bg-[#f7f7f7]",
+                                          )}
                     key={r.id}
                     onClick={() =>
                       r.vehicle &&
@@ -166,12 +160,12 @@ export function DashboardRecentDeals() {
                           <span className="h-[33px] w-[44px] shrink-0 rounded-sm bg-page" />
                         )}
                         <div className="min-w-0 leading-[1.3]">
-                          <div className="font-mono text-[12px] font-semibold">
+                          <div className="text-[13px] font-semibold text-foreground">
                             {r.vehicle?.registration ?? "—"}
                           </div>
-                          <div className="truncate text-[12px] text-muted-text">
+                          <div className="truncate text-[13px] text-muted-foreground">
                             {r.vehicle
-                              ? `${r.vehicle.stockId} · ${r.vehicle.make} ${r.vehicle.model}`
+                              ? titleCase(`${r.vehicle.make} ${r.vehicle.model}`)
                               : "—"}
                           </div>
                         </div>
@@ -180,13 +174,13 @@ export function DashboardRecentDeals() {
                     <td className="px-3 py-2.5">{r.customerName}</td>
                     <td className="px-3 py-2.5">
                       <span
-                        className="inline-flex h-[18px] items-center whitespace-nowrap rounded-sm px-1.5 text-[12px] font-medium"
+                        className="inline-flex h-5 items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium"
                         style={{ background: stage.bg, color: stage.fg }}
                       >
                         {stage.label}
                       </span>
                     </td>
-                    <td className="px-3 py-2.5 text-right text-body-text tabular-nums">
+                    <td className="px-3 py-2.5 text-right text-[#4a4a4a] tabular-nums">
                       {r.days === null ? "—" : `${r.days}d`}
                     </td>
                     <td className="px-3 py-2.5 text-right tabular-nums">
@@ -197,7 +191,7 @@ export function DashboardRecentDeals() {
                     </td>
                     {/* nowrap: the column is narrow enough that "09 Jul"
                         otherwise breaks onto two lines on every row (GEN-44) */}
-                    <td className="whitespace-nowrap py-2.5 pr-4 pl-3 text-right text-muted-text tabular-nums">
+                    <td className="whitespace-nowrap py-2.5 pr-4 pl-3 text-right text-muted-foreground tabular-nums">
                       {fmtDate(r.date)}
                     </td>
                   </tr>
@@ -205,6 +199,9 @@ export function DashboardRecentDeals() {
               })}
             </tbody>
           </table>
+          <div className="border-t border-[#e3e3e3] px-4 py-2 text-[13px] text-muted-foreground">
+            {formatCurrency(shownTotal)} agreed across these deals
+          </div>
         </div>
       )}
     </div>

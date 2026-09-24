@@ -24,6 +24,8 @@ import {
   ShieldAlert,
   MapPin,
   Building2,
+  Settings,
+  PlusCircle,
   type LucideIcon,
 } from "lucide-react";
 import type { Capability } from "@/lib/capabilities";
@@ -41,6 +43,12 @@ export interface SidebarItem {
 
 export interface SidebarGroup {
   label: string | null;
+  /**
+   * Icon for the group's own row. The rail is flat, Shopify-admin style: each
+   * group is one top-level row (linking to its first page) and its pages show
+   * as indented sub-rows only while you are inside it.
+   */
+  icon?: LucideIcon;
   items: SidebarItem[];
 }
 
@@ -79,6 +87,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
   },
   {
     label: "Inventory",
+    icon: Car,
     items: [
       {
         label: "All Vehicles",
@@ -106,6 +115,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
   },
   {
     label: "Maintenance",
+    icon: Wrench,
     // Exactly TWO steps, in the order a car meets them, then the views over
     // them. Inspection feeds Prep automatically — a car lands in Prep the
     // moment its inspection completes with outstanding items — so the first
@@ -170,6 +180,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
   },
   {
     label: "Advert",
+    icon: Megaphone,
     items: [
       {
         label: "Work List",
@@ -203,6 +214,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
   },
   {
     label: "Sales",
+    icon: TrendingUp,
     items: [
       {
         label: "Leads",
@@ -248,6 +260,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     // rows are warranties and live under /warranties, so the heading now
     // matches both the contents and the routes.
     label: "Warranties",
+    icon: Shield,
     items: [
       {
         label: "In-House",
@@ -278,6 +291,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     // Oversight of the lifecycle rather than a stage in it, so it sits last.
     label: "Administrative",
+    icon: Building2,
     items: [
       {
         label: "Master Sheet",
@@ -364,9 +378,26 @@ export function titleFromPath(pathname: string): string {
       }
     }
   }
+  if (pathname.startsWith("/admin/settings")) return "Settings";
+  if (pathname.startsWith("/inventory/add-vehicle")) return "Add vehicle";
   if (pathname.startsWith("/vehicles/")) return "Vehicle";
   if (pathname.startsWith("/warranties/")) return "Warranty";
   return "Car Capital UK";
+}
+
+/** The nav icon for the current page (its own item's icon), for the top bar. */
+export function iconFromPath(pathname: string): SidebarItem["icon"] | null {
+  if (pathname.startsWith("/admin/settings")) return Settings;
+  if (pathname.startsWith("/inventory/add-vehicle")) return PlusCircle;
+  if (pathname.startsWith("/vehicles/")) return Car;
+  const activeHref = activeHrefForPath(pathname);
+  if (!activeHref) return null;
+  for (const group of SIDEBAR_GROUPS) {
+    for (const item of group.items) {
+      if (item.href === activeHref) return item.icon;
+    }
+  }
+  return null;
 }
 
 /** Routes outside the sidebar that still need gating. */

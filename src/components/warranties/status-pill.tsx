@@ -17,7 +17,7 @@ type AnyStatus = WarrantyStatus | ClaimStatus | WarrantyPurchaseStatus;
 
 interface VariantSpec {
   /** Maps to the shadcn Badge variants the app already uses. */
-  variant: "default" | "secondary" | "destructive" | "outline";
+  variant: "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info";
   /** Optional dot colour (Tailwind class). Falls back to currentColor. */
   dotClass?: string;
   /** Optional extra classes to tint the badge — kept token-driven. */
@@ -28,20 +28,20 @@ interface VariantSpec {
 
 const SPECS: Record<AnyStatus, VariantSpec> = {
   // Warranty lifecycle
-  active: { variant: "secondary", extraClass: "bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200", dotClass: "bg-emerald-500" },
-  expired: { variant: "outline", dotClass: "bg-muted-foreground" },
-  cancelled: { variant: "outline", extraClass: "text-muted-foreground", dotClass: "bg-muted-foreground" },
+  active: { variant: "success" },
+  expired: { variant: "default" },
+  cancelled: { variant: "default" },
 
   // Claim lifecycle
-  open: { variant: "destructive", dotClass: "bg-current", label: "Open" },
-  under_review: { variant: "secondary", extraClass: "bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-200", dotClass: "bg-amber-500", label: "Under review" },
-  approved: { variant: "secondary", extraClass: "bg-blue-100 text-blue-900 dark:bg-blue-500/20 dark:text-blue-200", dotClass: "bg-blue-500", label: "Approved" },
-  resolved: { variant: "secondary", extraClass: "bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200", dotClass: "bg-emerald-500", label: "Resolved" },
-  rejected: { variant: "outline", extraClass: "text-muted-foreground", dotClass: "bg-muted-foreground", label: "Rejected" },
+  open: { variant: "destructive", label: "Open" },
+  under_review: { variant: "warning", label: "Under review" },
+  approved: { variant: "info", label: "Approved" },
+  resolved: { variant: "success", label: "Resolved" },
+  rejected: { variant: "default", label: "Rejected" },
 
   // Purchase tracker
-  pending: { variant: "secondary", extraClass: "bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-200", dotClass: "bg-amber-500", label: "Pending purchase" },
-  purchased: { variant: "secondary", extraClass: "bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200", dotClass: "bg-emerald-500", label: "Purchased" },
+  pending: { variant: "warning", label: "Pending purchase" },
+  purchased: { variant: "success", label: "Purchased" },
   n_a: { variant: "outline", extraClass: "text-muted-foreground", label: "—" },
 };
 
