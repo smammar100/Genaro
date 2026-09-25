@@ -1,27 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  AlertCircle,
-  Check,
-  ChevronLeft,
-  Loader2,
-  Save,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { AlertCircle, Check, X } from "lucide-react";
 import { toast } from "@/lib/toast";
-import type { AdvertData, Listing, ListingChannel, Vehicle } from "@/lib/types";
+import type {
+  AdvertData,
+  Listing,
+  ListingChannel,
+  ListingStatus,
+  Vehicle,
+} from "@/lib/types";
 import { listingService } from "@/lib/services/listing-service";
 import { useAuth } from "@/contexts/auth-context";
 import { cn, formatCurrency } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  Badge,
+  Button,
+  Card,
+  ProgressBar,
+  TextField,
+  type BadgeTone,
+} from "@/components/polaris";
 import { Switch } from "@/components/ui/switch";
-import { Panel, Pill } from "@/components/vehicle-detail/primitives";
+import { Panel } from "@/components/vehicle-detail/primitives";
 import { RegPlate } from "@/components/shared/reg-plate";
 import {
   advertCompleteness,
@@ -45,6 +47,22 @@ const CHANNELS: { key: ListingChannel; label: string; meta: string }[] = [
   { key: "ebay", label: "eBay Motors", meta: "Classified listing" },
   { key: "facebook", label: "Facebook", meta: "Marketplace" },
 ];
+
+// Same listing-status tones as the Work list.
+const STATUS_TONE: Record<ListingStatus, BadgeTone | undefined> = {
+  draft: "info",
+  live: "success",
+  reserved: "attention",
+  sold: undefined,
+  archived: undefined,
+};
+const STATUS_LABEL: Record<ListingStatus, string> = {
+  draft: "Draft",
+  live: "Live",
+  reserved: "Reserved",
+  sold: "Sold",
+  archived: "Archived",
+};
 
 function splitHighlights(s: string): string[] {
   return s
@@ -165,9 +183,9 @@ export function AdvertEditor({
     // persist copy the channels (AutoTrader/website) will reject or truncate.
     const overLimit: string[] = [];
     if (advert.attentionGrabber.length > LIMITS.attentionGrabber)
-      overLimit.push("Attention Grabber");
+      overLimit.push("Attention grabber");
     if (advert.keySellingPoint.length > LIMITS.keySellingPoint)
-      overLimit.push("Key Selling Point");
+      overLimit.push("Key selling point");
     if (advert.subtitle.length > LIMITS.subtitle) overLimit.push("Subtitle");
     if (advert.strapline.length > LIMITS.strapline) overLimit.push("Strapline");
     if (description.length > LIMITS.description) overLimit.push("Description");
@@ -214,19 +232,21 @@ export function AdvertEditor({
   return (
     <div className="flex flex-col gap-4">
       {/* Sticky action header */}
-      <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 shadow-[0_1px_0_rgba(0,0,0,.05)]">
+      <Card className="sticky top-0 z-20 flex-row flex-wrap items-center justify-between gap-3 px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
-          <Button asChild variant="ghost" size="icon" className="shrink-0">
-            <Link href={`/vehicles/${vehicle.id}`} aria-label="Back to vehicle">
-              <ChevronLeft className="h-4 w-4" />
-            </Link>
-          </Button>
+          <Button
+            variant="tertiary"
+            icon="ArrowLeftMinor"
+            accessibilityLabel="Back to vehicle"
+            url={`/vehicles/${vehicle.id}`}
+            className="shrink-0"
+          />
           <RegPlate registration={vehicle.registration} size="sm" />
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold leading-tight">
+            <div className="heading-sm truncate">
               {vehicle.year} {vehicle.make} {vehicle.model}
             </div>
-            <div className="truncate text-xs text-muted-foreground">
+            <div className="body-sm truncate text-(--text-secondary)">
               {[
                 price ? formatCurrency(price) : null,
                 `${vehicle.mileage.toLocaleString("en-GB")} mi`,
@@ -241,17 +261,16 @@ export function AdvertEditor({
         </div>
 
         <div className="flex items-center gap-2">
-          <Pill tone={status === "live" ? "good" : "neutral"}>{status}</Pill>
-          <Button size="sm" onClick={() => void save()} disabled={saving}>
-            {saving ? (
-              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-1.5 h-4 w-4" />
-            )}
-            Save Advert
+          <Badge tone={STATUS_TONE[status]}>{STATUS_LABEL[status]}</Badge>
+          <Button
+            variant="primary"
+            onClick={() => void save()}
+            loading={saving}
+          >
+            Save advert
           </Button>
         </div>
-      </div>
+      </Card>
 
       {/* Body: form + sticky rail */}
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
@@ -260,12 +279,12 @@ export function AdvertEditor({
           {/* Spotlight */}
           <section id="spotlight" className="scroll-mt-24">
             <Panel
-              title="AutoTrader Spotlight"
+              title="AutoTrader spotlight"
               subtitle="The bold text buyers see first on the search results card"
             >
               <div className="flex flex-col gap-4">
                 <CharField
-                  label="Attention Grabber"
+                  label="Attention grabber"
                   help="Short hook, e.g. “Just arrived” or “1 owner”."
                   value={advert.attentionGrabber}
                   onChange={(v) =>
@@ -275,7 +294,7 @@ export function AdvertEditor({
                   placeholder="Attention grabber…"
                 />
                 <CharField
-                  label="Key Selling Point"
+                  label="Key selling point"
                   help="The single best reason to buy this car."
                   value={advert.keySellingPoint}
                   onChange={(v) =>
@@ -295,33 +314,33 @@ export function AdvertEditor({
               subtitle="Mapped to AutoTrader's hierarchy · synced from your vehicle lookup"
             >
               <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
-                <TaxInput
+                <TextField
                   label="Make"
                   value={advert.taxonomy.make ?? vehicle.make}
                   onChange={(v) => setTax("make", v)}
                 />
-                <TaxInput
+                <TextField
                   label="Model"
                   value={advert.taxonomy.model ?? vehicle.model}
                   onChange={(v) => setTax("model", v)}
                 />
-                <TaxInput
+                <TextField
                   label="Generation"
                   value={advert.taxonomy.generation ?? vehicle.generation ?? ""}
                   onChange={(v) => setTax("generation", v)}
                 />
-                <TaxInput
+                <TextField
                   label="Trim"
                   value={advert.taxonomy.trim ?? vehicle.trim ?? ""}
                   onChange={(v) => setTax("trim", v)}
                 />
-                <TaxInput
-                  label="Fuel Type"
+                <TextField
+                  label="Fuel type"
                   value={advert.taxonomy.fuelType ?? vehicle.fuelType}
                   onChange={(v) => setTax("fuelType", v)}
                 />
-                <TaxInput
-                  label="Engine Size"
+                <TextField
+                  label="Engine size"
                   value={
                     advert.taxonomy.engineSize ??
                     (vehicle.engineSizeCC
@@ -330,12 +349,12 @@ export function AdvertEditor({
                   }
                   onChange={(v) => setTax("engineSize", v)}
                 />
-                <TaxInput
+                <TextField
                   label="Transmission"
                   value={advert.taxonomy.transmission ?? vehicle.transmission}
                   onChange={(v) => setTax("transmission", v)}
                 />
-                <TaxInput
+                <TextField
                   label="Derivative"
                   value={
                     advert.taxonomy.derivative ?? vehicle.derivative ?? ""
@@ -349,43 +368,37 @@ export function AdvertEditor({
           {/* Description */}
           <section id="description" className="scroll-mt-24">
             <Panel
-              title="Vehicle Description"
+              title="Vehicle description"
               subtitle={`${description.length.toLocaleString()} / ${LIMITS.description.toLocaleString()} chars · the main advert copy`}
               action={
                 <Button
-                  size="sm"
+                  icon="WandMinor"
                   onClick={() => void generate()}
-                  disabled={generating}
+                  loading={generating}
                 >
-                  {generating ? (
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                  )}
                   Generate
                 </Button>
               }
             >
-              <Textarea
+              <TextField
+                label="Vehicle description"
+                labelHidden
+                multiline={8}
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe the key facts about the vehicle, or hit Generate to draft it with AI."
-                className="min-h-44"
+                onChange={setDescription}
+                placeholder="Describe the key facts about the vehicle, or select Generate to draft it with AI."
+                error={description.length > LIMITS.description}
               />
               <div className="mt-2 flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => setDescription("")}
-                  className="text-xs text-muted-foreground transition hover:text-foreground"
-                >
+                <Button variant="plain" onClick={() => setDescription("")}>
                   Clear text
-                </button>
+                </Button>
                 <span
                   className={cn(
-                    "text-xs tabular-nums",
+                    "body-sm tabular-nums",
                     description.length > LIMITS.description
-                      ? "text-destructive"
-                      : "text-muted-foreground",
+                      ? "text-(--text-critical)"
+                      : "text-(--text-secondary)",
                   )}
                 >
                   {description.length.toLocaleString()} /{" "}
@@ -398,12 +411,10 @@ export function AdvertEditor({
           {/* Strapline */}
           <section id="strapline" className="scroll-mt-24">
             <Panel
-              title="Dealer Strapline"
+              title="Dealer strapline"
               subtitle="Shown beneath the description on every advert"
               action={
                 <Button
-                  variant="outline"
-                  size="sm"
                   onClick={() =>
                     setAdvert((a) => ({ ...a, strapline: DEFAULT_STRAPLINE }))
                   }
@@ -412,15 +423,23 @@ export function AdvertEditor({
                 </Button>
               }
             >
-              <Textarea
+              <TextField
+                label="Dealer strapline"
+                labelHidden
+                multiline={4}
                 value={advert.strapline}
-                onChange={(e) =>
-                  setAdvert((a) => ({ ...a, strapline: e.target.value }))
-                }
+                onChange={(v) => setAdvert((a) => ({ ...a, strapline: v }))}
                 placeholder="Enter dealer strapline here…"
-                className="min-h-24"
+                error={advert.strapline.length > LIMITS.strapline}
               />
-              <div className="mt-2 text-right text-xs tabular-nums text-muted-foreground">
+              <div
+                className={cn(
+                  "body-sm mt-2 text-right tabular-nums",
+                  advert.strapline.length > LIMITS.strapline
+                    ? "text-(--text-critical)"
+                    : "text-(--text-secondary)",
+                )}
+              >
                 {advert.strapline.length} / {LIMITS.strapline}
               </div>
             </Panel>
@@ -429,12 +448,12 @@ export function AdvertEditor({
           {/* Website */}
           <section id="website" className="scroll-mt-24">
             <Panel
-              title="Website Highlights"
+              title="Website highlights"
               subtitle="Subtitle + up to 5 bullet points shown on the listing card"
             >
               <div className="flex flex-col gap-4">
                 <CharField
-                  label="Vehicle Subtitle"
+                  label="Vehicle subtitle"
                   value={advert.subtitle}
                   onChange={(v) => setAdvert((a) => ({ ...a, subtitle: v }))}
                   max={LIMITS.subtitle}
@@ -445,17 +464,20 @@ export function AdvertEditor({
                     const val = advert.highlights[i] ?? "";
                     return (
                       <div key={i} className="flex items-center gap-3">
-                        <span className="w-5 text-xs tabular-nums text-muted-foreground">
+                        <span className="body-sm w-5 tabular-nums text-(--text-secondary)">
                           {String(i + 1).padStart(2, "0")}
                         </span>
-                        <Input
-                          value={val}
-                          onChange={(e) => setHighlight(i, e.target.value)}
-                          maxLength={LIMITS.highlight}
-                          placeholder={`Highlight ${i + 1}…`}
-                          className="h-9"
-                        />
-                        <span className="w-12 text-right text-xs tabular-nums text-muted-foreground">
+                        <div className="min-w-0 flex-1">
+                          <TextField
+                            label={`Highlight ${i + 1}`}
+                            labelHidden
+                            value={val}
+                            onChange={(v) => setHighlight(i, v)}
+                            maxLength={LIMITS.highlight}
+                            placeholder={`Highlight ${i + 1}…`}
+                          />
+                        </div>
+                        <span className="body-sm w-12 text-right tabular-nums text-(--text-secondary)">
                           {val.length}/{LIMITS.highlight}
                         </span>
                       </div>
@@ -482,48 +504,38 @@ export function AdvertEditor({
           {/* Channels & pricing */}
           <section id="channels" className="scroll-mt-24">
             <Panel
-              title="Channels & Pricing"
+              title="Channels and pricing"
               subtitle="Where this advert appears and at what price"
             >
               <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="text-[13px] font-medium">
-                    Advertised Price
-                  </label>
-                  <div className="relative mt-1">
-                    <span className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-sm text-muted-foreground">
-                      £
-                    </span>
-                    <Input
-                      type="number"
-                      value={price || ""}
-                      onChange={(e) => setPrice(Number(e.target.value) || 0)}
-                      className="h-9 pl-7 tabular-nums"
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-[13px] font-medium">
-                    Floor (minimum)
-                  </label>
-                  <div className="mt-1 flex h-8 items-center rounded-lg border bg-muted px-3 text-[13px] tabular-nums text-muted-foreground">
-                    {vehicle.minimumSalePrice
+                <TextField
+                  label="Advertised price"
+                  type="number"
+                  prefix="£"
+                  value={price ? String(price) : ""}
+                  onChange={(v) => setPrice(Number(v) || 0)}
+                  placeholder="0"
+                />
+                <TextField
+                  label="Floor (minimum)"
+                  readOnly
+                  value={
+                    vehicle.minimumSalePrice
                       ? formatCurrency(vehicle.minimumSalePrice)
-                      : "Not set"}
-                  </div>
-                </div>
+                      : "Not set"
+                  }
+                />
               </div>
 
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 {CHANNELS.map((c) => (
                   <label
                     key={c.key}
-                    className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 py-2"
+                    className="flex cursor-pointer items-center justify-between gap-3 rounded-(--radius-200) border border-(--border) px-3 py-2 hover:bg-(--bg-surface-hover)"
                   >
                     <div className="min-w-0">
-                      <div className="text-sm font-medium">{c.label}</div>
-                      <div className="truncate text-xs text-muted-foreground">
+                      <div className="body-md">{c.label}</div>
+                      <div className="body-sm truncate text-(--text-secondary)">
                         {c.meta}
                       </div>
                     </div>
@@ -540,20 +552,15 @@ export function AdvertEditor({
           </section>
 
           {/* Footer save bar */}
-          <div className="flex items-center justify-between rounded-xl border bg-card px-4 py-3 shadow-[0_1px_0_rgba(0,0,0,.05)]">
-            <span className="text-xs text-muted-foreground">
+          <Card className="flex-row items-center justify-between gap-3 px-4 py-3">
+            <span className="body-sm text-(--text-secondary)">
               {done} of {total} advert fields ready · saved as{" "}
-              <span className="font-medium text-foreground">{status}</span>
+              <span className="text-(--text)">{STATUS_LABEL[status].toLowerCase()}</span>
             </span>
-            <Button onClick={() => void save()} disabled={saving}>
-              {saving ? (
-                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="mr-1.5 h-4 w-4" />
-              )}
-              Save Advert
+            <Button onClick={() => void save()} loading={saving}>
+              Save advert
             </Button>
-          </div>
+          </Card>
         </div>
 
         {/* ── Sticky rail ───────────────────────────────────────── */}
@@ -575,12 +582,12 @@ export function AdvertEditor({
             title="Advert completeness"
             subtitle={`${done} of ${total} ready`}
           >
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-[#303030] transition-[width] duration-500"
-                style={{ width: `${pct}%` }}
-              />
-            </div>
+            <ProgressBar
+              progress={pct}
+              size="small"
+              tone="primary"
+              accessibilityLabel="Advert completeness"
+            />
             <div className="mt-3 flex flex-col gap-2">
               {checks.map((c) => (
                 <CheckRow key={c.key} check={c} />
@@ -612,58 +619,31 @@ function CharField({
 }) {
   const over = value.length > max;
   return (
-    <div className="grid gap-1.5 sm:grid-cols-[180px_1fr] sm:gap-4">
-      <div className="pt-1.5">
-        <div className="text-[13px] font-medium">{label}</div>
-        {help && <p className="mt-0.5 text-[13px] text-muted-foreground">{help}</p>}
-      </div>
-      <div>
-        <Input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className={cn("h-8", over && "border-destructive")}
-        />
-        <div
-          className={cn(
-            "mt-1 text-right text-xs tabular-nums",
-            over ? "text-destructive" : "text-muted-foreground",
-          )}
-        >
-          {value.length} / {max}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TaxInput({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
     <div>
-      <label className="text-[13px] font-medium">
-        {label}
-      </label>
-      <Input
+      <TextField
+        label={label}
+        helpText={help}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="mt-1 h-8"
+        onChange={onChange}
+        placeholder={placeholder}
+        error={over}
       />
+      <div
+        className={cn(
+          "body-sm mt-1 text-right tabular-nums",
+          over ? "text-(--text-critical)" : "text-(--text-secondary)",
+        )}
+      >
+        {value.length} / {max}
+      </div>
     </div>
   );
 }
 
 const CHECK_TONE: Record<AdvertCheck["state"], string> = {
-  done: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
-  warn: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
-  miss: "bg-muted text-muted-foreground",
+  done: "bg-(--bg-fill-success-secondary) text-(--icon-success)",
+  warn: "bg-(--bg-fill-warning-secondary) text-(--icon-warning)",
+  miss: "bg-(--bg-fill-secondary) text-(--icon-secondary)",
 };
 
 function CheckRow({ check }: { check: AdvertCheck }) {
@@ -671,21 +651,21 @@ function CheckRow({ check }: { check: AdvertCheck }) {
     <div className="flex items-center gap-2.5">
       <span
         className={cn(
-          "flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
+          "flex size-5 shrink-0 items-center justify-center rounded-full",
           CHECK_TONE[check.state],
         )}
       >
         {check.state === "done" ? (
-          <Check className="h-3 w-3" strokeWidth={3} />
+          <Check className="size-3" strokeWidth={3} />
         ) : check.state === "warn" ? (
-          <AlertCircle className="h-3 w-3" />
+          <AlertCircle className="size-3" />
         ) : (
-          <X className="h-3 w-3" strokeWidth={3} />
+          <X className="size-3" strokeWidth={3} />
         )}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-[13px] font-medium leading-snug">{check.name}</div>
-        <div className="truncate text-xs text-muted-foreground">
+        <div className="body-md">{check.name}</div>
+        <div className="body-sm truncate text-(--text-secondary)">
           {check.meta}
         </div>
       </div>

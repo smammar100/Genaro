@@ -1,7 +1,4 @@
-"use client";
-
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Badge, type BadgeProgress, type BadgeTone } from "@/components/polaris";
 import type {
   ClaimStatus,
   WarrantyPurchaseStatus,
@@ -9,44 +6,40 @@ import type {
 } from "@/lib/types";
 
 /**
- * Visual pill for any warranty- or claim-related status value. Uses the app's
- * Badge primitive so it inherits the global theme — never hard-codes hex.
+ * Status badge for any warranty- or claim-related status value — a Polaris
+ * Badge, so tone and theming come from the design system.
  */
 
 type AnyStatus = WarrantyStatus | ClaimStatus | WarrantyPurchaseStatus;
 
-interface VariantSpec {
-  /** Maps to the shadcn Badge variants the app already uses. */
-  variant: "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info";
-  /** Optional dot colour (Tailwind class). Falls back to currentColor. */
-  dotClass?: string;
-  /** Optional extra classes to tint the badge — kept token-driven. */
-  extraClass?: string;
-  /** Human label override if the raw status isn't presentable. */
-  label?: string;
+interface StatusSpec {
+  label: string;
+  tone?: BadgeTone;
+  progress?: BadgeProgress;
 }
 
-const SPECS: Record<AnyStatus, VariantSpec> = {
+const SPECS: Record<AnyStatus, StatusSpec> = {
   // Warranty lifecycle
-  active: { variant: "success" },
-  expired: { variant: "default" },
-  cancelled: { variant: "default" },
+  active: { label: "Active", tone: "success" },
+  expired: { label: "Expired" },
+  cancelled: { label: "Cancelled" },
 
   // Claim lifecycle
-  open: { variant: "destructive", label: "Open" },
-  under_review: { variant: "warning", label: "Under review" },
-  approved: { variant: "info", label: "Approved" },
-  resolved: { variant: "success", label: "Resolved" },
-  rejected: { variant: "default", label: "Rejected" },
+  open: { label: "Open", tone: "critical" },
+  under_review: { label: "Under review", tone: "attention" },
+  approved: { label: "Approved", tone: "info" },
+  resolved: { label: "Resolved", tone: "success" },
+  rejected: { label: "Rejected" },
 
   // Purchase tracker
-  pending: { variant: "warning", label: "Pending purchase" },
-  purchased: { variant: "success", label: "Purchased" },
-  n_a: { variant: "outline", extraClass: "text-muted-foreground", label: "—" },
+  pending: { label: "Pending purchase", tone: "attention", progress: "incomplete" },
+  purchased: { label: "Purchased", tone: "success", progress: "complete" },
+  n_a: { label: "—" },
 };
 
 interface StatusPillProps {
   status: AnyStatus;
+  /** Show the progress pip on purchase statuses (default true). */
   withDot?: boolean;
   className?: string;
 }
@@ -54,23 +47,13 @@ interface StatusPillProps {
 export function StatusPill({ status, withDot = true, className }: StatusPillProps) {
   const spec = SPECS[status];
   if (!spec) return null;
-  const label = spec.label ?? status.replace(/_/g, " ");
   return (
     <Badge
-      variant={spec.variant}
-      className={cn(
-        "inline-flex items-center gap-1.5 capitalize",
-        spec.extraClass,
-        className,
-      )}
+      tone={spec.tone}
+      progress={withDot ? spec.progress : undefined}
+      className={className}
     >
-      {withDot && spec.dotClass && (
-        <span
-          aria-hidden
-          className={cn("h-1.5 w-1.5 rounded-full", spec.dotClass)}
-        />
-      )}
-      {label}
+      {spec.label}
     </Badge>
   );
 }

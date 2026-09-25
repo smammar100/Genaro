@@ -198,10 +198,10 @@ export function VehicleImage({
           "relative flex items-center justify-center overflow-hidden",
           "bg-gradient-to-br from-muted to-muted/60 text-muted-foreground",
           // Subtle diagonal stripe pattern via CSS gradient
-          "[background-image:repeating-linear-gradient(45deg,transparent,transparent_8px,rgba(0,0,0,0.025)_8px,rgba(0,0,0,0.025)_16px)]",
-          // Pure black/white inset ring (never a tinted border token) so the
-          // edge reads as consistent depth against any surface color behind it.
-          "ring-1 ring-inset ring-black/10 dark:ring-white/10",
+          "[background-image:repeating-linear-gradient(45deg,transparent,transparent_8px,var(--bg-fill-transparent)_8px,var(--bg-fill-transparent)_16px)]",
+          // Neutral inset edge (shadow-border-inset: 8% black, 8% white in
+          // dark) so it reads as depth against any surface colour behind it.
+          "shadow-(--shadow-border-inset)",
           sizeClass,
           className,
         )}
@@ -223,7 +223,7 @@ export function VehicleImage({
     <div
       className={cn(
         "relative overflow-hidden bg-muted",
-        "ring-1 ring-inset ring-black/10 dark:ring-white/10",
+        "shadow-(--shadow-border-inset)",
         sizeClass,
         className,
       )}

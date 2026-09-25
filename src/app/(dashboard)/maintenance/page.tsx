@@ -5,12 +5,10 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Wrench,
-  Plus,
   CircleDashed,
   CircleDot,
   CheckCircle2,
   CircleAlert,
-  AlertTriangle,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -29,10 +27,17 @@ import type {
   Vendor,
 } from "@/lib/types";
 import { MAINTENANCE_STATUSES } from "@/lib/constants";
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Page,
+  type BadgeTone,
+} from "@/components/polaris";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { Chip, RowActionButton } from "@/components/ui/resource-list";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { RowActionButton } from "@/components/ui/resource-list";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,17 +45,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { EmptyState } from "@/components/shared/empty-state";
 import { AddEventSheet } from "@/components/shared/add-event-sheet";
 import { EditJobDialog } from "@/components/maintenance/edit-job-dialog";
+import { jobStatusLabel } from "@/components/maintenance/job-status";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import {
-  cn,
-  formatCurrency,
-  formatDate,
-  formatRegPlate,
-  getInitials,
-} from "@/lib/utils";
+import { cn, formatCurrency, formatDate, formatRegPlate } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 import { DragHandle } from "@/components/shared/drag-handle";
 
@@ -58,22 +57,20 @@ const STATUS_META: Record<
   MaintenanceStatus,
   { Icon: typeof CircleDashed; tone: string }
 > = {
-  pending: { Icon: CircleDashed, tone: "text-muted-foreground" },
-  in_progress: { Icon: CircleDot, tone: "text-blue-500" },
-  completed: { Icon: CheckCircle2, tone: "text-emerald-500" },
-  stalled: { Icon: CircleAlert, tone: "text-amber-500" },
+  pending: { Icon: CircleDashed, tone: "text-(--icon-secondary)" },
+  in_progress: { Icon: CircleDot, tone: "text-(--icon-info)" },
+  completed: { Icon: CheckCircle2, tone: "text-(--icon-success)" },
+  stalled: { Icon: CircleAlert, tone: "text-(--icon-caution)" },
 };
 
 type Urgency = "overdue" | "today" | "week" | "later" | "done";
-const URGENCY_TONE: Record<Exclude<Urgency, "later" | "done">, string> = {
-  overdue: "bg-[rgb(254,209,215)] text-[rgb(142,11,33)]",
-  today: "bg-[rgb(255,235,120)] text-[rgb(79,71,0)]",
-  week: "bg-[rgb(213,235,255)] text-[rgb(0,58,90)]",
-};
-const URGENCY_LABEL: Record<Exclude<Urgency, "later" | "done">, string> = {
-  overdue: "Overdue",
-  today: "Due today",
-  week: "This week",
+const URGENCY_BADGE: Record<
+  Exclude<Urgency, "later" | "done">,
+  { tone: BadgeTone; label: string }
+> = {
+  overdue: { tone: "critical", label: "Overdue" },
+  today: { tone: "attention", label: "Due today" },
+  week: { tone: "info", label: "This week" },
 };
 
 function shortId(id: string): string {
@@ -96,16 +93,11 @@ function urgencyOf(job: MaintenanceJob): Urgency {
 
 function UrgencyBadge({ urgency }: { urgency: Urgency }) {
   if (urgency === "later" || urgency === "done") return null;
+  const { tone, label } = URGENCY_BADGE[urgency];
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium",
-        URGENCY_TONE[urgency],
-      )}
-    >
-      {urgency === "overdue" && <AlertTriangle className="h-3 w-3" />}
-      {URGENCY_LABEL[urgency]}
-    </span>
+    <Badge tone={tone} icon={urgency === "overdue" ? "AlertMinor" : undefined}>
+      {label}
+    </Badge>
   );
 }
 
@@ -197,43 +189,36 @@ export default function MaintenancePage() {
   const totalJobs = grouped
     ? Object.values(grouped).reduce((n, l) => n + l.length, 0)
     : 0;
+  const isEmpty = grouped !== null && totalJobs === 0;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">
-            Maintenance Pipeline
-          </h1>
-          <p className="text-[13px] text-muted-foreground">
-            Track every repair and prep job through its stages, from booked to
-            completed, across all your stock.
-          </p>
-        </div>
-        <Button size="sm" onClick={() => setAddOpen(true)}>
-          <Plus className="mr-1 h-3.5 w-3.5" />
-          Add job
-        </Button>
-      </div>
-
+    <Page
+      title="Maintenance pipeline"
+      subtitle="Track every repair and prep job through its stages, from booked to completed, across all your stock."
+      fullWidth
+      // The empty state carries the one primary action when there are no jobs.
+      primaryAction={
+        isEmpty
+          ? undefined
+          : { content: "Add job", onAction: () => setAddOpen(true) }
+      }
+    >
       {!grouped ? (
         <div className="grid gap-3 lg:grid-cols-4">
           {MAINTENANCE_STATUSES.map((s) => (
             <Skeleton key={s.value} className="h-72" />
           ))}
         </div>
-      ) : totalJobs === 0 ? (
-        <EmptyState
-          icon={Wrench}
-          title="No maintenance jobs yet"
-          description="Add a job, or add a vehicle to auto-create a pending one."
-          action={
-            <Button size="sm" onClick={() => setAddOpen(true)}>
-              <Plus className="mr-1 h-3.5 w-3.5" />
-              Add job
-            </Button>
-          }
-        />
+      ) : isEmpty ? (
+        <Card padding="0">
+          <EmptyState
+            heading="No maintenance jobs yet"
+            icon={<Wrench className="fill-none" />}
+            action={{ content: "Add job", onAction: () => setAddOpen(true) }}
+          >
+            Add a job, or add a vehicle to auto-create a pending one.
+          </EmptyState>
+        </Card>
       ) : (
         <div className="grid items-start gap-3 lg:grid-cols-4">
           {MAINTENANCE_STATUSES.map((status) => {
@@ -259,28 +244,29 @@ export default function MaintenancePage() {
                   setOverLane(null);
                 }}
                 className={cn(
-                  "flex min-h-32 flex-col gap-2 rounded-xl bg-muted p-2 transition-colors",
+                  "flex min-h-32 flex-col gap-2 rounded-(--radius-300) bg-(--bg-surface-secondary) p-2 transition-colors",
                   dragId &&
                     overLane === status.value &&
-                    "bg-primary/5 ring-2 ring-primary/40",
+                    "bg-(--bg-surface-secondary-selected) ring-2 ring-(--border-emphasis)",
                 )}
               >
                 <div className="flex items-center gap-1.5 px-1.5 pt-1 pb-0.5">
-                  <Icon className={cn("h-3.5 w-3.5", tone)} />
-                  <h3 className="text-[13px] font-semibold">{status.label}</h3>
-                  <span className="rounded-md bg-secondary px-1.5 text-xs font-medium tabular-nums text-muted-foreground ring-1 ring-border">
-                    {list.length}
-                  </span>
+                  <Icon className={cn("size-3.5", tone)} />
+                  <h2 className="heading-sm">
+                    {jobStatusLabel(status.value)}
+                  </h2>
+                  <Badge>{String(list.length)}</Badge>
                 </div>
                 <div className="flex max-h-[calc(100dvh-22rem)] min-h-12 flex-col gap-2 overflow-y-auto pr-0.5">
                   {list.length === 0 ? (
-                    <button
-                      type="button"
+                    <Button
+                      variant="tertiary"
+                      icon="PlusMinor"
+                      fullWidth
                       onClick={() => setAddOpen(true)}
-                      className="flex shrink-0 items-center justify-center gap-1 rounded-lg border border-dashed border-border py-3 text-xs text-muted-foreground transition hover:bg-card hover:text-foreground"
                     >
-                      <Plus className="h-3 w-3" /> Add job
-                    </button>
+                      Add job
+                    </Button>
                   ) : (
                     list.map((j) => {
                       const v = vehicles.find((x) => x.id === j.vehicleId);
@@ -304,12 +290,18 @@ export default function MaintenancePage() {
                             setOverLane(null);
                           }}
                           className={cn(
-                            "group/card relative flex shrink-0 cursor-grab flex-col overflow-hidden rounded-lg border bg-card shadow-[0_1px_0_rgba(0,0,0,.05)] transition-colors hover:border-foreground/25 active:cursor-grabbing",
-                            urgency === "overdue" &&
-                              "border-rose-200 dark:border-rose-500/30",
+                            "group/card relative shrink-0 cursor-grab active:cursor-grabbing",
                             dragId === j.id && "opacity-50",
                           )}
                         >
+                          <Card
+                            padding="0"
+                            className={cn(
+                              "flex flex-col",
+                              urgency === "overdue" &&
+                                "ring-1 ring-(--border-critical-secondary)",
+                            )}
+                          >
                           {/* On the card's left edge rather than in the
                               header row. These columns are narrow enough that
                               the registration already truncates, and an inline
@@ -318,7 +310,7 @@ export default function MaintenancePage() {
                               nothing. */}
                           <DragHandle className="absolute left-0 top-1/2 z-10 -translate-y-1/2 [&_svg]:size-3" />
                           {/* Accent header — reg + job # */}
-                          <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
+                          <div className="flex items-center justify-between gap-2 border-b border-(--border-secondary) px-3 py-2">
                             <div className="flex min-w-0 items-baseline gap-2">
                               {v ? (
                                 <>
@@ -340,7 +332,7 @@ export default function MaintenancePage() {
                                   <Link
                                     href={`/maintenance/jobs/${j.id}`}
                                     title={`Job #${shortId(j.id)}`}
-                                    className="min-w-0 truncate text-xs text-muted-foreground hover:text-foreground hover:underline"
+                                    className="body-sm min-w-0 truncate text-(--text-secondary) hover:text-(--text) hover:underline"
                                   >
                                     #{shortId(j.id)}
                                   </Link>
@@ -365,12 +357,12 @@ export default function MaintenancePage() {
                                   <DropdownMenuItem
                                     onClick={() => setEditJob(j)}
                                   >
-                                    <Pencil className="mr-2 h-3.5 w-3.5" />
+                                    <Pencil className="mr-2 size-3.5" />
                                     Edit job
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
-                                    className="text-destructive"
+                                    className="text-(--text-critical)"
                                     onClick={() =>
                                       void handleDelete(
                                         j.id,
@@ -378,7 +370,7 @@ export default function MaintenancePage() {
                                       )
                                     }
                                   >
-                                    <Trash2 className="mr-2 h-3.5 w-3.5" />
+                                    <Trash2 className="mr-2 size-3.5" />
                                     Delete job
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -392,7 +384,7 @@ export default function MaintenancePage() {
                           <div
                             role="button"
                             tabIndex={0}
-                            className="flex cursor-pointer flex-col gap-2 p-3 transition-colors hover:bg-muted"
+                            className="flex cursor-pointer flex-col gap-2 p-3 transition-colors hover:bg-(--bg-surface-hover)"
                             onClick={(e) => {
                               // A completed drag doesn't fire a click, but guard
                               // anyway; also ignore clicks bubbling from any
@@ -414,57 +406,47 @@ export default function MaintenancePage() {
                             }}
                           >
                             {cardTotal ? (
-                              <span className="text-sm font-semibold tabular-nums">
+                              <span className="body-md-numeric font-semibold">
                                 {formatCurrency(cardTotal)}
                               </span>
                             ) : null}
 
-                            <p className="line-clamp-2 text-[13px] leading-snug">
+                            <p className="body-md line-clamp-2">
                               {j.description}
                             </p>
 
                             {(vendor || v) && (
                               <div className="flex flex-wrap gap-1">
-                                {vendor && (
-                                  <Chip>{vendor.name}</Chip>
-                                )}
+                                {vendor && <Badge>{vendor.name}</Badge>}
                                 {v && (
-                                  <Chip>
-                                    {v.make} {v.model}
-                                  </Chip>
+                                  <Badge>{`${v.make} ${v.model}`}</Badge>
                                 )}
                               </div>
                             )}
 
                             <div className="flex items-center justify-between pt-1">
                               <div className="flex items-center gap-1.5">
-                                <span className="text-xs text-muted-foreground">
+                                <span className="body-sm text-(--text-secondary)">
                                   {cardDate ? formatDate(cardDate) : "—"}
                                 </span>
                                 <UrgencyBadge urgency={urgency} />
                               </div>
                               {assignee ? (
-                                <Avatar size="sm" title={assignee.name}>
-                                  <AvatarFallback>
-                                    {getInitials(assignee.name)}
-                                  </AvatarFallback>
-                                </Avatar>
+                                <span title={assignee.name} className="inline-flex">
+                                  <Avatar size="sm" name={assignee.name} />
+                                </span>
                               ) : vendor ? (
-                                <Avatar size="sm" title={vendor.name}>
-                                  <AvatarFallback>
-                                    {getInitials(vendor.name)}
-                                  </AvatarFallback>
-                                </Avatar>
+                                <span title={vendor.name} className="inline-flex">
+                                  <Avatar size="sm" name={vendor.name} />
+                                </span>
                               ) : (
-                                <span
-                                  className="grid h-6 w-6 place-items-center rounded-full border border-dashed border-border text-xs text-muted-foreground"
-                                  title="Unassigned"
-                                >
-                                  ?
+                                <span title="Unassigned" className="inline-flex">
+                                  <Avatar size="sm" accessibilityLabel="Unassigned" />
                                 </span>
                               )}
                             </div>
                           </div>
+                          </Card>
                         </article>
                       );
                     })
@@ -500,6 +482,6 @@ export default function MaintenancePage() {
       />
 
       {confirmDialog}
-    </div>
+    </Page>
   );
 }

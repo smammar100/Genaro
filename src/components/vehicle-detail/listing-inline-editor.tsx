@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Pencil, Plus, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/polaris";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/lib/toast";
@@ -64,9 +63,9 @@ export function DescriptionEditor({
   if (!editing) {
     return (
       <div className="flex flex-col gap-2">
-        <div className="text-sm leading-relaxed text-foreground/80">
+        <div className="body-md text-(--text)">
           {listing.description || (
-            <span className="italic text-muted-foreground">
+            <span className="text-(--text-secondary)">
               No description yet, add one in the Advert editor.
             </span>
           )}
@@ -74,15 +73,13 @@ export function DescriptionEditor({
         {canEdit && (
           <div>
             <Button
-              size="sm"
-              variant="outline"
+              icon="EditMinor"
               onClick={() => {
                 setDraft(listing.description ?? "");
                 setEditing(true);
               }}
-              aria-label="Edit description"
+              accessibilityLabel="Edit description"
             >
-              <Pencil className="size-3.5" />
               Edit description
             </Button>
           </div>
@@ -103,29 +100,32 @@ export function DescriptionEditor({
       <div className="flex items-center justify-between gap-3">
         <span
           className={cn(
-            "text-xs tabular-nums",
-            error ? "text-destructive" : "text-muted-foreground",
+            "body-sm tabular-nums",
+            error ? "text-(--text-critical)" : "text-(--text-secondary)",
           )}
         >
           {draft.length.toLocaleString()} / {ADVERT_LIMITS.description.toLocaleString()}
         </span>
         <div className="flex gap-2">
           <Button
-            size="sm"
-            variant="ghost"
+            variant="tertiary"
             onClick={() => setEditing(false)}
             disabled={saving}
           >
             Cancel
           </Button>
-          <Button size="sm" onClick={() => void save()} disabled={saving || !!error}>
-            {saving && <Loader2 className="size-3.5 animate-spin" />}
+          <Button
+            variant="primary"
+            onClick={() => void save()}
+            loading={saving}
+            disabled={!!error}
+          >
             Save
           </Button>
         </div>
       </div>
       {error && (
-        <p role="alert" className="text-xs text-destructive">
+        <p role="alert" className="body-sm text-(--text-critical)">
           {error}
         </p>
       )}
@@ -176,10 +176,10 @@ export function HighlightsEditor({
     return (
       <div className="flex flex-col gap-3">
         {current.length > 0 ? (
-          <ul className="grid gap-1.5 sm:grid-cols-2">
+          <ul className="grid gap-1.5 @md:grid-cols-2">
             {current.map((h, i) => (
-              <li key={`${h}-${i}`} className="flex items-center gap-2 text-sm">
-                <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-primary/10 text-2xs font-semibold text-primary">
+              <li key={`${h}-${i}`} className="flex items-center gap-2 body-md">
+                <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-(--bg-fill-secondary) body-xs-semibold text-(--text-secondary)">
                   {i + 1}
                 </span>
                 {h}
@@ -187,22 +187,20 @@ export function HighlightsEditor({
             ))}
           </ul>
         ) : (
-          <p className="text-sm italic text-muted-foreground">
+          <p className="body-md text-(--text-secondary)">
             No highlights yet, add up to {MAX_HIGHLIGHTS} in the Advert editor.
           </p>
         )}
         {canEdit && (
           <div>
             <Button
-              size="sm"
-              variant="outline"
+              icon="EditMinor"
               onClick={() => {
                 setRows(current.length > 0 ? current : [""]);
                 setEditing(true);
               }}
-              aria-label="Edit highlights"
+              accessibilityLabel="Edit highlights"
             >
-              <Pencil className="size-3.5" />
               Edit highlights
             </Button>
           </div>
@@ -215,7 +213,7 @@ export function HighlightsEditor({
     <div className="flex flex-col gap-2">
       {rows.map((row, i) => (
         <div key={i} className="flex items-center gap-2">
-          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/10 text-2xs font-semibold text-primary">
+          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-(--bg-fill-secondary) body-xs-semibold text-(--text-secondary)">
             {i + 1}
           </span>
           <Input
@@ -227,51 +225,52 @@ export function HighlightsEditor({
             }
           />
           <Button
-            size="sm"
-            variant="ghost"
-            aria-label={`Remove highlight ${i + 1}`}
+            variant="tertiary"
+            icon="CancelSmallMinor"
+            accessibilityLabel={`Remove highlight ${i + 1}`}
             onClick={() => setRows((r) => r.filter((_, j) => j !== i))}
             disabled={saving}
-          >
-            <X className="size-3.5" />
-          </Button>
+          />
         </div>
       ))}
 
       {rows.length < MAX_HIGHLIGHTS && (
         <div>
           <Button
-            size="sm"
-            variant="ghost"
+            variant="plain"
+            icon="PlusMinor"
             onClick={() => setRows((r) => [...r, ""])}
-            aria-label="Add highlight"
+            accessibilityLabel="Add highlight"
             disabled={saving}
           >
-            <Plus className="size-3.5" />
             Add highlight
           </Button>
         </div>
       )}
 
       {error && (
-        <p role="alert" className="text-xs text-destructive">
+        <p role="alert" className="body-sm text-(--text-critical)">
           {error}
         </p>
       )}
 
       <div className="flex justify-end gap-2">
         <Button
-          size="sm"
-          variant="ghost"
+          variant="tertiary"
           onClick={() => setEditing(false)}
           disabled={saving}
         >
           Cancel
         </Button>
-        <Button size="sm" onClick={() => void save()} disabled={saving || !!error}>
-          {saving && <Loader2 className="size-3.5 animate-spin" />}
+        <Button
+          variant="primary"
+          onClick={() => void save()}
+          loading={saving}
+          disabled={!!error}
+        >
           Save
         </Button>
+
       </div>
     </div>
   );

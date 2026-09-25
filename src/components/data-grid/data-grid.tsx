@@ -181,7 +181,7 @@ export function DataGridHeaderRow<T>({
       <tr>
         {selection ? (
           <th
-            className="sticky left-0 z-30 border-b bg-[#f7f7f7] shadow-[2px_0_4px_-2px_var(--shadow-color)]"
+            className="sticky left-0 z-30 border-b bg-(--bg-surface-secondary) shadow-[1px_0_0_0_var(--border-secondary)]"
             style={{ width: 40 }}
           >
             <div className="flex h-8 items-center justify-center">
@@ -219,7 +219,7 @@ export function DataGridHeaderRow<T>({
             : ChevronsUpDown;
           const inner = (
             <>
-              <span className="truncate text-[#4a4a4a]">{c.label}</span>
+              <span className="truncate text-(--text-secondary)">{c.label}</span>
               {isSortable ? (
                 <SortIcon
                   className={cn(
@@ -245,9 +245,9 @@ export function DataGridHeaderRow<T>({
                     : undefined
               }
               className={cn(
-                "border-b bg-[#f7f7f7] px-3 text-left font-medium",
+                "border-b bg-(--bg-surface-secondary) px-3 text-left font-medium",
                 c.sticky &&
-                  "sticky z-30 bg-[#f7f7f7] shadow-[2px_0_4px_-2px_var(--shadow-color)]",
+                  "sticky z-30 bg-(--bg-surface-secondary) shadow-[1px_0_0_0_var(--border-secondary)]",
               )}
               style={{ ...widthStyle, ...stickyStyle }}
             >
@@ -348,10 +348,10 @@ export function DataGridRow<T>({
             // bg-card keeps it opaque AND white (GEN-62); the row's tints
             // are mixed into --card so sticky cells match the normal ones.
             "sticky left-0 z-10 border-b bg-card text-center",
-            "shadow-[2px_0_4px_-2px_var(--shadow-color)]",
+            "shadow-[1px_0_0_0_var(--border-secondary)]",
             isSelected &&
               "bg-[color-mix(in_srgb,var(--primary)_5%,var(--card))]",
-            "group-hover/row:bg-[color-mix(in_srgb,var(--muted)_40%,var(--card))]",
+            "group-hover/row:bg-(--bg-surface-hover)",
           )}
         >
           <div
@@ -378,7 +378,7 @@ export function DataGridRow<T>({
               // row's tints into --card so they stay opaque (no bleed) while
               // matching the normal cells exactly (GEN-62).
               c.sticky &&
-                "sticky z-10 bg-card shadow-[2px_0_4px_-2px_var(--shadow-color)] group-hover/row:bg-[color-mix(in_srgb,var(--muted)_40%,var(--card))]",
+                "sticky z-10 bg-card shadow-[1px_0_0_0_var(--border-secondary)] group-hover/row:bg-(--bg-surface-hover)",
               isSelected &&
                 c.sticky &&
                 "bg-[color-mix(in_srgb,var(--primary)_5%,var(--card))]",

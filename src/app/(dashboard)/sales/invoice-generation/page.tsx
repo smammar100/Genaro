@@ -3,9 +3,6 @@
 import { Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  ChevronDown,
-  Plus,
-  Trash2,
   ShieldX,
   Car,
   User,
@@ -47,9 +44,15 @@ import {
   WARRANTY_DEFAULTS,
 } from "@/lib/invoice-templates";
 import { computeInvoiceTotals } from "@/lib/invoice-calc";
-import { Card } from "@/components/ui/card";
+import {
+  ActionList,
+  Banner,
+  Button,
+  Card,
+  Layout,
+  Page,
+} from "@/components/polaris";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,7 +68,7 @@ import {
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/shared/empty-state";
 import { VehiclePicker } from "@/components/shared/vehicle-picker";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { isValidUkPhone } from "@/lib/formatters";
 import {
   addressLookupService,
@@ -84,7 +87,7 @@ function round2(n: number) {
 /** Human labels for the DepositMethod enum — a legal document form must never
  *  surface raw values like "bank_transfer" (GEN-51). */
 const DEPOSIT_METHOD_OPTIONS: [DepositMethod, string][] = [
-  ["bank_transfer", "Bank Transfer"],
+  ["bank_transfer", "Bank transfer"],
   ["cash", "Cash"],
   ["card", "Card"],
   ["cheque", "Cheque"],
@@ -152,28 +155,48 @@ function Section({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(true);
+  const bodyId = useId();
   const Icon = SECTION_ICON[letter];
   return (
-    <Card className="rounded-xl p-0 shadow-[0_1px_0_rgba(0,0,0,.05)]">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between px-4 py-3 text-left"
-      >
-        <span className="flex items-center gap-2 text-sm font-semibold">
-          {Icon ? <Icon className="size-4 text-muted-foreground" /> : null}
+    <Card
+      title={
+        <span className="flex items-center gap-2">
+          {Icon ? (
+            <Icon aria-hidden className="size-4 text-(--text-secondary)" />
+          ) : null}
           <span>
-            <span className="text-muted-foreground">{letter}.</span> {title}
+            <span className="text-(--text-secondary)">{letter}.</span> {title}
           </span>
         </span>
-        <ChevronDown
-          className={cn("h-4 w-4 transition-transform", !open && "-rotate-90")}
+      }
+      actions={
+        <Button
+          variant="tertiary"
+          icon={open ? "ChevronUpMinor" : "ChevronDownMinor"}
+          accessibilityLabel={`${open ? "Collapse" : "Expand"} ${
+            // "Buyer details" -> "buyer details", but keep "VAT scheme".
+            /^[A-Z]{2}/.test(title) ? title : title[0].toLowerCase() + title.slice(1)
+          }`}
+          ariaExpanded={open}
+          ariaControls={bodyId}
+          onClick={() => setOpen((o) => !o)}
         />
-      </button>
-      {open && <div className="border-t border-border px-4 py-4">{children}</div>}
+      }
+    >
+      <div id={bodyId} hidden={!open}>
+        {children}
+      </div>
     </Card>
   );
 }
+
+/** Readable names for the line-item types (the raw enum never reaches the UI). */
+const LINE_TYPE_LABEL: Record<InvoiceLineItemType, string> = {
+  vehicle_price: "Vehicle price",
+  discount: "Discount",
+  addon_paid: "Paid add-on",
+  addon_free: "Free add-on",
+};
 
 export default function InvoiceGenerationPage() {
   return (
@@ -573,7 +596,7 @@ function InvoiceGenerationForm() {
       return "Buyer phone doesn't look like a UK number (e.g. 07712 345678 or 020 7946 0958)";
     const vp = lines.find((l) => l.type === "vehicle_price");
     if (!vp || vp.quantity * vp.unitPrice <= 0)
-      return "A vehicle SALES PRICE greater than zero is required";
+      return "A vehicle sales price greater than zero is required";
     if (lines.filter((l) => l.type === "discount").length > 1)
       return "Only one discount line is allowed";
     if (depositAmount > 0 && !depositReceivedDate)
@@ -581,7 +604,7 @@ function InvoiceGenerationForm() {
     if (financeAmount > 0 && !financeProvider)
       return "Finance provider is required when a finance amount is entered";
     if (hasWarrantyAddon && nonWarrantyDisclaimer)
-      return "Non-Warranty Disclaimer cannot be ticked alongside a Warranty add-on";
+      return "The non-warranty disclaimer cannot be ticked alongside a warranty add-on";
     if (
       !nonWarrantyDisclaimer &&
       warrantyType === "external" &&
@@ -704,826 +727,825 @@ function InvoiceGenerationForm() {
     );
   }
 
+  const submitLabel = submitting
+    ? editing
+      ? "Updating…"
+      : "Generating…"
+    : editing
+      ? "Update invoice"
+      : "Generate invoice";
+
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 xl:flex-row">
-      <div className="flex flex-1 flex-col gap-4">
-        <div>
-          <h1 className="text-xl font-semibold">
-            {editing ? "Edit Invoice" : "Generate Invoice"}
-          </h1>
-          <p className="mt-0.5 text-[13px] text-muted-foreground">
-            Create a legal, two-page sales invoice for a deal. Your draft saves
-            automatically as you go.
-          </p>
-        </div>
+    <Page
+      title={editing ? "Edit invoice" : "Generate invoice"}
+      subtitle="Create a legal, two-page sales invoice for a deal. Your draft saves automatically as you go."
+      backAction={{ content: "Invoicing", url: "/admin/invoicing" }}
+    >
+      <Layout>
+        <Layout.Section>
+          <Section letter="A" title="Vehicle">
+            <Label htmlFor={vehicleFieldId}>
+              Vehicle <span className="text-destructive">*</span>
+            </Label>
+            {/* One control, not two. This was a search box that filtered a
+                separate dropdown — you typed in one field and picked in
+                another. VehiclePicker does both (GEN-79). */}
+            <VehiclePicker
+              id={vehicleFieldId}
+              vehicles={filteredVehicles}
+              value={vehicle}
+              onChange={(v) => handleVehicleChange(v?.id ?? "")}
+              placeholder="Search by reg, stock ID or model…"
+              className="mt-1"
+            />
+          </Section>
 
-        <Section letter="A" title="Vehicle">
-          <Label htmlFor={vehicleFieldId}>
-            Vehicle <span className="text-destructive">*</span>
-          </Label>
-          {/* One control, not two. This was a search box that filtered a
-              separate dropdown — you typed in one field and picked in
-              another. VehiclePicker does both (GEN-79). */}
-          <VehiclePicker
-            id={vehicleFieldId}
-            vehicles={filteredVehicles}
-            value={vehicle}
-            onChange={(v) => handleVehicleChange(v?.id ?? "")}
-            placeholder="Search by reg, stock ID or model…"
-            className="mt-1"
-          />
-        </Section>
-
-        <Section letter="B" title="Buyer Details">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <Label htmlFor={buyerNameId}>
-                Buyer name (e.g. MR JOHN SMITH){" "}
-                <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id={buyerNameId}
-                value={buyerName}
-                onChange={(e) => setBuyerName(e.target.value.toUpperCase())}
-              />
-            </div>
-            <div>
-              <Label htmlFor={buyerPhoneId}>
-                Phone <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id={buyerPhoneId}
-                value={buyerPhone}
-                onChange={(e) => setBuyerPhone(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor={buyerPostcodeId}>
-                Post code <span className="text-destructive">*</span>
-              </Label>
-              {/* No Lookup button: the list appears as you type (GEN-68). */}
-              <div className="relative">
+          <Section letter="B" title="Buyer details">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor={buyerNameId}>
+                  Buyer name (e.g. MR JOHN SMITH){" "}
+                  <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id={buyerPostcodeId}
-                  value={buyerPostcode}
-                  autoComplete="off"
-                  onChange={(e) => {
-                    const next = e.target.value.toUpperCase();
-                    setBuyerPostcode(next);
-                    setPcListOpen(true);
-                    lookupPostcodeDebounced(next);
-                  }}
-                  onFocus={() => setPcListOpen(true)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") setPcListOpen(false);
-                    // One suggestion is the common case on the current
-                    // provider — Enter takes it without reaching for the mouse.
-                    if (e.key === "Enter" && pcSuggestions.length === 1) {
-                      e.preventDefault();
-                      acceptAddress(pcSuggestions[0]);
-                    }
-                  }}
+                  id={buyerNameId}
+                  value={buyerName}
+                  onChange={(e) => setBuyerName(e.target.value.toUpperCase())}
                 />
-                {pcListOpen && pcSuggestions.length > 0 ? (
-                  <ul className="absolute inset-x-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-md border bg-popover py-1 shadow-lg">
-                    {pcSuggestions.map((sug) => (
-                      <li key={sug.id}>
-                        <button
-                          type="button"
-                          onClick={() => acceptAddress(sug)}
-                          className="flex w-full flex-col items-start gap-0.5 px-3 py-1.5 text-left text-sm transition-colors hover:bg-muted"
-                        >
-                          <span className="font-medium">
-                            {sug.line1 || sug.label}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {sug.line1 ? sug.label : sug.postcode}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {pcLoading
-                  ? "Searching…"
-                  : pcError
-                    ? "Address lookup unavailable, enter the address manually."
-                    : pcNotFound
-                      ? "No match for that postcode, enter the address manually."
-                      : pcHasPremises
-                        ? "Start typing a postcode and pick your address."
-                        : "Start typing a postcode and pick the area, then add your house number and street."}
-              </p>
-            </div>
-            <div>
-              <Label htmlFor={buyerAddressId}>
-                Address line <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id={buyerAddressId}
-                value={buyerAddress}
-                onChange={(e) => setBuyerAddress(e.target.value.toUpperCase())}
-              />
-            </div>
-            <div>
-              <Label htmlFor={buyerEmailId}>Email (optional)</Label>
-              <Input
-                id={buyerEmailId}
-                value={buyerEmail}
-                onChange={(e) => setBuyerEmail(e.target.value)}
-              />
-            </div>
-          </div>
-        </Section>
-
-        <Section letter="C" title="Sale Details (Date + Line Items)">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div>
-              <Label htmlFor={invoiceDateId}>Invoice date</Label>
-              <Input
-                id={invoiceDateId}
-                type="date"
-                value={invoiceDate}
-                onChange={(e) => setInvoiceDate(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor={presentMileageId}>Present mileage</Label>
-              <Input
-                id={presentMileageId}
-                type="number"
-                value={presentMileage}
-                onChange={(e) => setPresentMileage(Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <Label htmlFor={dorDateId}>D.O.R (first registered)</Label>
-              <Input
-                id={dorDateId}
-                type="date"
-                value={dorDate}
-                onChange={(e) => setDorDate(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-col gap-2">
-            {lines.map((l) => (
-              <div
-                key={l.uid}
-                className="flex flex-wrap items-end gap-2 rounded-md border p-2"
-              >
-                <div className="w-28">
-                  <p className="text-xs">Type</p>
-                  <div className="text-sm font-medium capitalize">
-                    {l.type.replace("_", " ")}
-                  </div>
-                </div>
-                {(l.type === "addon_paid" || l.type === "addon_free") && (
-                  <div className="w-40">
-                    <Label className="text-xs" htmlFor={`${l.uid}-category`}>
-                      Category
-                    </Label>
-                    <Select
-                      value={l.addonCategory ?? "custom"}
-                      onValueChange={(v) => {
-                        const opt = ADDON_CATEGORY_OPTIONS.find(
-                          (o) => o.value === v,
-                        );
-                        updateLine(l.uid, {
-                          addonCategory: v as AddonCategory,
-                          description:
-                            opt?.defaultDescription || l.description,
-                        });
-                      }}
-                    >
-                      <SelectTrigger id={`${l.uid}-category`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ADDON_CATEGORY_OPTIONS.map((o) => (
-                          <SelectItem key={o.value} value={o.value}>
-                            {o.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                <div className="flex-1 min-w-[160px]">
-                  <Label className="text-xs" htmlFor={`${l.uid}-description`}>
-                    Description
-                  </Label>
+              <div>
+                <Label htmlFor={buyerPhoneId}>
+                  Phone <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id={buyerPhoneId}
+                  value={buyerPhone}
+                  onChange={(e) => setBuyerPhone(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor={buyerPostcodeId}>
+                  Post code <span className="text-destructive">*</span>
+                </Label>
+                {/* No Lookup button: the list appears as you type (GEN-68). */}
+                <div className="relative">
                   <Input
-                    id={`${l.uid}-description`}
-                    value={l.description}
-                    onChange={(e) =>
-                      updateLine(l.uid, { description: e.target.value })
-                    }
+                    id={buyerPostcodeId}
+                    value={buyerPostcode}
+                    autoComplete="off"
+                    onChange={(e) => {
+                      const next = e.target.value.toUpperCase();
+                      setBuyerPostcode(next);
+                      setPcListOpen(true);
+                      lookupPostcodeDebounced(next);
+                    }}
+                    onFocus={() => setPcListOpen(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") setPcListOpen(false);
+                      // One suggestion is the common case on the current
+                      // provider — Enter takes it without reaching for the mouse.
+                      if (e.key === "Enter" && pcSuggestions.length === 1) {
+                        e.preventDefault();
+                        acceptAddress(pcSuggestions[0]);
+                      }
+                    }}
                   />
+                  {pcListOpen && pcSuggestions.length > 0 ? (
+                    <div className="absolute inset-x-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-(--radius-300) bg-(--bg-surface) shadow-(--shadow-400)">
+                      <ActionList
+                        items={pcSuggestions.map((sug) => ({
+                          content: sug.line1 || sug.label,
+                          helpText: sug.line1 ? sug.label : sug.postcode,
+                          onAction: () => acceptAddress(sug),
+                        }))}
+                      />
+                    </div>
+                  ) : null}
                 </div>
-                {l.type !== "addon_free" && (
-                  <div className="w-24">
-                    <Label className="text-xs" htmlFor={`${l.uid}-unit-price`}>
-                      Unit £
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {pcLoading
+                    ? "Searching…"
+                    : pcError
+                      ? "Address lookup unavailable, enter the address manually."
+                      : pcNotFound
+                        ? "No match for that postcode, enter the address manually."
+                        : pcHasPremises
+                          ? "Start typing a postcode and pick your address."
+                          : "Start typing a postcode and pick the area, then add your house number and street."}
+                </p>
+              </div>
+              <div>
+                <Label htmlFor={buyerAddressId}>
+                  Address line <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id={buyerAddressId}
+                  value={buyerAddress}
+                  onChange={(e) => setBuyerAddress(e.target.value.toUpperCase())}
+                />
+              </div>
+              <div>
+                <Label htmlFor={buyerEmailId}>Email (optional)</Label>
+                <Input
+                  id={buyerEmailId}
+                  value={buyerEmail}
+                  onChange={(e) => setBuyerEmail(e.target.value)}
+                />
+              </div>
+            </div>
+          </Section>
+
+          <Section letter="C" title="Sale details (date and line items)">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div>
+                <Label htmlFor={invoiceDateId}>Invoice date</Label>
+                <Input
+                  id={invoiceDateId}
+                  type="date"
+                  value={invoiceDate}
+                  onChange={(e) => setInvoiceDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor={presentMileageId}>Present mileage</Label>
+                <Input
+                  id={presentMileageId}
+                  type="number"
+                  value={presentMileage}
+                  onChange={(e) => setPresentMileage(Number(e.target.value))}
+                />
+              </div>
+              <div>
+                <Label htmlFor={dorDateId}>D.O.R (first registered)</Label>
+                <Input
+                  id={dorDateId}
+                  type="date"
+                  value={dorDate}
+                  onChange={(e) => setDorDate(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-2">
+              {lines.map((l) => (
+                <div
+                  key={l.uid}
+                  className="flex flex-wrap items-end gap-2 rounded-(--radius-200) border border-(--border) p-2"
+                >
+                  <div className="w-28">
+                    <p className="text-xs text-(--text-secondary)">Type</p>
+                    <div className="text-sm font-medium">
+                      {LINE_TYPE_LABEL[l.type]}
+                    </div>
+                  </div>
+                  {(l.type === "addon_paid" || l.type === "addon_free") && (
+                    <div className="w-40">
+                      <Label className="text-xs" htmlFor={`${l.uid}-category`}>
+                        Category
+                      </Label>
+                      <Select
+                        value={l.addonCategory ?? "custom"}
+                        onValueChange={(v) => {
+                          const opt = ADDON_CATEGORY_OPTIONS.find(
+                            (o) => o.value === v,
+                          );
+                          updateLine(l.uid, {
+                            addonCategory: v as AddonCategory,
+                            description:
+                              opt?.defaultDescription || l.description,
+                          });
+                        }}
+                      >
+                        <SelectTrigger id={`${l.uid}-category`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ADDON_CATEGORY_OPTIONS.map((o) => (
+                            <SelectItem key={o.value} value={o.value}>
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  <div className="min-w-40 flex-1">
+                    <Label className="text-xs" htmlFor={`${l.uid}-description`}>
+                      Description
                     </Label>
                     <Input
-                      id={`${l.uid}-unit-price`}
-                      type="number"
-                      value={l.unitPrice}
+                      id={`${l.uid}-description`}
+                      value={l.description}
                       onChange={(e) =>
-                        updateLine(l.uid, {
-                          unitPrice: Number(e.target.value),
+                        updateLine(l.uid, { description: e.target.value })
+                      }
+                    />
+                  </div>
+                  {l.type !== "addon_free" && (
+                    <div className="w-24">
+                      <Label className="text-xs" htmlFor={`${l.uid}-unit-price`}>
+                        Unit £
+                      </Label>
+                      <Input
+                        id={`${l.uid}-unit-price`}
+                        type="number"
+                        value={l.unitPrice}
+                        onChange={(e) =>
+                          updateLine(l.uid, {
+                            unitPrice: Number(e.target.value),
+                          })
+                        }
+                      />
+                    </div>
+                  )}
+                  {l.type !== "vehicle_price" && (
+                    <Button
+                      variant="tertiary"
+                      icon="DeleteMinor"
+                      onClick={() => removeLine(l.uid)}
+                      accessibilityLabel="Remove line"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button icon="PlusMinor" onClick={() => addAddon(false)}>
+                Add paid add-on
+              </Button>
+              <Button icon="PlusMinor" onClick={() => addAddon(true)}>
+                Add free add-on
+              </Button>
+              <Button icon="PlusMinor" onClick={addDiscount}>
+                Add discount
+              </Button>
+            </div>
+          </Section>
+
+          <Section letter="D" title="VAT scheme">
+            <RadioGroup
+              value={vatScheme}
+              onValueChange={(v) => setVatScheme(v as VatScheme)}
+            >
+              {(
+                [
+                  ["margin_used", "Margin scheme (UK used-car standard)"],
+                  ["standard_20", "Standard 20% VAT"],
+                  ["zero_rated", "Zero rated (export / commercial)"],
+                ] as [VatScheme, string][]
+              ).map(([v, label]) => (
+                <RadioItem key={v} value={v}>
+                  {label}
+                </RadioItem>
+              ))}
+            </RadioGroup>
+          </Section>
+
+          <Section letter="E" title="Payment breakdown">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor={depositAmountId}>Customer deposit (£)</Label>
+                <Input
+                  id={depositAmountId}
+                  type="number"
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(Number(e.target.value))}
+                />
+              </div>
+              <div>
+                <Label htmlFor={depositMethodId}>Deposit method</Label>
+                {/* items map: without it Base UI's SelectValue renders the raw
+                    enum ("bank_transfer") in the closed trigger (GEN-51). */}
+                <Select
+                  items={DEPOSIT_METHOD_OPTIONS.map(([value, label]) => ({
+                    value,
+                    label,
+                  }))}
+                  value={depositMethod}
+                  onValueChange={(v) => setDepositMethod(v as DepositMethod)}
+                >
+                  <SelectTrigger id={depositMethodId}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEPOSIT_METHOD_OPTIONS.map(([v, l]) => (
+                      <SelectItem key={v} value={v}>
+                        {l}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor={depositReceivedDateId}>
+                  Deposit received date
+                </Label>
+                <Input
+                  id={depositReceivedDateId}
+                  type="date"
+                  value={depositReceivedDate}
+                  onChange={(e) => setDepositReceivedDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor={financeAmountId}>Finance amount (£)</Label>
+                <Input
+                  id={financeAmountId}
+                  type="number"
+                  value={financeAmount}
+                  onChange={(e) => setFinanceAmount(Number(e.target.value))}
+                />
+              </div>
+              <div>
+                <Label htmlFor={financeProviderId}>Finance provider</Label>
+                <Select
+                  value={financeProvider}
+                  onValueChange={setFinanceProvider}
+                >
+                  <SelectTrigger id={financeProviderId}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MOTOR_FINANCE_PROVIDERS.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor={balanceDueById}>Balance due by</Label>
+                <Input
+                  id={balanceDueById}
+                  type="date"
+                  value={balanceDueBy}
+                  onChange={(e) => setBalanceDueBy(e.target.value)}
+                />
+              </div>
+            </div>
+          </Section>
+
+          <Section letter="F" title="Warranty declaration">
+            {hasWarrantyAddon && (
+              <Banner tone="warning" className="mb-3">
+                A warranty add-on is present, so this section is required.
+              </Banner>
+            )}
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div>
+                <Label htmlFor={warrantyProviderTypeId}>
+                  Warranty provided by
+                </Label>
+                <Select
+                  items={{
+                    in_house: "Car Capital (in-house)",
+                    external: "External provider",
+                  }}
+                  value={warrantyType}
+                  onValueChange={(v) =>
+                    setWarranty({
+                      ...warranty,
+                      type: v as WarrantyType,
+                      // Swap the provider block wholesale so an in-house invoice
+                      // never carries a stale third-party name into the PDF.
+                      ...(v === "in_house"
+                        ? {
+                            provider: WARRANTY_DEFAULTS.provider,
+                            providerPhone: WARRANTY_DEFAULTS.providerPhone,
+                            providerEmail: WARRANTY_DEFAULTS.providerEmail,
+                          }
+                        : warranty.provider === WARRANTY_DEFAULTS.provider
+                          ? { provider: "", providerPhone: "", providerEmail: "" }
+                          : {}),
+                    })
+                  }
+                >
+                  <SelectTrigger id={warrantyProviderTypeId}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="in_house">
+                      Car Capital (in-house)
+                    </SelectItem>
+                    <SelectItem value="external">External provider</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {warrantyType === "external" ? (
+                <>
+                  <div>
+                    <Label htmlFor={warrantyProviderNameId}>Provider name</Label>
+                    <Input
+                      id={warrantyProviderNameId}
+                      value={warranty.provider}
+                      onChange={(e) =>
+                        setWarranty({ ...warranty, provider: e.target.value })
+                      }
+                      placeholder="e.g. WarrantyWise"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={warrantyProviderPhoneId}>
+                      Provider phone
+                    </Label>
+                    <Input
+                      id={warrantyProviderPhoneId}
+                      value={warranty.providerPhone}
+                      onChange={(e) =>
+                        setWarranty({
+                          ...warranty,
+                          providerPhone: e.target.value,
                         })
                       }
                     />
                   </div>
-                )}
-                {l.type !== "vehicle_price" && (
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => removeLine(l.uid)}
-                    aria-label="Remove line"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
+                  <div>
+                    <Label htmlFor={warrantyProviderEmailId}>
+                      Provider email
+                    </Label>
+                    <Input
+                      id={warrantyProviderEmailId}
+                      type="email"
+                      value={warranty.providerEmail}
+                      onChange={(e) =>
+                        setWarranty({
+                          ...warranty,
+                          providerEmail: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </>
+              ) : null}
+              <div>
+                <Label htmlFor={warrantyCoverTypeId}>Cover type</Label>
+                <Select
+                  value={warranty.coverType}
+                  onValueChange={(v) =>
+                    setWarranty({
+                      ...warranty,
+                      coverType: v as WarrantyDeclaration["coverType"],
+                    })
+                  }
+                >
+                  <SelectTrigger id={warrantyCoverTypeId}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["Basic", "Standard", "Premier", "Comprehensive"].map(
+                      (c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
-            ))}
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={() => addAddon(false)}>
-              <Plus className="mr-1 h-3 w-3" /> Paid add-on
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => addAddon(true)}>
-              <Plus className="mr-1 h-3 w-3" /> Free add-on
-            </Button>
-            <Button size="sm" variant="outline" onClick={addDiscount}>
-              <Plus className="mr-1 h-3 w-3" /> Discount
-            </Button>
-          </div>
-        </Section>
-
-        <Section letter="D" title="VAT Scheme">
-          <RadioGroup
-            value={vatScheme}
-            onValueChange={(v) => setVatScheme(v as VatScheme)}
-          >
-            {(
-              [
-                ["margin_used", "Margin scheme (UK used-car standard)"],
-                ["standard_20", "Standard 20% VAT"],
-                ["zero_rated", "Zero rated (export / commercial)"],
-              ] as [VatScheme, string][]
-            ).map(([v, label]) => (
-              <RadioItem key={v} value={v}>
-                {label}
-              </RadioItem>
-            ))}
-          </RadioGroup>
-        </Section>
-
-        <Section letter="E" title="Payment Breakdown">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <Label htmlFor={depositAmountId}>Customer deposit (£)</Label>
-              <Input
-                id={depositAmountId}
-                type="number"
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <Label htmlFor={depositMethodId}>Deposit method</Label>
-              {/* items map: without it Base UI's SelectValue renders the raw
-                  enum ("bank_transfer") in the closed trigger (GEN-51). */}
-              <Select
-                items={DEPOSIT_METHOD_OPTIONS.map(([value, label]) => ({
-                  value,
-                  label,
-                }))}
-                value={depositMethod}
-                onValueChange={(v) => setDepositMethod(v as DepositMethod)}
-              >
-                <SelectTrigger id={depositMethodId}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DEPOSIT_METHOD_OPTIONS.map(([v, l]) => (
-                    <SelectItem key={v} value={v}>
-                      {l}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor={depositReceivedDateId}>
-                Deposit received date
-              </Label>
-              <Input
-                id={depositReceivedDateId}
-                type="date"
-                value={depositReceivedDate}
-                onChange={(e) => setDepositReceivedDate(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor={financeAmountId}>Finance amount (£)</Label>
-              <Input
-                id={financeAmountId}
-                type="number"
-                value={financeAmount}
-                onChange={(e) => setFinanceAmount(Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <Label htmlFor={financeProviderId}>Finance provider</Label>
-              <Select
-                value={financeProvider}
-                onValueChange={setFinanceProvider}
-              >
-                <SelectTrigger id={financeProviderId}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {MOTOR_FINANCE_PROVIDERS.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor={balanceDueById}>Balance due by</Label>
-              <Input
-                id={balanceDueById}
-                type="date"
-                value={balanceDueBy}
-                onChange={(e) => setBalanceDueBy(e.target.value)}
-              />
-            </div>
-          </div>
-        </Section>
-
-        <Section letter="F" title="Warranty Declaration">
-          {hasWarrantyAddon && (
-            <p className="mb-2 text-xs text-amber-600">
-              A Warranty add-on is present, so this section is required.
-            </p>
-          )}
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div>
-              <Label htmlFor={warrantyProviderTypeId}>
-                Warranty provided by
-              </Label>
-              <Select
-                items={{
-                  in_house: "Car Capital (in-house)",
-                  external: "External provider",
-                }}
-                value={warrantyType}
-                onValueChange={(v) =>
-                  setWarranty({
-                    ...warranty,
-                    type: v as WarrantyType,
-                    // Swap the provider block wholesale so an in-house invoice
-                    // never carries a stale third-party name into the PDF.
-                    ...(v === "in_house"
-                      ? {
-                          provider: WARRANTY_DEFAULTS.provider,
-                          providerPhone: WARRANTY_DEFAULTS.providerPhone,
-                          providerEmail: WARRANTY_DEFAULTS.providerEmail,
-                        }
-                      : warranty.provider === WARRANTY_DEFAULTS.provider
-                        ? { provider: "", providerPhone: "", providerEmail: "" }
-                        : {}),
-                  })
-                }
-              >
-                <SelectTrigger id={warrantyProviderTypeId}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="in_house">
-                    Car Capital (in-house)
-                  </SelectItem>
-                  <SelectItem value="external">External provider</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {warrantyType === "external" ? (
-              <>
-                <div>
-                  <Label htmlFor={warrantyProviderNameId}>Provider name</Label>
-                  <Input
-                    id={warrantyProviderNameId}
-                    value={warranty.provider}
-                    onChange={(e) =>
-                      setWarranty({ ...warranty, provider: e.target.value })
-                    }
-                    placeholder="e.g. WarrantyWise"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor={warrantyProviderPhoneId}>
-                    Provider phone
-                  </Label>
-                  <Input
-                    id={warrantyProviderPhoneId}
-                    value={warranty.providerPhone}
-                    onChange={(e) =>
-                      setWarranty({
-                        ...warranty,
-                        providerPhone: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label htmlFor={warrantyProviderEmailId}>
-                    Provider email
-                  </Label>
-                  <Input
-                    id={warrantyProviderEmailId}
-                    type="email"
-                    value={warranty.providerEmail}
-                    onChange={(e) =>
-                      setWarranty({
-                        ...warranty,
-                        providerEmail: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-              </>
-            ) : null}
-            <div>
-              <Label htmlFor={warrantyCoverTypeId}>Cover type</Label>
-              <Select
-                value={warranty.coverType}
-                onValueChange={(v) =>
-                  setWarranty({
-                    ...warranty,
-                    coverType: v as WarrantyDeclaration["coverType"],
-                  })
-                }
-              >
-                <SelectTrigger id={warrantyCoverTypeId}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {["Basic", "Standard", "Premier", "Comprehensive"].map(
-                    (c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor={warrantyClaimLimitId}>Claim limit (£)</Label>
-              <Input
-                id={warrantyClaimLimitId}
-                type="number"
-                value={warranty.claimLimit}
-                onChange={(e) =>
-                  setWarranty({
-                    ...warranty,
-                    claimLimit: Number(e.target.value),
-                  })
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor={warrantyDiagnosticsCoverId}>
-                Diagnostics cover (£)
-              </Label>
-              <Input
-                id={warrantyDiagnosticsCoverId}
-                type="number"
-                value={warranty.diagnosticsCover}
-                onChange={(e) =>
-                  setWarranty({
-                    ...warranty,
-                    diagnosticsCover: Number(e.target.value),
-                  })
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor={warrantyDurationId}>Duration</Label>
-              <Select
-                value={warranty.duration}
-                onValueChange={(v) =>
-                  setWarranty({
-                    ...warranty,
-                    duration: v as WarrantyDeclaration["duration"],
-                  })
-                }
-              >
-                <SelectTrigger id={warrantyDurationId}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {["1 Month", "3 Months", "6 Months", "12 Months"].map(
-                    (d) => (
-                      <SelectItem key={d} value={d}>
-                        {d}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor={warrantyExcessPercentId}>Excess (%)</Label>
-              <Input
-                id={warrantyExcessPercentId}
-                type="number"
-                value={warranty.excessPercent}
-                onChange={(e) =>
-                  setWarranty({
-                    ...warranty,
-                    excessPercent: Number(e.target.value),
-                  })
-                }
-              />
-            </div>
-            <label className="flex items-end gap-2 text-sm">
-              <Checkbox
-                checked={warranty.wearTearCovered}
-                onCheckedChange={(v) =>
-                  setWarranty({ ...warranty, wearTearCovered: Boolean(v) })
-                }
-              />
-              Wear &amp; Tear covered
-            </label>
-          </div>
-          <label className="mt-3 flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={nonWarrantyDisclaimer}
-              onCheckedChange={(v) =>
-                setNonWarrantyDisclaimer(Boolean(v))
-              }
-            />
-            Non-Warranty Disclaimer accepted (opted out of comprehensive cover)
-          </label>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {nonWarrantyDisclaimer
-              ? "No warranty record will be created for this sale."
-              : `Issuing this invoice creates an ${
-                  warrantyType === "external" ? "external" : "in-house"
-                } warranty record, running ${warranty.duration.toLowerCase()} from the invoice date.`}
-          </p>
-        </Section>
-
-        <Section letter="G" title="Pre-Delivery Check">
-          <div className="grid gap-1.5 sm:grid-cols-2">
-            {PDI_ITEMS.map((it) => (
-              <label
-                key={it.key as string}
-                className="flex items-center gap-2 text-xs"
-              >
-                <Checkbox
-                  checked={Boolean(pdc[it.key])}
-                  onCheckedChange={(v) =>
-                    setPdc({ ...pdc, [it.key]: Boolean(v) })
+              <div>
+                <Label htmlFor={warrantyClaimLimitId}>Claim limit (£)</Label>
+                <Input
+                  id={warrantyClaimLimitId}
+                  type="number"
+                  value={warranty.claimLimit}
+                  onChange={(e) =>
+                    setWarranty({
+                      ...warranty,
+                      claimLimit: Number(e.target.value),
+                    })
                   }
                 />
-                {it.label}
+              </div>
+              <div>
+                <Label htmlFor={warrantyDiagnosticsCoverId}>
+                  Diagnostics cover (£)
+                </Label>
+                <Input
+                  id={warrantyDiagnosticsCoverId}
+                  type="number"
+                  value={warranty.diagnosticsCover}
+                  onChange={(e) =>
+                    setWarranty({
+                      ...warranty,
+                      diagnosticsCover: Number(e.target.value),
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor={warrantyDurationId}>Duration</Label>
+                <Select
+                  value={warranty.duration}
+                  onValueChange={(v) =>
+                    setWarranty({
+                      ...warranty,
+                      duration: v as WarrantyDeclaration["duration"],
+                    })
+                  }
+                >
+                  <SelectTrigger id={warrantyDurationId}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["1 Month", "3 Months", "6 Months", "12 Months"].map(
+                      (d) => (
+                        <SelectItem key={d} value={d}>
+                          {d}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor={warrantyExcessPercentId}>Excess (%)</Label>
+                <Input
+                  id={warrantyExcessPercentId}
+                  type="number"
+                  value={warranty.excessPercent}
+                  onChange={(e) =>
+                    setWarranty({
+                      ...warranty,
+                      excessPercent: Number(e.target.value),
+                    })
+                  }
+                />
+              </div>
+              <label className="flex items-end gap-2 text-sm">
+                <Checkbox
+                  checked={warranty.wearTearCovered}
+                  onCheckedChange={(v) =>
+                    setWarranty({ ...warranty, wearTearCovered: Boolean(v) })
+                  }
+                />
+                Wear and tear covered
               </label>
-            ))}
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <label className="flex items-center gap-2 text-sm">
+            </div>
+            <label className="mt-3 flex items-center gap-2 text-sm">
               <Checkbox
-                checked={pdc.lockNut}
+                checked={nonWarrantyDisclaimer}
                 onCheckedChange={(v) =>
-                  setPdc({ ...pdc, lockNut: Boolean(v) })
+                  setNonWarrantyDisclaimer(Boolean(v))
                 }
               />
-              Lock nut
+              Non-warranty disclaimer accepted (opted out of comprehensive cover)
             </label>
-            <div>
-              <Label htmlFor={numKeysId}>No. of keys</Label>
-              <Input
-                id={numKeysId}
-                type="number"
-                value={pdc.numKeys}
-                onChange={(e) =>
-                  setPdc({ ...pdc, numKeys: Number(e.target.value) })
-                }
-              />
+            <p className="mt-2 text-xs text-muted-foreground">
+              {nonWarrantyDisclaimer
+                ? "No warranty record will be created for this sale."
+                : `Issuing this invoice creates an ${
+                    warrantyType === "external" ? "external" : "in-house"
+                  } warranty record, running ${warranty.duration.toLowerCase()} from the invoice date.`}
+            </p>
+          </Section>
+
+          <Section letter="G" title="Pre-delivery check">
+            <div className="grid gap-1.5 sm:grid-cols-2">
+              {PDI_ITEMS.map((it) => (
+                <label
+                  key={it.key as string}
+                  className="flex items-center gap-2 text-xs"
+                >
+                  <Checkbox
+                    checked={Boolean(pdc[it.key])}
+                    onCheckedChange={(v) =>
+                      setPdc({ ...pdc, [it.key]: Boolean(v) })
+                    }
+                  />
+                  {it.label}
+                </label>
+              ))}
             </div>
-            <div>
-              <Label htmlFor={serviceHistoryId}>Service history</Label>
-              <Input
-                id={serviceHistoryId}
-                value={pdc.serviceHistoryStatus}
-                onChange={(e) =>
-                  setPdc({ ...pdc, serviceHistoryStatus: e.target.value })
-                }
-              />
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={pdc.lockNut}
+                  onCheckedChange={(v) =>
+                    setPdc({ ...pdc, lockNut: Boolean(v) })
+                  }
+                />
+                Lock nut
+              </label>
+              <div>
+                <Label htmlFor={numKeysId}>No. of keys</Label>
+                <Input
+                  id={numKeysId}
+                  type="number"
+                  value={pdc.numKeys}
+                  onChange={(e) =>
+                    setPdc({ ...pdc, numKeys: Number(e.target.value) })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor={serviceHistoryId}>Service history</Label>
+                <Input
+                  id={serviceHistoryId}
+                  value={pdc.serviceHistoryStatus}
+                  onChange={(e) =>
+                    setPdc({ ...pdc, serviceHistoryStatus: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor={engineServiceDateId}>Engine service date</Label>
+                <Input
+                  id={engineServiceDateId}
+                  type="date"
+                  value={pdc.engineServiceDoneDate ?? ""}
+                  onChange={(e) =>
+                    setPdc({
+                      ...pdc,
+                      engineServiceDoneDate: e.target.value || null,
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor={engineServiceMileageId}>
+                  Engine service mileage
+                </Label>
+                <Input
+                  id={engineServiceMileageId}
+                  type="number"
+                  value={pdc.engineServiceDoneMileage ?? ""}
+                  onChange={(e) =>
+                    setPdc({
+                      ...pdc,
+                      engineServiceDoneMileage: e.target.value
+                        ? Number(e.target.value)
+                        : null,
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor={v5StatusId}>V5 status</Label>
+                <Select
+                  value={pdc.v5Status}
+                  onValueChange={(v) =>
+                    setPdc({
+                      ...pdc,
+                      v5Status: v as PreDeliveryCheck["v5Status"],
+                    })
+                  }
+                >
+                  <SelectTrigger id={v5StatusId}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["V5C-2 Green Slip", "V5C Awaited", "Not Received"].map(
+                      (o) => (
+                        <SelectItem key={o} value={o}>
+                          {o}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor={hpiCheckResultId}>HPI / history check</Label>
+                <Select
+                  value={pdc.hpiCheckResult}
+                  onValueChange={(v) =>
+                    setPdc({
+                      ...pdc,
+                      hpiCheckResult: v as PreDeliveryCheck["hpiCheckResult"],
+                    })
+                  }
+                >
+                  <SelectTrigger id={hpiCheckResultId}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["Clear", "Issues Found", "Pending", "Not Performed"].map(
+                      (o) => (
+                        <SelectItem key={o} value={o}>
+                          {o}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div>
-              <Label htmlFor={engineServiceDateId}>Engine service date</Label>
-              <Input
-                id={engineServiceDateId}
-                type="date"
-                value={pdc.engineServiceDoneDate ?? ""}
-                onChange={(e) =>
-                  setPdc({
-                    ...pdc,
-                    engineServiceDoneDate: e.target.value || null,
-                  })
-                }
-              />
+          </Section>
+
+          <Section letter="H" title="Notes and declarations">
+            <div className="flex flex-col gap-2 text-sm">
+              <label className="flex items-center gap-2">
+                <Checkbox
+                  checked={includeUnitStockingNote}
+                  onCheckedChange={(v) => setUnitNote(Boolean(v))}
+                />
+                Include unit-stocking note
+              </label>
+              <label className="flex items-center gap-2">
+                <Checkbox
+                  checked={includeIdRequirementNote}
+                  onCheckedChange={(v) => setIdNote(Boolean(v))}
+                />
+                Include ID-requirement note
+              </label>
+              <label className="flex items-center gap-2">
+                <Checkbox
+                  checked={includeServiceHistoryNote}
+                  onCheckedChange={(v) => setShNote(Boolean(v))}
+                />
+                Include service-history note
+              </label>
+              <div>
+                <Label htmlFor={customNoteId}>Custom note</Label>
+                <Textarea
+                  id={customNoteId}
+                  value={customNote}
+                  onChange={(e) => setCustomNote(e.target.value)}
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor={engineServiceMileageId}>
-                Engine service mileage
-              </Label>
-              <Input
-                id={engineServiceMileageId}
-                type="number"
-                value={pdc.engineServiceDoneMileage ?? ""}
-                onChange={(e) =>
-                  setPdc({
-                    ...pdc,
-                    engineServiceDoneMileage: e.target.value
-                      ? Number(e.target.value)
-                      : null,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor={v5StatusId}>V5 status</Label>
-              <Select
-                value={pdc.v5Status}
-                onValueChange={(v) =>
-                  setPdc({
-                    ...pdc,
-                    v5Status: v as PreDeliveryCheck["v5Status"],
-                  })
-                }
+          </Section>
+
+          {/* The page's one primary action lives here, at the end of the form,
+              rather than in the Page header: the kit Button doesn't forward
+              data-* attributes, so the data-testid sits on a wrapper around
+              this single submit control. */}
+          <div className="flex justify-end gap-2 border-t border-(--border) pt-4">
+            <Button
+              onClick={() => router.push("/admin/invoicing")}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <span data-testid="generate-invoice" className="inline-flex">
+              <Button
+                variant="primary"
+                onClick={() => void handleSubmit()}
+                loading={submitting}
               >
-                <SelectTrigger id={v5StatusId}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {["V5C-2 Green Slip", "V5C Awaited", "Not Received"].map(
-                    (o) => (
-                      <SelectItem key={o} value={o}>
-                        {o}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor={hpiCheckResultId}>HPI / history check</Label>
-              <Select
-                value={pdc.hpiCheckResult}
-                onValueChange={(v) =>
-                  setPdc({
-                    ...pdc,
-                    hpiCheckResult: v as PreDeliveryCheck["hpiCheckResult"],
-                  })
-                }
-              >
-                <SelectTrigger id={hpiCheckResultId}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {["Clear", "Issues Found", "Pending", "Not Performed"].map(
-                    (o) => (
-                      <SelectItem key={o} value={o}>
-                        {o}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+                {submitLabel}
+              </Button>
+            </span>
           </div>
-        </Section>
+        </Layout.Section>
 
-        <Section letter="H" title="Notes & Declarations">
-          <div className="flex flex-col gap-2 text-sm">
-            <label className="flex items-center gap-2">
-              <Checkbox
-                checked={includeUnitStockingNote}
-                onCheckedChange={(v) => setUnitNote(Boolean(v))}
-              />
-              Include unit-stocking note
-            </label>
-            <label className="flex items-center gap-2">
-              <Checkbox
-                checked={includeIdRequirementNote}
-                onCheckedChange={(v) => setIdNote(Boolean(v))}
-              />
-              Include ID-requirement note
-            </label>
-            <label className="flex items-center gap-2">
-              <Checkbox
-                checked={includeServiceHistoryNote}
-                onCheckedChange={(v) => setShNote(Boolean(v))}
-              />
-              Include service-history note
-            </label>
-            <div>
-              <Label htmlFor={customNoteId}>Custom note</Label>
-              <Textarea
-                id={customNoteId}
-                value={customNote}
-                onChange={(e) => setCustomNote(e.target.value)}
-              />
-            </div>
-          </div>
-        </Section>
-
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/admin/invoicing")}
-            disabled={submitting}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={submitting}
-            data-testid="generate-invoice"
-          >
-            {submitting
-              ? editing
-                ? "Updating…"
-                : "Generating…"
-              : editing
-                ? "Update Invoice"
-                : "Generate Invoice"}
-          </Button>
-        </div>
-      </div>
-
-      {/* Sticky cost summary */}
-      <div className="xl:w-72">
-        <Card className="rounded-xl p-4 shadow-[0_1px_0_rgba(0,0,0,.05)] xl:sticky xl:top-4">
-          <h2 className="text-sm font-semibold">Cost Summary</h2>
-          <div className="mt-3 flex flex-col gap-1.5 text-sm">
-            <Row label="Vehicle (Sales Price)" v={totals.salesPrice} />
-            {totals.discount > 0 && (
-              <Row label="Discount" v={-totals.discount} />
-            )}
-            <div className="my-1 border-t" />
-            <Row label="Subtotal" v={totals.subtotal} />
-            <Row label="Add-ons (paid)" v={totals.paidAddonsTotal} />
-            <div className="flex justify-between text-muted-foreground">
-              <span>Add-ons (free)</span>
-              <span>{totals.freeAddonsCount} items</span>
-            </div>
-            <Row label="VAT" v={totals.vatAmount} />
-            <div className="my-1 border-t" />
-            <div className="flex justify-between font-semibold">
-              <span>GRAND TOTAL</span>
-              <span>{formatCurrency(totals.grandTotalInclAddons)}</span>
-            </div>
-            {depositAmount > 0 && (
-              <Row label="Customer Deposit" v={-depositAmount} />
-            )}
-            {financeAmount > 0 && (
-              <Row label="Finance Amount" v={-financeAmount} />
-            )}
-            <div className="my-1 border-t" />
-            <div className="flex justify-between font-semibold">
-              <span>BALANCE DUE</span>
-              <span>{formatCurrency(totals.balanceDue)}</span>
+        {/* Sticky cost summary */}
+        <Layout.Section variant="oneThird" className="xl:sticky xl:top-4">
+          <Card title="Cost summary">
+            <div className="flex flex-col gap-1.5 text-sm">
+              <Row label="Vehicle (sales price)" v={totals.salesPrice} />
+              {totals.discount > 0 && (
+                <Row label="Discount" v={-totals.discount} />
+              )}
+              <div className="my-1 border-t border-(--border)" />
+              <Row label="Subtotal" v={totals.subtotal} />
+              <Row label="Add-ons (paid)" v={totals.paidAddonsTotal} />
+              <div className="flex justify-between">
+                <span className="text-(--text-secondary)">Add-ons (free)</span>
+                <span className="tabular-nums text-(--text-secondary)">
+                  {totals.freeAddonsCount} items
+                </span>
+              </div>
+              <Row label="VAT" v={totals.vatAmount} />
+              <div className="my-1 border-t border-(--border)" />
+              <div className="flex justify-between font-semibold">
+                <span>Grand total</span>
+                <span className="tabular-nums">
+                  {formatCurrency(totals.grandTotalInclAddons)}
+                </span>
+              </div>
+              {depositAmount > 0 && (
+                <Row label="Customer deposit" v={-depositAmount} />
+              )}
+              {financeAmount > 0 && (
+                <Row label="Finance amount" v={-financeAmount} />
+              )}
+              <div className="my-1 border-t border-(--border)" />
+              <div className="flex justify-between font-semibold">
+                <span>Balance due</span>
+                <span className="tabular-nums">
+                  {formatCurrency(totals.balanceDue)}
+                </span>
+              </div>
             </div>
             {totals.overpayment && (
-              <p className="text-xs text-destructive">Overpayment</p>
+              <Banner tone="critical">
+                Overpayment: the deposit and finance exceed the grand total.
+              </Banner>
             )}
-          </div>
-        </Card>
-      </div>
+          </Card>
+        </Layout.Section>
+      </Layout>
       {confirmDialog}
-    </div>
+    </Page>
   );
 }
 
 function Row({ label, v }: { label: string; v: number }) {
   return (
     <div className="flex justify-between">
-      <span className="text-muted-foreground">{label}</span>
+      <span className="text-(--text-secondary)">{label}</span>
       <span className="tabular-nums">{formatCurrency(v)}</span>
     </div>
   );

@@ -17,7 +17,7 @@ export function PageHelper({ children, className }: PageHelperProps) {
   return (
     <p
       className={cn(
-        "mt-1 mb-2 max-w-2xl text-[13px] leading-5 text-[#616161]",
+        "mt-1 mb-2 max-w-2xl text-[13px] leading-5 text-(--text-secondary)",
         className,
       )}
     >

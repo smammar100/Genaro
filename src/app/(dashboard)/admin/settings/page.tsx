@@ -1,20 +1,21 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { KeyRound } from "lucide-react";
 import {
-  Building2,
-  ClipboardCheck,
-  DatabaseBackup,
-  ImageIcon,
-  KeyRound,
-  Megaphone,
-  Upload,
-  UserRound,
-  Workflow,
-  X,
-} from "lucide-react";
-import { Section, SectionStack } from "@/components/ui/section";
-import { ResourceList, ResourceListItem } from "@/components/ui/resource-list";
+  Button,
+  Card,
+  DropZone,
+  Icon,
+  Layout,
+  Page,
+  PageActions,
+  Select,
+  Tabs,
+  Thumbnail,
+  TextField,
+  type SelectOption,
+} from "@/components/polaris";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import {
@@ -24,27 +25,62 @@ import {
 import { PipelineStageSettings } from "@/components/admin/pipeline-stage-settings";
 import { InspectionChecklistSettings } from "@/components/admin/inspection-checklist-settings";
 import { LeadChannelSettings } from "@/components/admin/lead-channel-settings";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BackupPanel } from "@/components/settings/backup-panel";
 import { toast } from "@/lib/toast";
 import { authService } from "@/lib/services/auth-service";
 import { accountHandle } from "@/lib/auth/username";
 
+/** Quarter-hour steps for the working-hours pickers ("00:00" … "23:45"). */
+const QUARTER_HOURS: string[] = Array.from({ length: 96 }, (_, i) => {
+  const h = String(Math.floor(i / 4)).padStart(2, "0");
+  const m = String((i % 4) * 15).padStart(2, "0");
+  return `${h}:${m}`;
+});
+
+/** Time options, keeping a stored off-grid value (e.g. "08:40") selectable. */
+function timeOptions(current: string): SelectOption[] {
+  const values = QUARTER_HOURS.includes(current) || !current
+    ? QUARTER_HOURS
+    : [...QUARTER_HOURS, current].sort();
+  return values.map((v) => ({ label: v, value: v }));
+}
+
+/** Settings sections in tab order. All but My profile need Manage Settings. */
+const SECTIONS = [
+  { id: "profile", content: "My profile" },
+  { id: "company", content: "Company" },
+  { id: "inspection", content: "Inspection checklist" },
+  { id: "pipeline", content: "Sales pipeline" },
+  { id: "channels", content: "Lead channels" },
+  { id: "backup", content: "Backup" },
+] as const;
+
+type SectionId = (typeof SECTIONS)[number]["id"];
+
 export default function SettingsPage() {
-  const baseId = useId();
-  const nameId = `${baseId}-name`;
-  const addressId = `${baseId}-address`;
-  const vatId = `${baseId}-vat`;
-  const stockPrefixId = `${baseId}-stock-prefix`;
-  const hoursStartId = `${baseId}-hours-start`;
-  const hoursEndId = `${baseId}-hours-end`;
   const { user, company, revalidate } = useAuth();
   const { can, isSuperUser, isLoading } = usePermissions();
   const canManage = isSuperUser || can("admin:manage_settings");
+  // My profile is open to everyone; the company tabs need Manage Settings.
+  // Until permissions load, show just the profile.
+  const manageTabs = canManage && !isLoading;
+  const tabs = manageTabs ? SECTIONS : SECTIONS.slice(0, 1);
+  // The tab the user picked, tagged with the permission state it was picked
+  // under: once permissions settle the pick resets, so a manager lands on
+  // Company and everyone else on My profile.
+  const [picked, setPicked] = useState<{ manage: boolean; id: SectionId } | null>(
+    null,
+  );
+  const active: SectionId =
+    picked && picked.manage === manageTabs
+      ? picked.id
+      : manageTabs
+        ? "company"
+        : "profile";
+  const selectedIndex = Math.max(
+    0,
+    tabs.findIndex((t) => t.id === active),
+  );
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState(company?.name ?? "");
   const [address, setAddress] = useState(company?.address ?? "");
@@ -65,12 +101,7 @@ export default function SettingsPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingMark, setUploadingMark] = useState(false);
 
-  async function handleLogoSelect(
-    e: React.ChangeEvent<HTMLInputElement>,
-    kind: LogoKind,
-  ) {
-    const file = e.target.files?.[0];
-    e.target.value = ""; // allow re-selecting the same file
+  async function handleLogoSelect(file: File | undefined, kind: LogoKind) {
     if (!file || !company) return;
     const setUploading = kind === "mark" ? setUploadingMark : setUploadingLogo;
     const setUrl = kind === "mark" ? setLogoMarkUrl : setLogoUrl;
@@ -121,184 +152,129 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-semibold">Settings</h1>
-        <p className="text-[13px] text-muted-foreground">
-          Your profile{canManage ? ", plus company profile, defaults, and inspection checklist" : ""}.
-        </p>
-      </div>
-      {/* My profile is open to everyone; the company tabs need Manage
-          Settings. Until permissions load, show just the profile. */}
-      <Tabs
-        // Remount once permissions settle so the default tab can change
-        // (Base UI ignores a changed defaultValue on a mounted Tabs).
-        key={canManage && !isLoading ? "manage" : "self"}
-        orientation="vertical"
-        defaultValue={canManage && !isLoading ? "company" : "profile"}
-        className="items-start gap-4 data-[orientation=vertical]:flex-col md:data-[orientation=vertical]:flex-row"
-      >
-        <Card className="w-full shrink-0 p-2 md:sticky md:top-4 md:w-60">
-          <TabsList className="w-full flex-col items-stretch">
-            <TabsTrigger value="profile" className="h-8 gap-2 px-2">
-                  <UserRound className="size-4 text-[#4a4a4a]" />
-                  My profile</TabsTrigger>
-            {canManage && (
-              <>
-                <TabsTrigger value="company" className="h-8 gap-2 px-2">
-                  <Building2 className="size-4 text-[#4a4a4a]" />
-                  Company</TabsTrigger>
-                <TabsTrigger value="inspection" className="h-8 gap-2 px-2">
-                  <ClipboardCheck className="size-4 text-[#4a4a4a]" />
-                  Inspection Checklist</TabsTrigger>
-                <TabsTrigger value="pipeline" className="h-8 gap-2 px-2">
-                  <Workflow className="size-4 text-[#4a4a4a]" />
-                  Sales Pipeline</TabsTrigger>
-                <TabsTrigger value="channels" className="h-8 gap-2 px-2">
-                  <Megaphone className="size-4 text-[#4a4a4a]" />
-                  Lead Channels</TabsTrigger>
-                <TabsTrigger value="backup" className="h-8 gap-2 px-2">
-                  <DatabaseBackup className="size-4 text-[#4a4a4a]" />
-                  Backup</TabsTrigger>
-              </>
-            )}
-          </TabsList>
-        </Card>
-        <div className="mx-auto w-full min-w-0 max-w-[784px] flex-1">
-        <TabsContent value="profile">
-          <ProfilePanel />
-        </TabsContent>
-        {canManage && (
-        <>
-        <TabsContent value="company">
-          <SectionStack>
-          <AnnotatedSection
-            title="Branding"
-            description="Logos used on invoices and in the sidebar."
-          >
-            <LogoField
-              label="Full logo"
-              hint="Shown on generated invoices (logo + wordmark). PNG or JPG; large images are automatically resized."
-              url={logoUrl}
-              previewClassName="h-16 w-24"
-              uploading={uploadingLogo}
-              onSelect={(e) => void handleLogoSelect(e, "full")}
-              onClear={() => setLogoUrl(null)}
-            />
-            <LogoField
-              label="Logo mark"
-              hint="Square icon shown in the sidebar. Falls back to the initials when unset. PNG or JPG."
-              url={logoMarkUrl}
-              previewClassName="h-16 w-16"
-              uploading={uploadingMark}
-              onSelect={(e) => void handleLogoSelect(e, "mark")}
-              onClear={() => setLogoMarkUrl(null)}
-            />
-          </AnnotatedSection>
-          <AnnotatedSection
-            title="Company details"
-            description="Name, address and tax details shown on invoices."
-          >
-            <div className="sm:col-span-2">
-              <Label htmlFor={nameId}>Name</Label>
-              <Input id={nameId} value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div className="sm:col-span-2">
-              <Label htmlFor={addressId}>Address</Label>
-              <Input
-                id={addressId}
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor={vatId}>VAT number</Label>
-              <Input id={vatId} value={vat} onChange={(e) => setVat(e.target.value)} />
-            </div>
-            <div>
-              <Label htmlFor={stockPrefixId}>Stock ID prefix</Label>
-              <Input
-                id={stockPrefixId}
-                value={stockPrefix}
-                onChange={(e) => setStockPrefix(e.target.value)}
-                maxLength={4}
-              />
-            </div>
-          </AnnotatedSection>
-          <AnnotatedSection
-            title="Working hours"
-            description="Controls the Appointment Book calendar range."
-          >
-            <div>
-              <Label htmlFor={hoursStartId}>Working hours start</Label>
-              <p className="mb-2 text-[13px] text-muted-foreground">
-                Drives the visible range on the Appointment Book calendar.
-              </p>
-              <Input
-                id={hoursStartId}
-                type="time"
-                value={hoursStart}
-                onChange={(e) => setHoursStart(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor={hoursEndId}>Working hours end</Label>
-              <p className="mb-2 text-[13px] text-muted-foreground">
-                Appointments can be booked up to one hour before this time.
-              </p>
-              <Input
-                id={hoursEndId}
-                type="time"
-                value={hoursEnd}
-                onChange={(e) => setHoursEnd(e.target.value)}
-              />
-            </div>
-          </AnnotatedSection>
-          <div className="flex justify-end">
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Saving…" : "Save"}
-            </Button>
-          </div>
-          </SectionStack>
-        </TabsContent>
-        <TabsContent value="inspection">
-          <InspectionChecklistSettings />
-        </TabsContent>
-        <TabsContent value="backup">
-          <BackupPanel />
-        </TabsContent>
-        <TabsContent value="pipeline">
-          <PipelineStageSettings />
-        </TabsContent>
-        <TabsContent value="channels">
-          <LeadChannelSettings />
-        </TabsContent>
-        </>
-        )}
-        </div>
-      </Tabs>
-    </div>
-  );
-}
-
-/** Shopify Settings section: heading + description outside, fields in a card. */
-function AnnotatedSection({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Section
-      title={title}
-      description={description}
-      cardClassName="grid gap-4 px-4 py-4 sm:grid-cols-2"
+    <Page
+      title="Settings"
+      subtitle={`Your profile${canManage ? ", plus your company details, inspection checklist, sales pipeline, lead channels and backups" : ""}.`}
     >
-      {children}
-    </Section>
+      {/* Section tabs sit under the header, Shopify-style, and scroll
+          sideways on a narrow screen rather than wrapping. */}
+      <Tabs
+        tabs={[...tabs]}
+        selected={selectedIndex}
+        onSelect={(i) =>
+          setPicked({ manage: manageTabs, id: tabs[i]?.id ?? "profile" })
+        }
+      />
+      <div
+        role="tabpanel"
+        aria-label={tabs[selectedIndex]?.content}
+        className="w-full min-w-0"
+      >
+        {active === "profile" && <ProfilePanel />}
+        {manageTabs && (
+          <>
+            {active === "company" && (
+              <Layout>
+                <Layout.AnnotatedSection
+                  title="Branding"
+                  description="Logos used on invoices and in the top bar."
+                >
+                  <Card padding="0">
+                    <div className="divide-y divide-(--border-secondary)">
+                      <LogoField
+                        label="Full logo"
+                        hint="Logo and wordmark on generated invoices."
+                        url={logoUrl}
+                        uploading={uploadingLogo}
+                        onSelect={(file) => void handleLogoSelect(file, "full")}
+                        onClear={() => setLogoUrl(null)}
+                      />
+                      <LogoField
+                        label="Logo mark"
+                        hint="Square icon in the top bar. Your initials show when it's empty."
+                        url={logoMarkUrl}
+                        uploading={uploadingMark}
+                        onSelect={(file) => void handleLogoSelect(file, "mark")}
+                        onClear={() => setLogoMarkUrl(null)}
+                      />
+                    </div>
+                  </Card>
+                </Layout.AnnotatedSection>
+                <Layout.AnnotatedSection
+                  title="Company details"
+                  description="Name, address and tax details shown on invoices."
+                >
+                  <Card>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="sm:col-span-2">
+                        <TextField
+                          label="Name"
+                          value={name}
+                          onChange={setName}
+                          autoComplete="organization"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <TextField
+                          label="Address"
+                          value={address}
+                          onChange={setAddress}
+                          autoComplete="street-address"
+                        />
+                      </div>
+                      <TextField label="VAT number" value={vat} onChange={setVat} />
+                      <TextField
+                        label="Stock ID prefix"
+                        value={stockPrefix}
+                        onChange={setStockPrefix}
+                        maxLength={4}
+                        helpText="Up to 4 characters."
+                      />
+                    </div>
+                  </Card>
+                </Layout.AnnotatedSection>
+                <Layout.AnnotatedSection
+                  title="Working hours"
+                  description="Controls the Appointment Book calendar range."
+                >
+                  <Card>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Select
+                        label="Working hours start"
+                        options={timeOptions(hoursStart)}
+                        value={hoursStart}
+                        onChange={setHoursStart}
+                        helpText="Drives the visible range on the Appointment Book calendar."
+                      />
+                      <Select
+                        label="Working hours end"
+                        options={timeOptions(hoursEnd)}
+                        value={hoursEnd}
+                        onChange={setHoursEnd}
+                        helpText="Appointments can be booked up to one hour before this time."
+                      />
+                    </div>
+                  </Card>
+                </Layout.AnnotatedSection>
+                <Layout.Section>
+                  <PageActions
+                    primaryAction={{
+                      content: "Save",
+                      onAction: () => void handleSave(),
+                      loading: saving,
+                    }}
+                  />
+                </Layout.Section>
+              </Layout>
+            )}
+            {active === "inspection" && <InspectionChecklistSettings />}
+            {active === "pipeline" && <PipelineStageSettings />}
+            {active === "channels" && <LeadChannelSettings />}
+            {active === "backup" && <BackupPanel />}
+          </>
+        )}
+      </div>
+    </Page>
   );
 }
 
@@ -308,7 +284,6 @@ function AnnotatedSection({
  * they are the sign-in identity, managed from Users & Permissions.
  */
 function ProfilePanel() {
-  const fieldId = useId();
   const { user, revalidate } = useAuth();
   const [name, setName] = useState(user?.name ?? "");
   const [saving, setSaving] = useState(false);
@@ -330,56 +305,69 @@ function ProfilePanel() {
   }
 
   return (
-    <AnnotatedSection
-      title="My profile"
-      description="How you appear to your team."
-    >
-      <div className="grid gap-4 sm:col-span-2">
-      <div>
-        <Label htmlFor={fieldId}>Your name</Label>
-        <p className="mb-2 text-[13px] text-muted-foreground">
-          Shown on your card, in the header and against everything you do in
-          the activity log.
-        </p>
-        <Input
-          id={fieldId}
-          value={name}
-          maxLength={80}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") void save();
-          }}
-        />
-        {!trimmed && (
-          <p className="mt-1 text-xs text-destructive">Name can&apos;t be empty</p>
-        )}
-      </div>
-      <div>
-        <Label>Sign-in</Label>
-        <ResourceList className="mt-1">
-          <ResourceListItem
-            icon={<KeyRound />}
-            title={user ? accountHandle(user) : "—"}
-            description="Managed from Users & Permissions"
-          />
-        </ResourceList>
-      </div>
-      <div className="flex justify-end">
-        <Button onClick={() => void save()} disabled={saving || !trimmed || unchanged}>
-          {saving ? "Saving…" : "Save"}
-        </Button>
-      </div>
-      </div>
-    </AnnotatedSection>
+    <Layout>
+      <Layout.AnnotatedSection
+        title="My profile"
+        description="How you appear to your team."
+      >
+        <Card>
+          <div className="flex flex-col gap-4">
+            {/* Enter saves: TextField has no key handler, so listen on the wrapper. */}
+            <div
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void save();
+              }}
+            >
+              <TextField
+                label="Your name"
+                value={name}
+                maxLength={80}
+                autoComplete="name"
+                onChange={setName}
+                helpText="Shown on your card, in the header and against everything you do in the activity log."
+                error={!trimmed ? "Name can't be empty" : undefined}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-(--text)">Sign-in</span>
+              <div className="flex items-center gap-3 rounded-(--radius-200) bg-(--bg-surface-secondary) px-3 py-2">
+                <Icon source={<KeyRound className="size-4" />} tone="subdued" />
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium text-(--text)">
+                    {user ? accountHandle(user) : "—"}
+                  </div>
+                  <div className="text-xs text-(--text-secondary)">
+                    Managed from Users and permissions
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button
+                variant="primary"
+                onClick={() => void save()}
+                loading={saving}
+                disabled={!trimmed || unchanged}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </Layout.AnnotatedSection>
+    </Layout>
   );
 }
 
-/** One logo uploader (preview + Upload/Replace + Remove). Owns its file input. */
+/**
+ * One logo, Shopify Brand-settings style: with a logo set it's a compact row
+ * (thumbnail, name and use, Replace / Remove on the right); with none it's a
+ * drop zone to add one.
+ */
 function LogoField({
   label,
   hint,
   url,
-  previewClassName,
   uploading,
   onSelect,
   onClear,
@@ -387,62 +375,69 @@ function LogoField({
   label: string;
   hint: string;
   url: string | null;
-  previewClassName: string;
   uploading: boolean;
-  onSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSelect: (file: File | undefined) => void;
   onClear: () => void;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const fieldId = useId();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const formats = "PNG or JPG, resized automatically.";
+
+  if (!url) {
+    return (
+      <div className="flex flex-col gap-1 p-4">
+        <DropZone
+          label={label}
+          accept="image/png,image/jpeg"
+          allowMultiple={false}
+          size="small"
+          disabled={uploading}
+          actionTitle={uploading ? "Uploading…" : "Add image"}
+          actionHint={formats}
+          onDrop={([file]) => onSelect(file)}
+        />
+        <p className="body-sm text-(--text-secondary)">{hint}</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="sm:col-span-2">
-      <Label htmlFor={fieldId}>{label}</Label>
-      <p className="mb-2 text-[13px] text-muted-foreground">{hint}</p>
-      <div className="flex items-center gap-4">
-        <div
-          className={`grid shrink-0 place-items-center overflow-hidden rounded-lg ${url ? "" : "border bg-[#f7f7f7]"} ${previewClassName}`}
+    <div className="flex flex-wrap items-center gap-4 p-4">
+      <Thumbnail size="large" source={url} alt={label} />
+      <div className="min-w-40 flex-1">
+        <p className="body-md-semibold">{label}</p>
+        <p className="body-sm text-(--text-secondary)">{hint}</p>
+        <p className="body-sm text-(--text-secondary)">{formats}</p>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        {/* Picker for Replace; the button below opens it. */}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/png,image/jpeg"
+          className="hidden"
+          aria-hidden
+          tabIndex={-1}
+          onChange={(e) => {
+            onSelect(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
+        <Button
+          onClick={() => fileRef.current?.click()}
+          loading={uploading}
+          accessibilityLabel={`Replace ${label.toLowerCase()}`}
         >
-          {url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={url}
-              alt={label}
-              className="h-full w-full object-contain"
-            />
-          ) : (
-            <ImageIcon className="h-6 w-6 text-muted-foreground/50" />
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            id={fieldId}
-            ref={inputRef}
-            type="file"
-            accept="image/png,image/jpeg"
-            className="hidden"
-            onChange={onSelect}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => inputRef.current?.click()}
-            disabled={uploading}
-          >
-            <Upload className="mr-1.5 h-3.5 w-3.5" />
-            {uploading ? "Uploading…" : url ? "Replace" : "Upload"}
-          </Button>
-          {url ? (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={onClear}
-              disabled={uploading}
-            >
-              <X className="mr-1.5 h-3.5 w-3.5" />
-              Remove
-            </Button>
-          ) : null}
-        </div>
+          Replace
+        </Button>
+        <Button
+          variant="plain"
+          tone="critical"
+          onClick={onClear}
+          disabled={uploading}
+          accessibilityLabel={`Remove ${label.toLowerCase()}`}
+        >
+          Remove
+        </Button>
       </div>
     </div>
   );

@@ -145,7 +145,7 @@ const PAGE_SIZE = 25;
 
 /** Compact Shopify-style field for the filter builder row. */
 const FIELD_CLASS =
-  "h-8 rounded-lg border border-border bg-card px-2.5 text-[13px] text-foreground outline-none focus-visible:border-foreground focus-visible:ring-1 focus-visible:ring-foreground";
+  "h-8 rounded-lg border border-border bg-card px-2.5 text-sm text-foreground outline-none focus-visible:border-foreground focus-visible:ring-1 focus-visible:ring-foreground";
 
 // Column-resize bounds (GEN-20). Columns never shrink below MIN so a header
 // stays clickable, nor grow past MAX so one column can't run off the screen.
@@ -234,21 +234,16 @@ function matchCond(c: FilterCond, v: Vehicle): boolean {
 }
 
 const STATUS_TONE: Record<VehicleStatus, string> = {
-  received: "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300",
-  inspection_pending:
-    "bg-yellow-50 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-300",
-  being_prepared:
-    "bg-orange-50 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300",
-  photos_pending:
-    "bg-yellow-50 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-300",
-  photos_ready:
-    "bg-lime-50 text-lime-700 dark:bg-lime-950/30 dark:text-lime-300",
-  ready: "bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-300",
-  listed:
-    "bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-300",
-  reserved: "bg-pink-50 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300",
-  sold: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
-  returned: "bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-300",
+  received: "bg-(--bg-fill-info-secondary) text-(--text-info)",
+  inspection_pending: "bg-(--bg-fill-caution-secondary) text-(--text-caution)",
+  being_prepared: "bg-(--bg-fill-warning-secondary) text-(--text-warning)",
+  photos_pending: "bg-(--bg-fill-caution-secondary) text-(--text-caution)",
+  photos_ready: "bg-(--bg-fill-success-secondary) text-(--text-success)",
+  ready: "bg-(--bg-fill-success-secondary) text-(--text-success)",
+  listed: "bg-(--bg-surface-emphasis) text-(--text-emphasis)",
+  reserved: "bg-(--bg-fill-warning-secondary) text-(--text-warning)",
+  sold: "bg-(--bg-fill-transparent-secondary) text-(--text-secondary)",
+  returned: "bg-(--bg-fill-critical-secondary) text-(--text-critical)",
 };
 
 function csvEscape(s: string) {
@@ -410,7 +405,7 @@ function CellContent({ col, v }: { col: ColDef; v: Vehicle }) {
           <VehicleImage
             vehicle={v}
             variant="thumb"
-            className="size-10 shrink-0 rounded-lg border border-[#e3e3e3]"
+            className="size-10 shrink-0 rounded-lg border border-(--border)"
           />
           <RegPlate registration={v.registration} size="sm" />
         </div>
@@ -434,7 +429,7 @@ function CellContent({ col, v }: { col: ColDef; v: Vehicle }) {
     }
     case "boolean":
       return raw ? (
-        <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300">
+        <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-(--bg-fill-success-secondary) text-(--text-success)">
           <Check className="h-2.5 w-2.5" />
         </span>
       ) : (
@@ -501,8 +496,9 @@ const EMPTY_QUICK_ADD: QuickAdd = {
 };
 
 interface VehicleSheetProps {
-  /** Page title shown in the header. */
-  title: string;
+  /** Page title shown in the header. Omit when the route renders its own
+   *  Polaris `Page` header (title + actions) around the sheet. */
+  title?: string;
   /** Optional clarifier line (PageHelper) rendered under the title. */
   helper?: ReactNode;
   /** Row-count summary line; receives the filtered count + selected count. */
@@ -524,6 +520,12 @@ interface VehicleSheetProps {
   headerActions?: ReactNode;
   /** Optional footer rendered after the table (e.g. an add-vehicle modal). */
   children?: ReactNode;
+  /** Replaces the built-in "No vehicles" empty state (e.g. a Polaris
+   *  EmptyState whose action opens the Add vehicle dialog). */
+  emptyState?: ReactNode;
+  /** Extra classes on the sheet's outer column, e.g. a shorter viewport
+   *  height when a Page header sits above it. */
+  className?: string;
   /**
    * Column groups offered as a switcher next to "Add filter" (Master Sheet:
    * Buying / Receiving / Value Addition / Sales Data). Columns tagged
@@ -542,13 +544,10 @@ const sectionKey = (csvName: string): string =>
  */
 const SECTION_TONE: Record<string, string> = {
   common: "bg-muted text-muted-foreground",
-  buying: "bg-sky-50 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300",
-  receiving:
-    "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
-  value_addition:
-    "bg-violet-50 text-violet-800 dark:bg-violet-950/40 dark:text-violet-300",
-  sales:
-    "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
+  buying: "bg-(--bg-surface-info) text-(--text-info)",
+  receiving: "bg-(--bg-surface-caution) text-(--text-caution)",
+  value_addition: "bg-(--bg-surface-emphasis) text-(--text-emphasis)",
+  sales: "bg-(--bg-surface-success) text-(--text-success)",
 };
 
 export function VehicleSheet({
@@ -564,6 +563,8 @@ export function VehicleSheet({
   headerActions,
   children,
   sections,
+  emptyState,
+  className,
 }: VehicleSheetProps) {
   const { company, user } = useAuth();
   const { can, isSuperUser } = usePermissions();
@@ -1208,17 +1209,19 @@ export function VehicleSheet({
   }
 
   return (
-    // No PageShell here — the dashboard layout already wraps every route in
-    // one, and nesting a second doubled this page's padding (GEN-61).
+    // No padding here — the dashboard shell (AdminShell) already pads a route
+    // without a Polaris Page, and adding more doubled it (GEN-61).
     <>
       {/* Bounded viewport height so the table's own container scrolls (and the
           sticky <thead> sticks) instead of the whole page scrolling. */}
-      <div className="flex h-[calc(100dvh-8rem)] flex-col gap-3">
+      <div className={cn("flex h-[calc(100dvh-8rem)] flex-col gap-3", className)}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-semibold text-foreground">{title}</h1>
+            {title ? (
+              <h1 className="text-xl font-semibold text-foreground">{title}</h1>
+            ) : null}
             {helper}
-            <p className="text-[13px] text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {summary(filtered?.length ?? null, selected.size)}
             </p>
           </div>
@@ -1275,20 +1278,20 @@ export function VehicleSheet({
         </div>
 
         {/* Variation C — filter-chip bar: applied chips + add-condition builder */}
-        <div className="flex flex-col gap-2 rounded-xl border border-[#e3e3e3] bg-card px-3 py-2 shadow-[0_1px_0_rgba(0,0,0,.05)]">
+        <div className="flex flex-col gap-2 rounded-xl border border-(--border) bg-card px-3 py-2 shadow-(--shadow-100)">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[13px] font-medium text-[#4a4a4a]">
+            <span className="text-sm font-medium text-(--text-secondary)">
               Filters
             </span>
             {filters.length === 0 && (
-              <span className="text-[13px] text-muted-foreground">
+              <span className="text-sm text-muted-foreground">
                 No filters applied
               </span>
             )}
             {filters.map((f) => (
               <span
                 key={f.id}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#ebebeb] px-2 py-0.5 text-xs font-medium text-[#303030]"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-(--bg-fill-transparent-secondary) px-2 py-0.5 text-xs font-medium text-(--text)"
               >
                 <span className="text-muted-foreground">{f.label}</span>
                 <span className="text-muted-foreground">{opLabel(f.op)}</span>
@@ -1317,13 +1320,13 @@ export function VehicleSheet({
                     setSearch(e.target.value);
                     setPage(1);
                   }}
-                  className="h-8 w-56 rounded-lg pl-7 text-[13px]"
+                  className="h-8 w-56 rounded-lg pl-7 text-sm"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => setBuilderOpen((o) => !o)}
-                className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-[13px] font-medium text-[#303030] hover:bg-[#f1f1f1]"
+                className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-sm font-medium text-(--text) hover:bg-(--bg-fill-transparent-hover)"
               >
                 <Plus className="h-3.5 w-3.5" /> Add filter
               </button>
@@ -1348,10 +1351,10 @@ export function VehicleSheet({
                           setPage(1);
                         }}
                         className={cn(
-                          "h-7 rounded-lg px-3 text-[13px] transition-colors",
+                          "h-7 rounded-lg px-3 text-sm transition-colors",
                           on
-                            ? "bg-[#ebebeb] font-medium text-[#101010]"
-                            : "text-[#4a4a4a] hover:bg-[#f1f1f1]",
+                            ? "bg-(--bg-fill-transparent-selected) font-medium text-(--text)"
+                            : "text-(--text-secondary) hover:bg-(--bg-fill-transparent-hover)",
                         )}
                       >
                         {s.label}
@@ -1363,8 +1366,8 @@ export function VehicleSheet({
             </div>
           </div>
           {builderOpen && (
-            <div className="flex flex-wrap items-center gap-2 rounded-lg bg-[#f7f7f7] p-2">
-              <span className="text-[13px] font-medium text-[#4a4a4a]">
+            <div className="flex flex-wrap items-center gap-2 rounded-lg bg-(--bg-surface-secondary) p-2">
+              <span className="text-sm font-medium text-(--text-secondary)">
                 Add condition
               </span>
               <select
@@ -1424,6 +1427,8 @@ export function VehicleSheet({
 
         {!filtered ? (
           <Skeleton className="h-72" />
+        ) : filtered.length === 0 && emptyState ? (
+          emptyState
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={FileSpreadsheet}
@@ -1440,14 +1445,14 @@ export function VehicleSheet({
             <div
               aria-hidden
               className={cn(
-                "pointer-events-none absolute inset-y-0 left-0 z-40 w-6 bg-gradient-to-r from-black/12 to-transparent transition-opacity dark:from-black/40",
+                "pointer-events-none absolute inset-y-0 left-0 z-40 w-6 bg-gradient-to-r from-(--bg-fill-transparent-secondary-active) to-transparent transition-opacity",
                 edges.left ? "opacity-100" : "opacity-0",
               )}
             />
             <div
               aria-hidden
               className={cn(
-                "pointer-events-none absolute inset-y-0 right-0 z-40 w-6 bg-gradient-to-l from-black/12 to-transparent transition-opacity dark:from-black/40",
+                "pointer-events-none absolute inset-y-0 right-0 z-40 w-6 bg-gradient-to-l from-(--bg-fill-transparent-secondary-active) to-transparent transition-opacity",
                 edges.right ? "opacity-100" : "opacity-0",
               )}
             />
@@ -1484,7 +1489,7 @@ export function VehicleSheet({
                 <thead className="sticky top-0 z-20 bg-card">
                   {bands.length > 0 && (
                     <tr aria-hidden>
-                      <th className="sticky left-0 z-30 border-b bg-[#f7f7f7]" />
+                      <th className="sticky left-0 z-30 border-b bg-(--bg-surface-secondary)" />
                       {bands.map((b, i) => (
                         <th
                           key={`${b.section}-${i}`}
@@ -1510,7 +1515,7 @@ export function VehicleSheet({
                     </tr>
                   )}
                   <tr>
-                    <th className="sticky left-0 z-30 border-b bg-[#f7f7f7] shadow-[2px_0_4px_-2px_var(--shadow-color)]">
+                    <th className="sticky left-0 z-30 border-b bg-(--bg-surface-secondary) shadow-[1px_0_0_var(--border)]">
                       <div className="flex h-8 items-center justify-center">
                         <Checkbox
                           checked={
@@ -1526,9 +1531,9 @@ export function VehicleSheet({
                       <th
                         key={colKey(c)}
                         className={cn(
-                          "relative border-b bg-[#f7f7f7] px-2 text-left font-medium",
+                          "relative border-b bg-(--bg-surface-secondary) px-2 text-left font-medium",
                           c.sticky &&
-                            "sticky z-30 bg-[#f7f7f7] shadow-[2px_0_4px_-2px_var(--shadow-color)]",
+                            "sticky z-30 bg-(--bg-surface-secondary) shadow-[1px_0_0_var(--border)]",
                         )}
                         style={c.sticky ? { left: stickyLeft(c) } : undefined}
                         aria-sort={
@@ -1611,7 +1616,7 @@ export function VehicleSheet({
                         onClick={() => openVehicle(v.id)}
                         className={cn(
                           "group/row cursor-pointer",
-                          isSelected && "bg-primary/5",
+                          isSelected && "bg-(--bg-surface-selected)",
                         )}
                       >
                         <td
@@ -1625,14 +1630,14 @@ export function VehicleSheet({
                             // surface (GEN-62). Drop shadow marks the
                             // sticky boundary.
                             "sticky left-0 z-10 border-b bg-card text-center",
-                            "shadow-[2px_0_4px_-2px_var(--shadow-color)]",
+                            "shadow-[1px_0_0_var(--border)]",
                             // Sticky cells can't use the row's translucent
                             // tints (they'd bleed), so mix the SAME tints
                             // into --card to get an opaque colour identical
                             // to what the normal cells composite to.
                             isSelected &&
-                              "bg-[color-mix(in_srgb,var(--primary)_5%,var(--card))]",
-                            "group-hover/row:bg-[color-mix(in_srgb,var(--muted)_40%,var(--card))]",
+                              "bg-(--bg-surface-selected)",
+                            "group-hover/row:bg-(--bg-surface-hover)",
                           )}
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -1671,11 +1676,11 @@ export function VehicleSheet({
                                 // --card so they stay opaque while matching
                                 // the normal cells exactly (GEN-62).
                                 c.sticky &&
-                                  "sticky z-10 bg-card shadow-[2px_0_4px_-2px_var(--shadow-color)] group-hover/row:bg-[color-mix(in_srgb,var(--muted)_40%,var(--card))]",
+                                  "sticky z-10 bg-card shadow-[1px_0_0_var(--border)] group-hover/row:bg-(--bg-surface-hover)",
                                 isSelected &&
                                   c.sticky &&
-                                  "bg-[color-mix(in_srgb,var(--primary)_5%,var(--card))]",
-                                !c.sticky && "group-hover/row:bg-muted/40",
+                                  "bg-(--bg-surface-selected)",
+                                !c.sticky && "group-hover/row:bg-(--bg-surface-hover)",
                               )}
                               style={c.sticky ? { left: stickyLeft(c) } : undefined}
                             >
@@ -1806,13 +1811,13 @@ export function VehicleSheet({
                             </td>
                           );
                         })}
-                        <td className="border-b group-hover/row:bg-muted/40" />
+                        <td className="border-b group-hover/row:bg-(--bg-surface-hover)" />
                       </tr>
                     );
                   })}
                   {/* Quick-add row — minimal create with auto stock ID */}
                   {enableQuickAdd && (
-                    <tr className="bg-muted/20">
+                    <tr className="bg-(--bg-surface-secondary)">
                       <td
                         colSpan={cols.length + 2}
                         className="border-b px-2 py-2"
@@ -1879,6 +1884,7 @@ export function VehicleSheet({
                             onChange={(e) =>
                               setQuick({ ...quick, supplierId: e.target.value })
                             }
+                            aria-label="Dealer partner"
                             className="h-8 rounded-md border bg-background px-2 text-xs"
                           >
                             <option value="">No dealer partner</option>

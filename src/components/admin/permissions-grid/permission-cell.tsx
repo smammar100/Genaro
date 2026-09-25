@@ -50,9 +50,9 @@ export function PermissionCell({
   return (
     <td
       className={cn(
-        "h-12 border-b border-l p-0 text-center align-middle transition-colors group-hover/row:bg-muted",
+        "h-12 border-b border-l border-(--border) p-0 text-center align-middle transition-colors group-hover/row:bg-(--bg-surface-hover)",
         changed &&
-          "bg-amber-50 ring-1 ring-amber-300 ring-inset group-hover/row:bg-amber-50 dark:bg-amber-950/20 dark:ring-amber-700 dark:group-hover/row:bg-amber-950/20",
+          "bg-(--bg-surface-warning) ring-1 ring-(--border-warning) ring-inset group-hover/row:bg-(--bg-surface-warning-hover)",
       )}
     >
       {/*

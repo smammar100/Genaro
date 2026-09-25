@@ -1,14 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Search, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { Button, Checkbox, Tabs, Tag, TextField } from "@/components/polaris";
 import {
   VEHICLE_FEATURES,
   FEATURE_CATEGORIES,
-  FEATURE_CATEGORY_TONE,
-  categoryForFeature,
   type FeatureCategory,
 } from "@/lib/vehicle-features";
 
@@ -73,157 +69,89 @@ export function FeaturePicker({ selected, onChange }: FeaturePickerProps) {
     <div className="flex flex-col gap-3">
       {/* Header: count + clear all */}
       <div className="flex items-center justify-between">
-        <span className="text-[13px] font-medium">
+        <span className="body-md-semibold">
           {selected.length} feature{selected.length === 1 ? "" : "s"} selected
         </span>
         {selected.length > 0 && (
-          <button
-            type="button"
-            onClick={() => onChange([])}
-            className="text-xs text-muted-foreground transition hover:text-foreground"
-          >
+          <Button variant="plain" onClick={() => onChange([])}>
             Clear all
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Category tabs with selected-count badges */}
-      <div className="flex flex-wrap gap-1">
-        {FEATURE_CATEGORIES.map((cat) => {
+      <Tabs
+        tabs={FEATURE_CATEGORIES.map((cat) => {
           const n = selectedInCat(cat);
-          return (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => {
-                setActive(cat);
-                setQuery("");
-              }}
-              className={cn(
-                "inline-flex h-7 items-center gap-1.5 rounded-lg px-3 text-[13px] transition",
-                active === cat
-                  ? "bg-[#ebebeb] font-medium text-foreground"
-                  : "text-[#4a4a4a] hover:bg-[#f1f1f1]",
-              )}
-            >
-              <span
-                className={cn(
-                  "h-1.5 w-1.5 rounded-full",
-                  FEATURE_CATEGORY_TONE[cat].dot,
-                )}
-              />
-              {cat}
-              {n > 0 && (
-                <span className="rounded-md bg-black/[0.06] px-1.5 text-xs font-medium text-[#303030]">
-                  {n}
-                </span>
-              )}
-            </button>
-          );
+          return { id: cat, content: cat, badge: n > 0 ? n : undefined };
         })}
-      </div>
+        selected={FEATURE_CATEGORIES.indexOf(active)}
+        onSelect={(i) => {
+          setActive(FEATURE_CATEGORIES[i]);
+          setQuery("");
+        }}
+      />
 
       {/* Search (scoped to active category) + select-all-in-view */}
       <div className="flex items-center justify-between gap-2">
-        <div className="relative w-full sm:w-64">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
+        <div className="w-full sm:w-64">
+          <TextField
+            label={`Search ${active}`}
+            labelHidden
+            prefix="SearchMinor"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={setQuery}
             placeholder={`Search ${active}…`}
-            className="h-9 pl-8"
+            clearButton
+            onClearButtonClick={() => setQuery("")}
           />
         </div>
         {items.length > 0 && (
-          <button
-            type="button"
+          <Button
             onClick={() => (allInViewOn ? removeMany(items) : addMany(items))}
-            className="shrink-0 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium transition hover:bg-muted"
           >
             {allInViewOn ? "Clear all in view" : "Select all in view"}
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Two-column checklist for the active category */}
-      <div className="grid max-h-72 grid-cols-1 gap-x-4 gap-y-0.5 overflow-y-auto pr-1 sm:grid-cols-2">
+      <div className="grid max-h-72 grid-cols-1 gap-x-4 overflow-y-auto px-1 sm:grid-cols-2">
         {items.length === 0 ? (
-          <div className="col-span-full px-2 py-6 text-center text-xs text-muted-foreground">
+          <div className="body-sm col-span-full px-2 py-6 text-center text-(--text-secondary)">
             No {active} features match “{query}”.
           </div>
         ) : (
-          items.map((name) => {
-            const on = has(name);
-            return (
-              <button
-                key={name}
-                type="button"
-                onClick={() => toggle(name)}
-                className={cn(
-                  "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm transition hover:bg-muted/60",
-                  on && "bg-muted/40",
-                )}
-              >
-                <Checkbox on={on} />
-                <span className="truncate">{name}</span>
-              </button>
-            );
-          })
+          items.map((name) => (
+            <Checkbox
+              key={name}
+              label={name}
+              checked={has(name)}
+              onChange={() => toggle(name)}
+            />
+          ))
         )}
       </div>
 
       {/* Running selected summary */}
-      <div className="border-t border-border pt-3">
-        <div className="mb-1.5 text-[13px] font-medium">
+      <div className="border-t border-(--border) pt-3">
+        <div className="body-md-semibold mb-1.5">
           Selected ({selected.length})
         </div>
         {selected.length === 0 ? (
-          <div className="rounded-lg bg-muted px-3 py-3 text-center text-xs text-muted-foreground">
+          <div className="body-sm rounded-(--radius-200) bg-(--bg-surface-secondary) px-3 py-3 text-center text-(--text-secondary)">
             No features selected, pick from the categories above.
           </div>
         ) : (
           <div className="flex max-h-28 flex-wrap gap-1.5 overflow-y-auto">
-            {selected.map((name) => {
-              const tone = FEATURE_CATEGORY_TONE[categoryForFeature(name)];
-              return (
-                <span
-                  key={name}
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full border bg-background px-2.5 py-1 text-xs",
-                    tone.chip,
-                  )}
-                >
-                  <span className={cn("h-1.5 w-1.5 rounded-full", tone.dot)} />
-                  {name}
-                  <button
-                    type="button"
-                    onClick={() => toggle(name)}
-                    className="ml-0.5 rounded text-muted-foreground transition hover:text-foreground"
-                    aria-label={`Remove ${name}`}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              );
-            })}
+            {selected.map((name) => (
+              <Tag key={name} onRemove={() => toggle(name)}>
+                {name}
+              </Tag>
+            ))}
           </div>
         )}
       </div>
     </div>
-  );
-}
-
-function Checkbox({ on }: { on: boolean }) {
-  return (
-    <span
-      className={cn(
-        "grid h-4 w-4 shrink-0 place-items-center rounded border transition",
-        on
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-muted-foreground/40",
-      )}
-    >
-      {on && <Check className="h-3 w-3" strokeWidth={3} />}
-    </span>
   );
 }

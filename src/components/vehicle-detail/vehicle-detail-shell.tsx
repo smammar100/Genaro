@@ -1,23 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import type { Vehicle } from "@/lib/types";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Card, Layout, SkeletonBodyText, Tabs } from "@/components/polaris";
 import { todoService } from "@/lib/services/todo-service";
 import { enquiryService } from "@/lib/services/enquiry-service";
 import { vehiclePhotoService } from "@/lib/services/vehicle-photo-service";
-import { Skeleton } from "@/components/ui/skeleton";
 import { OverviewTab } from "./overview-tab";
 
 // Only the active panel is mounted, and Overview is what the page opens on, so
 // the other nine tabs load on first visit instead of in the page's initial JS.
-const tabLoading = () => <Skeleton className="h-64 w-full rounded-lg" />;
+const tabLoading = () => (
+  <Card>
+    <SkeletonBodyText lines={8} />
+  </Card>
+);
 const DetailsTab = dynamic(
   () => import("./details-tab").then((m) => m.DetailsTab),
   { loading: tabLoading },
@@ -67,13 +65,33 @@ interface VehicleDetailShellProps {
   /** Job Card PDF export — surfaced on the Things to Do tab (the job sheet). */
   onExportPdf?: () => void;
   exporting?: boolean;
+  /** One-third sidebar beside the active panel (the Manage card). */
+  aside?: ReactNode;
+  /** Class names for the sidebar section (e.g. sticky positioning). */
+  asideClassName?: string;
 }
 
+/** The detail tabs, in order. Ids are the values the page and panels use. */
+const TAB_IDS = [
+  "overview",
+  "details",
+  "location",
+  "financials",
+  "todo",
+  "inspection",
+  "photos",
+  "listing",
+  "appointments",
+  "activity",
+] as const;
+
 /**
- * v5 vehicle-detail shell — shadcn Tabs (pill style, identical to
- * Admin Invoicing + Sales Appointments) with per-tab panel components.
- * Counts on Things to Do / Photos / Appointments are fetched once on
- * mount so the user sees workload at a glance.
+ * Vehicle-detail shell — Polaris Tabs (pill tabs with count badges) on their
+ * own full-width row, then a Layout: the active tab's panel in the main
+ * column and `aside` in the one-third sidebar. Only the active panel is
+ * mounted. Counts on Things
+ * to do / Photos / Appointments are fetched once on mount so the user sees
+ * workload at a glance.
  */
 export function VehicleDetailShell({
   vehicle,
@@ -83,6 +101,8 @@ export function VehicleDetailShell({
   onVehicleRefetch,
   onExportPdf,
   exporting,
+  aside,
+  asideClassName,
 }: VehicleDetailShellProps) {
   const [todoCount, setTodoCount] = useState<number | null>(null);
   const [enquiryCount, setEnquiryCount] = useState<number | null>(null);
@@ -115,94 +135,96 @@ export function VehicleDetailShell({
       .catch(() => setPhotoCount(null));
   }, [vehicle.id]);
 
-  return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4">
-      {/* Original grey-pill (`default` variant) but full-width: the
-          shadcn TabsTrigger already has `flex-1`, so a `w-full` list
-          spreads all 8 tabs to equal widths across the whole content
-          area — no stranded pill, no bare gap after "Activity".
-          overflow-x-auto keeps it scrollable on narrow viewports. */}
-      <TabsList className="max-w-full justify-start overflow-x-auto">
-        <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="details">Details</TabsTrigger>
-        <TabsTrigger value="location">Location</TabsTrigger>
-        <TabsTrigger value="financials">Financials</TabsTrigger>
-        <TabsTrigger value="todo">
-          Things to Do
-          <CountBadge value={todoCount} />
-        </TabsTrigger>
-        <TabsTrigger value="inspection">Inspection</TabsTrigger>
-        <TabsTrigger value="photos">
-          Photos
-          <CountBadge value={photoCount} />
-        </TabsTrigger>
-        <TabsTrigger value="listing">Listing</TabsTrigger>
-        <TabsTrigger value="appointments">
-          Appointments
-          <CountBadge value={enquiryCount} />
-        </TabsTrigger>
-        <TabsTrigger value="activity">Activity</TabsTrigger>
-      </TabsList>
+  const count = (n: number | null) => (n != null && n > 0 ? n : undefined);
+  const selected = Math.max(0, TAB_IDS.indexOf(activeTab as (typeof TAB_IDS)[number]));
+  const tabs = [
+    { id: "overview", content: "Overview" },
+    { id: "details", content: "Details" },
+    { id: "location", content: "Location" },
+    { id: "financials", content: "Financials" },
+    { id: "todo", content: "Things to do", badge: count(todoCount) },
+    { id: "inspection", content: "Inspection" },
+    { id: "photos", content: "Photos", badge: count(photoCount) },
+    { id: "listing", content: "Listing" },
+    {
+      id: "appointments",
+      content: "Appointments",
+      badge: count(enquiryCount),
+    },
+    { id: "activity", content: "Activity" },
+  ];
 
-      <TabsContent value="overview">
-        <OverviewTab
-          vehicle={vehicle}
-          onVehiclePatch={onVehiclePatch}
-          onNavigate={setActiveTab}
-          onChanged={onVehicleRefetch}
-        />
-      </TabsContent>
-      <TabsContent value="details">
-        <DetailsTab vehicle={vehicle} onChanged={onVehicleRefetch} />
-      </TabsContent>
-      <TabsContent value="location">
-        <LocationTab vehicle={vehicle} />
-      </TabsContent>
-      <TabsContent value="financials">
-        <FinancialsTab vehicle={vehicle} onChanged={onVehicleRefetch} />
-      </TabsContent>
-      <TabsContent value="todo">
-        <TodoTab
-          vehicleId={vehicle.id}
-          onExportPdf={onExportPdf}
-          exporting={exporting}
-          // Closing the last item can flip the car to "ready" (GEN-64), so the
-          // header/status and the tab's own count both need re-pulling.
-          onChanged={() => {
-            void todoService
-              .getForVehicle(vehicle.id)
-              .then((rows) =>
-                setTodoCount(rows.filter((r) => r.status !== "completed").length),
-              )
-              .catch(() => undefined);
-            onVehicleRefetch?.();
-          }}
-        />
-      </TabsContent>
-      <TabsContent value="inspection">
-        <InspectionTab vehicle={vehicle} />
-      </TabsContent>
-      <TabsContent value="photos">
-        <PhotosTab vehicle={vehicle} onVehicleRefetch={onVehicleRefetch} />
-      </TabsContent>
-      <TabsContent value="listing">
-        <ListingTab vehicle={vehicle} />
-      </TabsContent>
-      <TabsContent value="appointments">
-        <AppointmentsTab vehicle={vehicle} />
-      </TabsContent>
-      <TabsContent value="activity">
-        <ActivityTab vehicleId={vehicle.id} />
-      </TabsContent>
-    </Tabs>
-  );
-}
-
-function CountBadge({ value }: { value: number | null }) {
-  if (value == null || value <= 0) return null;
   return (
-    <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-black/[0.06] px-1.5 text-2xs font-medium tabular-nums text-muted-foreground">
-      {value}
-    </span>
+    <>
+      {/* Their own row under the header card, like every page's tabs. Ten
+          pills can outgrow the window; the row then scrolls sideways. */}
+      <Tabs
+        tabs={tabs}
+        selected={selected}
+        onSelect={(i) => setActiveTab(TAB_IDS[i])}
+      />
+
+      <Layout>
+        <Layout.Section>
+
+          {/* @container: the tab panels size their columns to this panel (the
+              Layout main column), not the viewport — it is narrower than the
+              window once the one-third sidebar sits beside it. */}
+          <div
+            role="tabpanel"
+            aria-label={tabs[selected].content}
+            className="@container min-w-0"
+          >
+            {activeTab === "overview" && (
+              <OverviewTab
+                vehicle={vehicle}
+                onVehiclePatch={onVehiclePatch}
+                onNavigate={setActiveTab}
+                onChanged={onVehicleRefetch}
+              />
+            )}
+            {activeTab === "details" && (
+              <DetailsTab vehicle={vehicle} onChanged={onVehicleRefetch} />
+            )}
+            {activeTab === "location" && <LocationTab vehicle={vehicle} />}
+            {activeTab === "financials" && (
+              <FinancialsTab vehicle={vehicle} onChanged={onVehicleRefetch} />
+            )}
+            {activeTab === "todo" && (
+              <TodoTab
+                vehicleId={vehicle.id}
+                onExportPdf={onExportPdf}
+                exporting={exporting}
+                // Closing the last item can flip the car to "ready" (GEN-64), so the
+                // header/status and the tab's own count both need re-pulling.
+                onChanged={() => {
+                  void todoService
+                    .getForVehicle(vehicle.id)
+                    .then((rows) =>
+                      setTodoCount(
+                        rows.filter((r) => r.status !== "completed").length,
+                      ),
+                    )
+                    .catch(() => undefined);
+                  onVehicleRefetch?.();
+                }}
+              />
+            )}
+            {activeTab === "inspection" && <InspectionTab vehicle={vehicle} />}
+            {activeTab === "photos" && (
+              <PhotosTab vehicle={vehicle} onVehicleRefetch={onVehicleRefetch} />
+            )}
+            {activeTab === "listing" && <ListingTab vehicle={vehicle} />}
+            {activeTab === "appointments" && <AppointmentsTab vehicle={vehicle} />}
+            {activeTab === "activity" && <ActivityTab vehicleId={vehicle.id} />}
+          </div>
+        </Layout.Section>
+        {aside ? (
+          <Layout.Section variant="oneThird" className={asideClassName}>
+            {aside}
+          </Layout.Section>
+        ) : null}
+      </Layout>
+    </>
   );
 }

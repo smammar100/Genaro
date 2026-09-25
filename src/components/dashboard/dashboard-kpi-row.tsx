@@ -21,7 +21,7 @@ import { leadService } from "@/lib/services/lead-service";
 import { maintenanceService } from "@/lib/services/maintenance-service";
 import { salesService } from "@/lib/services/sales-service";
 import type { Capability } from "@/lib/capabilities";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, SkeletonDisplayText } from "@/components/polaris";
 import { cn } from "@/lib/utils";
 
 interface Stats {
@@ -79,7 +79,7 @@ interface KpiDef {
 const KPI_DEFS: KpiDef[] = [
   {
     key: "cars_in_stock",
-    label: "Cars in Stock",
+    label: "Cars in stock",
     icon: Car,
     href: "/vehicles",
     requiredAnyOf: [
@@ -95,7 +95,7 @@ const KPI_DEFS: KpiDef[] = [
   },
   {
     key: "inspections_pending",
-    label: "Inspections Pending",
+    label: "Inspections pending",
     icon: ClipboardCheck,
     href: "/maintenance/inspection",
     requiredAnyOf: ["inspection:run", "inspection:add_note"],
@@ -104,7 +104,7 @@ const KPI_DEFS: KpiDef[] = [
   },
   {
     key: "active_jobs",
-    label: "Active Workshop Jobs",
+    label: "Active workshop jobs",
     icon: Wrench,
     href: "/maintenance/workshop",
     requiredAnyOf: [
@@ -118,7 +118,7 @@ const KPI_DEFS: KpiDef[] = [
   },
   {
     key: "cars_in_readiness",
-    label: "Cars in Readiness",
+    label: "Cars in readiness",
     icon: CheckCircle2,
     href: "/vehicles?status=ready",
     requiredAnyOf: [
@@ -132,7 +132,7 @@ const KPI_DEFS: KpiDef[] = [
   },
   {
     key: "sold_this_month",
-    label: "Sold This Month",
+    label: "Sold this month",
     icon: TrendingUp,
     href: "/sales/deals",
     requiredAnyOf: [
@@ -145,7 +145,7 @@ const KPI_DEFS: KpiDef[] = [
   },
   {
     key: "new_leads_24h",
-    label: "New Leads (24h)",
+    label: "New leads (24h)",
     icon: Inbox,
     href: "/sales/leads",
     requiredAnyOf: ["sales:create_lead", "sales:edit_lead"],
@@ -157,7 +157,7 @@ const KPI_DEFS: KpiDef[] = [
     // "Warranty Open Claims" truncated to "WARRANTY OPEN C…" in its tile at
     // desktop widths (GEN-44); the shield icon + /warranties/claims link carry
     // the warranty context, so the short label loses nothing.
-    label: "Open Claims",
+    label: "Open claims",
     icon: ShieldAlert,
     href: "/warranties/claims",
     requiredAnyOf: [
@@ -170,7 +170,7 @@ const KPI_DEFS: KpiDef[] = [
   },
   {
     key: "avg_days",
-    label: "Avg Days in Stock",
+    label: "Avg days in stock",
     icon: Sparkles,
     href: "/admin/master-sheet",
     requiredAnyOf: [
@@ -326,43 +326,45 @@ export function DashboardKpiRow() {
   if (visibleKpis.length === 0) return null;
 
   return (
-    // Shopify Home metric strip: ONE card, one row of metrics split by
-    // vertical dividers; wraps to 2 / 3 columns on narrower screens.
-    <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-[#e3e3e3] bg-card p-1 shadow-[0_1px_0_rgba(0,0,0,.05)] sm:grid-cols-3 xl:flex xl:items-stretch xl:divide-x xl:divide-[#e3e3e3]">
-      {visibleKpis.map((k) => {
-        const delta = stats && k.delta ? k.delta(stats) : null;
-        return (
-          <Link
-            className="flex min-w-0 flex-1 flex-col gap-1 rounded-lg px-3 py-2 no-underline transition-colors hover:bg-[#f7f7f7]"
-            href={k.href}
-            key={k.key}
-          >
-            <span className="truncate text-[13px] font-medium text-muted-foreground underline decoration-[#b5b5b5] decoration-dotted underline-offset-4">
-              {k.label}
-            </span>
-            <span className="flex items-baseline gap-2">
-              {stats === null ? (
-                <Skeleton className="h-7 w-14" />
-              ) : (
-                <span className="text-xl font-bold leading-7 text-foreground tabular-nums">
-                  {k.value(stats)}
-                </span>
-              )}
-              {delta && delta.dir !== "flat" ? (
-                <span
-                  className={cn(
-                    "text-[12px] font-medium tabular-nums",
-                    delta.dir === "up" && "text-[#014b40]",
-                    delta.dir === "down" && "text-[#8e0b21]",
-                  )}
-                >
-                  {delta.text}
-                </span>
-              ) : null}
-            </span>
-          </Link>
-        );
-      })}
-    </div>
+    // Polaris analytics stat tiles: ONE flush card, one row of metrics split
+    // by hairline dividers; wraps to 2 / 3 columns on narrower screens.
+    <Card padding="0">
+      <div className="grid grid-cols-2 p-1 sm:grid-cols-3 xl:flex xl:items-stretch xl:divide-x xl:divide-(--border-secondary)">
+        {visibleKpis.map((k) => {
+          const delta = stats && k.delta ? k.delta(stats) : null;
+          return (
+            <Link
+              className="flex min-w-0 flex-1 flex-col gap-1 rounded-(--radius-200) px-3 py-2 no-underline transition-colors hover:bg-(--bg-surface-hover) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
+              href={k.href}
+              key={k.key}
+            >
+              <span className="body-md truncate text-(--text-secondary) underline decoration-(--border-tertiary) decoration-dotted underline-offset-4">
+                {k.label}
+              </span>
+              <span className="flex items-baseline gap-2">
+                {stats === null ? (
+                  <SkeletonDisplayText size="small" />
+                ) : (
+                  <span className="heading-lg text-(--text) tabular-nums">
+                    {k.value(stats)}
+                  </span>
+                )}
+                {delta && delta.dir !== "flat" ? (
+                  <span
+                    className={cn(
+                      "body-sm tabular-nums",
+                      delta.dir === "up" && "text-(--text-success)",
+                      delta.dir === "down" && "text-(--text-critical)",
+                    )}
+                  >
+                    {delta.text}
+                  </span>
+                ) : null}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </Card>
   );
 }

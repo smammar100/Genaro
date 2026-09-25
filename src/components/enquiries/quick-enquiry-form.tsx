@@ -9,8 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Badge, Card } from "@/components/polaris";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { enquiryService } from "@/lib/services/enquiry-service";
@@ -129,12 +128,12 @@ export function QuickEnquiryForm({
         },
         actorId: user.id,
       });
-      const verb = result.wasNewCustomer ? "Created new customer + enquiry" : "Added enquiry";
+      const verb = result.wasNewCustomer ? "Created customer and enquiry" : "Added enquiry";
       notify.success(`${verb} for ${result.customer.firstName} ${result.customer.lastName}`);
       onComplete();
     } catch (err) {
       notify.error(
-        err instanceof Error ? err.message : "Failed to save enquiry, try again",
+        err instanceof Error ? err.message : "Could not save the enquiry. Try again.",
       );
     }
   }
@@ -146,21 +145,18 @@ export function QuickEnquiryForm({
         className="flex flex-col gap-4"
       >
         {selectedCustomer && (
-          <div className="flex items-center justify-between rounded-md bg-primary/5 px-3 py-2 text-sm">
+          <div className="flex items-center justify-between rounded-(--radius-200) bg-(--bg-surface-secondary) px-3 py-2 text-sm text-(--text)">
             <span>
-              <span className="text-muted-foreground">Customer: </span>
+              <span className="text-(--text-secondary)">Customer: </span>
               <span className="font-medium">
                 {selectedCustomer.firstName} {selectedCustomer.lastName}
               </span>
             </span>
-            <Badge variant="outline" className="text-xs">
-              Existing
-            </Badge>
+            <Badge>Existing</Badge>
           </div>
         )}
 
-        <Card className="flex flex-col gap-3 p-4">
-          <h3 className="text-sm font-semibold">Customer</h3>
+        <Card title="Customer">
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor={firstNameId}>First name</Label>
@@ -224,11 +220,10 @@ export function QuickEnquiryForm({
           </div>
         </Card>
 
-        <Card className="flex flex-col gap-3 p-4">
-          <h3 className="text-sm font-semibold">Enquiry</h3>
+        <Card title="Enquiry">
           {vehicleLabel && (
-            <div className="rounded-md border border-dashed border-border bg-muted/30 px-3 py-2 text-sm">
-              <span className="text-muted-foreground">Vehicle: </span>
+            <div className="rounded-(--radius-200) border border-dashed border-(--border) bg-(--bg-surface-secondary) px-3 py-2 text-sm text-(--text)">
+              <span className="text-(--text-secondary)">Vehicle: </span>
               <span className="font-medium">{vehicleLabel}</span>
             </div>
           )}
@@ -304,12 +299,12 @@ export function QuickEnquiryForm({
 
         <div className="flex items-center justify-between gap-2">
           <Button type="button" variant="ghost" onClick={onBack}>
-            <ArrowLeft className="mr-1 h-4 w-4" />
+            <ArrowLeft aria-hidden className="mr-1 size-4" />
             Back
           </Button>
           <Button type="submit" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 aria-hidden className="mr-2 size-4 animate-spin" />
             )}
             {form.formState.isSubmitting ? "Saving…" : "Save enquiry"}
           </Button>

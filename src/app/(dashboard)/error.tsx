@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
-import { TriangleAlert } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, EmptyState } from "@/components/polaris";
 
 export default function DashboardError({
   error,
@@ -18,30 +16,20 @@ export default function DashboardError({
     console.error("[dashboard error]", error);
   }, [error]);
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
-      <div className="grid h-12 w-12 place-items-center rounded-full bg-rose-100 text-rose-600">
-        <TriangleAlert className="h-6 w-6" />
-      </div>
-      <div>
-        <h2 className="text-base font-semibold">Something went wrong</h2>
-        <p className="mt-1 max-w-md text-sm text-muted-foreground">
-          {error.message || "An unexpected error occurred."}
-        </p>
-      </div>
-      <div className="flex flex-wrap justify-center gap-2">
-        <Button variant="outline" onClick={() => unstable_retry()}>
-          Try again
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => window.location.reload()}
-        >
-          Reload page
-        </Button>
-        <Button asChild>
-          <Link href="/dashboard">Back to dashboard</Link>
-        </Button>
-      </div>
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <EmptyState
+        icon="AlertMinor"
+        heading="Something went wrong"
+        action={{ content: "Try again", onAction: () => unstable_retry() }}
+        secondaryAction={{ content: "Reload page", onAction: () => window.location.reload() }}
+        footerContent={
+          <Button variant="plain" url="/dashboard">
+            Back to dashboard
+          </Button>
+        }
+      >
+        {error.message || "An unexpected error occurred."}
+      </EmptyState>
     </div>
   );
 }

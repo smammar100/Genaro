@@ -22,7 +22,7 @@ export function Input({
   ...props
 }: InputProps): React.ReactElement {
   const inputClassName = cn(
-    "h-7.5 pointer-coarse:h-11 pointer-coarse:leading-11 w-full min-w-0 rounded-[inherit] px-3 leading-7.5 outline-none [transition:background-color_5000000s_ease-in-out_0s] placeholder:text-[#616161]",
+    "h-7.5 pointer-coarse:h-11 pointer-coarse:leading-11 w-full min-w-0 rounded-[inherit] px-3 leading-7.5 outline-none [transition:background-color_5000000s_ease-in-out_0s] placeholder:text-(--text-secondary)",
     size === "sm" &&
       "h-6.5 pointer-coarse:h-10 pointer-coarse:leading-10 px-2.5 leading-6.5",
     size === "lg" && "h-8.5 leading-8.5",
@@ -37,7 +37,12 @@ export function Input({
       className={
         cn(
           !unstyled &&
-            "relative inline-flex w-full rounded-lg border border-[#8a8a8a] bg-background text-[13px] text-foreground transition-[border-color,box-shadow] hover:border-[#616161] has-focus-visible:border-[#005bd3] has-focus-visible:ring-1 has-focus-visible:ring-[#005bd3] has-aria-invalid:border-destructive has-aria-invalid:bg-[#fff4f4] has-disabled:border-[#ebebeb] has-disabled:bg-[#f7f7f7] has-disabled:text-[#b5b5b5] has-autofill:bg-foreground/4 dark:bg-input/32",
+            // Polaris TextField (.p-field): input tokens, radius-200, a
+            // darker hairline + 2px focus outline while focused. Not
+            // `relative` on purpose: callers overlay a leading icon as an
+            // absolute sibling, and a positioned control would paint its
+            // background over it.
+            "inline-flex w-full rounded-(--radius-200) border border-(--input-border) bg-(--input-bg-surface) text-[13px] text-(--text) transition-[border-color,background-color] hover:border-(--input-border-hover) hover:bg-(--input-bg-surface-hover) has-focus-visible:border-(--input-border-active) has-focus-visible:bg-(--input-bg-surface-active) has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-(--border-focus) has-aria-invalid:border-(--border-critical-secondary) has-aria-invalid:bg-(--bg-surface-critical) has-disabled:border-transparent has-disabled:bg-(--bg-surface-disabled) has-disabled:text-(--text-disabled) has-autofill:bg-foreground/4",
           className,
         ) || undefined
       }

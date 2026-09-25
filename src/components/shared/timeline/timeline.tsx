@@ -27,23 +27,23 @@ export type TimelineTone =
 
 const TONE_STYLES: Record<TimelineTone, { wrap: string; icon: string }> = {
   emerald: {
-    wrap: "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/50",
+    wrap: "bg-(--bg-surface-success) text-(--text-success) ring-(--border-success)",
     icon: "",
   },
   amber: {
-    wrap: "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/50",
+    wrap: "bg-(--bg-surface-warning) text-(--text-warning) ring-(--border-warning)",
     icon: "",
   },
   rose: {
-    wrap: "bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-900/50",
+    wrap: "bg-(--bg-surface-critical) text-(--text-critical) ring-(--border-critical)",
     icon: "",
   },
   violet: {
-    wrap: "bg-violet-50 text-violet-700 ring-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/50",
+    wrap: "bg-(--bg-surface-magic) text-(--text-magic) ring-(--border-magic)",
     icon: "",
   },
   sky: {
-    wrap: "bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:ring-sky-900/50",
+    wrap: "bg-(--bg-surface-info) text-(--text-info) ring-(--border-info)",
     icon: "",
   },
   slate: {

@@ -7,11 +7,17 @@ import { cva, type VariantProps } from "class-variance-authority";
 import type React from "react";
 
 /**
- * Badge — Polaris Badge: an 8px-radius chip, 12px medium text, in Polaris's
- * tone colours (values from @shopify/polaris-tokens, light theme).
+ * Badge — the Polaris Badge, drawn with the kit's `p-badge` classes
+ * (src/components/polaris/styles/components.css): 20px tall, radius-200,
+ * 12px medium text, tone colours from the theme tokens.
+ *
+ * The Polaris tones are variants of their own (neutral, info, success,
+ * attention, warning, critical, magic); the older names map onto them:
+ *   default / secondary → neutral · error / destructive → critical ·
+ *   outline → a surface chip with a hairline (Polaris has no outline badge).
  */
 const badgeVariants = cva(
-  "relative inline-flex shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-transparent font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg:not([class*='size-'])]:size-3 [&_svg]:pointer-events-none [&_svg]:shrink-0 [button&,a&]:cursor-pointer",
+  "p-badge relative min-w-5 shrink-0 justify-center gap-1 outline-none focus-visible:outline-2 focus-visible:outline-(--border-focus) [&_svg:not([class*='size-'])]:size-3 [&_svg]:pointer-events-none [&_svg]:shrink-0 [button&,a&]:cursor-pointer",
   {
     defaultVariants: {
       size: "default",
@@ -19,20 +25,23 @@ const badgeVariants = cva(
     },
     variants: {
       size: {
-        default: "h-5 min-w-5 px-2 text-xs leading-4",
-        lg: "h-6 min-w-6 px-2.5 text-[13px] leading-5",
-        sm: "h-4.5 min-w-4.5 px-1.5 text-[11px] leading-3",
+        default: "",
+        lg: "p-badge--large",
+        sm: "px-1.5 py-0 text-2xs leading-4",
       },
       variant: {
-        // Neutral — Polaris's default badge.
-        default: "bg-black/[0.06] text-[#303030] [button&,a&]:hover:bg-black/10",
-        secondary: "bg-black/[0.06] text-[#303030] [button&,a&]:hover:bg-black/10",
-        outline: "border-[#dddddd] bg-white text-[#303030] [button&,a&]:hover:bg-[#f7f7f7]",
-        success: "bg-[rgb(175,254,191)] text-[rgb(1,75,64)]",
-        warning: "bg-[rgb(255,235,120)] text-[rgb(79,71,0)]",
-        error: "bg-[rgb(254,209,215)] text-[rgb(142,11,33)]",
-        destructive: "bg-[rgb(254,209,215)] text-[rgb(142,11,33)]",
-        info: "bg-[rgb(213,235,255)] text-[rgb(0,58,90)]",
+        default: "p-badge--neutral [button&,a&]:hover:bg-(--bg-fill-transparent-secondary-hover)",
+        secondary: "p-badge--neutral [button&,a&]:hover:bg-(--bg-fill-transparent-secondary-hover)",
+        neutral: "p-badge--neutral [button&,a&]:hover:bg-(--bg-fill-transparent-secondary-hover)",
+        outline: "bg-(--bg-surface) text-(--text-secondary) ring-1 ring-inset ring-(--border) [button&,a&]:hover:bg-(--bg-surface-hover)",
+        info: "p-badge--info",
+        success: "p-badge--success",
+        attention: "p-badge--attention",
+        warning: "p-badge--warning",
+        critical: "p-badge--critical",
+        error: "p-badge--critical",
+        destructive: "p-badge--critical",
+        magic: "p-badge--magic",
       },
     },
   },

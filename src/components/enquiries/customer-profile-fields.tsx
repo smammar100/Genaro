@@ -161,13 +161,13 @@ export function CustomerProfileFields({ readonly }: CustomerProfileFieldsProps) 
         </div>
       </div>
 
-      <div className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2">
+      <div className="flex items-center justify-between gap-3 rounded-(--radius-200) border border-(--border) bg-(--bg-surface-secondary) px-3 py-2">
         <div>
           <Label htmlFor="marketingConsent" className="cursor-pointer">
             Marketing consent
           </Label>
-          <p className="text-xs text-muted-foreground">
-            Customer has agreed to receive marketing emails &amp; SMS.
+          <p className="text-xs text-(--text-secondary)">
+            Customer has agreed to receive marketing emails and SMS.
           </p>
         </div>
         <Switch

@@ -2,12 +2,14 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Loader2, Plus } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { maintenanceService } from "@/lib/services/maintenance-service";
 import { maintenanceNoteService } from "@/lib/services/maintenance-note-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
+import { vendorService } from "@/lib/services/vendor-service";
 import { authService } from "@/lib/services/auth-service";
+import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import type {
   JobNoteType,
   MaintenanceJob,
@@ -15,30 +17,42 @@ import type {
   MaintenanceStatus,
   User,
   Vehicle,
+  Vendor,
 } from "@/lib/types";
 import { MAINTENANCE_STATUSES } from "@/lib/constants";
-import { Section, SectionStack } from "@/components/ui/section";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Layout,
+  Page,
+  PageActions,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  TextField,
+  type BadgeTone,
+} from "@/components/polaris";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { RegPlate } from "@/components/shared/reg-plate";
-import { formatRelativeTime, formatCurrency } from "@/lib/utils";
+import { EditJobDialog } from "@/components/maintenance/edit-job-dialog";
+import {
+  JobStatusBadge,
+  jobStatusLabel,
+} from "@/components/maintenance/job-status";
+import { formatCurrency, formatDate, formatRelativeTime } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 
-const NOTE_TYPES: { value: JobNoteType; label: string; tone: string }[] = [
-  { value: "note", label: "Note", tone: "secondary" },
-  { value: "call_log", label: "Call Log", tone: "outline" },
-  { value: "status_update", label: "Status Update", tone: "default" },
-  { value: "vendor_update", label: "Vendor Update", tone: "outline" },
+const NOTE_TYPES: { value: JobNoteType; label: string; tone?: BadgeTone }[] = [
+  { value: "note", label: "Note" },
+  { value: "call_log", label: "Call log", tone: "info" },
+  { value: "status_update", label: "Status update", tone: "success" },
+  { value: "vendor_update", label: "Vendor update", tone: "attention" },
 ];
+
+function shortId(id: string): string {
+  return id.replace(/-/g, "").slice(-6).toUpperCase();
+}
 
 export default function MaintenanceJobDetailPage({
   params,
@@ -46,28 +60,36 @@ export default function MaintenanceJobDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
+  const pathname = usePathname();
+  const { confirm, confirmDialog } = useConfirm();
   const { user, company } = useAuth();
   const [job, setJob] = useState<MaintenanceJob | null | undefined>(undefined);
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [notes, setNotes] = useState<MaintenanceJobNote[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [newNote, setNewNote] = useState("");
   const [noteType, setNoteType] = useState<JobNoteType>("note");
   const [saving, setSaving] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     if (!company) return;
     const j = await maintenanceService.getById(id);
     setJob(j);
     if (j) {
-      const [v, n, u] = await Promise.all([
+      const [v, n, u, ve] = await Promise.all([
         vehicleService.getById(j.vehicleId),
         maintenanceNoteService.getForJob(j.id),
         authService.getUsersForCompany(company.id),
+        vendorService.getAll(company.id),
       ]);
       setVehicle(v);
       setNotes(n);
       setUsers(u);
+      setVendors(ve);
     }
   }
 
@@ -111,148 +133,230 @@ export default function MaintenanceJobDetailPage({
     void load();
   }
 
-  if (job === undefined) return <Skeleton className="h-96" />;
+  async function handleDelete() {
+    if (!job) return;
+    const ok = await confirm({
+      title: "Delete maintenance job?",
+      description: `This permanently deletes the job${vehicle ? ` for ${vehicle.registration}` : ""}. This cannot be undone.`,
+      confirmText: "Delete job",
+      destructive: true,
+    });
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      await maintenanceService.remove(job.id);
+      toast.success("Job deleted");
+      router.push("/maintenance");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't delete job");
+      setDeleting(false);
+    }
+  }
+
+  const backAction = { content: "Maintenance", url: "/maintenance" };
+
+  if (job === undefined) {
+    return (
+      <Page title="Maintenance job" backAction={backAction}>
+        <Skeleton className="h-96" />
+      </Page>
+    );
+  }
   if (job === null) {
     return (
-      <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
-        Job not found.
-      </div>
+      <Page title="Maintenance job" backAction={backAction}>
+        <Card padding="0">
+          <EmptyState
+            heading="Job not found"
+            icon="CircleAlertMajor"
+            action={{ content: "Back to maintenance", url: "/maintenance" }}
+          >
+            It may have been deleted, or the link is out of date.
+          </EmptyState>
+        </Card>
+      </Page>
     );
   }
 
+  const noteTypeOf = (value: JobNoteType) =>
+    NOTE_TYPES.find((t) => t.value === value);
+
   return (
-    <div className="mx-auto flex w-full max-w-[784px] flex-col gap-4 pt-2">
-      <Button asChild variant="ghost" size="sm" className="-ml-2 self-start">
-        <Link href="/maintenance">
-          <ChevronLeft className="mr-1 h-4 w-4" /> Back to maintenance
-        </Link>
-      </Button>
+    <Page
+      title={`Job #${shortId(job.id)}`}
+      subtitle={job.description}
+      backAction={backAction}
+      titleMetadata={<JobStatusBadge status={job.status} />}
+      secondaryActions={[
+        { content: "Edit job", icon: "EditMinor", onAction: () => setEditOpen(true) },
+      ]}
+    >
+      <Layout>
+        <Layout.Section>
+          <Card title="Job details">
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              <KV label="Estimated cost" value={formatCurrency(job.estimatedCost)} numeric />
+              <KV label="Actual cost" value={formatCurrency(job.actualCost)} numeric />
+              <KV label="Due date" value={formatDate(job.dueDate)} />
+            </div>
+          </Card>
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold">
-              Maintenance Job
-            </h1>
-            <p className="text-[13px] text-muted-foreground">{job.description}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            {vehicle && <RegPlate registration={vehicle.registration} />}
-            <Select
-              items={{
-                none: "Unassigned",
-                ...Object.fromEntries(users.map((u) => [u.id, u.name])),
-              }}
-              value={job.assignedTo ?? "none"}
-              onValueChange={(v) => void handleAssign(v)}
-            >
-              <SelectTrigger className="w-44">
-                <SelectValue placeholder="Owner" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Unassigned</SelectItem>
-                {users.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>
-                    {u.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={job.status} onValueChange={(v) => void handleStatusChange(v as MaintenanceStatus)}>
-              <SelectTrigger className="w-44">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MAINTENANCE_STATUSES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+          <Card title="Notes and activity">
+            <div className="mt-3 flex flex-col gap-3">
+              <Select
+                label="Note type"
+                options={NOTE_TYPES.map((nt) => ({
+                  label: nt.label,
+                  value: nt.value,
+                }))}
+                value={noteType}
+                onChange={(v) => setNoteType(v as JobNoteType)}
+              />
+              <TextField
+                label="Note"
+                labelHidden
+                multiline={3}
+                value={newNote}
+                onChange={setNewNote}
+                placeholder="Add a note…"
+              />
+              <div className="flex justify-end">
+                <Button
+                  icon="PlusMinor"
+                  onClick={() => void handleAddNote()}
+                  disabled={!newNote.trim()}
+                  loading={saving}
+                >
+                  Add note
+                </Button>
+              </div>
+            </div>
+            {notes.length > 0 && (
+              <ul className="mt-4 flex flex-col gap-2 border-t border-(--border-secondary) pt-4">
+                {notes.map((n) => {
+                  const author = users.find((u) => u.id === n.userId);
+                  const nt = noteTypeOf(n.noteType);
+                  return (
+                    <li
+                      key={n.id}
+                      className="rounded-(--radius-200) bg-(--bg-surface-secondary) p-3"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Badge tone={nt?.tone}>{nt?.label ?? n.noteType}</Badge>
+                          <span className="body-sm-semibold">
+                            {author?.name ?? "System"}
+                          </span>
+                        </div>
+                        <span className="body-sm text-(--text-secondary)">
+                          {formatRelativeTime(n.createdAt)}
+                        </span>
+                      </div>
+                      <p className="body-md mt-1 whitespace-pre-wrap">
+                        {n.content}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </Card>
+        </Layout.Section>
 
-      <SectionStack className="mt-4">
-      <Section
-        title="Job details"
-        description="Costs and due date for this job."
-      >
-        <div className="grid gap-2 text-[13px] sm:grid-cols-3">
-          <KV label="Estimated cost" value={formatCurrency(job.estimatedCost)} />
-          <KV label="Actual cost" value={formatCurrency(job.actualCost)} />
-          <KV label="Due date" value={job.dueDate ?? "—"} />
-        </div>
-      </Section>
+        <Layout.Section variant="oneThird">
+          <Card title="Status">
+            <div className="mt-3">
+              <Select
+                label="Status"
+                labelHidden
+                options={MAINTENANCE_STATUSES.map((s) => ({
+                  label: jobStatusLabel(s.value),
+                  value: s.value,
+                }))}
+                value={job.status}
+                onChange={(v) => void handleStatusChange(v as MaintenanceStatus)}
+              />
+            </div>
+          </Card>
 
-      <Section
-        title="Notes & Activity"
-        description="Updates, quotes and parts logged against this job."
-      >
-        <div className="flex flex-col gap-2">
-          <div className="flex gap-2">
-            <Select value={noteType} onValueChange={(v) => setNoteType(v as JobNoteType)}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {NOTE_TYPES.map((nt) => (
-                  <SelectItem key={nt.value} value={nt.value}>
-                    {nt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Textarea
-            value={newNote}
-            onChange={(e) => setNewNote(e.target.value)}
-            placeholder="Add a note…"
-            className="min-h-20"
-          />
-          <div className="flex justify-end">
-            <Button size="sm" onClick={handleAddNote} disabled={saving || !newNote.trim()}>
-              {saving ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Plus className="mr-1 h-3 w-3" />}
-              Add Note
-            </Button>
-          </div>
-        </div>
-        {notes.length > 0 && (
-          <div className="flex flex-col gap-2 border-t pt-3">
-            {notes.map((n) => {
-              const author = users.find((u) => u.id === n.userId);
-              const nt = NOTE_TYPES.find((t) => t.value === n.noteType);
-              return (
-                <div key={n.id} className="rounded-lg border p-3 text-[13px]">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {nt?.label ?? n.noteType}
-                      </Badge>
-                      <span className="text-xs font-medium">
-                        {author?.name ?? "System"}
-                      </span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {formatRelativeTime(n.createdAt)}
-                    </span>
-                  </div>
-                  <p className="mt-1 whitespace-pre-wrap">{n.content}</p>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Section>
-      </SectionStack>
-    </div>
+          <Card title="Owner">
+            <div className="mt-3">
+              <Select
+                label="Owner"
+                labelHidden
+                options={[
+                  { label: "Unassigned", value: "none" },
+                  ...users.map((u) => ({ label: u.name, value: u.id })),
+                ]}
+                value={job.assignedTo ?? "none"}
+                onChange={(v) => void handleAssign(v)}
+              />
+            </div>
+          </Card>
+
+          {vehicle ? (
+            <Card title="Vehicle">
+              <div className="mt-3 flex flex-col items-start gap-2">
+                <Link
+                  href={vehicleDetailHref(vehicle.id, pathname)}
+                  title="Open vehicle details"
+                  className="transition-opacity hover:opacity-80"
+                >
+                  <RegPlate registration={vehicle.registration} />
+                </Link>
+                <span className="body-md">
+                  {vehicle.make} {vehicle.model}
+                </span>
+                <span className="body-sm text-(--text-secondary)">
+                  {vehicle.stockId}
+                </span>
+              </div>
+            </Card>
+          ) : null}
+        </Layout.Section>
+      </Layout>
+
+      <PageActions
+        secondaryActions={[
+          {
+            content: "Delete job",
+            destructive: true,
+            disabled: deleting,
+            onAction: () => void handleDelete(),
+          },
+        ]}
+      />
+
+      <EditJobDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        job={job}
+        vehicle={vehicle}
+        vendors={vendors}
+        users={users}
+        onSaved={() => void load()}
+      />
+
+      {confirmDialog}
+    </Page>
   );
 }
 
-function KV({ label, value }: { label: string; value: string }) {
+function KV({
+  label,
+  value,
+  numeric,
+}: {
+  label: string;
+  value: string;
+  numeric?: boolean;
+}) {
   return (
-    <div className="rounded-lg bg-muted p-3">
-      <div className="text-[13px] font-medium text-muted-foreground">{label}</div>
-      <div className="mt-1 font-medium">{value}</div>
+    <div className="rounded-(--radius-200) bg-(--bg-surface-secondary) p-3">
+      <div className="body-sm text-(--text-secondary)">{label}</div>
+      <div className={numeric ? "body-md-numeric mt-1" : "body-md mt-1"}>
+        {value}
+      </div>
     </div>
   );
 }

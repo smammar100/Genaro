@@ -1,7 +1,6 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import { todoService } from "@/lib/services/todo-service";
@@ -9,12 +8,23 @@ import { vendorService } from "@/lib/services/vendor-service";
 import { downloadBlob, pdfService } from "@/lib/services/pdf-service";
 import { useAuth } from "@/contexts/auth-context";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
-import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Card,
+  EmptyState,
+  Layout,
+  Page,
+  SkeletonBodyText,
+  SkeletonDisplayText,
+  SkeletonThumbnail,
+} from "@/components/polaris";
+import { DaysInStockChip } from "@/components/shared/days-in-stock-chip";
+import {
+  NEXT_STEP,
   VehicleHeaderCard,
+  VehicleStatusMenu,
   VehicleSummaryAside,
+  vehicleTitle,
 } from "@/components/vehicle-detail/vehicle-header-card";
 import { VehicleDetailShell } from "@/components/vehicle-detail/vehicle-detail-shell";
 import { titleFromPath } from "@/components/layout/sidebar-config";
@@ -30,12 +40,12 @@ import { toast } from "@/lib/toast";
  * always Inventory (GEN-88), even from global search or the command palette.
  */
 const BACK_TARGETS: Record<string, string> = {
-  "/vehicles": "All Vehicles",
-  "/sales/pipeline": "Sales Pipeline",
-  "/maintenance": "Maintenance Pipeline",
-  "/admin/activity": "Activity Log",
-  "/advert/photo-processing": "Photo Processing",
-  "/inventory/add-vehicle": "Add Vehicle",
+  "/vehicles": "All vehicles",
+  "/sales/pipeline": "Sales pipeline",
+  "/maintenance": "Maintenance pipeline",
+  "/admin/activity": "Activity log",
+  "/advert/photo-processing": "Photo processing",
+  "/inventory/add-vehicle": "Add vehicle",
 };
 
 /** Resolve the Back link target from the `from` query param. Known routes use
@@ -51,11 +61,27 @@ function resolveBack(from: string | null): { href: string; label: string } {
 }
 
 /**
- * Vehicle detail — the v5 surface for a single piece of stock. The page
- * owns auth/data hydration and the inspection side-panel; everything
- * visual is handled by `VehicleHeaderCard` (the hero) and
- * `VehicleDetailShell` (pill tabs + per-tab panels).
+ * Vehicle detail — the Polaris product-detail pattern for a single piece of
+ * stock. The Page header carries the back link, title, status (a menu) and
+ * days-in-stock badges, the lifecycle's next step as the primary action and
+ * Remove from website as a destructive secondary action. Below it,
+ * `VehicleHeaderCard` (photo, plate, key facts), then `VehicleDetailShell`:
+ * the tab row, and a Layout with the active tab in the main column and the
+ * Manage card in the sidebar.
  */
+const DETAIL_TABS = new Set([
+  "overview",
+  "details",
+  "location",
+  "financials",
+  "todo",
+  "inspection",
+  "photos",
+  "listing",
+  "appointments",
+  "activity",
+]);
+
 export default function VehicleDetailPage({
   params,
 }: {
@@ -69,7 +95,11 @@ export default function VehicleDetailPage({
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [exporting, setExporting] = useState(false);
   // Active detail tab — lifted so the header "Open Inspection" can jump to it.
-  const [tab, setTab] = useState("overview");
+  // A ?tab= link (e.g. "Edit price" from the vehicle list) opens that tab.
+  const [tab, setTab] = useState(() => {
+    const requested = searchParams.get("tab");
+    return requested && DETAIL_TABS.has(requested) ? requested : "overview";
+  });
 
   useEffect(() => {
     void vehicleService.getById(id).then(setVehicle);
@@ -149,60 +179,97 @@ export default function VehicleDetailPage({
 
   if (vehicle === undefined) {
     return (
-      <div className="flex flex-col gap-4">
-        <Skeleton className="h-8 w-72" />
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
-          <Skeleton className="h-[60vh] w-full rounded-xl" />
-          <Skeleton className="h-72 w-full rounded-xl" />
-        </div>
-      </div>
+      <Page>
+        <SkeletonDisplayText size="small" />
+        <Card>
+          <div className="flex gap-4">
+            <SkeletonThumbnail size="large" />
+            <div className="flex-1">
+              <SkeletonBodyText lines={3} />
+            </div>
+          </div>
+        </Card>
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <SkeletonBodyText lines={8} />
+            </Card>
+          </Layout.Section>
+          <Layout.Section variant="oneThird">
+            <Card>
+              <SkeletonBodyText lines={4} />
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
     );
   }
   if (vehicle === null) {
     return (
-      <div className="rounded-xl border bg-card p-10 text-center">
-        <p className="text-sm font-semibold text-foreground">Vehicle not found</p>
-        <p className="mt-1 text-[13px] text-muted-foreground">
+      <Page>
+        <EmptyState
+          icon="ProductsMinor"
+          heading="Vehicle not found"
+          action={{ content: `Back to ${back.label}`, url: back.href }}
+        >
           It may have been deleted or the link is out of date.
-        </p>
-        <div className="mt-4">
-          <Button asChild size="sm">
-            <Link href={back.href}>Back to {back.label}</Link>
-          </Button>
-        </div>
-      </div>
+        </EmptyState>
+      </Page>
     );
   }
 
+  const nextStep = NEXT_STEP[vehicle.status];
+  const canRemoveFromWebsite =
+    vehicle.status === "sold" && vehicle.removedFromWebsiteAt === null;
+
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
-      <VehicleHeaderCard
+    <Page
+      title={vehicleTitle(vehicle)}
+      backAction={{ content: `Back to ${back.label}`, url: back.href }}
+      titleMetadata={
+        <span className="flex flex-wrap items-center gap-1">
+          <VehicleStatusMenu
+            vehicle={vehicle}
+            onStatusChange={(s) => void handleStatusChange(s)}
+          />
+          <DaysInStockChip days={vehicle.daysInStock} />
+        </span>
+      }
+      secondaryActions={
+        canRemoveFromWebsite
+          ? [
+              {
+                content: "Remove from website",
+                destructive: true,
+                onAction: () => void handleRemoveFromWebsite(),
+              },
+            ]
+          : undefined
+      }
+      primaryAction={
+        nextStep
+          ? { content: nextStep.label, onAction: () => setTab(nextStep.tab) }
+          : undefined
+      }
+    >
+      <VehicleHeaderCard vehicle={vehicle} />
+
+      {/* Polaris product detail: the tab row under the header card, then the
+          active tab's cards in the main column and the Manage card in the
+          one-third sidebar. */}
+      <VehicleDetailShell
         vehicle={vehicle}
-        back={back}
-        onStatusChange={(s) => void handleStatusChange(s)}
-        onRemoveFromWebsite={() => void handleRemoveFromWebsite()}
-        onNavigate={setTab}
+        value={tab}
+        onValueChange={setTab}
+        onVehiclePatch={patchVehicle}
+        onVehicleRefetch={() => void refetchVehicle()}
+        exporting={exporting}
+        onExportPdf={() => void handleExportPdf()}
+        aside={<VehicleSummaryAside vehicle={vehicle} onNavigate={setTab} />}
+        asideClassName="lg:sticky lg:top-4"
       />
 
-      {/* Shopify product-detail body: main cards left, narrow summary right. */}
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="min-w-0">
-          <VehicleDetailShell
-            vehicle={vehicle}
-            value={tab}
-            onValueChange={setTab}
-            onVehiclePatch={patchVehicle}
-            onVehicleRefetch={() => void refetchVehicle()}
-            exporting={exporting}
-            onExportPdf={() => void handleExportPdf()}
-          />
-        </div>
-        <aside className="xl:sticky xl:top-4">
-          <VehicleSummaryAside vehicle={vehicle} onNavigate={setTab} />
-        </aside>
-      </div>
-
       {confirmDialog}
-    </div>
+    </Page>
   );
 }

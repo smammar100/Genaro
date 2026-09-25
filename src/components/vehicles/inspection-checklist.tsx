@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, ClipboardCheck, Loader2, Plus, AlertTriangle } from "lucide-react";
+import { Check, ClipboardCheck, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { inspectionService } from "@/lib/services/inspection-service";
 import { inspectionNoteService } from "@/lib/services/inspection-note-service";
@@ -15,22 +15,20 @@ import type {
   User,
   Vehicle,
 } from "@/lib/types";
-import { Textarea } from "@/components/ui/textarea";
-import { formatRelativeTime } from "@/lib/utils";
+import { cn, formatRelativeTime } from "@/lib/utils";
 // onComplete callback lets a side-panel host close the panel instead of
 // navigating away from the underlying page (Phase 5 — v4.1 spec §11.5).
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
+  Badge,
+  Banner,
+  Button,
+  Card,
+  EmptyState,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  TextField,
+} from "@/components/polaris";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 
 interface Props {
@@ -59,7 +57,7 @@ function ProgressRing({ percent }: { percent: number }) {
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c - (percent / 100) * c}
-          className="stroke-emerald-500 transition-[stroke-dashoffset]"
+          className="stroke-(--bg-fill-success) transition-[stroke-dashoffset]"
         />
       </svg>
       <span className="absolute inset-0 grid place-items-center text-2xs font-semibold tabular-nums">
@@ -170,27 +168,27 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
 
   if (checks === null) {
     return (
-      <Card className="p-5">
+      <Card>
         <Skeleton className="h-6 w-48" />
-        <Skeleton className="mt-3 h-72 w-full" />
+        <Skeleton className="mt-1 h-72 w-full" />
       </Card>
     );
   }
 
   if (checks.length === 0) {
     return (
-      <Card className="flex flex-col items-center gap-2 p-10 text-center">
-        <span className="grid size-11 place-items-center rounded-full bg-muted text-muted-foreground">
-          <ClipboardCheck className="size-5" />
-        </span>
-        <div className="text-base font-semibold">No inspection yet</div>
-        <p className="max-w-sm text-sm text-muted-foreground">
+      <Card padding="0">
+        <EmptyState
+          heading="No inspection yet"
+          icon={<ClipboardCheck />}
+          action={{
+            content: "Start inspection",
+            onAction: () => void handleStart(),
+          }}
+        >
           Run a 20-point inspection to surface issues and auto-generate Things
           to Do. Your answers save automatically as you go.
-        </p>
-        <Button onClick={handleStart} className="mt-2">
-          Start Inspection
-        </Button>
+        </EmptyState>
       </Card>
     );
   }
@@ -204,72 +202,71 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Card className="flex-row flex-wrap items-center justify-between gap-3 p-4">
-        <div className="flex items-center gap-3">
-          <ProgressRing percent={percent} />
-          <div className="text-sm">
-            <div className="flex flex-wrap items-center gap-2 font-medium">
-              <span>{completed}/{total} completed</span>
-              {flagged > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#fed1d7] px-2 py-0.5 text-xs font-medium text-[#8e0b21] dark:bg-rose-500/15 dark:text-rose-300">
-                  <AlertTriangle className="size-3" />
-                  {flagged} flagged
-                </span>
-              )}
-            </div>
-            <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-              <span>Inspector: {inspector}</span>
-              <span aria-hidden>·</span>
-              {saving ? (
-                <span className="inline-flex items-center gap-1">
-                  <Loader2 className="size-3 animate-spin" /> Saving…
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 text-[#014b40] dark:text-emerald-400">
-                  <Check className="size-3" /> All changes saved
-                </span>
-              )}
+      <Card>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <ProgressRing percent={percent} />
+            <div className="text-sm">
+              <div className="flex flex-wrap items-center gap-2 font-medium">
+                <span>{completed}/{total} completed</span>
+                {flagged > 0 && (
+                  <Badge tone="critical" icon="AlertMinor">
+                    {`${flagged} flagged`}
+                  </Badge>
+                )}
+              </div>
+              <div className="mt-0.5 flex items-center gap-2 text-xs text-(--text-secondary)">
+                <span>Inspector: {inspector}</span>
+                <span aria-hidden>·</span>
+                {saving ? (
+                  <span className="inline-flex items-center gap-1">
+                    <Loader2 className="size-3 animate-spin" /> Saving…
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-(--text-success)">
+                    <Check className="size-3" /> All changes saved
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleStart} disabled={submitting}>
-            Reset
-          </Button>
-          <Button
-            onClick={handleComplete}
-            disabled={submitting || completed === 0}
-          >
-            {submitting && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-            Complete Inspection
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => void handleStart()} disabled={submitting}>
+              Reset
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => void handleComplete()}
+              disabled={completed === 0}
+              loading={submitting}
+            >
+              Complete inspection
+            </Button>
+          </div>
         </div>
       </Card>
 
       {lastCompleted ? (
-        <div className="flex items-center gap-2 rounded-lg border border-transparent bg-[#affebf] px-4 py-2.5 text-sm dark:border-emerald-900/40 dark:bg-emerald-950/20">
-          <Check className="size-4 shrink-0 text-[#014b40]" />
-          <span>
-            Inspection completed
-            {lastCompleted.flagged > 0
-              ? `, ${lastCompleted.flagged} item${lastCompleted.flagged === 1 ? "" : "s"} sent to Things to Do.`
-              : ", all items pass."}{" "}
-            You can still update any answer below; changes save automatically.
-          </span>
-        </div>
+        <Banner tone="success">
+          Inspection completed
+          {lastCompleted.flagged > 0
+            ? `, ${lastCompleted.flagged} item${lastCompleted.flagged === 1 ? "" : "s"} sent to Things to Do.`
+            : ", all items pass."}{" "}
+          You can still update any answer below; changes save automatically.
+        </Banner>
       ) : null}
 
-      <Card className="overflow-hidden p-0">
-        <div className="divide-y">
+      <Card padding="0">
+        <div className="divide-y divide-(--border-secondary)">
           {items.map((item) => {
             const check = checks.find((c) => c.checkNumber === item.number);
             const status = check?.status ?? "";
             const isNegative = !!status && NEGATIVE_INSPECTION_STATUSES.has(status);
             const dot = !status
-              ? "bg-muted-foreground/30"
+              ? "bg-(--bg-fill-tertiary)"
               : isNegative
-                ? "bg-[#8e0b21]"
-                : "bg-[#014b40]";
+                ? "bg-(--bg-fill-critical)"
+                : "bg-(--bg-fill-success)";
             return (
               /*
                 One row needs ~418px laid out horizontally (fixed 160px label
@@ -289,7 +286,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
                 className={cn(
                   "flex flex-col gap-2 px-4 py-3",
                   "sm:flex-row sm:items-center sm:gap-3 sm:py-2",
-                  isNegative && "bg-[#fed1d7] dark:bg-rose-950/20",
+                  isNegative && "bg-(--bg-surface-critical)",
                 )}
               >
                 <div className="flex min-w-0 items-center gap-3 sm:contents">
@@ -297,7 +294,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
                     className={cn("size-2.5 shrink-0 rounded-full", dot)}
                     title={status || "Not checked"}
                   />
-                  <span className="w-6 shrink-0 text-xs tabular-nums text-muted-foreground">
+                  <span className="w-6 shrink-0 text-xs tabular-nums text-(--text-secondary)">
                     {item.number}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm font-medium sm:w-40 sm:flex-none sm:shrink-0">
@@ -308,24 +305,17 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
                 <div className="flex min-w-0 items-center gap-2 sm:contents">
                   <div className="w-36 shrink-0">
                     <Select
+                      label={`Status for ${item.item}`}
+                      labelHidden
+                      placeholder="Select…"
+                      options={item.statusOptions}
                       value={status}
-                      onValueChange={(v) => handleStatusChange(item.number, v)}
-                    >
-                      {/* Taller control on touch, unchanged on desktop. */}
-                      <SelectTrigger className="h-10 w-full text-xs sm:h-8">
-                        <SelectValue placeholder="Select…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {item.statusOptions.map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {s}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={(v) => void handleStatusChange(item.number, v)}
+                    />
                   </div>
                   <div className="min-w-0 flex-1">
                     <Input
+                      aria-label={`Action required for ${item.item}`}
                       defaultValue={check?.actionRequired ?? ""}
                       placeholder={
                         isNegative ? "Describe what needs doing…" : "(optional)"
@@ -335,7 +325,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
                       }
                       className={cn(
                         "h-10 text-xs sm:h-8",
-                        isNegative && "border-transparent dark:border-rose-800",
+                        isNegative && "border-transparent",
                       )}
                     />
                   </div>
@@ -346,47 +336,49 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
         </div>
       </Card>
 
-      {/* Inspection Notes — v4.1 §11.5 / Gap 4: append-only sub-entity */}
-      <Card className="flex flex-col gap-3 p-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Inspection Notes</h3>
-          <span className="text-xs text-muted-foreground">
+      {/* Inspection notes — v4.1 §11.5 / Gap 4: append-only sub-entity */}
+      <Card
+        title="Inspection notes"
+        actions={
+          <span className="text-xs text-(--text-secondary)">
             {notes.length} note{notes.length === 1 ? "" : "s"} · append-only
           </span>
-        </div>
+        }
+      >
         <div className="flex flex-col gap-2">
-          <Textarea
+          <TextField
+            label="Note"
+            labelHidden
+            multiline={3}
             value={newNote}
-            onChange={(e) => setNewNote(e.target.value)}
+            onChange={setNewNote}
             placeholder="Add a note…"
-            className="min-h-20"
           />
           <div className="flex justify-end">
             <Button
-              size="sm"
-              onClick={handleAddNote}
-              disabled={savingNote || !newNote.trim()}
+              icon="PlusMinor"
+              onClick={() => void handleAddNote()}
+              disabled={!newNote.trim()}
+              loading={savingNote}
             >
-              {savingNote ? (
-                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-              ) : (
-                <Plus className="mr-1 h-3 w-3" />
-              )}
-              Add Note
+              Add note
             </Button>
           </div>
         </div>
         {notes.length > 0 && (
-          <div className="flex flex-col gap-2 border-t pt-3">
+          <div className="mt-1 flex flex-col gap-2 border-t border-(--border-secondary) pt-3">
             {notes.map((n) => {
               const author = users.find((u) => u.id === n.userId);
               return (
-                <div key={n.id} className="rounded border bg-muted/30 p-3 text-sm">
+                <div
+                  key={n.id}
+                  className="rounded-(--radius-200) bg-(--bg-surface-secondary) p-3 text-sm"
+                >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium">
                       {author?.name ?? "Unknown"}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-(--text-secondary)">
                       {formatRelativeTime(n.createdAt)}
                     </span>
                   </div>

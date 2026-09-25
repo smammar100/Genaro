@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Button, InlineError } from "@/components/polaris";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -153,10 +153,8 @@ export function MarkPurchasedDialog({
                 ))}
               </SelectContent>
             </Select>
-            {form.formState.errors.purchasedBy && (
-              <p className="text-xs text-destructive">
-                {form.formState.errors.purchasedBy.message}
-              </p>
+            {form.formState.errors.purchasedBy?.message && (
+              <InlineError message={form.formState.errors.purchasedBy.message} />
             )}
           </div>
 
@@ -189,15 +187,13 @@ export function MarkPurchasedDialog({
           </div>
 
           <DialogFooter className="-mx-6 mt-2">
+            <Button onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
+              variant="primary"
+              submit
+              loading={form.formState.isSubmitting}
             >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "Saving…" : "Mark purchased"}
+              Mark purchased
             </Button>
           </DialogFooter>
         </form>

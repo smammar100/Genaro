@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
+import "./globals.css";
+import { Button } from "@/components/polaris";
 
 /**
- * SPEC Point 9 — last-resort boundary for errors thrown in the root layout
- * itself (which `(dashboard)/error.tsx` cannot catch). Replaces the root
- * layout when active, so it must render its own <html>/<body> and cannot
- * rely on app fonts/providers/Tailwind — inline styles only.
+ * Last-resort boundary for errors thrown in the root layout itself (which
+ * `(dashboard)/error.tsx` cannot catch). It replaces the root layout when
+ * active, so it renders its own <html>/<body> and imports the global
+ * stylesheet itself — the Polaris tokens and components then apply as usual.
  */
 export default function GlobalError({
   error,
@@ -21,64 +23,20 @@ export default function GlobalError({
 
   return (
     <html lang="en">
-      <body
-        style={{
-          margin: 0,
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily:
-            "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
-          background: "#fafafa",
-          color: "#111",
-        }}
-      >
-        <div style={{ textAlign: "center", maxWidth: 420, padding: 24 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 600, margin: "0 0 8px" }}>
-            Something went wrong
-          </h2>
-          <p style={{ fontSize: 14, color: "#666", margin: "0 0 20px" }}>
+      <body className="flex min-h-dvh items-center justify-center p-6">
+        <div className="max-w-md text-center">
+          <h2 className="heading-md mb-2 text-(--text)">Something went wrong</h2>
+          <p className="body-md mb-5 text-(--text-secondary)">
             {error.message || "An unexpected error occurred."}
           </p>
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              justifyContent: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => unstable_retry()}
-              style={btn(false)}
-            >
-              Try again
-            </button>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              style={btn(true)}
-            >
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button onClick={() => unstable_retry()}>Try again</Button>
+            <Button variant="primary" onClick={() => window.location.reload()}>
               Reload page
-            </button>
+            </Button>
           </div>
         </div>
       </body>
     </html>
   );
-}
-
-function btn(primary: boolean): React.CSSProperties {
-  return {
-    cursor: "pointer",
-    padding: "8px 16px",
-    borderRadius: 8,
-    fontSize: 14,
-    fontWeight: 500,
-    border: primary ? "none" : "1px solid #d4d4d4",
-    background: primary ? "#111" : "#fff",
-    color: primary ? "#fff" : "#111",
-  };
 }

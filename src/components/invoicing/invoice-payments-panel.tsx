@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
-import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import type { DepositMethod, Invoice } from "@/lib/types";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -9,28 +8,27 @@ import {
   type InvoiceReceipt,
 } from "@/lib/services/invoice-receipt-service";
 import { computeBalance, type BalanceState } from "@/lib/invoice-balance";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Button,
+  Labelled,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SkeletonBodyText,
+  TextField,
+} from "@/components/polaris";
+import { Input } from "@/components/ui/input";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 import { useAutoFocus } from "@/hooks/use-auto-focus";
 
 const METHODS: [DepositMethod, string][] = [
-  ["bank_transfer", "Bank Transfer"],
+  ["bank_transfer", "Bank transfer"],
   ["cash", "Cash"],
   ["card", "Card"],
   ["cheque", "Cheque"],
   ["pdq", "PDQ"],
 ];
+
+const METHOD_OPTIONS = METHODS.map(([value, label]) => ({ value, label }));
 
 const methodLabel = (m: string | null): string =>
   METHODS.find(([v]) => v === m)?.[1] ?? "—";
@@ -122,7 +120,7 @@ export function InvoicePaymentsPanel({ invoice, onChanged }: Props) {
     }
   }
 
-  if (receipts === null) return <Skeleton className="mx-6 h-24" />;
+  if (receipts === null) return <SkeletonBodyText lines={3} />;
 
   const entries = [
     ...(invoice.depositAmount > 0
@@ -161,64 +159,60 @@ export function InvoicePaymentsPanel({ invoice, onChanged }: Props) {
   ];
 
   return (
-    <div className="mx-6 mb-4 rounded-lg border">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left"
-      >
-        <span className="text-sm font-semibold">
-          Payments · {entries.length}
-        </span>
+    <div className="rounded-(--radius-300) border border-(--border)">
+      <div className="flex items-center gap-2 px-3 py-2">
+        <Button
+          variant="tertiary"
+          disclosure={open ? "up" : "down"}
+          ariaExpanded={open}
+          onClick={() => setOpen((o) => !o)}
+        >
+          {`Payments · ${entries.length}`}
+        </Button>
         <span
           className={cn(
             "ml-auto text-sm font-semibold tabular-nums",
-            balance.settled
-              ? "text-emerald-600 dark:text-emerald-400"
-              : "text-foreground",
+            balance.settled ? "text-(--text-success)" : "text-(--text)",
           )}
         >
           {balance.settled
             ? "Paid in full"
             : `${formatCurrency(balance.balanceDue)} due`}
         </span>
-        <ChevronDown
-          className={cn("size-4 shrink-0 transition-transform", !open && "-rotate-90")}
-        />
-      </button>
+      </div>
 
       {open ? (
-        <div className="border-t">
+        <div className="border-t border-(--border)">
           {entries.length === 0 ? (
-            <p className="px-3 py-2 text-xs italic text-muted-foreground">
+            <p className="px-3 py-2 text-xs text-(--text-secondary)">
               Nothing received yet.
             </p>
           ) : (
-            <ul className="divide-y">
+            <ul className="divide-y divide-(--border-secondary)">
               {entries.map((e) => (
                 <li
                   key={e.key}
                   className="flex items-center gap-2 px-3 py-1.5 text-xs"
                 >
                   <span className="font-medium">{e.label}</span>
-                  <span className="text-muted-foreground">
+                  <span className="text-(--text-secondary)">
                     {e.date ? formatDate(e.date) : "—"}
                   </span>
-                  <span className="text-muted-foreground">
+                  <span className="text-(--text-secondary)">
                     · {methodLabel(e.method)}
                   </span>
                   <span className="ml-auto tabular-nums">
                     {formatCurrency(e.amount)}
                   </span>
                   {e.removable && "receipt" in e ? (
-                    <button
-                      type="button"
+                    <Button
+                      variant="tertiary"
+                      tone="critical"
+                      size="micro"
+                      icon="DeleteMinor"
+                      accessibilityLabel="Remove payment"
                       onClick={() => void handleRemove(e.receipt as InvoiceReceipt)}
-                      aria-label="Remove payment"
-                      className="grid size-6 place-items-center rounded text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="size-3" />
-                    </button>
+                    />
                   ) : (
                     <span className="size-6" />
                   )}
@@ -227,15 +221,15 @@ export function InvoicePaymentsPanel({ invoice, onChanged }: Props) {
             </ul>
           )}
 
-          <div className="flex items-center justify-between border-t bg-muted/30 px-3 py-2 text-xs">
-            <span className="text-muted-foreground">
+          <div className="flex items-center justify-between border-t border-(--border) bg-(--bg-surface-secondary) px-3 py-2 text-xs">
+            <span className="text-(--text-secondary)">
               Total {formatCurrency(balance.grandTotal)} · paid{" "}
               {formatCurrency(balance.paid)}
             </span>
             <span
               className={cn(
                 "font-semibold tabular-nums",
-                balance.overpaid && "text-amber-600 dark:text-amber-400",
+                balance.overpaid && "text-(--text-warning)",
               )}
             >
               {balance.overpaid
@@ -245,85 +239,85 @@ export function InvoicePaymentsPanel({ invoice, onChanged }: Props) {
           </div>
 
           {adding ? (
-            <div className="flex flex-wrap items-end gap-2 border-t px-3 py-2">
-              <div className="w-28">
-                <Label htmlFor={amountId} className="text-xs">Amount</Label>
-                <Input
-                  id={amountId}
-                  ref={amountRef}
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") void handleAdd();
-                    if (e.key === "Escape") setAdding(false);
-                  }}
-                  inputMode="decimal"
-                  placeholder="£0.00"
-                  className="h-8 text-right text-sm tabular-nums"
-                />
-              </div>
-              <div className="w-36">
-                <Label htmlFor={dateId} className="text-xs">Date</Label>
-                <Input
-                  id={dateId}
-                  type="date"
-                  value={paidOn}
-                  onChange={(e) => setPaidOn(e.target.value)}
-                  className="h-8 text-sm"
-                />
-              </div>
-              <div className="w-36">
-                <Label htmlFor={methodId} className="text-xs">Method</Label>
-                <Select
-                  items={Object.fromEntries(METHODS)}
-                  value={method}
-                  onValueChange={(v) => setMethod(v as DepositMethod)}
-                >
-                  <SelectTrigger id={methodId} className="h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {METHODS.map(([v, l]) => (
-                      <SelectItem key={v} value={v}>
-                        {l}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                type="button"
-                size="sm"
-                className="h-8"
-                disabled={saving}
-                onClick={() => void handleAdd()}
+            // A real form so Enter records the payment from any field.
+            // Escape cancels just this row: the dialog also closes on Escape
+            // via a document listener, so stop the event before it gets there.
+            <form
+              className="flex flex-wrap items-end gap-2 border-t border-(--border) px-3 py-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleAdd();
+              }}
+              onKeyDown={(e) => {
+                if (e.key !== "Escape") return;
+                e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
+                setAdding(false);
+              }}
+            >
+              <div
+                className="w-32"
+                // TextField doesn't forward a ref, so hand its <input> to the
+                // auto-focus hook (desktop-only focus when the row opens).
+                ref={(el) => {
+                  amountRef.current = el?.querySelector("input") ?? null;
+                }}
               >
-                {saving ? "Saving…" : "Record"}
+                <TextField
+                  id={amountId}
+                  label="Amount"
+                  prefix="£"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={setAmount}
+                />
+              </div>
+              <div className="w-36">
+                <Labelled id={dateId} label="Date">
+                  <Input
+                    id={dateId}
+                    type="date"
+                    value={paidOn}
+                    onChange={(e) => setPaidOn(e.target.value)}
+                  />
+                </Labelled>
+              </div>
+              <div className="w-36">
+                <Select
+                  id={methodId}
+                  label="Method"
+                  options={METHOD_OPTIONS}
+                  value={method}
+                  onChange={(v) => setMethod(v as DepositMethod)}
+                />
+              </div>
+              <Button submit loading={saving}>
+                Record payment
               </Button>
               <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="h-8"
+                variant="tertiary"
                 disabled={saving}
                 onClick={() => setAdding(false)}
               >
                 Cancel
               </Button>
-            </div>
+            </form>
           ) : balance.settled ? null : (
-            <button
-              type="button"
-              onClick={() => {
-                // Pre-fill with what's outstanding — settling in full is the
-                // common case, and typing it again invites a typo.
-                setAmount(String(balance.balanceDue));
-                setAdding(true);
-              }}
-              className="flex w-full items-center gap-1 border-t px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
-            >
-              <Plus className="size-3.5" /> Record a payment
-            </button>
+            <div className="border-t border-(--border) px-3 py-2">
+              <Button
+                variant="plain"
+                icon="PlusMinor"
+                onClick={() => {
+                  // Pre-fill with what's outstanding — settling in full is the
+                  // common case, and typing it again invites a typo.
+                  setAmount(String(balance.balanceDue));
+                  setAdding(true);
+                }}
+              >
+                Record a payment
+              </Button>
+            </div>
           )}
         </div>
       ) : null}

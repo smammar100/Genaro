@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { ArrowRight, Pencil, Plus, Users, Zap } from "lucide-react";
+import { ArrowRight, Users, Zap } from "lucide-react";
 import type { Appointment, Customer, Enquiry, User, Vehicle } from "@/lib/types";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -11,7 +10,7 @@ import { appointmentService } from "@/lib/services/appointment-service";
 import { enquiryService } from "@/lib/services/enquiry-service";
 import { customerService } from "@/lib/services/customer-service";
 import { teamService } from "@/lib/services/team-service";
-import { Button } from "@/components/ui/button";
+import { Banner, Button, EmptyState, ProgressBar } from "@/components/polaris";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -81,9 +80,8 @@ export function AppointmentsTab({ vehicle }: AppointmentsTabProps) {
         title="Enquiries on this vehicle"
         subtitle="Every interaction with this car. Repeat buyers are de-duped on phone / postcode / email, so they stay connected across vehicles."
         action={
-          <Button size="sm" onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-1 h-3.5 w-3.5" />
-            Add Enquiry
+          <Button icon="PlusMinor" onClick={() => setDialogOpen(true)}>
+            Add enquiry
           </Button>
         }
         flush
@@ -104,7 +102,7 @@ export function AppointmentsTab({ vehicle }: AppointmentsTabProps) {
 
       <div>
         <SectionDivider label="Performance · across all vehicles" />
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 @2xl:grid-cols-2">
           <div className="flex flex-col gap-4">
             <LostReasonInsight />
             <Panel title="Why we lose enquiries" subtitle="Last 90 days · 61 lost enquiries">
@@ -156,8 +154,8 @@ const WORKFLOW: {
   tone: "default" | "good" | "bad";
 }[] = [
   { num: "01", label: "Capture", meta: "Enquiry · Phone · Web · Walk-in", tone: "default" },
-  { num: "02", label: "Customer Match", meta: "Dedupe · Name · postcode · email", tone: "default" },
-  { num: "03", label: "Vehicle Interest", meta: "Link · attach + assign salesperson", tone: "default" },
+  { num: "02", label: "Customer match", meta: "Dedupe · Name · postcode · email", tone: "default" },
+  { num: "03", label: "Vehicle interest", meta: "Link · attach + assign salesperson", tone: "default" },
   { num: "04", label: "Appointment", meta: "Book · viewing · test drive · finance", tone: "default" },
   { num: "05a", label: "Sale", meta: "Outcome · Deposit → Invoice", tone: "good" },
   { num: "05b", label: "Lost", meta: "Outcome · 9 reason categories", tone: "bad" },
@@ -165,25 +163,23 @@ const WORKFLOW: {
 
 function WorkflowLegend() {
   return (
-    <div className="flex flex-wrap items-center gap-1.5 text-xs">
+    <div className="flex flex-wrap items-center gap-1.5 body-sm">
       {WORKFLOW.map((s, i) => (
         <div key={s.num} className="flex items-center gap-1.5">
           <span
             title={s.meta}
             className={cn(
               "inline-flex cursor-default items-center gap-1 rounded-full border px-2 py-0.5",
-              s.tone === "good" &&
-                "border-transparent text-[#014b40] dark:border-emerald-500/40 dark:text-emerald-300",
-              s.tone === "bad" &&
-                "border-transparent text-[#8e0b21] dark:border-rose-500/40 dark:text-rose-300",
-              s.tone === "default" && "border-border text-muted-foreground",
+              s.tone === "good" && "border-transparent text-(--text-success)",
+              s.tone === "bad" && "border-transparent text-(--text-critical)",
+              s.tone === "default" && "border-(--border) text-(--text-secondary)",
             )}
           >
             <span className="font-semibold tabular-nums">{s.num}</span>
             {s.label}
           </span>
           {i < WORKFLOW.length - 1 && i !== 4 && (
-            <ArrowRight className="h-3 w-3 text-muted-foreground/50" />
+            <ArrowRight className="h-3 w-3 text-(--icon-disabled)" />
           )}
         </div>
       ))}
@@ -222,21 +218,17 @@ function EnquiriesTable({
 
   if (enquiries.length === 0 && appts.length === 0) {
     return (
-      <div className="px-4 py-10 text-center">
-        <Users className="mx-auto h-8 w-8 text-muted-foreground/50" />
-        <div className="mt-3 text-base font-semibold">
-          No enquiries on this vehicle yet
-        </div>
-        <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-muted-foreground">
-          Click <strong className="text-foreground">+ Add Enquiry</strong>;
-          we&apos;ll dedup against your existing customers first so repeat buyers
-          stay attached to their record.
-        </p>
-        <Button variant="outline" size="sm" className="mt-4" onClick={onAddEnquiry}>
-          <Plus className="mr-1 h-3.5 w-3.5" />
-          Add First Enquiry
-        </Button>
-      </div>
+      // Already inside the panel's card, so the empty state drops its own
+      // card chrome.
+      <EmptyState
+        icon={<Users />}
+        heading="No enquiries on this vehicle yet"
+        action={{ content: "Add first enquiry", onAction: onAddEnquiry }}
+        className="rounded-none bg-transparent pt-6 pb-8 shadow-none"
+      >
+        Select Add enquiry and we&apos;ll dedupe against your existing
+        customers first, so repeat buyers stay attached to their record.
+      </EmptyState>
     );
   }
 
@@ -250,7 +242,7 @@ function EnquiriesTable({
           <TableHead>Salesperson</TableHead>
           <TableHead>Date</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead>Next Action</TableHead>
+          <TableHead>Next action</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -262,7 +254,7 @@ function EnquiriesTable({
               <TableCell className="font-medium">
                 {cust ? `${cust.firstName} ${cust.lastName}` : "—"}
                 {cust?.mobilePhone && (
-                  <div className="text-xs text-muted-foreground">
+                  <div className="body-sm text-(--text-secondary)">
                     {cust.mobilePhone}
                   </div>
                 )}
@@ -304,12 +296,11 @@ function EnquiriesTable({
               {/* GEN-104 — rescheduling used to mean cancel-and-rebook. */}
               {canEditAppointments ? (
                 <Button
-                  size="sm"
-                  variant="outline"
+                  size="micro"
+                  icon="EditMinor"
                   onClick={() => onEditAppointment(a)}
-                  aria-label={`Edit appointment for ${a.customerName}`}
+                  accessibilityLabel={`Edit appointment for ${a.customerName}`}
                 >
-                  <Pencil className="size-3.5" />
                   Edit
                 </Button>
               ) : (
@@ -329,27 +320,22 @@ function EnquiriesTable({
 
 function LostReasonInsight() {
   return (
-    <div className="flex items-start gap-2.5 rounded-lg border border-transparent bg-[#f1f1f1] px-3 py-2.5 dark:border-violet-500/20 dark:bg-violet-500/5">
-      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#303030] text-white">
-        <Zap className="h-3.5 w-3.5" />
+    <Banner tone="info" icon={<Zap />}>
+      <span className="body-sm-semibold text-(--text-secondary)">
+        Top finding this period
       </span>
-      <div>
-        <div className="text-xs font-semibold text-muted-foreground">
-          Top finding this period
-        </div>
-        <p className="mt-0.5 text-xs leading-relaxed">
-          <strong>41% of lost enquiries</strong> (25 of 61) over the last 90 days
-          were driven by <strong>Price</strong> or <strong>Finance</strong>:
-          both operational levers you control directly.
-        </p>
-      </div>
-    </div>
+      <p className="mt-0.5">
+        <strong>41% of lost enquiries</strong> (25 of 61) over the last 90 days
+        were driven by <strong>Price</strong> or <strong>Finance</strong>:
+        both operational levers you control directly.
+      </p>
+    </Banner>
   );
 }
 
 const REASONS = [
   { label: "Price", pct: 23, count: 14, desc: "Customer found a better price elsewhere" },
-  { label: "Vehicle Sold", pct: 21, count: 13, desc: "We sold it before they returned" },
+  { label: "Vehicle sold", pct: 21, count: 13, desc: "We sold it before they returned" },
   { label: "Finance", pct: 18, count: 11, desc: "Finance declined or rate too high" },
   { label: "Contact", pct: 15, count: 9, desc: "Couldn't reach customer for follow-up" },
   { label: "PX", pct: 10, count: 6, desc: "Couldn't agree on part-exchange value" },
@@ -366,15 +352,16 @@ function ReasonBars() {
           title={r.desc}
           className="grid cursor-default grid-cols-[110px_1fr_auto] items-center gap-3"
         >
-          <div className="truncate text-xs font-medium">{r.label}</div>
-          <div className="h-2 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-[#303030]"
-              style={{ width: `${(r.pct / max) * 100}%` }}
-            />
-          </div>
-          <div className="text-xs tabular-nums text-muted-foreground">
-            <span className="font-semibold text-foreground">{r.pct}%</span> ·{" "}
+          <div className="truncate body-sm">{r.label}</div>
+          <ProgressBar
+            progress={(r.pct / max) * 100}
+            size="small"
+            tone="primary"
+            animated={false}
+            accessibilityLabel={`${r.label}: ${r.pct}% of lost enquiries`}
+          />
+          <div className="body-sm tabular-nums text-(--text-secondary)">
+            <span className="body-sm-semibold text-(--text)">{r.pct}%</span> ·{" "}
             {r.count}
           </div>
         </div>
@@ -409,20 +396,20 @@ function RecommendedActions() {
       title="Recommended actions"
       subtitle="Data-driven next steps based on this period's losses"
     >
-      <div className="divide-y divide-border">
+      <div className="divide-y divide-(--border-secondary)">
         {actions.map((a, i) => (
           <div key={a.title} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-foreground text-2xs font-semibold text-background tabular-nums">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-(--bg-fill-brand) body-xs-semibold text-(--text-brand-on-bg-fill) tabular-nums">
               {i + 1}
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold">{a.title}</div>
-              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+              <div className="body-md-semibold">{a.title}</div>
+              <p className="mt-0.5 body-sm text-(--text-secondary)">
                 {a.text}
               </p>
             </div>
-            <Button asChild variant="outline" size="sm">
-              <Link href={a.href}>{a.cta} →</Link>
+            <Button url={a.href}>
+              {a.cta}
             </Button>
           </div>
         ))}

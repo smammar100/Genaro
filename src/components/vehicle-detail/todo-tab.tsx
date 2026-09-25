@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Download, Loader2, Plus, Trash2 } from "lucide-react";
+import { Download } from "lucide-react";
 import type { TodoItem, TodoStatus, Vendor } from "@/lib/types";
 import { useAuth } from "@/contexts/auth-context";
 import { todoService } from "@/lib/services/todo-service";
@@ -9,7 +9,7 @@ import { vendorService } from "@/lib/services/vendor-service";
 import { toast } from "@/lib/toast";
 import { parseNumeric } from "@/lib/field-edit";
 import { useAutoFocus } from "@/hooks/use-auto-focus";
-import { Button } from "@/components/ui/button";
+import { Banner, Button } from "@/components/polaris";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -40,7 +40,7 @@ const STATUS_TONE: Record<TodoStatus, React.ComponentProps<typeof Pill>["tone"]>
 };
 const STATUS_LABEL: Record<TodoStatus, string> = {
   pending: "Pending",
-  in_progress: "In Progress",
+  in_progress: "In progress",
   completed: "Done",
   cancelled: "Cancelled",
 };
@@ -173,7 +173,7 @@ export function TodoTab({
 
   if (todos === null) {
     return (
-      <Panel title="Things to Do" subtitle="Loading…">
+      <Panel title="Things to do" subtitle="Loading…">
         <Skeleton className="h-32 w-full" />
       </Panel>
     );
@@ -195,7 +195,7 @@ export function TodoTab({
 
   return (
     <Panel
-      title={`Things to Do · ${todos.length} ${todos.length === 1 ? "item" : "items"}`}
+      title={`Things to do · ${todos.length} ${todos.length === 1 ? "item" : "items"}`}
       subtitle={
         todos.length === 0
           ? "Repairs, prep work, and inspection follow-ups"
@@ -204,27 +204,21 @@ export function TodoTab({
       action={
         onExportPdf && (
           <Button
-            size="sm"
-            variant="outline"
-            disabled={exporting}
+            variant="plain"
+            icon={<Download />}
+            loading={exporting}
             onClick={onExportPdf}
           >
-            {exporting ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Download className="mr-1.5 h-3.5 w-3.5" />
-            )}
-            Job Card PDF
+            Download job card
           </Button>
         )
       }
     >
       <div className="flex flex-col gap-4">
         {allDone ? (
-          <div className="flex items-center gap-2 rounded-lg border border-transparent bg-[#affebf] px-4 py-2.5 text-sm text-[#014b40] dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
-            <Check className="size-4 shrink-0" />
+          <Banner tone="success">
             All prep work is complete, this car is ready to move to Sales.
-          </div>
+          </Banner>
         ) : null}
 
         {groups.map((status) => {
@@ -232,25 +226,28 @@ export function TodoTab({
           return (
             <div
               key={status}
-              className="overflow-hidden rounded-xl border border-border"
+              className="overflow-hidden rounded-(--radius-300) border border-(--border)"
             >
-              <div className="flex items-center gap-2 border-b border-border bg-muted/30 px-4 py-2">
+              <div className="flex items-center gap-2 border-b border-(--border) bg-(--bg-surface-secondary) px-4 py-2">
                 <Pill tone={STATUS_TONE[status]}>{STATUS_LABEL[status]}</Pill>
-                <span className="text-xs tabular-nums text-muted-foreground">
+                <span className="body-sm tabular-nums text-(--text-secondary)">
                   {items.length}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setAddingTo(status)}
-                  className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-                >
-                  <Plus className="size-3.5" /> Add
-                </button>
+                <span className="ml-auto">
+                  <Button
+                    variant="plain"
+                    icon="PlusMinor"
+                    onClick={() => setAddingTo(status)}
+                    accessibilityLabel={`Add ${STATUS_LABEL[status].toLowerCase()} item`}
+                  >
+                    Add
+                  </Button>
+                </span>
               </div>
 
-              <div className="divide-y divide-border">
+              <div className="divide-y divide-(--border-secondary)">
                 {items.length === 0 && addingTo !== status ? (
-                  <div className="px-4 py-3 text-xs italic text-muted-foreground">
+                  <div className="px-4 py-3 body-sm text-(--text-secondary)">
                     Nothing here.
                   </div>
                 ) : null}
@@ -283,9 +280,9 @@ export function TodoTab({
           );
         })}
 
-        <div className="flex items-center justify-between rounded-lg bg-muted/40 px-4 py-3">
-          <span className="text-[13px] font-medium text-muted-foreground">
-            Grand Total
+        <div className="flex items-center justify-between rounded-(--radius-300) bg-(--bg-surface-secondary) px-4 py-3">
+          <span className="body-md text-(--text-secondary)">
+            Grand total
           </span>
           <span className="text-base font-semibold tabular-nums">
             {formatCurrency(total)}
@@ -370,9 +367,9 @@ function TodoRow({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-x-2 gap-y-1.5 px-4 py-2 text-sm transition-opacity",
+        "flex flex-wrap items-center gap-x-2 gap-y-1.5 px-4 py-2 body-md transition-opacity",
         saving && "opacity-60",
-        item.status === "completed" && "text-muted-foreground",
+        item.status === "completed" && "text-(--text-secondary)",
       )}
     >
       <Select
@@ -431,7 +428,7 @@ function TodoRow({
       {/* Where the item came from. Least important column, so it's the one
           that goes when the panel is narrow. */}
       <span
-        className="hidden w-14 shrink-0 text-right text-2xs capitalize text-muted-foreground sm:inline"
+        className="hidden w-14 shrink-0 text-right body-xs capitalize text-(--text-secondary) sm:inline"
         title={`Source: ${item.source}`}
       >
         {item.source}
@@ -451,14 +448,13 @@ function TodoRow({
         className="h-8 w-20 shrink-0 border-transparent bg-transparent text-right text-sm tabular-nums shadow-none hover:border-border focus-visible:border-input"
       />
 
-      <button
-        type="button"
+      <Button
+        variant="tertiary"
+        tone="critical"
+        icon="DeleteMinor"
         onClick={onDelete}
-        aria-label={`Delete ${item.description}`}
-        className="grid size-8 shrink-0 place-items-center rounded text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-      >
-        <Trash2 className="size-3.5" />
-      </button>
+        accessibilityLabel={`Delete ${item.description}`}
+      />
     </div>
   );
 }
@@ -507,9 +503,10 @@ function AddRow({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 bg-muted/20 px-4 py-2.5">
+    <div className="flex flex-wrap items-center gap-2 bg-(--bg-surface-secondary) px-4 py-2.5">
       <Input
         ref={descriptionRef}
+        aria-label="New item description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         onKeyDown={(e) => {
@@ -527,7 +524,7 @@ function AddRow({
         value={vendorId}
         onValueChange={setVendorId}
       >
-        <SelectTrigger className="h-8 w-40 text-sm">
+        <SelectTrigger className="h-8 w-40 text-sm" aria-label="New item vendor">
           <SelectValue placeholder="Vendor (optional)" />
         </SelectTrigger>
         <SelectContent>
@@ -548,21 +545,16 @@ function AddRow({
         }}
         inputMode="decimal"
         placeholder="£0.00"
+        aria-label="New item cost"
         className="h-8 w-24 text-right text-sm tabular-nums"
       />
-      <Button type="button" size="sm" className="h-8" onClick={submit} disabled={saving}>
-        {saving ? "Adding…" : "Add"}
+      <Button variant="primary" onClick={submit} loading={saving}>
+        Add item
       </Button>
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        className="h-8"
-        onClick={onCancel}
-        disabled={saving}
-      >
+      <Button variant="tertiary" onClick={onCancel} disabled={saving}>
         Cancel
       </Button>
+
     </div>
   );
 }

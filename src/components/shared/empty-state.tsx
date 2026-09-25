@@ -9,6 +9,13 @@ interface Props {
   className?: string;
 }
 
+/**
+ * Empty / no-access state with the Polaris EmptyState look, drawn with the
+ * kit's `p-empty` classes: a tinted icon tile, a 14px semibold heading, a
+ * 12px body and the action underneath. Kept as its own component (rather than
+ * the kit's EmptyState) because callers pass a lucide icon and a ready-made
+ * action node.
+ */
 export function EmptyState({
   icon: Icon,
   title,
@@ -17,24 +24,23 @@ export function EmptyState({
   className,
 }: Props) {
   return (
-    <div
-      className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-xl bg-card px-6 py-10 text-center",
-        className,
-      )}
-    >
+    <div className={cn("p-empty", className)}>
       {Icon ? (
-        <div className="grid h-10 w-10 place-items-center text-[#8a8a8a]">
-          <Icon className="h-8 w-8" strokeWidth={1.5} />
+        <div className="p-empty__icon">
+          <span className="p-icon">
+            <Icon aria-hidden strokeWidth={1.5} />
+          </span>
         </div>
       ) : null}
-      <div className="flex flex-col gap-1">
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-        {description ? (
-          <p className="max-w-sm text-[13px] leading-5 text-[#616161]">{description}</p>
-        ) : null}
+      <div className="p-empty__content">
+        <div className="p-empty__text">
+          <h3 className="p-empty__heading">{title}</h3>
+          {description ? (
+            <p className="p-empty__body m-0 text-(--text-secondary)">{description}</p>
+          ) : null}
+        </div>
+        {action}
       </div>
-      {action}
     </div>
   );
 }

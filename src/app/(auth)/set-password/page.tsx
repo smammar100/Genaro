@@ -12,17 +12,8 @@ import { toast } from "@/lib/toast";
 import { useAutoFocusField } from "@/hooks/use-auto-focus";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/auth-context";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Button } from "@/components/polaris";
+import { AuthCard, RhfTextField } from "../_components/auth-card";
 
 interface FormValues {
   password: string;
@@ -89,71 +80,39 @@ export default function SetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f1f1f1] px-4 py-12 dark:bg-background">
-      <div className="w-full max-w-[400px] rounded-xl border border-[#e3e3e3] bg-white p-8 shadow-[0_1px_0_rgba(0,0,0,.05)] dark:bg-card">
-        <div className="mb-6">
-          <div className="mb-6 grid size-9 place-items-center rounded-lg bg-[#101010] text-xs font-bold text-white">
-            CC
-          </div>
-          <h1 className="text-xl font-semibold text-[#101010] dark:text-foreground">
-            Welcome, set your password
-          </h1>
-          <p className="mt-1 text-[13px] text-muted-foreground">
-            Choose your own password to continue to the dashboard.
-          </p>
-        </div>
-
-        <Card className="gap-0 border-0 bg-transparent p-0 shadow-none ring-0">
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="flex flex-col gap-4"
-            >
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>New password</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        autoComplete="new-password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="confirm"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm password</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        autoComplete="new-password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                className="mt-2"
-                disabled={form.formState.isSubmitting}
-              >
-                {form.formState.isSubmitting ? "Saving…" : "Set password"}
-              </Button>
-            </form>
-          </Form>
-        </Card>
-      </div>
-    </div>
+    <AuthCard
+      title="Welcome, set your password"
+      subtitle="Choose your own password to continue to the dashboard."
+    >
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-col gap-4"
+      >
+        <RhfTextField
+          control={form.control}
+          name="password"
+          label="New password"
+          type="password"
+          autoComplete="new-password"
+        />
+        <RhfTextField
+          control={form.control}
+          name="confirm"
+          label="Confirm password"
+          type="password"
+          autoComplete="new-password"
+        />
+        <Button
+          variant="primary"
+          size="large"
+          submit
+          fullWidth
+          loading={form.formState.isSubmitting}
+          className="mt-2"
+        >
+          Set password
+        </Button>
+      </form>
+    </AuthCard>
   );
 }

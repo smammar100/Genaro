@@ -38,7 +38,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { activityService } from "@/lib/services/activity-service";
 import { teamService } from "@/lib/services/team-service";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/shared/empty-state";
+import { Badge, Button, EmptyState, type BadgeTone } from "@/components/polaris";
 import { formatDateTime } from "@/lib/utils";
 import { Panel } from "./primitives";
 import { cn } from "@/lib/utils";
@@ -99,22 +99,22 @@ const CAT_LABEL: Record<Cat, string> = {
   other: "Workshop",
 };
 
-const CAT_PILL: Record<Cat, string> = {
-  status: "bg-zinc-100 text-zinc-600 dark:bg-zinc-500/15 dark:text-zinc-300",
-  costs: "bg-[#fff1c2] text-[#4f4700] dark:bg-amber-500/15 dark:text-amber-300",
-  photos: "bg-[#d5ebff] text-[#003a5a] dark:bg-sky-500/15 dark:text-sky-300",
-  listing: "bg-[#f1f1f1] text-[#303030] dark:bg-violet-500/15 dark:text-violet-300",
-  enquiries: "bg-[#affebf] text-[#014b40] dark:bg-emerald-500/15 dark:text-emerald-300",
-  other: "bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300",
+const CAT_TONE: Record<Cat, BadgeTone> = {
+  status: "neutral",
+  costs: "attention",
+  photos: "info",
+  listing: "neutral",
+  enquiries: "success",
+  other: "neutral",
 };
 
 const TONE_BUBBLE: Record<Tone, string> = {
-  violet: "bg-[#f1f1f1] text-[#303030] dark:bg-violet-500/15 dark:text-violet-300",
-  amber: "bg-[#fff1c2] text-[#4f4700] dark:bg-amber-500/15 dark:text-amber-300",
-  emerald: "bg-[#affebf] text-[#014b40] dark:bg-emerald-500/15 dark:text-emerald-300",
-  rose: "bg-[#fed1d7] text-[#8e0b21] dark:bg-rose-500/15 dark:text-rose-300",
-  sky: "bg-[#d5ebff] text-[#003a5a] dark:bg-sky-500/15 dark:text-sky-300",
-  slate: "bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300",
+  violet: "bg-(--bg-fill-secondary) text-(--icon)",
+  amber: "bg-(--bg-surface-caution) text-(--icon-caution)",
+  emerald: "bg-(--bg-surface-success) text-(--icon-success)",
+  rose: "bg-(--bg-surface-critical) text-(--icon-critical)",
+  sky: "bg-(--bg-surface-info) text-(--icon-info)",
+  slate: "bg-(--bg-fill-secondary) text-(--icon-secondary)",
 };
 
 /**
@@ -220,11 +220,9 @@ export function ActivityTab({ vehicleId }: ActivityTabProps) {
 
   if (entries.length === 0) {
     return (
-      <EmptyState
-        icon={History}
-        title="No activity yet"
-        description="Every action on this vehicle will appear here."
-      />
+      <EmptyState icon={<History />} heading="No activity yet">
+        Every action on this vehicle will appear here.
+      </EmptyState>
     );
   }
 
@@ -237,7 +235,7 @@ export function ActivityTab({ vehicleId }: ActivityTabProps) {
       title="Activity"
       subtitle={`Every action taken on this vehicle since arrival · ${entries.length} events`}
       action={
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1">
           {(Object.keys(FILTER_LABELS) as FilterKey[]).map((k) => (
             <FilterChip key={k} active={filter === k} count={counts[k]} onClick={() => setFilter(k)}>
               {FILTER_LABELS[k]}
@@ -248,17 +246,17 @@ export function ActivityTab({ vehicleId }: ActivityTabProps) {
       flush
     >
       {filtered.length === 0 ? (
-        <div className="px-4 py-10 text-center text-sm text-muted-foreground">
+        <div className="px-4 py-10 text-center body-md text-(--text-secondary)">
           No events match this filter.
         </div>
       ) : (
         <div className="flex flex-col gap-3 px-4 pb-4">
           {grouped.map(([day, dayEntries]) => (
             <div key={day}>
-              <div className="mb-1.5 text-xs font-semibold text-muted-foreground">
+              <div className="mb-1.5 body-sm-semibold text-(--text-secondary)">
                 {day}
               </div>
-              <div className="overflow-hidden rounded-xl border border-border bg-background">
+              <div className="overflow-hidden rounded-(--radius-200) border border-(--border) bg-(--bg-surface)">
                 {dayEntries.map((e) => {
                   const visual = ACTION_VISUAL[e.actionType] ?? { icon: History, tone: "slate" as Tone };
                   const Icon = visual.icon;
@@ -267,21 +265,21 @@ export function ActivityTab({ vehicleId }: ActivityTabProps) {
                   return (
                     <div
                       key={e.id}
-                      className="flex items-center gap-3 border-b border-border px-3 py-2.5 last:border-0 hover:bg-muted/40"
+                      className="flex items-center gap-3 border-b border-(--border-secondary) px-3 py-2.5 last:border-0 hover:bg-(--bg-surface-hover)"
                     >
                       <span className={cn("grid size-8 shrink-0 place-items-center rounded-full", TONE_BUBBLE[visual.tone])}>
                         <Icon className="size-4" />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm">
-                          <span className="font-medium text-foreground">{actorName}</span>{" "}
-                          <span className="text-muted-foreground">· {e.description}</span>
+                        <div className="truncate body-md">
+                          <span className="body-md-semibold text-(--text)">{actorName}</span>{" "}
+                          <span className="text-(--text-secondary)">· {e.description}</span>
                         </div>
                       </div>
-                      <span className={cn("hidden shrink-0 rounded-full px-2 py-0.5 text-2xs font-medium sm:inline", CAT_PILL[cat])}>
-                        {CAT_LABEL[cat]}
+                      <span className="hidden shrink-0 sm:inline-flex">
+                        <Badge tone={CAT_TONE[cat]}>{CAT_LABEL[cat]}</Badge>
                       </span>
-                      <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">
+                      <span className="shrink-0 body-sm tabular-nums text-(--text-secondary)">
                         {formatDateTime(e.createdAt)}
                       </span>
                     </div>
@@ -308,21 +306,10 @@ function FilterChip({
   children: React.ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
-        active
-          ? "border-foreground bg-foreground text-background"
-          : "border-border bg-card text-muted-foreground hover:bg-muted/40 hover:text-foreground",
-      )}
-    >
-      {children}
-      <span className={cn("rounded-full px-1.5 text-2xs tabular-nums", active ? "bg-background/20" : "bg-muted")}>
-        {count}
-      </span>
-    </button>
+    <Button size="micro" pressed={active} onClick={onClick}>
+      {children}{" "}
+      <span className="tabular-nums text-(--text-secondary)">{count}</span>
+    </Button>
   );
 }
 

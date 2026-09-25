@@ -1,4 +1,10 @@
 @import "tailwindcss";
+@import "../components/polaris/styles/tokens.css";
+@import "../components/polaris/styles/base.css";
+@import "../components/polaris/styles/components.css" layer(components);
+@import "../components/polaris/styles/tailwind.css";
+@import "../components/polaris/styles/shadcn.css";
+@import "./polaris-bridge.css";
 
 /* Onborda ships prebuilt Tailwind classes inside its own dist, which Tailwind
    would otherwise never scan — v4 has no `content` array, so @source is the
@@ -23,185 +29,82 @@
   pointer-events: auto;
 }
 
-@custom-variant dark (&:is(.dark *));
-
+/* shadcn/ui colour utilities (bg-card, text-muted-foreground…) → the shadcn
+   variables, which shadcn.css points at Polaris tokens. */
 @theme inline {
   --breakpoint-3xl: 1600px;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-heading: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  --color-info: var(--info);
-  --color-info-foreground: var(--info-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Genaro's radius set, stated literally rather than derived from --radius:
-     the spec fixes 4px chips and thumbnails, 6px inputs and buttons, 8px inner
-     panels, 10–12px cards. An offset-from-one-anchor scale lands a pixel off
-     each of those, which is visible where a chip sits inside a card. */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 10px;
-  --radius-2xl: 12px;
+  /* Registration plates are the one brand colour outside Polaris: UK plate
+     yellow, used by RegPlate and nowhere else. */
+  --color-plate: #f6cd5a; /* audit-ignore: UK plate yellow, the one sanctioned non-token colour */
 
-  --animate-skeleton: skeleton 2s -1s infinite linear;
+  /* Polaris radius scale under Tailwind's names. */
+  --radius-sm: var(--radius-100);
+  --radius-md: var(--radius-200);
+  --radius-lg: var(--radius-200);
+  --radius-xl: var(--radius-300);
+  --radius-2xl: var(--radius-300);
 
-  --tw-shadow-color: #000;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* ── Canonical type scale (4 sizes + 1 locked micro) ─────────────────
-     Dozens of components have padding/height assumptions baked in around
-     these exact sizes, so change them app-wide with care. Roles:
-       text-2xl  display — page/modal <h1>, KPI/stat hero numbers
-       text-base title   — card/panel/dialog/section titles, key numbers
-       text-sm   body    — prose, descriptions, table cells, nav, inputs
-       text-xs   label   — eyebrows, captions, meta, table heads
-       text-2xs  micro   — LOCKED: glyphs in fixed sub-12px boxes only
-     Emphasis is weight (600) + color, never a 5th size. */
-  --text-2xl: 1.5rem;
-  --text-2xl--line-height: 1.15;
-  --text-2xl--letter-spacing: -0.02em;
-  --text-base: 1.125rem;
-  --text-base--line-height: 1.35;
-  --text-base--letter-spacing: -0.012em;
-  --text-sm: 0.875rem;
-  --text-sm--line-height: 1.5;
-  --text-sm--letter-spacing: -0.004em;
+  /* Tailwind's type scale re-pointed at Polaris's: text-sm is body-md (13/20),
+     text-xs body-sm (12/16), text-base/lg heading-sm (14/20), text-xl/2xl
+     heading-lg (20/24). */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 0.75rem;
   --text-xs: 0.75rem;
-  --text-xs--line-height: 1.4;
-  --text-xs--letter-spacing: 0.008em;
-  --text-2xs: 0.625rem;
-  --text-2xs--line-height: 1;
-  --text-2xs--letter-spacing: 0.01em;
-
-  @keyframes skeleton {
-    to {
-      background-position: -200% 0;
-    }
-  }
-}
-
-/* ── Genaro token layer ──────────────────────────────────────────────
-   The base values every semantic token resolves to (Genaro brand values,
-   declared in the @theme block at the foot of this file). The app runs with
-   `.polaris` on <html>, and polaris-theme.css — imported after this file —
-   re-points these tokens at Shopify Polaris, so this layer is the fallback.
-
-   LIGHT ONLY. The Genaro package defines one light system and no dark
-   variants, so there is no `.dark` block and no theme toggle. Inventing dark
-   values would be fiction, not design. `dark:` utilities still exist in
-   ~67 component files; they are inert (the class is never applied) and are
-   left for a separate mechanical cleanup rather than a risky sweep here.
- */
-:root {
-  color-scheme: light;
-
-  /* Inter app-wide (self-hosted by next/font in layout.tsx as --font-inter) —
-     the Shopify admin's typeface. */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-
-  --radius: 6px;
-
-  /* ---------------------------------------------------------- semantic */
-
-  --background: var(--color-page);
-  --foreground: var(--color-ink);
-  --card: #ffffff;
-  --card-foreground: var(--color-ink);
-  --popover: #ffffff;
-  --popover-foreground: var(--color-ink);
-
-  /* Rule 2 lives here: navy fill is the primary action and nothing else. */
-  --primary: var(--color-navy-900);
-  --primary-foreground: #ffffff;
-
-  /* The Genaro secondary button is white with a 1px border, so --secondary
-     carries the surface tone and the border comes from --border. */
-  --secondary: var(--color-surface);
-  --secondary-foreground: #3f3f46;
-
-  --muted: var(--color-surface);
-  --muted-foreground: var(--color-muted-text);
-
-  /* Hover/active fill. One step darker than --muted so a hover is visible on
-     top of a zebra row, which is already sitting on --color-surface. */
-  --accent: var(--color-line-soft);
-  --accent-foreground: var(--color-ink);
-
-  /* Status. The saturated value is the fill AND the on-light text (both are
-     specified against white or a tint); the darker *-foreground values are the
-     badge text colours, which sit on the matching tinted background. */
-  --destructive: var(--color-status-blocked);
-  --destructive-foreground: #7f1d1d;
-  --success: var(--color-status-clear);
-  --success-foreground: #14532d;
-  --warning: var(--color-status-warning);
-  --warning-foreground: #713f12;
-  --info: var(--color-navy-500);
-  --info-foreground: #1e3a8a;
-
-  --border: var(--color-line);
-  --input: var(--color-line);
-  /* Focus is the blue accent, not navy: navy on a navy primary button would
-     be invisible, and the accent is the system's one "look here" colour. */
-  --ring: var(--color-accent-blue);
-
-  /* Chart series = the four stock stages, in the spec's own order. --chart-5
-     is the accent, for series the stage set does not name. */
-  --chart-1: var(--color-stage-ready);
-  --chart-2: var(--color-stage-prep);
-  --chart-3: var(--color-stage-parts);
-  --chart-4: var(--color-stage-blocked);
-  --chart-5: var(--color-accent-blue);
-
-  /* The nav rail is navy — the largest single piece of brand on any screen. */
-  --sidebar: var(--color-navy-900);
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: var(--color-accent-blue);
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: var(--color-navy-700);
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: var(--color-navy-700);
-  --sidebar-ring: var(--color-accent-blue);
-
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.25rem;
+  --text-lg: 0.875rem;
+  --text-lg--line-height: 1.25rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.5rem;
+  --text-2xl: 1.25rem;
+  --text-2xl--line-height: 1.5rem;
+  --text-3xl: 1.5rem;
+  --text-3xl--line-height: 2rem;
 }
 
 @layer base {
@@ -209,23 +112,16 @@
   *::before,
   *::after {
     @apply border-border outline-ring/50;
-    /* Flex/grid items default to min-content for their min-* size,
-       which is what causes the classic "child overflows its flex
-       parent" bug. Resetting to 0 lets children shrink properly. */
+    /* Flex/grid items default to min-content for their min-* size, which is
+       the classic "child overflows its flex parent" bug. */
     min-width: 0;
     min-height: 0;
-    /* Thin, unobtrusive scrollbars on EVERY scroll container — page, tables,
-       nav, panels, textareas. Firefox + Chromium 121+ + Safari 18.2+. */
     scrollbar-width: thin;
-    scrollbar-color: gray transparent;
+    scrollbar-color: var(--border) transparent;
   }
 
   body {
-    line-height: 1.45;
-    /* Never let the browser fake a weight or style it doesn't have a file
-       for — a synthesized bold/italic silently ships as a slightly-wrong
-       typeface. With this off, a missing Inter weight fails visibly instead
-       (GEN-57). */
+    /* A missing Inter weight should fail visibly, not ship a faked bold. */
     font-synthesis: none;
   }
 
@@ -235,22 +131,7 @@
   h4,
   h5,
   h6 {
-    line-height: 1.1;
-    /* Default greedy wrapping breaks a two-line heading as "six words / one
-       word", and a stranded last word reads as a mistake. `balance` evens the
-       lines out. Cheap here: the browser only applies it up to a handful of
-       lines, which every heading in this app is. */
     text-wrap: balance;
-  }
-
-  /* Selection is a design surface, not a browser default. Primary at 24% keeps
-     the brand in reading without dropping text below AA. Worst case is over
-     --muted, where --foreground still measures 12.22:1 / APCA Lc 77.6 in light
-     and 11.21:1 / Lc 81.9 in dark. Tailwind emits a solid-primary fallback
-     ahead of the color-mix version; that path is unreachable in practice,
-     since the table hover/selected states already require color-mix. */
-  ::selection {
-    background-color: --alpha(var(--color-primary) / 24%);
   }
 
   code,
@@ -260,8 +141,6 @@
     font-family: var(--font-mono);
   }
 
-  /* <strong>/<b> default to 700 (bolder) — keep emphasis on the 3-weight
-     scale (semibold is the heaviest). */
   strong,
   b {
     font-weight: 600;
@@ -270,77 +149,4 @@
 
 @utility container {
   @apply mx-auto max-w-[1416px] px-4 lg:px-6;
-}
-
-/* App overlay stacking tier (GEN-31).
-   Overlays (dialogs, sheets, drawers, popovers, menus, selects, tooltips, the
-   command palette, calendar modals) portal to <body> and all use `z-[900]`,
-   above the mobile nav drawer (z-50), so a backdrop always covers the whole
-   viewport and traps interaction. They share one value so they keep stacking
-   amongst themselves by portal/DOM order. */
-
-/* ══════════════════════════════════════════════════════════════════════════
-   GENARO BRAND TOKENS — Direction 05 "Grille"
-   ══════════════════════════════════════════════════════════════════════════
-   From the "Genaro branding guidelines" handoff (2026-08-22). These are
-   ABSOLUTE brand values, not theme-relative ones: each is one fixed hex in
-   every context. The brand package defines
-   a single light system; it specifies no dark variants, so inventing them
-   here would be fiction.
-
-   The semantic layer (bg-card, text-muted-foreground…) now resolves to
-   Shopify Polaris via polaris-theme.css; these remain for the few places that
-   name a brand colour directly. */
-@theme {
-  /* Navy — brand, nav rail, primary actions, one framing figure per screen */
-  --color-navy-900: #16203a;
-  --color-navy-700: #243254;
-  --color-navy-500: #4c6fb5;
-  --color-navy-200: #a9b4cc;
-  --color-accent-blue: #0b5cff;
-
-  /* Zinc — text, borders, surfaces: the whole interface outside of status */
-  /* On-navy text. The zinc ramp is built for light grounds — muted (#71717A)
-     on the navy rail measures ~3.2:1, under the 4.5 floor for the 11px email —
-     so the rail carries its own two foreground tones.
-
-     --color-nav-email is the spec's #8B9AB8 unchanged (~5.3:1 at 11px).
-
-     --color-nav-heading is NOT the spec's #6B7A99: that measures 3.74:1 on the
-     navy ground, below the 4.5 floor, and it carries the 10px uppercase group
-     labels — the smallest persistent text in the app. Raised in LUMINANCE ONLY
-     along the same hue, the way --muted-foreground was corrected for light
-     mode (GEN-58), which clears 4.5:1 with no perceptible shift in tone. Worth
-     re-checking against the brand owner when the final artwork lands. */
-  --color-nav-heading: #798aac;
-  --color-nav-email: #8b9ab8;
-  /* Sidebar item text and the initials mark — tokens so a theme can move them. */
-  --color-nav-item: var(--color-navy-200);
-  --color-nav-mark: var(--color-navy-500);
-
-  --color-ink: #18181b;
-  --color-muted-text: #71717a;
-  --color-faint: #a1a1aa;
-  --color-line: #e4e4e7;
-  --color-line-soft: #efeff1;
-  --color-surface: #fafafa;
-  --color-page: #f4f4f5;
-
-  /* Status — meaning only, never decoration (rule 4) */
-  --color-status-blocked: #b4232f;
-  --color-status-warning: #946200;
-  --color-status-clear: #117627;
-
-  /* Plate — registration plates and nowhere else (rule 5) */
-  --color-plate: #f6cd5a;
-
-  /* Chart series, stock stages. The amber is #D9A62E, NOT plate yellow —
-     kept distinct so plate yellow stays unique to plates. */
-  --color-stage-ready: #16203a;
-  --color-stage-prep: #4c6fb5;
-  --color-stage-parts: #d9a62e;
-  --color-stage-blocked: #b4232f;
-
-  /* The one shadow in the system: the calendar date chip. Nothing else. */
-  --shadow-chip: 0 1px 1px rgb(0 0 0 / 0.04);
 }

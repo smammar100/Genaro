@@ -11,21 +11,41 @@ import type {
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
+import type { ReactNode } from "react";
 
-const COLOR_CLASSES: Record<string, string> = {
-  blue: "bg-[#d5ebff] text-[#003a5a] border-transparent",
-  yellow:
-    "bg-[#ffeb78] text-[#4f4700] border-transparent",
-  orange:
-    "bg-[#ffd6a4] text-[#5e2e00] border-transparent",
-  green:
-    "bg-[#affebf] text-[#014b40] border-transparent",
-  purple:
-    "bg-[#f0e8ff] text-[#5700d1] border-transparent",
-  pink: "bg-[#ffe3f3] text-[#8d0448] border-transparent",
-  gray: "bg-[#ebebeb] text-[#303030] border-transparent",
-  red: "bg-[#fed1d7] text-[#8e0b21] border-transparent",
+/**
+ * The status colour names used in lib/constants → Polaris Badge tones.
+ * Pink (Reserved, Deposit taken) has no Polaris tone of its own, so it is the
+ * strong info badge — distinct from the plain info of Received / New lead.
+ */
+type Tone = "info" | "attention" | "warning" | "success" | "magic" | "neutral" | "critical";
+const COLOR_TONES: Record<string, { tone: Tone; strong?: boolean }> = {
+  blue: { tone: "info" },
+  yellow: { tone: "attention" },
+  orange: { tone: "warning" },
+  green: { tone: "success" },
+  purple: { tone: "magic" },
+  pink: { tone: "info", strong: true },
+  gray: { tone: "neutral" },
+  red: { tone: "critical" },
 };
+
+function ToneBadge({
+  color,
+  className,
+  children,
+}: {
+  color: string | undefined;
+  className?: string;
+  children: ReactNode;
+}) {
+  const { tone, strong } = COLOR_TONES[color ?? "gray"] ?? COLOR_TONES.gray;
+  return (
+    <Badge variant={tone} className={cn(strong && "p-badge--strong", className)}>
+      {children}
+    </Badge>
+  );
+}
 
 interface VehicleStatusBadgeProps {
   status: VehicleStatus;
@@ -40,15 +60,12 @@ export function VehicleStatusBadge({
   withChevron,
 }: VehicleStatusBadgeProps) {
   const meta = VEHICLE_STATUSES.find((s) => s.value === status);
-  if (!meta) return <Badge variant="outline">{status}</Badge>;
+  if (!meta) return <Badge variant="neutral">{status}</Badge>;
   return (
-    <Badge
-      variant="outline"
-      className={cn(COLOR_CLASSES[meta.color], className)}
-    >
+    <ToneBadge color={meta.color} className={className}>
       {meta.label}
       {withChevron && <ChevronDown aria-hidden className="-mr-0.5 size-3" />}
-    </Badge>
+    </ToneBadge>
   );
 }
 
@@ -70,9 +87,9 @@ export function MaintenanceStatusBadge({
 }: MaintenanceStatusBadgeProps) {
   const meta = MAINTENANCE_STATUSES.find((s) => s.value === status);
   return (
-    <Badge variant="outline" className={cn(COLOR_CLASSES[MAINTENANCE_COLORS[status]], className)}>
+    <ToneBadge color={MAINTENANCE_COLORS[status]} className={className}>
       {meta?.label ?? status}
-    </Badge>
+    </ToneBadge>
   );
 }
 
@@ -96,11 +113,8 @@ interface SalesStageBadgeProps {
 
 export function SalesStageBadge({ stage, className }: SalesStageBadgeProps) {
   return (
-    <Badge
-      variant="outline"
-      className={cn(COLOR_CLASSES[STAGE_COLORS[stage] ?? "gray"], className)}
-    >
+    <ToneBadge color={STAGE_COLORS[stage]} className={className}>
       {salesStageLabel(stage)}
-    </Badge>
+    </ToneBadge>
   );
 }

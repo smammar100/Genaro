@@ -1,9 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Download, Loader2, ShieldCheck, TriangleAlert } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Download } from "lucide-react";
+import {
+  Badge,
+  Button,
+  Card,
+  Layout,
+  type BadgeTone,
+} from "@/components/polaris";
 import { toast } from "@/lib/toast";
 import { useAuth } from "@/contexts/auth-context";
 import { backupService } from "@/lib/services/backup-service";
@@ -13,7 +18,12 @@ import {
   type BackupStatus,
 } from "@/lib/backup-schedule";
 import { formatDateTime } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+
+const URGENCY_BADGE: Record<BackupStatus["urgency"], { label: string; tone: BadgeTone }> = {
+  never: { label: "Not backed up", tone: "critical" },
+  due: { label: "Due", tone: "attention" },
+  ok: { label: "Up to date", tone: "success" },
+};
 
 /**
  * Settings › Backup (GEN-90).
@@ -85,67 +95,44 @@ export function BackupPanel() {
   }
 
   const status: BackupStatus = getBackupStatus(lastBackupAt);
-  const needsAttention = status.urgency !== "ok";
+
+  const badge = URGENCY_BADGE[status.urgency];
 
   return (
-    <Card
-      className={cn(
-        needsAttention && !loading && "border-amber-400/60 bg-amber-50/50",
-      )}
-    >
-      <CardContent className="flex flex-col gap-4">
-        <div className="flex items-start gap-3">
+    <Layout>
+      <Layout.AnnotatedSection
+        title="Data backup"
+        description="Download a complete copy of your data (vehicles, inspections, deals, invoices, customers and more) as an Excel workbook. Take one weekly so a problem can never cost you more than a week."
+      >
+        <Card
+          title="Status"
+          actions={loading ? null : <Badge tone={badge.tone}>{badge.label}</Badge>}
+        >
           <div
-            className={cn(
-              "grid size-9 shrink-0 place-items-center rounded-md border bg-card",
-              needsAttention ? "text-amber-600" : "text-emerald-600",
-            )}
-          >
-            {needsAttention ? (
-              <TriangleAlert className="size-4" />
-            ) : (
-              <ShieldCheck className="size-4" />
-            )}
-          </div>
-          <div className="min-w-0">
-            <div className="text-base font-semibold">Data backup</div>
-            <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-              Download a complete copy of your data — vehicles, inspections,
-              deals, invoices, customers and more — as an Excel workbook. Take
-              one weekly so a problem can never cost you more than a week.
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-lg border bg-[#f7f7f7] px-4 py-3">
-          <div className="text-[13px] font-medium text-muted-foreground">
-            Status
-          </div>
-          <div
-            className="mt-1 text-sm"
+            className="text-sm text-(--text)"
             data-testid="backup-status"
             aria-live="polite"
           >
             {loading ? "Checking…" : status.message}
           </div>
           {lastBackupAt && !loading && (
-            <div className="mt-1 text-xs text-muted-foreground">
+            <div className="text-xs text-(--text-secondary)">
               Last backup: {formatDateTime(lastBackupAt)}
             </div>
           )}
-        </div>
-
-        <div>
-          <Button onClick={() => void handleDownload()} disabled={busy || loading}>
-            {busy ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Download className="size-4" />
-            )}
-            {busy ? "Preparing backup…" : "Download data backup"}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+          <div className="flex justify-end pt-2">
+            <Button
+              variant="primary"
+              icon={<Download className="size-4" />}
+              onClick={() => void handleDownload()}
+              loading={busy}
+              disabled={loading}
+            >
+              {busy ? "Preparing backup…" : "Download data backup"}
+            </Button>
+          </div>
+        </Card>
+      </Layout.AnnotatedSection>
+    </Layout>
   );
 }

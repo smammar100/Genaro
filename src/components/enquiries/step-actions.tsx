@@ -28,22 +28,22 @@ export function StepActions({
 }: StepActionsProps) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-md bg-primary/5 px-3 py-2 text-sm">
+      <div className="rounded-(--radius-200) bg-(--bg-surface-secondary) px-3 py-2 text-sm text-(--text)">
         {selectedCustomer ? (
           <>
-            <span className="text-muted-foreground">Continuing for: </span>
+            <span className="text-(--text-secondary)">Continuing for: </span>
             <span className="font-medium">
               {selectedCustomer.firstName} {selectedCustomer.lastName}
             </span>
             {selectedCustomer.mobilePhone && (
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span className="ml-2 text-xs text-(--text-secondary)">
                 {selectedCustomer.mobilePhone}
               </span>
             )}
           </>
         ) : (
           <>
-            <span className="text-muted-foreground">Continuing as: </span>
+            <span className="text-(--text-secondary)">Continuing as: </span>
             <span className="font-medium">New customer</span>
           </>
         )}
@@ -70,7 +70,7 @@ export function StepActions({
 
       <div>
         <Button type="button" variant="ghost" onClick={onBack}>
-          <ArrowLeft className="mr-1 h-4 w-4" />
+          <ArrowLeft aria-hidden className="mr-1 size-4" />
           Back to search
         </Button>
       </div>
@@ -86,35 +86,38 @@ function ActionCard({
   onClick,
   accent,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
   title: string;
   subtitle: string;
   description: string;
   onClick: () => void;
   accent: "primary" | "muted";
 }) {
+  // A selectable card (icon, title, timing, description) — a Polaris Button
+  // can't hold this layout, so it stays a token-styled native <button>.
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "flex flex-col items-start gap-2 rounded-md border p-4 text-left transition-colors",
+        "flex flex-col items-start gap-2 rounded-(--radius-300) border border-(--border) bg-(--bg-surface) p-4 text-left text-(--text) transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--border-focus)",
         accent === "primary"
-          ? "border-border hover:border-primary hover:bg-primary/5"
-          : "border-border hover:border-primary/40 hover:bg-accent/40",
+          ? "hover:border-(--border-emphasis) hover:bg-(--bg-surface-hover)"
+          : "hover:border-(--border-hover) hover:bg-(--bg-surface-hover)",
       )}
     >
       <div className="flex items-center gap-2">
         <Icon
+          aria-hidden
           className={cn(
-            "h-4 w-4",
-            accent === "primary" ? "text-primary" : "text-muted-foreground",
+            "size-4",
+            accent === "primary" ? "text-(--text-emphasis)" : "text-(--text-secondary)",
           )}
         />
         <span className="text-sm font-semibold">{title}</span>
-        <span className="text-xs text-muted-foreground">· {subtitle}</span>
+        <span className="text-xs text-(--text-secondary)">· {subtitle}</span>
       </div>
-      <p className="text-xs text-muted-foreground">{description}</p>
+      <p className="text-xs text-(--text-secondary)">{description}</p>
     </button>
   );
 }

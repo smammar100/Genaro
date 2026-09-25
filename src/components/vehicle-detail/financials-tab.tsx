@@ -6,7 +6,7 @@ import type { Invoice, Listing, Vehicle } from "@/lib/types";
 import { listingService } from "@/lib/services/listing-service";
 import { invoiceService } from "@/lib/services/invoice-service";
 import { paidAddonsTotal } from "@/lib/invoice-calc";
-import { Button } from "@/components/ui/button";
+import { Button, Card } from "@/components/polaris";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { Field, FieldGrid, Panel, Pill } from "./primitives";
 import { EditableCard, type EditableField } from "./editable-card";
@@ -35,28 +35,28 @@ interface FinancialsTabProps {
  * sheet (docs/master-sheet-spec.md).
  */
 const COST_LINES: { key: keyof Vehicle & string; label: string }[] = [
-  { key: "buyingPrice", label: "Buying Price" },
-  { key: "vatOnBuyingPrice", label: "VAT on Buying Price" },
-  { key: "buyersFee", label: "BCA Buyer's Fee" },
-  { key: "vatOnBuyersFee", label: "VAT on Buyer's Fee" },
+  { key: "buyingPrice", label: "Buying price" },
+  { key: "vatOnBuyingPrice", label: "VAT on buying price" },
+  { key: "buyersFee", label: "BCA buyer's fee" },
+  { key: "vatOnBuyersFee", label: "VAT on buyer's fee" },
   { key: "inspectionCharge", label: "BCA Essential Check / Assured" },
   { key: "vatOnInspectionCharge", label: "VAT on Essential Check" },
   { key: "evAssuredCharge", label: "BCA EV / Hybrid Assured" },
   { key: "vatOnEvAssuredCharge", label: "VAT on EV / Hybrid Assured" },
-  { key: "batteryReportFee", label: "Battery Health Report" },
-  { key: "vatOnBatteryReportFee", label: "VAT on Battery Report" },
-  { key: "lateStorageFee", label: "Late Payment / Storage" },
-  { key: "vatOnLateStorageFee", label: "VAT on Late Payment / Storage" },
+  { key: "batteryReportFee", label: "Battery health report" },
+  { key: "vatOnBatteryReportFee", label: "VAT on battery report" },
+  { key: "lateStorageFee", label: "Late payment / storage" },
+  { key: "vatOnLateStorageFee", label: "VAT on late payment / storage" },
   { key: "collectionFee", label: "Collection" },
-  { key: "vatOnCollectionFee", label: "VAT on Collection" },
-  { key: "deliveryFee", label: "Delivery / Transport" },
-  { key: "vatOnDeliveryFee", label: "VAT on Delivery" },
-  { key: "otherCharges", label: "Other Charges" },
-  { key: "loadingFee", label: "Loading Fee" },
-  { key: "unloadingFee", label: "Unloading Fee" },
-  { key: "stockingCharges", label: "Stocking Charges" },
-  { key: "valueAddition", label: "Total Value Addition" },
-  { key: "warrantyCost", label: "Warranty Cost" },
+  { key: "vatOnCollectionFee", label: "VAT on collection" },
+  { key: "deliveryFee", label: "Delivery / transport" },
+  { key: "vatOnDeliveryFee", label: "VAT on delivery" },
+  { key: "otherCharges", label: "Other charges" },
+  { key: "loadingFee", label: "Loading fee" },
+  { key: "unloadingFee", label: "Unloading fee" },
+  { key: "stockingCharges", label: "Stocking charges" },
+  { key: "valueAddition", label: "Total value addition" },
+  { key: "warrantyCost", label: "Warranty cost" },
 ];
 
 function costFields(vehicle: Vehicle): EditableField<Vehicle>[] {
@@ -83,13 +83,13 @@ function costFields(vehicle: Vehicle): EditableField<Vehicle>[] {
 
 /** Master sheet BH–BN — expenses at the point of sale (BO is their sum). */
 const POINT_OF_SALE_FIELDS: EditableField<Vehicle>[] = [
-  { key: "financeCompanyCharges", label: "Finance Company Charges / Commission" },
-  { key: "partnerShare", label: "Partner's Share" },
-  { key: "extendedWarrantyCost", label: "Extended Warranty" },
-  { key: "roadTaxCost", label: "Road Tax" },
+  { key: "financeCompanyCharges", label: "Finance company charges / commission" },
+  { key: "partnerShare", label: "Partner's share" },
+  { key: "extendedWarrantyCost", label: "Extended warranty" },
+  { key: "roadTaxCost", label: "Road tax" },
   { key: "insuranceCost", label: "Insurance" },
-  { key: "otherJobsCost", label: "Other Jobs" },
-  { key: "customerDeliveryCost", label: "Delivery to Customer" },
+  { key: "otherJobsCost", label: "Other jobs" },
+  { key: "customerDeliveryCost", label: "Delivery to customer" },
 ].map((f) => ({
   key: f.key as keyof Vehicle & string,
   label: f.label,
@@ -196,9 +196,9 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
           amount: l.total,
         }))
       : [
-          "Accessories", "Warranty (markup)", "Paint Protection", "Admin Fee",
-          "GAP Insurance", "Service Plan", "Smart Insurance", "Finance Commission",
-          "Bonus", "Discount", "Writedown", "Commission Adj.",
+          "Accessories", "Warranty (markup)", "Paint protection", "Admin fee",
+          "GAP insurance", "Service plan", "Smart insurance", "Finance commission",
+          "Bonus", "Discount", "Writedown", "Commission adj.",
         ].map((name) => ({ name, amount: 0 }));
   // Canonical paid add-on revenue from the invoice (falls back to 0 gracefully).
   const addonTotal = invoice
@@ -221,29 +221,32 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <DollarSign className="size-3.5 shrink-0" />
-        Every cost and every add-on revenue for this car. VAT uses HMRC&apos;s{" "}
-        <strong className="font-medium text-foreground">Margin Scheme</strong>:
-        owed only on the profit margin, not the full sale price.
-      </p>
+      <div className="flex items-start gap-1.5 body-sm text-(--text-secondary)">
+        <DollarSign className="mt-0.5 size-3.5 shrink-0" />
+        <p>
+          Every cost and every add-on revenue for this car. VAT uses
+          HMRC&apos;s{" "}
+          <strong className="body-sm-semibold text-(--text)">Margin Scheme</strong>:
+          owed only on the profit margin, not the full sale price.
+        </p>
+      </div>
 
-      {/* Money out ↔ money in */}
-      <div className="grid items-stretch gap-4 lg:grid-cols-[1fr_auto_1fr]">
+      {/* Money out vs money in */}
+      <div className="grid items-stretch gap-4 @4xl:grid-cols-[1fr_auto_1fr]">
         {/* GEN-88: the expense ledger is the editable surface — every line here
             is a stored vehicle cost, and correcting one re-derives the totals
             the rest of the app reads. */}
         <div className="flex flex-col gap-2">
           <EditableCard
-            title="Money out · Expenses"
+            title="Money out · expenses"
             record={vehicle}
             fields={costFields(vehicle)}
             onSave={saveCosts}
             canEdit={canEditCosts}
             className="[&_[data-testid]]:contents"
           />
-          <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-2.5 text-sm">
-            <span className="text-[13px] font-medium text-muted-foreground">
+          <div className="flex items-center justify-between rounded-(--radius-300) bg-(--bg-surface-secondary) px-4 py-2.5 shadow-(--shadow-100)">
+            <span className="body-md text-(--text-secondary)">
               Total expenses
             </span>
             <span className="text-base font-semibold tabular-nums">
@@ -251,13 +254,13 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
             </span>
           </div>
         </div>
-        <div className="hidden items-center justify-center lg:flex">
-          <span className="grid size-12 place-items-center rounded-full border bg-card text-muted-foreground">
+        <div className="hidden items-center justify-center @4xl:flex">
+          <span className="grid size-12 place-items-center rounded-full bg-(--bg-surface) text-(--icon-secondary) shadow-(--shadow-100)">
             <ChevronRight className="size-5" />
           </span>
         </div>
         <LedgerCard
-          title="Money in · Revenue"
+          title="Money in · revenue"
           subtitle={`Retail ${formatCurrency(retail)} + add-ons`}
           rows={revenue}
           total={revenueTotal}
@@ -266,17 +269,17 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
       </div>
 
       {/* Net result */}
-      <div className="rounded-xl border bg-[#f7f7f7] p-5 text-center dark:bg-muted">
-        <div className="text-[13px] font-medium text-muted-foreground">
+      <Card background="subdued" className="items-center gap-1 p-5 text-center">
+        <div className="body-md text-(--text-secondary)">
           Net profit after margin VAT
         </div>
-        <div className="mt-1 text-3xl font-semibold tabular-nums text-[#014b40] dark:text-emerald-400">
+        <div className="text-3xl font-semibold tabular-nums text-(--text-success)">
           {net > 0 ? formatCurrency(Math.round(net)) : "—"}
         </div>
-        <div className="mt-1 text-xs text-muted-foreground">
+        <div className="body-sm text-(--text-secondary)">
           Gross {formatCurrency(gross)} − margin VAT {formatCurrency(marginVat)}
         </div>
-      </div>
+      </Card>
 
       {/* Master sheet BH–BN. Not part of the base cost — the sheet keeps
           them as a separate "expense at point of sale" (BO). */}
@@ -288,8 +291,8 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
           onSave={saveCosts}
           canEdit={canEditCosts}
         />
-        <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-2.5 text-sm">
-          <span className="text-[13px] font-medium text-muted-foreground">
+        <div className="flex items-center justify-between rounded-(--radius-300) bg-(--bg-surface-secondary) px-4 py-2.5 shadow-(--shadow-100)">
+          <span className="body-md text-(--text-secondary)">
             Expense at point of sale
           </span>
           <span className="text-base font-semibold tabular-nums">
@@ -305,33 +308,33 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
 
       {/* Purchase information */}
       <Panel
-        title="Purchase Information"
+        title="Purchase information"
         subtitle={
           vehicle.invoiceDate
             ? `Invoice · ${formatDate(vehicle.invoiceDate)}`
             : "Invoice not recorded"
         }
         action={
-          <Button variant="outline" size="sm">
-            Print Invoice
+          <Button variant="plain" icon="PrintMajor">
+            Print invoice
           </Button>
         }
       >
         <FieldGrid cols={3}>
           <Field label="Supplier">{vehicle.sellerName}</Field>
-          <Field label="VAT Scheme">Margin Based</Field>
-          <Field label="Purchase Source">
+          <Field label="VAT scheme">Margin based</Field>
+          <Field label="Purchase source">
             <span className="capitalize">
               {vehicle.purchaseSource.replace("_", " ")}
             </span>
           </Field>
-          <Field label="Buying Price" numeric>
+          <Field label="Buying price" numeric>
             {formatCurrency(vehicle.buyingPrice)}
           </Field>
-          <Field label="Total Buying" numeric>
+          <Field label="Total buying" numeric>
             {formatCurrency(vehicle.totalBuyingPrice)}
           </Field>
-          <Field label="Stocking Provider">
+          <Field label="Stocking provider">
             <span className="capitalize">
               {vehicle.financeProvider.replace("_", " ")}
             </span>
@@ -344,15 +347,15 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
 
       {/* VAT margin scheme */}
       <Panel
-        title="VAT Margin Scheme"
+        title="VAT margin scheme"
         subtitle="Under HMRC margin scheme, VAT applies only to gross profit"
-        action={<Pill tone="info">Margin Scheme</Pill>}
+        action={<Pill tone="info">Margin scheme</Pill>}
       >
         <FieldGrid cols={4}>
-          <VatStat label="Gross Profit" value={gross} formula="revenue − total cost" tone="good" />
+          <VatStat label="Gross profit" value={gross} formula="revenue − total cost" tone="good" />
           <VatStat label="Margin VAT" value={marginVat} formula="gross × 0.20 / 1.20" />
-          <VatStat label="Car Margin" value={net} formula="gross − VAT" tone="good" />
-          <VatStat label="Net Profit (SIV)" value={net + addonTotal} formula="+ add-on profit" tone="good" />
+          <VatStat label="Car margin" value={net} formula="gross − VAT" tone="good" />
+          <VatStat label="Net profit (SIV)" value={net + addonTotal} formula="+ add-on profit" tone="good" />
         </FieldGrid>
       </Panel>
     </div>
@@ -379,29 +382,30 @@ function LedgerCard({
       action={<Pill tone={tone}>{formatCurrency(total)}</Pill>}
       flush
     >
-      <div className="divide-y border-t">
+      <div className="divide-y divide-(--border-secondary) border-t border-(--border-secondary)">
         {rows.map((r) => {
           const has = r.amount > 0;
           return (
             <div
               key={r.name}
-              className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"
+              className="flex items-center justify-between gap-3 px-4 py-2.5 body-md"
             >
               <span className="flex items-center gap-2.5">
                 <span
+                  aria-hidden
                   className={cn(
                     "h-1.5 w-1.5 rounded-full",
-                    has ? "bg-foreground" : "bg-muted-foreground/40",
+                    has ? "bg-(--bg-fill-brand)" : "bg-(--bg-fill-disabled)",
                   )}
                 />
-                <span className={cn(has ? "font-medium" : "text-muted-foreground")}>
+                <span className={cn(has ? "text-(--text)" : "text-(--text-secondary)")}>
                   {r.name}
                 </span>
               </span>
               <span
                 className={cn(
                   "tabular-nums",
-                  has ? "font-medium" : "text-muted-foreground",
+                  has ? "body-md-semibold" : "text-(--text-secondary)",
                 )}
               >
                 {formatCurrency(r.amount)}
@@ -410,8 +414,8 @@ function LedgerCard({
           );
         })}
       </div>
-      <div className="flex items-center justify-between border-t bg-muted/40 px-4 py-3">
-        <span className="text-[13px] font-medium text-muted-foreground">
+      <div className="flex items-center justify-between border-t border-(--border-secondary) bg-(--bg-surface-secondary) px-4 py-3">
+        <span className="body-md text-(--text-secondary)">
           {tone === "bad" ? "Total expenses" : "Total revenue"}
         </span>
         <span className="text-base font-semibold tabular-nums">
@@ -458,9 +462,9 @@ function AutoTraderCard({
       }
     >
       {showBar && (
-        <div className="relative mb-3 mt-1 h-2 rounded-full bg-[#e3e3e3]">
+        <div className="relative mb-3 mt-1 h-2 rounded-full bg-(--bg-fill-tertiary)">
           <div
-            className="absolute -top-1 size-4 -translate-x-1/2 rounded-full border-2 border-background bg-foreground shadow"
+            className="absolute -top-1 size-4 -translate-x-1/2 rounded-full border-2 border-(--bg-surface) bg-(--bg-fill-brand) shadow-(--shadow-100)"
             style={{ left: `${pos}%` }}
           />
         </div>
@@ -502,20 +506,19 @@ function VatStat({
 }) {
   return (
     <div>
-      <div className="text-[13px] font-medium text-muted-foreground">
-        {label}
-      </div>
+      <div className="body-md text-(--text-secondary)">{label}</div>
       <div
         className={cn(
           "mt-1 text-base font-semibold tabular-nums",
-          tone === "good" && "text-[#014b40] dark:text-emerald-400",
+          tone === "good" && "text-(--text-success)",
         )}
       >
         {value > 0 ? formatCurrency(value) : "—"}
       </div>
       {formula && (
-        <div className="mt-1 text-xs text-muted-foreground">{formula}</div>
+        <div className="mt-1 body-sm text-(--text-secondary)">{formula}</div>
       )}
+
     </div>
   );
 }

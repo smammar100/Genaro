@@ -8,7 +8,9 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        "animate-skeleton rounded-md [--skeleton-highlight:--alpha(var(--color-white)/64%)] [background:linear-gradient(120deg,transparent_40%,var(--skeleton-highlight),transparent_60%)_#ebebeb_0_0/200%_100%_fixed] dark:[--skeleton-highlight:--alpha(var(--color-white)/4%)]",
+        // Polaris Skeleton: a bg-fill-tertiary block that pulses (the kit's
+        // p-pulse keyframes), still under reduced motion.
+        "rounded-(--radius-200) bg-(--bg-fill-tertiary) animate-[p-pulse_2s_ease-in-out_infinite] motion-reduce:animate-none",
         className,
       )}
       data-slot="skeleton"

@@ -17,9 +17,9 @@ const NS = "prep:";
 export type PrepStatus = "unassigned" | "in_progress" | "ready";
 
 export const PREP_STATUSES: { value: PrepStatus; label: string; subtitle: string }[] = [
-  { value: "unassigned", label: "Unassigned", subtitle: "Waiting for someone to pick up" },
-  { value: "in_progress", label: "In Progress", subtitle: "Prep work under way" },
-  { value: "ready", label: "Ready for Sales", subtitle: "All items done" },
+  { value: "unassigned", label: "Unassigned", subtitle: "Waiting for someone to pick it up" },
+  { value: "in_progress", label: "In progress", subtitle: "Prep work under way" },
+  { value: "ready", label: "Ready for sales", subtitle: "All items done" },
 ];
 
 export interface PrepCar {

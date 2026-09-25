@@ -3,16 +3,16 @@
 import type { CardComponentProps } from "onborda";
 import { X, MousePointerClick } from "lucide-react";
 import { useOnborda } from "./tour-context";
+import { Button } from "@/components/polaris";
 import type { GuidedStep } from "@/lib/onboarding/tour-steps";
 
 /**
  * The tour tooltip.
  *
  * Onborda ships its own card, but it is unstyled Tailwind that inherits none
- * of the Genaro tokens. This one is a plain white surface: the overlay behind
- * it is near-black, and a navy card on a navy-dark scrim reads as washed out
- * and low-contrast — white is the only value that stays legible against a
- * dimmed screen whatever is underneath it.
+ * of the Polaris tokens. This one is a Polaris surface (bg-surface,
+ * radius-300, the modal shadow) with Polaris Buttons: a light card is the only
+ * value that stays legible against the dimmed screen whatever is underneath.
  */
 export function TourCard({
   step,
@@ -31,30 +31,28 @@ export function TourCard({
   const awaitsAction = Boolean(guided.awaitRoute);
 
   return (
-    <div className="w-[330px] max-w-[calc(100vw-2rem)] rounded-xl bg-white p-4 text-navy-900 shadow-2xl ring-1 ring-black/5">
+    <div className="w-[330px] max-w-[calc(100vw-2rem)] rounded-(--radius-300) bg-(--bg-surface) p-4 text-(--text) shadow-(--shadow-600)">
       <div className="flex items-start gap-3">
         <span aria-hidden className="text-xl leading-none">
           {step.icon}
         </span>
-        <h2 className="min-w-0 flex-1 text-[15px] font-semibold leading-snug">
-          {step.title}
-        </h2>
-        <button
-          type="button"
+        <h2 className="heading-md min-w-0 flex-1">{step.title}</h2>
+        <Button
+          variant="tertiary"
+          size="micro"
+          icon={<X className="size-4" />}
+          accessibilityLabel="Skip the tour"
           onClick={closeOnborda}
-          aria-label="Skip the tour"
-          className="-m-1 shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-black/5 hover:text-navy-900"
-        >
-          <X className="size-4" />
-        </button>
+          className="-m-1 shrink-0"
+        />
       </div>
 
-      <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+      <p className="mt-2 text-[13px] leading-5 text-(--text-secondary)">
         {step.content}
       </p>
 
       {awaitsAction && (
-        <p className="mt-3 flex items-center gap-2 rounded-lg bg-accent-blue/10 px-3 py-2 text-[13px] font-medium text-accent-blue">
+        <p className="mt-3 flex items-center gap-2 rounded-(--radius-200) bg-(--bg-surface-emphasis) px-3 py-2 text-[13px] font-medium text-(--text-emphasis)">
           <MousePointerClick className="size-4 shrink-0" />
           <span>
             Click <b>{guided.actionLabel}</b> to carry on
@@ -72,56 +70,45 @@ export function TourCard({
               key={i}
               className={
                 i === currentStep
-                  ? "h-1.5 w-4 rounded-full bg-accent-blue"
+                  ? "h-1.5 w-4 rounded-full bg-(--bg-fill-emphasis)"
                   : i < currentStep
-                    ? "h-1.5 w-1.5 rounded-full bg-accent-blue/50"
-                    : "h-1.5 w-1.5 rounded-full bg-black/15"
+                    ? "h-1.5 w-1.5 rounded-full bg-(--bg-fill-emphasis)/50"
+                    : "h-1.5 w-1.5 rounded-full bg-(--bg-fill-tertiary)"
               }
             />
           ))}
         </div>
-        <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+        <span className="body-xs shrink-0 tabular-nums text-(--text-secondary)">
           {currentStep + 1} / {totalSteps}
         </span>
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-2">
-        <button
-          type="button"
-          onClick={closeOnborda}
-          className="rounded px-1 py-1 text-[12px] text-muted-foreground underline-offset-2 transition-colors hover:text-navy-900 hover:underline"
-        >
-          Skip tour
-        </button>
+        <span className="text-(--text-secondary)">
+          <Button variant="monochromePlain" onClick={closeOnborda}>
+            Skip tour
+          </Button>
+        </span>
 
         <div className="flex items-center gap-2">
           {!isFirst && (
-            <button
-              type="button"
-              onClick={prevStep}
-              className="rounded-md px-3 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-black/5 hover:text-navy-900"
-            >
+            <Button variant="tertiary" onClick={prevStep}>
               Back
-            </button>
+            </Button>
           )}
           {awaitsAction ? (
             // Safety valve: someone who cannot find the highlighted item is
             // otherwise stuck with no way forward but abandoning the tour.
-            <button
-              type="button"
+            <Button
+              variant="tertiary"
               onClick={() => setCurrentStep(currentStep + 1)}
-              className="rounded-md px-3 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-black/5 hover:text-navy-900"
             >
               Skip step
-            </button>
+            </Button>
           ) : (
-            <button
-              type="button"
-              onClick={isLast ? closeOnborda : nextStep}
-              className="rounded-md bg-accent-blue px-3.5 py-1.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
-            >
+            <Button variant="primary" onClick={isLast ? closeOnborda : nextStep}>
               {isLast ? "Finish" : "Next"}
-            </button>
+            </Button>
           )}
         </div>
       </div>

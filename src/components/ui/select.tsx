@@ -38,7 +38,7 @@ export function Select<Multiple extends boolean | undefined = false>({
 }
 
 export const selectTriggerVariants = cva(
-  "relative inline-flex min-h-8 w-full min-w-36 select-none items-center justify-between gap-2 rounded-lg border border-[#8a8a8a] bg-background px-3 text-left text-[13px] text-foreground outline-none transition-[border-color,box-shadow] hover:border-[#616161] after:absolute after:top-1/2 after:left-1/2 after:size-full after:min-h-10 after:-translate-x-1/2 after:-translate-y-1/2 pointer-coarse:after:min-h-11 focus-visible:border-[#005bd3] focus-visible:ring-1 focus-visible:ring-[#005bd3] aria-invalid:border-destructive/64 focus-visible:aria-invalid:border-destructive/64 focus-visible:aria-invalid:ring-destructive/16 data-disabled:pointer-events-none data-disabled:border-[#ebebeb] data-disabled:bg-[#f7f7f7] data-disabled:text-[#b5b5b5] dark:bg-input/32 [&_svg:not([class*='opacity-'])]:opacity-80 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [[data-disabled],:focus-visible,[aria-invalid],[data-pressed]]:shadow-none",
+  "relative inline-flex min-h-8 w-full min-w-36 select-none items-center justify-between gap-2 rounded-(--radius-200) border border-(--input-border) bg-(--input-bg-surface) px-3 text-left text-[13px] text-(--text) outline-none transition-[border-color,background-color] hover:border-(--input-border-hover) hover:bg-(--input-bg-surface-hover) after:absolute after:top-1/2 after:left-1/2 after:size-full after:min-h-10 after:-translate-x-1/2 after:-translate-y-1/2 pointer-coarse:after:min-h-11 focus-visible:border-(--input-border-active) focus-visible:bg-(--input-bg-surface-active) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--border-focus) aria-invalid:border-(--border-critical-secondary) aria-invalid:bg-(--bg-surface-critical) data-disabled:pointer-events-none data-disabled:border-transparent data-disabled:bg-(--bg-surface-disabled) data-disabled:text-(--text-disabled) [&_svg:not([class*='opacity-'])]:opacity-80 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [[data-disabled],:focus-visible,[aria-invalid],[data-pressed]]:shadow-none",
   {
     defaultVariants: {
       size: "default",
@@ -53,7 +53,7 @@ export const selectTriggerVariants = cva(
   },
 );
 
-const selectTriggerIconClassName = "-me-1 size-4 text-[#4a4a4a]";
+const selectTriggerIconClassName = "-me-1 size-4 text-(--icon-secondary)";
 
 export function SelectTrigger({
   className,
@@ -135,7 +135,7 @@ function SelectPopup({
           >
             <ChevronUpIcon className="relative size-4.5 sm:size-4" />
           </SelectPrimitive.ScrollUpArrow>
-          <div className="relative h-full min-w-(--anchor-width) rounded-xl bg-popover shadow-[0_4px_8px_-2px_rgba(26,26,26,0.2),0_0_0_1px_rgba(0,0,0,0.08)]">
+          <div className="relative h-full min-w-(--anchor-width) rounded-xl bg-popover shadow-(--shadow-300)">
             <SelectPrimitive.List
               className={cn(
                 "max-h-(--available-height) overflow-y-auto p-1",
@@ -166,7 +166,7 @@ export function SelectItem({
   return (
     <SelectPrimitive.Item
       className={cn(
-        "grid min-h-8 in-data-[side=none]:min-w-[calc(var(--anchor-width)+1.25rem)] cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-lg py-1 ps-2 pe-4 text-[13px] outline-none data-disabled:pointer-events-none data-highlighted:bg-[#f1f1f1] data-highlighted:text-accent-foreground data-disabled:opacity-64 sm:min-h-7 sm:text-sm [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "grid min-h-8 in-data-[side=none]:min-w-[calc(var(--anchor-width)+1.25rem)] cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-lg py-1 ps-2 pe-4 text-[13px] outline-none data-disabled:pointer-events-none data-highlighted:bg-(--bg-surface-secondary-hover) data-highlighted:text-accent-foreground data-disabled:opacity-64 sm:min-h-7 sm:text-sm [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       data-slot="select-item"

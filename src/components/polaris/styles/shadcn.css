@@ -1,0 +1,40 @@
+/*
+ * shadcn/ui bridge: points shadcn's CSS variables at Polaris tokens, so shadcn components you already use
+ * (and new ones you add) look like Polaris in light and dark. Import after tokens.css, and delete the
+ * :root { --background: … } and .dark { … } color blocks shadcn added to globals.css (keep its @theme inline block).
+ * --border is the same token in both systems, so it is not redefined here.
+ */
+:root, [data-theme="light"], .light, [data-theme="dark"], .dark {
+  --radius: 0.5rem; /* radius-200; shadcn derives sm/md/lg/xl from it (xl = radius-300) */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--bg-surface);
+  --card-foreground: var(--text);
+  --popover: var(--bg-surface);
+  --popover-foreground: var(--text);
+  --primary: var(--bg-fill-brand);
+  --primary-foreground: var(--text-brand-on-bg-fill);
+  --secondary: var(--bg-fill-secondary);
+  --secondary-foreground: var(--text);
+  --muted: var(--bg-surface-secondary);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--bg-surface-hover);
+  --accent-foreground: var(--text);
+  --destructive: var(--bg-fill-critical);
+  --destructive-foreground: var(--text-critical-on-bg-fill);
+  --input: var(--input-border);
+  --ring: var(--border-focus);
+  --chart-1: var(--bg-fill-emphasis);
+  --chart-2: var(--bg-fill-success);
+  --chart-3: var(--bg-fill-warning);
+  --chart-4: var(--bg-fill-magic);
+  --chart-5: var(--bg-fill-critical);
+  --sidebar: var(--nav-bg);
+  --sidebar-foreground: var(--text);
+  --sidebar-primary: var(--bg-fill-brand);
+  --sidebar-primary-foreground: var(--text-brand-on-bg-fill);
+  --sidebar-accent: var(--nav-bg-surface-hover);
+  --sidebar-accent-foreground: var(--text);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--border-focus);
+}

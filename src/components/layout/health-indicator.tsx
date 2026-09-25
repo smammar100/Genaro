@@ -8,10 +8,12 @@ import { cn } from "@/lib/utils";
 /**
  * SPEC Point 9 — connection/session health dot in the header.
  *
- *  🟢 green  = online + session valid
- *  🟡 amber  = reconnecting (tab just regained focus / network just returned —
- *               the auth-context is revalidating + caches refreshing)
- *  🔴 red    = offline, or the auth context failed to initialise / no session
+ *  green (success fill)  = online + session valid
+ *  amber (warning fill)  = reconnecting (tab just regained focus / network
+ *                          just returned — the auth-context is revalidating +
+ *                          caches refreshing)
+ *  red (critical fill)   = offline, or the auth context failed to initialise /
+ *                          no session
  *
  * Tooltip (native `title`, zero-dep) shows the last successful sync time.
  * Purely observational — it never blocks interaction.
@@ -85,9 +87,9 @@ export function HealthIndicator() {
       <span
         className={cn(
           "h-2 w-2 rounded-full transition-colors",
-          state === "green" && "bg-emerald-500",
-          state === "amber" && "animate-pulse bg-amber-500",
-          state === "red" && "bg-rose-500",
+          state === "green" && "bg-(--bg-fill-success)",
+          state === "amber" && "animate-pulse bg-(--bg-fill-warning)",
+          state === "red" && "bg-(--bg-fill-critical)",
         )}
         suppressHydrationWarning
       />

@@ -7,8 +7,7 @@ import { z } from "zod";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Badge, Card } from "@/components/polaris";
 import { useAuth } from "@/contexts/auth-context";
 import { enquiryService } from "@/lib/services/enquiry-service";
 import type { Customer, EnquiryType, UUID } from "@/lib/types";
@@ -181,7 +180,7 @@ export function FullEnquiryForm({
         actorId: user.id,
       });
       const verb = result.wasNewCustomer
-        ? "Created new customer + enquiry"
+        ? "Created customer and enquiry"
         : "Added enquiry";
       notify.success(
         `${verb} for ${result.customer.firstName} ${result.customer.lastName}`,
@@ -189,7 +188,7 @@ export function FullEnquiryForm({
       onComplete();
     } catch (err) {
       notify.error(
-        err instanceof Error ? err.message : "Failed to save enquiry, try again",
+        err instanceof Error ? err.message : "Could not save the enquiry. Try again.",
       );
     }
   }
@@ -201,38 +200,34 @@ export function FullEnquiryForm({
         className="flex flex-col gap-4"
       >
         {selectedCustomer && (
-          <div className="flex items-center justify-between rounded-md bg-primary/5 px-3 py-2 text-sm">
+          <div className="flex items-center justify-between rounded-(--radius-200) bg-(--bg-surface-secondary) px-3 py-2 text-sm text-(--text)">
             <span>
-              <span className="text-muted-foreground">Customer: </span>
+              <span className="text-(--text-secondary)">Customer: </span>
               <span className="font-medium">
                 {selectedCustomer.firstName} {selectedCustomer.lastName}
               </span>
             </span>
-            <Badge variant="outline" className="text-xs">
-              Existing
-            </Badge>
+            <Badge>Existing</Badge>
           </div>
         )}
 
         {/* Step indicator (only shows if 2 steps are in play) */}
         {!selectedCustomer && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-(--text-secondary)">
             <StepPill active={step === 1} done={step > 1} label="1. Customer" />
-            <div className="h-px flex-1 bg-border" />
+            <div className="h-px flex-1 bg-(--border)" />
             <StepPill active={step === 2} done={false} label="2. Enquiry" />
           </div>
         )}
 
         {step === 1 && !selectedCustomer && (
-          <Card className="flex flex-col gap-3 p-4">
-            <h3 className="text-sm font-semibold">Customer profile</h3>
+          <Card title="Customer profile">
             <CustomerProfileFields />
           </Card>
         )}
 
         {step === 2 && (
-          <Card className="flex flex-col gap-3 p-4">
-            <h3 className="text-sm font-semibold">Enquiry details</h3>
+          <Card title="Enquiry details">
             <EnquiryDetailsFields vehicleLabel={vehicleLabel} />
           </Card>
         )}
@@ -240,7 +235,7 @@ export function FullEnquiryForm({
         <div className="flex items-center justify-between gap-2">
           {step === 1 ? (
             <Button type="button" variant="ghost" onClick={onBack}>
-              <ArrowLeft className="mr-1 h-4 w-4" />
+              <ArrowLeft aria-hidden className="mr-1 size-4" />
               Back
             </Button>
           ) : (
@@ -249,7 +244,7 @@ export function FullEnquiryForm({
               variant="ghost"
               onClick={() => (selectedCustomer ? onBack() : setStep(1))}
             >
-              <ArrowLeft className="mr-1 h-4 w-4" />
+              <ArrowLeft aria-hidden className="mr-1 size-4" />
               {selectedCustomer ? "Back" : "Previous"}
             </Button>
           )}
@@ -257,12 +252,12 @@ export function FullEnquiryForm({
           {step === 1 ? (
             <Button type="button" onClick={handleNext}>
               Next
-              <ArrowRight className="ml-1 h-4 w-4" />
+              <ArrowRight aria-hidden className="ml-1 size-4" />
             </Button>
           ) : (
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 aria-hidden className="mr-2 size-4 animate-spin" />
               )}
               {form.formState.isSubmitting ? "Saving…" : "Save enquiry"}
             </Button>
@@ -285,9 +280,9 @@ function StepPill({
   return (
     <span
       className={cn(
-        "rounded-full border px-2 py-0.5",
-        active && "border-primary bg-primary/10 text-foreground",
-        done && "border-emerald-300 bg-emerald-50 text-emerald-700",
+        "rounded-full border border-(--border) px-2 py-0.5",
+        active && "border-(--border-emphasis) bg-(--bg-surface-secondary) text-(--text)",
+        done && "border-(--border-success) bg-(--bg-surface-success) text-(--text-success)",
       )}
     >
       {label}

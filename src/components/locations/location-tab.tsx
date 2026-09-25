@@ -1,14 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Clock, Download, MoveRight, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Download } from "lucide-react";
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  IndexTable,
+  SkeletonBodyText,
+  TextField,
+  type BadgeTone,
+  type IndexTableHeading,
+} from "@/components/polaris";
 import { RegPlate } from "@/components/shared/reg-plate";
-import { cn } from "@/lib/utils";
 import {
   VEHICLE_LOCATION_LABELS,
   type UUID,
@@ -22,39 +28,26 @@ import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import { exportCsv, type ColumnDef } from "@/components/data-grid";
 import { LocationBadge } from "./location-badge";
 
-// Flat status pill tones — kept in sync with the Master Sheet / All
-// Vehicles grids so a car's status reads identically across inventory.
-const STATUS_TONE: Record<VehicleStatus, string> = {
-  received: "bg-[#d5ebff] text-[#003a5a]",
-  inspection_pending:
-    "bg-yellow-50 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-300",
-  being_prepared:
-    "bg-[#ffeb78] text-[#4f4700]",
-  photos_pending:
-    "bg-yellow-50 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-300",
-  photos_ready:
-    "bg-lime-50 text-lime-700 dark:bg-lime-950/30 dark:text-lime-300",
-  ready: "bg-[#affebf] text-[#014b40]",
-  listed:
-    "bg-[#d5ebff] text-[#003a5a]",
-  reserved: "bg-pink-50 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300",
-  sold: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
-  returned: "bg-[#fed1d7] text-[#8e0b21]",
+// Status badge tones — kept in step with the Master Sheet / All Vehicles
+// grids so a car's status reads identically across inventory.
+const STATUS_TONE: Record<VehicleStatus, BadgeTone | undefined> = {
+  received: "info",
+  inspection_pending: "attention",
+  being_prepared: "warning",
+  photos_pending: "attention",
+  photos_ready: "success",
+  ready: "success",
+  listed: "info",
+  reserved: "warning",
+  sold: undefined,
+  returned: "critical",
 };
 
-function StatusPill({ status }: { status: string }) {
-  const tone =
-    STATUS_TONE[status as VehicleStatus] ??
-    "bg-muted text-muted-foreground";
+function StatusBadge({ status }: { status: string }) {
   return (
-    <span
-      className={cn(
-        "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-medium",
-        tone,
-      )}
-    >
+    <Badge tone={STATUS_TONE[status as VehicleStatus]}>
       {statusLabel(status)}
-    </span>
+    </Badge>
   );
 }
 
@@ -96,18 +89,17 @@ function daysSince(iso: string): string {
   return rem === 0 ? `${weeks}w` : `${weeks}w ${rem}d`;
 }
 
+/** `inspection_pending` → "Inspection pending" (sentence case). */
 function statusLabel(s: string): string {
-  return s
-    .split("_")
-    .map((w) => w[0]?.toUpperCase() + w.slice(1))
-    .join(" ");
+  const text = s.split("_").join(" ");
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 /**
  * One tab pane on `/admin/locations`. Renders the cars currently at this
- * location, with a search box, a Garage/Staff sub-filter chip set, CSV
- * export, and a Move button per row. The page owns the MoveDialog state
- * and the global vendors/users lookup.
+ * location, with a search box, a Garage/Staff sub-filter set, CSV export,
+ * and a Move button per row. The page owns the MoveDialog state and the
+ * global vendors/users lookup.
  */
 export function LocationTab({
   location,
@@ -148,8 +140,8 @@ export function LocationTab({
     };
   }, [companyId, location, refreshToken]);
 
-  // Filter-chip options for garage / staff tabs — distinct vendor / staff
-  // ids in the currently-rendered rows.
+  // Filter options for garage / staff tabs — distinct vendor / staff ids in
+  // the currently-rendered rows.
   const filterChips = useMemo(() => {
     if (!rows) return [];
     if (location === "garage") {
@@ -219,144 +211,155 @@ export function LocationTab({
     );
   }
 
+  const locationLabel = VEHICLE_LOCATION_LABELS[location];
+
+  // Garage and Staff rows carry who has the car; Staff also has an
+  // expected-back time.
+  const headings: IndexTableHeading[] = [
+    { title: "Registration" },
+    { title: "Vehicle" },
+    { title: "Stock ID" },
+    ...(location === "garage" ? [{ title: "Workshop" }] : []),
+    ...(location === "staff"
+      ? [{ title: "Staff member" }, { title: "Expected back" }]
+      : []),
+    { title: "Status" },
+    { title: "Days here", alignment: "end" as const },
+    { title: "Actions", alignment: "end" as const },
+  ];
+
   return (
-    <div className="space-y-3">
+    <>
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
+        <div className="w-full sm:w-64">
+          <TextField
+            label={`Search ${locationLabel}`}
+            labelHidden
+            prefix="SearchMinor"
+            placeholder={`Search ${locationLabel}…`}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Search ${VEHICLE_LOCATION_LABELS[location]}…`}
-            className="h-9 w-64 pl-8"
+            onChange={setQuery}
+            clearButton
+            onClearButtonClick={() => setQuery("")}
           />
         </div>
 
-        {/* Garage / Staff sub-filter chips */}
+        {/* Garage / Staff sub-filter */}
         {filterChips.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              type="button"
+          <div
+            className="flex flex-wrap items-center gap-1"
+            role="group"
+            aria-label={location === "garage" ? "Filter by workshop" : "Filter by staff member"}
+          >
+            <Button
+              variant="tertiary"
+              pressed={filterId === null}
               onClick={() => setFilterId(null)}
-              className={cn(
-                "rounded-full border px-2.5 py-1 text-xs",
-                filterId === null
-                  ? "border-foreground/30 bg-muted font-medium text-foreground"
-                  : "border-transparent text-muted-foreground hover:bg-muted/60",
-              )}
             >
               All
-            </button>
+            </Button>
             {filterChips.map((c) => (
-              <button
+              <Button
                 key={c.id}
-                type="button"
+                variant="tertiary"
+                pressed={filterId === c.id}
                 onClick={() => setFilterId(filterId === c.id ? null : c.id)}
-                className={cn(
-                  "rounded-full border px-2.5 py-1 text-xs",
-                  filterId === c.id
-                    ? "border-foreground/30 bg-muted font-medium text-foreground"
-                    : "border-transparent text-muted-foreground hover:bg-muted/60",
-                )}
               >
                 {c.label}
-              </button>
+              </Button>
             ))}
           </div>
         ) : null}
 
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="ml-auto gap-1.5"
-          onClick={handleExport}
-          disabled={filteredRows.length === 0}
-        >
-          <Download className="size-3.5" />
-          Export CSV
-        </Button>
+        <div className="ml-auto">
+          <Button
+            icon={<Download />}
+            onClick={handleExport}
+            disabled={filteredRows.length === 0}
+          >
+            Export CSV
+          </Button>
+        </div>
       </div>
 
-      {/* List (Variation E) */}
-      <ul className="divide-y divide-border overflow-hidden rounded-xl border bg-card">
-        {rows === null ? (
-          <ListSkeleton />
-        ) : filteredRows.length === 0 ? (
-          <li className="px-4 py-10 text-center text-sm italic text-muted-foreground">
-            No cars at {VEHICLE_LOCATION_LABELS[location]}.
-          </li>
-        ) : (
-          filteredRows.map((r) => {
-            const context = r.externalVendorId
+      {rows === null ? (
+        <Card>
+          <SkeletonBodyText lines={6} />
+        </Card>
+      ) : filteredRows.length === 0 ? (
+        <EmptyState heading={`No cars at ${locationLabel}`}>
+          {query || filterId
+            ? "Try changing the search or filter."
+            : `Cars moved to ${locationLabel} show up here.`}
+        </EmptyState>
+      ) : (
+        <IndexTable
+          selectable={false}
+          primaryColumn={1}
+          headings={headings}
+          rows={filteredRows.map((r) => {
+            const workshop = r.externalVendorId
               ? (vendorById[r.externalVendorId]?.name ?? "Unknown vendor")
-              : r.staffUserId
-                ? (userById[r.staffUserId]?.name ?? "Unknown staff")
-                : null;
+              : null;
+            const staff = r.staffUserId
+              ? (userById[r.staffUserId]?.name ?? "Unknown staff")
+              : null;
             const back =
               location === "staff" && r.expectedReturnAt
                 ? formatBack(r.expectedReturnAt)
                 : null;
-            return (
-              <li
-                key={r.id}
-                className="flex items-center gap-4 px-4 py-3 transition-colors hover:bg-[#f7f7f7]"
-              >
-                <RegPlate registration={r.registration} size="sm" />
-                <div className="min-w-0 flex-1">
-                  <Link
-                    href={vehicleDetailHref(r.id, pathname)}
-                    className="block truncate text-sm font-medium hover:underline"
-                  >
-                    {r.make} {r.model}
-                  </Link>
-                  <div className="truncate text-xs text-muted-foreground">
-                    {r.stockId}
-                    {context ? ` · ${context}` : ""}
-                    {back ? ` · back ${back}` : ""}
-                  </div>
-                </div>
-                {r.outForTestDrive ? (
-                  <LocationBadge
-                    location={r.currentLocation}
-                    outForTestDrive
-                    testDriveExpectedBackAt={r.testDriveExpectedBackAt}
-                    compact
-                  />
-                ) : null}
-                <StatusPill status={r.status} />
-                <span className="inline-flex w-20 shrink-0 items-center justify-end gap-1 text-xs tabular-nums text-muted-foreground">
-                  <Clock className="size-3" />
+            return {
+              id: r.id,
+              url: vehicleDetailHref(r.id, pathname),
+              cells: [
+                <RegPlate key="reg" registration={r.registration} size="sm" />,
+                `${r.make} ${r.model}`,
+                <span key="stock" className="text-(--text-secondary)">
+                  {r.stockId}
+                </span>,
+                ...(location === "garage" ? [workshop ?? "—"] : []),
+                ...(location === "staff" ? [staff ?? "—", back ?? "—"] : []),
+                <span key="status" className="inline-flex items-center gap-2">
+                  {r.outForTestDrive ? (
+                    <LocationBadge
+                      location={r.currentLocation}
+                      outForTestDrive
+                      testDriveExpectedBackAt={r.testDriveExpectedBackAt}
+                      compact
+                    />
+                  ) : null}
+                  <StatusBadge status={r.status} />
+                </span>,
+                <span key="days" className="tabular-nums text-(--text-secondary)">
                   {daysSince(r.locationSince)}
-                </span>
+                </span>,
                 <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="shrink-0 gap-1"
+                  key="move"
+                  size="micro"
+                  icon="ArrowRightMinor"
                   onClick={() => onRequestMove(r.id)}
                 >
-                  Move <MoveRight className="size-3.5" />
-                </Button>
-              </li>
-            );
-          })
-        )}
-      </ul>
+                  Move
+                </Button>,
+              ],
+            };
+          })}
+        />
+      )}
 
       {rows !== null ? (
-        <div className="text-xs text-muted-foreground">
+        <p className="body-sm text-(--text-secondary)">
           {filteredRows.length} of {rows.length} car
-          {rows.length === 1 ? "" : "s"} at {VEHICLE_LOCATION_LABELS[location]}
+          {rows.length === 1 ? "" : "s"} at {locationLabel}
           {query || filterId ? " (filtered)" : ""}
-        </div>
+        </p>
       ) : null}
-    </div>
+    </>
   );
 }
 
-/** Expected-back timestamp for the staff sub-line ("· back 21 Jun, 14:30"). */
+/** Expected-back timestamp for the staff column ("21 Jun, 14:30"). */
 function formatBack(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
     day: "numeric",
@@ -364,23 +367,4 @@ function formatBack(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
-
-function ListSkeleton() {
-  return (
-    <>
-      {Array.from({ length: 6 }).map((_, i) => (
-        <li key={i} className="flex items-center gap-4 px-4 py-3">
-          <Skeleton className="h-5 w-16 shrink-0 rounded" />
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <Skeleton className="h-3 w-40" />
-            <Skeleton className="h-2.5 w-24" />
-          </div>
-          <Skeleton className="h-5 w-16 shrink-0 rounded-full" />
-          <Skeleton className="h-3 w-10 shrink-0" />
-          <Skeleton className="h-7 w-16 shrink-0 rounded-md" />
-        </li>
-      ))}
-    </>
-  );
 }

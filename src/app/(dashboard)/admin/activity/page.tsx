@@ -24,7 +24,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { Button } from "@/components/ui/button";
 import { activityService } from "@/lib/services/activity-service";
 import { authService } from "@/lib/services/auth-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
@@ -35,7 +34,7 @@ import type {
   User,
   Vehicle,
 } from "@/lib/types";
-import { Card } from "@/components/ui/card";
+import { Button, Card, EmptyState, Page } from "@/components/polaris";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   FilterBar,
@@ -43,7 +42,6 @@ import {
   useFilterState,
   type SelectFilter,
 } from "@/components/filters/filter-bar";
-import { EmptyState } from "@/components/shared/empty-state";
 import { cn, formatRelativeTime } from "@/lib/utils";
 
 const ACTION_TYPES: ActivityActionType[] = [
@@ -77,57 +75,52 @@ const ACTION_TYPES: ActivityActionType[] = [
   "company_setting_changed",
 ];
 
-// Each action type maps to an icon + a soft color tint for its timeline node.
-const TINT = {
-  blue: "bg-[#f1f1f1] text-[#4a4a4a]",
-  sky: "bg-[#f1f1f1] text-[#4a4a4a]",
-  violet: "bg-[#f1f1f1] text-[#4a4a4a]",
-  emerald: "bg-[#f1f1f1] text-[#4a4a4a]",
-  rose: "bg-[#f1f1f1] text-[#4a4a4a]",
-  amber: "bg-[#f1f1f1] text-[#4a4a4a]",
-  teal: "bg-[#f1f1f1] text-[#4a4a4a]",
-  indigo: "bg-[#f1f1f1] text-[#4a4a4a]",
-  orange: "bg-[#f1f1f1] text-[#4a4a4a]",
-  slate: "bg-muted text-muted-foreground",
-} as const;
+// Each action type maps to an icon on a neutral timeline node. The icon
+// carries the category, so the node itself stays on the neutral fill.
+const NODE_TINT = "bg-(--bg-fill-secondary) text-(--icon)";
 
 const ACTION_META: Partial<
-  Record<ActivityActionType, { icon: LucideIcon; tint: string }>
+  Record<ActivityActionType, { icon: LucideIcon }>
 > = {
-  vehicle_arrived: { icon: Car, tint: TINT.blue },
-  vehicle_status_changed: { icon: Car, tint: TINT.sky },
-  vehicle_returned: { icon: Undo2, tint: TINT.rose },
-  inspection_started: { icon: ClipboardCheck, tint: TINT.amber },
-  inspection_completed: { icon: ClipboardCheck, tint: TINT.amber },
-  todo_added: { icon: CheckSquare, tint: TINT.slate },
-  todo_completed: { icon: CheckSquare, tint: TINT.slate },
-  maintenance_job_created: { icon: Wrench, tint: TINT.amber },
-  maintenance_job_completed: { icon: Wrench, tint: TINT.amber },
-  workshop_job_created: { icon: Wrench, tint: TINT.amber },
-  photo_uploaded: { icon: ImageIcon, tint: TINT.violet },
-  photo_processed: { icon: ImageIcon, tint: TINT.violet },
-  listing_created: { icon: Megaphone, tint: TINT.indigo },
-  listing_published: { icon: Megaphone, tint: TINT.indigo },
-  listing_deleted: { icon: Megaphone, tint: TINT.rose },
-  lead_created: { icon: UserPlus, tint: TINT.teal },
-  lead_converted: { icon: UserPlus, tint: TINT.teal },
-  lead_status_changed: { icon: UserPlus, tint: TINT.teal },
-  appointment_booked: { icon: Calendar, tint: TINT.teal },
-  appointment_completed: { icon: Calendar, tint: TINT.teal },
-  sale_stage_changed: { icon: TrendingUp, tint: TINT.blue },
-  sale_completed: { icon: CheckCircle2, tint: TINT.emerald },
-  warranty_created: { icon: Shield, tint: TINT.orange },
-  warranty_claim_opened: { icon: Shield, tint: TINT.orange },
-  invoice_created: { icon: Receipt, tint: TINT.violet },
-  invoice_sent: { icon: Mail, tint: TINT.violet },
-  invoice_paid: { icon: Banknote, tint: TINT.emerald },
-  cost_updated: { icon: Banknote, tint: TINT.amber },
-  user_invited: { icon: UserPlus, tint: TINT.slate },
-  company_setting_changed: { icon: Settings, tint: TINT.slate },
+  vehicle_arrived: { icon: Car },
+  vehicle_status_changed: { icon: Car },
+  vehicle_returned: { icon: Undo2 },
+  inspection_started: { icon: ClipboardCheck },
+  inspection_completed: { icon: ClipboardCheck },
+  todo_added: { icon: CheckSquare },
+  todo_completed: { icon: CheckSquare },
+  maintenance_job_created: { icon: Wrench },
+  maintenance_job_completed: { icon: Wrench },
+  workshop_job_created: { icon: Wrench },
+  photo_uploaded: { icon: ImageIcon },
+  photo_processed: { icon: ImageIcon },
+  listing_created: { icon: Megaphone },
+  listing_published: { icon: Megaphone },
+  listing_deleted: { icon: Megaphone },
+  lead_created: { icon: UserPlus },
+  lead_converted: { icon: UserPlus },
+  lead_status_changed: { icon: UserPlus },
+  appointment_booked: { icon: Calendar },
+  appointment_completed: { icon: Calendar },
+  sale_stage_changed: { icon: TrendingUp },
+  sale_completed: { icon: CheckCircle2 },
+  warranty_created: { icon: Shield },
+  warranty_claim_opened: { icon: Shield },
+  invoice_created: { icon: Receipt },
+  invoice_sent: { icon: Mail },
+  invoice_paid: { icon: Banknote },
+  cost_updated: { icon: Banknote },
+  user_invited: { icon: UserPlus },
+  company_setting_changed: { icon: Settings },
 };
 
 function actionMeta(a: ActivityActionType) {
-  return ACTION_META[a] ?? { icon: History, tint: TINT.slate };
+  return ACTION_META[a] ?? { icon: History };
+}
+
+/** "vehicle_arrived" → "Vehicle arrived" (sentence case). */
+function actionLabel(a: ActivityActionType): string {
+  return a.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
 }
 
 /** Group label for a timestamp: Today / Yesterday / N days ago / date. */
@@ -213,9 +206,7 @@ export default function ActivityLogPage() {
         allLabel: "Any action",
         options: ACTION_TYPES.map((a) => ({
           value: a,
-          label: a
-            .replace(/_/g, " ")
-            .replace(/^\w/, (c) => c.toUpperCase()),
+          label: actionLabel(a),
         })),
       },
       {
@@ -265,15 +256,11 @@ export default function ActivityLogPage() {
   }, [filtered]);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-semibold">Activity Log</h1>
-        <p className="text-sm text-muted-foreground">
-          A company-wide audit trail of every action taken across the system.
-          Filter by category, user, or date.
-        </p>
-      </div>
-
+    <Page
+      title="Activity log"
+      subtitle="A company-wide audit trail of every action taken across the system. Filter by category, user or date."
+      fullWidth
+    >
       <FilterBar
         state={filters}
         onChange={setFilters}
@@ -285,16 +272,14 @@ export default function ActivityLogPage() {
       {!groups ? (
         <Skeleton className="h-72" />
       ) : groups.length === 0 ? (
-        <EmptyState
-          icon={History}
-          title="No activity"
-          description="Once people start using the system, every action lands here."
-        />
+        <EmptyState icon={<History />} heading="No activity">
+          Once people start using the system, every action lands here.
+        </EmptyState>
       ) : (
-        <Card className="flex flex-col gap-6 p-5">
+        <Card className="gap-6">
           {groups.map(([label, items]) => (
             <div key={label}>
-              <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
+              <h2 className="mb-3 text-sm font-semibold text-(--text-secondary)">
                 {label}
               </h2>
               <ol className="flex flex-col">
@@ -310,13 +295,15 @@ export default function ActivityLogPage() {
                       <div className="flex flex-col items-center">
                         <span
                           className={cn(
-                            "z-10 grid h-8 w-8 shrink-0 place-items-center rounded-full ring-4 ring-card",
-                            meta.tint,
+                            "z-10 grid h-8 w-8 shrink-0 place-items-center rounded-full ring-4 ring-(--bg-surface)",
+                            NODE_TINT,
                           )}
                         >
                           <Icon className="h-4 w-4" />
                         </span>
-                        {!last && <span className="w-px flex-1 bg-border" />}
+                        {!last && (
+                          <span className="w-px flex-1 bg-(--border)" />
+                        )}
                       </div>
                       <div
                         className={cn(
@@ -330,20 +317,17 @@ export default function ActivityLogPage() {
                             {vehicle && (
                               <Link
                                 href={vehicleDetailHref(vehicle.id, pathname)}
-                                className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground/80 hover:text-primary"
+                                className="rounded bg-(--bg-fill-secondary) px-1.5 py-0.5 font-mono text-xs text-(--text) hover:text-(--text-link)"
                               >
                                 {vehicle.registration}
                               </Link>
                             )}
                           </div>
-                          <div className="mt-0.5 text-xs capitalize text-muted-foreground">
-                            {e.actionType.replace(/_/g, " ")} ·{" "}
-                            <span className="normal-case">
-                              {user?.name ?? "—"}
-                            </span>
+                          <div className="mt-0.5 text-xs text-(--text-secondary)">
+                            {actionLabel(e.actionType)} · {user?.name ?? "—"}
                           </div>
                         </div>
-                        <span className="shrink-0 text-xs text-muted-foreground">
+                        <span className="shrink-0 text-xs text-(--text-secondary)">
                           {formatRelativeTime(e.createdAt)}
                         </span>
                       </div>
@@ -354,15 +338,9 @@ export default function ActivityLogPage() {
             </div>
           ))}
           {nextCursor && (
-            <div className="flex justify-center border-t pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => void loadMore()}
-                disabled={loadingMore}
-              >
-                {loadingMore ? "Loading…" : "Load older activity"}
+            <div className="flex justify-center border-t border-(--border-secondary) pt-4">
+              <Button onClick={() => void loadMore()} loading={loadingMore}>
+                Load older activity
               </Button>
             </div>
           )}
@@ -373,11 +351,11 @@ export default function ActivityLogPage() {
           filters.date.from !== null ||
           filters.date.to !== null ||
           Object.values(filters.selects).some((v) => v !== "")) && (
-          <p className="text-center text-xs text-muted-foreground">
+          <p className="text-center text-xs text-(--text-secondary)">
             Filters apply to the {entries?.length ?? 0} loaded entries; load
             older activity to search further back.
           </p>
         )}
-    </div>
+    </Page>
   );
 }

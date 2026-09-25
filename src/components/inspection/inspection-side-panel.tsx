@@ -41,7 +41,7 @@ export function InspectionSidePanel({ vehicle, open, onOpenChange, onComplete }:
           <>
             <SheetHeader>
               <SheetTitle className="flex items-center gap-2">
-                20-point Inspection
+                20-point inspection
                 <Link
                   href={vehicleDetailHref(vehicle.id, pathname)}
                   className="transition-opacity hover:opacity-80"

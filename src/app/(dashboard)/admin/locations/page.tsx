@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { MapPin } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import {
@@ -18,7 +17,7 @@ import { locationService } from "@/lib/services/location-service";
 import { vendorService } from "@/lib/services/vendor-service";
 import { teamService } from "@/lib/services/team-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Page, Tabs } from "@/components/polaris";
 import { LocationTab } from "@/components/locations/location-tab";
 import { MoveDialog } from "@/components/locations/move-dialog";
 
@@ -101,7 +100,7 @@ export default function LocationsPage() {
       const v = await vehicleService.getById(vehicleId);
       if (v) setMoveTarget(v);
     },
-    [],
+    [setMoveTarget],
   );
 
   const handleMoveSuccess = useCallback(() => {
@@ -114,48 +113,41 @@ export default function LocationsPage() {
   }, [counts]);
 
   if (!companyId || !actorId) {
-    return <div className="text-sm text-muted-foreground">Loading session…</div>;
+    return (
+      <Page title="Locations">
+        <p className="body-md text-(--text-secondary)">Loading session…</p>
+      </Page>
+    );
   }
 
   return (
     // Padding comes from the layout's PageShell — pages don't add their own
     // (GEN-61).
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-xl font-semibold">
-            <MapPin className="size-5" /> Locations
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            See where every car physically is right now. Each vehicle sits in
-            exactly one location; use the tabs to view each.
-          </p>
-        </div>
-        <div className="text-xs text-muted-foreground">
-          {counts ? `${totalActive} total active` : ""}
-        </div>
-      </header>
-
-      {/* Location tabs — shared design-system Tabs (matches Invoicing etc.),
-          with a live count badge per tab. */}
+    <Page
+      title="Locations"
+      subtitle="See where every car physically is right now. Each vehicle sits in exactly one location; use the tabs to view each."
+      fullWidth
+      titleMetadata={
+        counts ? (
+          <span className="body-sm text-(--text-secondary)">
+            {totalActive} total active
+          </span>
+        ) : null
+      }
+    >
+      {/* Location tabs with a live count badge per tab. */}
       <Tabs
-        value={activeTab}
-        onValueChange={(v) => setTab(v as VehicleLocation)}
-      >
-        <TabsList>
-          {VEHICLE_LOCATIONS.map((loc) => {
-            const count = counts?.[loc] ?? null;
-            return (
-              <TabsTrigger key={loc} value={loc} className="group">
-                {VEHICLE_LOCATION_LABELS[loc]}
-                <span className="rounded-full bg-background px-1.5 text-xs tabular-nums text-muted-foreground group-data-[active]:bg-muted">
-                  {count ?? "·"}
-                </span>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-      </Tabs>
+        tabs={VEHICLE_LOCATIONS.map((loc) => ({
+          id: loc,
+          content: VEHICLE_LOCATION_LABELS[loc],
+          badge: counts?.[loc],
+        }))}
+        selected={Math.max(0, VEHICLE_LOCATIONS.indexOf(activeTab))}
+        onSelect={(i) => {
+          const loc = VEHICLE_LOCATIONS[i];
+          if (loc) setTab(loc);
+        }}
+      />
 
       {/* Tab pane */}
       <LocationTab
@@ -182,6 +174,6 @@ export default function LocationsPage() {
           onSuccess={handleMoveSuccess}
         />
       ) : null}
-    </div>
+    </Page>
   );
 }

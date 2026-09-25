@@ -17,7 +17,7 @@ function AlertDialogBackdrop({
   return (
     <AlertDialogPrimitive.Backdrop
       className={cn(
-        "fixed inset-0 z-[900] bg-black/50 transition-opacity duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
+        "fixed inset-0 z-[900] bg-(--backdrop-bg) transition-opacity duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
         className,
       )}
       data-slot="alert-dialog-backdrop"
@@ -62,7 +62,7 @@ function AlertDialogPopup({
       >
         <AlertDialogPrimitive.Popup
           className={cn(
-            "relative row-start-2 flex max-h-full min-h-0 w-full min-w-0 max-w-lg origin-center flex-col overflow-hidden rounded-xl bg-popover text-[13px] text-popover-foreground opacity-[calc(1-var(--nested-dialogs))] shadow-[0_0_0_1px_rgba(0,0,0,0.08),0_20px_20px_-8px_rgba(26,26,26,0.28)] outline-none transition-[scale,opacity,translate] duration-200 ease-out will-change-transform data-ending-style:opacity-0 data-starting-style:opacity-0 sm:scale-[calc(1-0.1*var(--nested-dialogs))] sm:data-ending-style:scale-98 sm:data-starting-style:scale-98",
+            "relative row-start-2 flex max-h-full min-h-0 w-full min-w-0 max-w-lg origin-center flex-col overflow-hidden rounded-xl bg-popover text-[13px] text-popover-foreground opacity-[calc(1-var(--nested-dialogs))] shadow-(--shadow-600) outline-none transition-[scale,opacity,translate] duration-200 ease-out will-change-transform data-ending-style:opacity-0 data-starting-style:opacity-0 sm:scale-[calc(1-0.1*var(--nested-dialogs))] sm:data-ending-style:scale-98 sm:data-starting-style:scale-98",
             bottomStickOnMobile &&
               "max-sm:max-w-none max-sm:origin-bottom max-sm:rounded-b-none max-sm:data-ending-style:translate-y-4 max-sm:data-starting-style:translate-y-4",
             className,

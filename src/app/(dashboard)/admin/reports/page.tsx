@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { BarChart3, Download, Info, X } from "lucide-react";
+import { BarChart3, X } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import { vehicleService } from "@/lib/services/vehicle-service";
@@ -16,8 +16,15 @@ import {
   profitOf,
   type ModelRow,
 } from "@/lib/reports";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import {
+  Banner,
+  Button,
+  ButtonGroup,
+  Card,
+  EmptyState,
+  Grid,
+  Page,
+} from "@/components/polaris";
 import { Label } from "@/components/ui/label";
 import {
   Combobox,
@@ -28,10 +35,9 @@ import {
   ComboboxPopup,
 } from "@/components/ui/combobox";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/shared/empty-state";
 import { BarChart, DonutChart } from "@/components/charts/simple-charts";
 import { downloadXlsx, type CellValue, type Sheet } from "@/lib/xlsx";
-import { cn, formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 
 const formatNumber = (n: number): string => n.toLocaleString("en-GB");
 
@@ -63,6 +69,11 @@ const MONTHS_SHORT = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 type Gran = "month" | "quarter" | "year";
+const GRANULARITIES: { value: Gran; label: string }[] = [
+  { value: "month", label: "Month" },
+  { value: "quarter", label: "Quarter" },
+  { value: "year", label: "Year" },
+];
 
 /** Bucket key + label for a sold date at a given granularity. */
 function periodOf(dateSold: string, gran: Gran): { key: string; label: string } {
@@ -413,274 +424,277 @@ export default function ReportsPage() {
 
   if (!allowed) {
     return (
-      <EmptyState
-        icon={BarChart3}
-        title="Access restricted"
-        description="You don't have permission to view reports."
-      />
+      <Page title="Reports & analytics">
+        <EmptyState icon={<BarChart3 />} heading="Access restricted">
+          You don&rsquo;t have permission to view reports.
+        </EmptyState>
+      </Page>
     );
   }
 
   const ready = vehicles != null && sold != null && kpis != null;
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Header + primary export CTA */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">
-            Reports &amp; Analytics
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Sales and stock performance at a glance. Filter it down and every
-            number and chart below recalculates.
-          </p>
-        </div>
-        <Button onClick={handleExport} disabled={!ready}>
-          <Download className="size-4" />
-          Export report
-        </Button>
-      </div>
-
+    <Page
+      title="Reports & analytics"
+      subtitle="Sales and stock performance at a glance. Filter it down and every number and chart below recalculates."
+      fullWidth
+      primaryAction={{
+        content: "Export report",
+        onAction: handleExport,
+        disabled: !ready,
+      }}
+    >
       {/* Filters — combine as an intersection; everything below reacts. */}
-      <div className="flex flex-wrap items-end gap-2 rounded-xl border border-border bg-card p-3">
-        <FilterSelect
-          label="Year"
-          value={year}
-          onChange={setYear}
-          allLabel="All time"
-          options={years.map((y) => ({ value: y, label: y }))}
-        />
-        <FilterSelect
-          label="Make"
-          value={make}
-          onChange={(v) => {
-            setMake(v);
-            // The old model almost certainly isn't in the new make.
-            setModel(ALL);
-          }}
-          allLabel="All makes"
-          options={makes.map((m) => ({ value: m, label: m }))}
-        />
-        <FilterSelect
-          label="Model"
-          value={model}
-          onChange={setModel}
-          allLabel="All models"
-          options={models.map((m) => ({ value: m, label: m }))}
-        />
-        <FilterSelect
-          label="Status"
-          value={status}
-          onChange={setStatus}
-          allLabel="Any status"
-          options={VEHICLE_STATUSES.map((s) => ({
-            value: s.value,
-            label: s.label,
-          }))}
-        />
-        {activeFilters > 0 ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-9"
-            onClick={() => {
-              setYear(ALL);
-              setMake(ALL);
+      <Card>
+        <div className="flex flex-wrap items-end gap-2">
+          <FilterSelect
+            label="Year"
+            value={year}
+            onChange={setYear}
+            allLabel="All time"
+            options={years.map((y) => ({ value: y, label: y }))}
+          />
+          <FilterSelect
+            label="Make"
+            value={make}
+            onChange={(v) => {
+              setMake(v);
+              // The old model almost certainly isn't in the new make.
               setModel(ALL);
-              setStatus(ALL);
             }}
-          >
-            <X className="mr-1 size-3.5" />
-            Clear {activeFilters} filter{activeFilters === 1 ? "" : "s"}
-          </Button>
-        ) : null}
-        <p className="w-full text-xs text-muted-foreground">
+            allLabel="All makes"
+            options={makes.map((m) => ({ value: m, label: m }))}
+          />
+          <FilterSelect
+            label="Model"
+            value={model}
+            onChange={setModel}
+            allLabel="All models"
+            options={models.map((m) => ({ value: m, label: m }))}
+          />
+          <FilterSelect
+            label="Status"
+            value={status}
+            onChange={setStatus}
+            allLabel="Any status"
+            options={VEHICLE_STATUSES.map((s) => ({
+              value: s.value,
+              label: s.label,
+            }))}
+          />
+          {activeFilters > 0 ? (
+            <div className="flex h-9 items-center">
+              <Button
+                variant="tertiary"
+                icon={<X />}
+                onClick={() => {
+                  setYear(ALL);
+                  setMake(ALL);
+                  setModel(ALL);
+                  setStatus(ALL);
+                }}
+              >
+                {`Clear ${activeFilters} filter${activeFilters === 1 ? "" : "s"}`}
+              </Button>
+            </div>
+          ) : null}
+        </div>
+        <p className="text-xs text-(--text-secondary)">
           Showing <span className="font-medium">{filterSummary}</span>. Year
           means the year of sale for a sold car, and the year of arrival for
           one still in stock.
         </p>
-      </div>
+      </Card>
 
       {/* Sales figures read zero whenever nothing in the selection has sold.
           That's a real answer, but on its own it's indistinguishable from a
           broken page — so say it, and say what IS there. */}
       {ready && kpis.units === 0 && kpis.inStock > 0 ? (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-          <Info className="mt-0.5 size-4 shrink-0" />
-          <span>
-            Nothing in this selection has sold yet, so every sales figure below
-            is £0; that&rsquo;s the answer, not a missing number. There{" "}
-            {kpis.inStock === 1 ? "is" : "are"}{" "}
-            <span className="font-medium">
-              {formatNumber(kpis.inStock)} still in stock
-            </span>
-            , averaging {kpis.avgDays} days.
+        <Banner tone="info">
+          Nothing in this selection has sold yet, so every sales figure below
+          is £0; that&rsquo;s the answer, not a missing number. There{" "}
+          {kpis.inStock === 1 ? "is" : "are"}{" "}
+          <span className="font-semibold">
+            {formatNumber(kpis.inStock)} still in stock
           </span>
-        </div>
+          , averaging {kpis.avgDays} days.
+        </Banner>
       ) : null}
 
       {!ready ? (
         <Skeleton className="h-96" />
       ) : (
-        <div className="flex flex-col gap-4">
+        <>
           {/* KPI tiles */}
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Kpi
-              label="Units sold"
-              value={formatNumber(kpis.units)}
-              // Said "All time" even with a year filter applied — a KPI that
-              // misstates its own scope is worse than one with no subtitle.
-              sub={year === ALL ? "All time" : `Sold in ${year}`}
-            />
-            <Kpi
-              label="Revenue"
-              value={gbpCompact(kpis.revenue)}
-              sub={`Avg ${gbpCompact(kpis.avgPrice)}/car`}
-            />
-            <Kpi
-              label="Profit"
-              value={gbpCompact(kpis.profit)}
-              sub={`${kpis.margin.toFixed(1)}% margin`}
-            />
-            <Kpi
-              label="Avg days in stock"
-              value={`${kpis.avgDays}d`}
-              sub={`${formatNumber(kpis.inStock)} unsold`}
-            />
-          </div>
+          <Grid>
+            <Grid.Cell columnSpan={{ xs: 3, lg: 3 }}>
+              <Kpi
+                label="Units sold"
+                value={formatNumber(kpis.units)}
+                // Said "All time" even with a year filter applied — a KPI that
+                // misstates its own scope is worse than one with no subtitle.
+                sub={year === ALL ? "All time" : `Sold in ${year}`}
+              />
+            </Grid.Cell>
+            <Grid.Cell columnSpan={{ xs: 3, lg: 3 }}>
+              <Kpi
+                label="Revenue"
+                value={gbpCompact(kpis.revenue)}
+                sub={`Avg ${gbpCompact(kpis.avgPrice)}/car`}
+              />
+            </Grid.Cell>
+            <Grid.Cell columnSpan={{ xs: 3, lg: 3 }}>
+              <Kpi
+                label="Profit"
+                value={gbpCompact(kpis.profit)}
+                sub={`${kpis.margin.toFixed(1)}% margin`}
+              />
+            </Grid.Cell>
+            <Grid.Cell columnSpan={{ xs: 3, lg: 3 }}>
+              <Kpi
+                label="Avg days in stock"
+                value={`${kpis.avgDays}d`}
+                sub={`${formatNumber(kpis.inStock)} unsold`}
+              />
+            </Grid.Cell>
+          </Grid>
 
           {/* Section header — labels the charts and hosts the period toggle */}
-          <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border pb-3">
+          <div className="flex flex-wrap items-end justify-between gap-2 border-b border-(--border) pb-3">
             <div>
               <h2 className="text-sm font-semibold">Performance breakdown</h2>
-              <p className="text-xs text-muted-foreground">
-                Profit &amp; revenue by {gran}, with source and stock-age mix.
+              <p className="text-xs text-(--text-secondary)">
+                Profit and revenue by {gran}, with source and stock-age mix.
               </p>
             </div>
-            <div
-              className="inline-flex overflow-hidden rounded-md border border-border"
-              role="group"
-              aria-label="Period granularity"
-            >
-              {(["month", "quarter", "year"] as Gran[]).map((g) => (
-                <button
-                  key={g}
-                  type="button"
-                  onClick={() => setGran(g)}
-                  aria-pressed={gran === g}
-                  className={cn(
-                    "px-3 py-1.5 text-xs font-medium capitalize transition-colors",
-                    gran === g
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted",
-                  )}
-                >
-                  {g}
-                </button>
-              ))}
+            <div role="group" aria-label="Period granularity">
+              <ButtonGroup variant="segmented">
+                {GRANULARITIES.map((g) => (
+                  <Button
+                    key={g.value}
+                    pressed={gran === g.value}
+                    onClick={() => setGran(g.value)}
+                  >
+                    {g.label}
+                  </Button>
+                ))}
+              </ButtonGroup>
             </div>
           </div>
 
           {/* 2×2 chart-card grid */}
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-            <ChartCard
-              title={`Profit by ${gran}`}
-              right={
-                <span className="text-xs font-medium tabular-nums text-muted-foreground">
-                  {formatCurrency(kpis.profit)}
-                </span>
-              }
-            >
-              <BarChart
-                data={periods.map((p) => ({ label: p.label, value: p.profit }))}
-                format={(v) => formatCurrency(v)}
-                fmtAxis={gbpCompact}
-                color="var(--chart-2)"
-                emptyLabel="No sales yet."
-              />
-            </ChartCard>
+          <Grid>
+            <Grid.Cell columnSpan={{ xs: 6, lg: 6 }}>
+              <ChartCard
+                title={`Profit by ${gran}`}
+                right={
+                  <span className="text-xs font-medium tabular-nums text-(--text-secondary)">
+                    {formatCurrency(kpis.profit)}
+                  </span>
+                }
+              >
+                <BarChart
+                  data={periods.map((p) => ({ label: p.label, value: p.profit }))}
+                  format={(v) => formatCurrency(v)}
+                  fmtAxis={gbpCompact}
+                  color="var(--bg-fill-success)"
+                  emptyLabel="No sales yet."
+                />
+              </ChartCard>
+            </Grid.Cell>
 
-            <ChartCard
-              title={`Revenue by ${gran}`}
-              right={
-                <span className="text-xs font-medium tabular-nums text-muted-foreground">
-                  {formatCurrency(kpis.revenue)}
-                </span>
-              }
-            >
-              <BarChart
-                data={periods.map((p) => ({ label: p.label, value: p.revenue }))}
-                format={(v) => formatCurrency(v)}
-                fmtAxis={gbpCompact}
-                emptyLabel="No sales yet."
-              />
-            </ChartCard>
+            <Grid.Cell columnSpan={{ xs: 6, lg: 6 }}>
+              <ChartCard
+                title={`Revenue by ${gran}`}
+                right={
+                  <span className="text-xs font-medium tabular-nums text-(--text-secondary)">
+                    {formatCurrency(kpis.revenue)}
+                  </span>
+                }
+              >
+                <BarChart
+                  data={periods.map((p) => ({ label: p.label, value: p.revenue }))}
+                  format={(v) => formatCurrency(v)}
+                  fmtAxis={gbpCompact}
+                  color="var(--bg-fill-emphasis)"
+                  emptyLabel="No sales yet."
+                />
+              </ChartCard>
+            </Grid.Cell>
 
-            <ChartCard title="Purchase source">
-              <DonutChart
-                data={sourceBreakdown.map((s) => ({ label: s.label, value: s.units }))}
-                format={(v) => formatNumber(v)}
-                centerLabel="vehicles"
-              />
-            </ChartCard>
+            <Grid.Cell columnSpan={{ xs: 6, lg: 6 }}>
+              <ChartCard title="Purchase source">
+                <DonutChart
+                  data={sourceBreakdown.map((s) => ({ label: s.label, value: s.units }))}
+                  format={(v) => formatNumber(v)}
+                  centerLabel="vehicles"
+                />
+              </ChartCard>
+            </Grid.Cell>
 
-            <ChartCard title="Days in stock">
-              <BarChart
-                data={aging}
-                format={(v) => formatNumber(v)}
-                color="var(--chart-4)"
-                emptyLabel="No vehicles in stock."
-              />
-            </ChartCard>
+            <Grid.Cell columnSpan={{ xs: 6, lg: 6 }}>
+              <ChartCard title="Days in stock">
+                <BarChart
+                  data={aging}
+                  format={(v) => formatNumber(v)}
+                  color="var(--bg-fill-warning)"
+                  emptyLabel="No vehicles in stock."
+                />
+              </ChartCard>
+            </Grid.Cell>
 
-            <ChartCard
-              title="Best-selling models"
-              right={
-                <span className="text-xs text-muted-foreground">
-                  {/* "Top 0 by units" is nonsense — say nothing instead. */}
-                  {bestSelling.length > 0
-                    ? `Top ${Math.min(MODEL_CHART_LIMIT, bestSelling.length)} by units`
-                    : null}
-                </span>
-              }
-            >
-              <BarChart
-                data={bestSelling.map((m) => ({
-                  label: m.label,
-                  value: m.units,
-                }))}
-                format={(v) => `${formatNumber(v)} sold`}
-                color="var(--chart-3)"
-                emptyLabel="No sales for this selection."
-              />
-            </ChartCard>
+            <Grid.Cell columnSpan={{ xs: 6, lg: 6 }}>
+              <ChartCard
+                title="Best-selling models"
+                right={
+                  <span className="text-xs text-(--text-secondary)">
+                    {/* "Top 0 by units" is nonsense — say nothing instead. */}
+                    {bestSelling.length > 0
+                      ? `Top ${Math.min(MODEL_CHART_LIMIT, bestSelling.length)} by units`
+                      : null}
+                  </span>
+                }
+              >
+                <BarChart
+                  data={bestSelling.map((m) => ({
+                    label: m.label,
+                    value: m.units,
+                  }))}
+                  format={(v) => `${formatNumber(v)} sold`}
+                  color="var(--bg-fill-info)"
+                  emptyLabel="No sales for this selection."
+                />
+              </ChartCard>
+            </Grid.Cell>
 
-            <ChartCard
-              title="Profit margin by model"
-              right={
-                <span className="text-xs text-muted-foreground">
-                  Profit as % of revenue
-                </span>
-              }
-            >
-              <BarChart
-                data={bestMargin.map((m) => ({
-                  // The unit count qualifies the percentage — a 40% margin on
-                  // one car is a different claim from 40% on twelve.
-                  label: `${m.label} (${m.units})`,
-                  value: Number(m.margin.toFixed(1)),
-                }))}
-                format={(v) => `${v.toFixed(1)}%`}
-                fmtAxis={(v) => `${Math.round(v)}%`}
-                color="var(--chart-5)"
-                emptyLabel="No sales for this selection."
-              />
-            </ChartCard>
-          </div>
-        </div>
+            <Grid.Cell columnSpan={{ xs: 6, lg: 6 }}>
+              <ChartCard
+                title="Profit margin by model"
+                right={
+                  <span className="text-xs text-(--text-secondary)">
+                    Profit as % of revenue
+                  </span>
+                }
+              >
+                <BarChart
+                  data={bestMargin.map((m) => ({
+                    // The unit count qualifies the percentage — a 40% margin on
+                    // one car is a different claim from 40% on twelve.
+                    label: `${m.label} (${m.units})`,
+                    value: Number(m.margin.toFixed(1)),
+                  }))}
+                  format={(v) => `${v.toFixed(1)}%`}
+                  fmtAxis={(v) => `${Math.round(v)}%`}
+                  color="var(--bg-fill-magic)"
+                  emptyLabel="No sales for this selection."
+                />
+              </ChartCard>
+            </Grid.Cell>
+          </Grid>
+        </>
       )}
-    </div>
+    </Page>
   );
 }
 
@@ -696,12 +710,10 @@ function Kpi({
   sub?: string;
 }) {
   return (
-    <Card className="p-4">
-      <div className="text-[13px] font-medium text-muted-foreground">
-        {label}
-      </div>
-      <div className="mt-1 text-xl font-semibold tabular-nums">{value}</div>
-      {sub && <div className="mt-0.5 text-xs text-muted-foreground">{sub}</div>}
+    <Card className="h-full gap-1">
+      <div className="text-sm font-medium text-(--text-secondary)">{label}</div>
+      <div className="text-xl font-semibold tabular-nums">{value}</div>
+      {sub && <div className="text-xs text-(--text-secondary)">{sub}</div>}
     </Card>
   );
 }
@@ -785,12 +797,8 @@ function ChartCard({
   children: ReactNode;
 }) {
   return (
-    <Card className="flex flex-col p-5">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold">{title}</h2>
-        {right}
-      </div>
-      <div className="flex flex-1 flex-col justify-center">{children}</div>
+    <Card title={title} actions={right} className="h-full">
+      <div className="flex flex-1 flex-col justify-center pt-1">{children}</div>
     </Card>
   );
 }

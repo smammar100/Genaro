@@ -63,7 +63,7 @@ export function SalespersonDropdown({
         aria-invalid={invalid}
         className={cn(invalid && "border-destructive")}
       >
-        <SelectValue placeholder="Pick salesperson" />
+        <SelectValue placeholder="Choose salesperson" />
       </SelectTrigger>
       <SelectContent>
         {users.map((u) => (

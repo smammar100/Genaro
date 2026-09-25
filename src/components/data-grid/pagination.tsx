@@ -38,8 +38,8 @@ export function DataGridPagination({
   const lastRow = Math.min(total, page * pageSize);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-[#f7f7f7] px-3 py-2 text-[13px]">
-      <div className="flex items-center gap-3 text-[#616161]">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-(--bg-surface-secondary) px-3 py-2 text-[13px]">
+      <div className="flex items-center gap-3 text-(--text-secondary)">
         <span className="tabular-nums">
           {total === 0
             ? "No rows"
@@ -68,30 +68,30 @@ export function DataGridPagination({
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="tabular-nums text-[#616161]">
+        <span className="tabular-nums text-(--text-secondary)">
           Page <span className="font-medium text-foreground">{page}</span> of{" "}
           <span className="font-medium text-foreground">{totalPages}</span>
         </span>
         {/* Shopify index-table pager: a joined pair of small arrow buttons. */}
-        <div className="flex items-center overflow-hidden rounded-lg border border-[#e3e3e3] bg-card shadow-[0_1px_0_rgba(0,0,0,0.05)]">
+        <div className="flex items-center overflow-hidden rounded-(--radius-200) border border-(--border) bg-(--bg-surface)">
           <button
             type="button"
             aria-label="Previous"
             title="Previous"
             onClick={() => onPageChange(Math.max(1, page - 1))}
             disabled={page <= 1}
-            className="flex h-7 w-8 items-center justify-center text-[#4a4a4a] transition-colors hover:bg-[#f1f1f1] hover:text-foreground disabled:pointer-events-none disabled:text-[#cccccc]"
+            className="flex h-7 w-8 items-center justify-center text-(--icon) transition-colors hover:bg-(--bg-fill-transparent-hover) hover:text-(--icon-hover) disabled:pointer-events-none disabled:text-(--icon-disabled)"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <span aria-hidden className="h-7 w-px bg-[#e3e3e3]" />
+          <span aria-hidden className="h-7 w-px bg-(--border)" />
           <button
             type="button"
             aria-label="Next"
             title="Next"
             onClick={() => onPageChange(Math.min(totalPages, page + 1))}
             disabled={page >= totalPages}
-            className="flex h-7 w-8 items-center justify-center text-[#4a4a4a] transition-colors hover:bg-[#f1f1f1] hover:text-foreground disabled:pointer-events-none disabled:text-[#cccccc]"
+            className="flex h-7 w-8 items-center justify-center text-(--icon) transition-colors hover:bg-(--bg-fill-transparent-hover) hover:text-(--icon-hover) disabled:pointer-events-none disabled:text-(--icon-disabled)"
           >
             <ChevronRight className="h-4 w-4" />
           </button>

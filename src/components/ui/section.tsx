@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 type SectionProps = Omit<React.ComponentProps<"section">, "title"> & {
   /** 14px/600 heading shown outside (above) the card. */
   title?: React.ReactNode;
-  /** One-line 13px #616161 description under the heading. */
+  /** One-line 13px secondary-text description under the heading. */
   description?: React.ReactNode;
   /** Right-aligned actions on the heading row. */
   actions?: React.ReactNode;
@@ -43,7 +43,7 @@ export function Section({
               </h2>
             ) : null}
             {description ? (
-              <p className="text-[#616161] text-[13px] leading-5">
+              <p className="text-(--text-secondary) text-[13px] leading-5">
                 {description}
               </p>
             ) : null}

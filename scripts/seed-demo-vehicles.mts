@@ -167,7 +167,7 @@ const deals = inserted!
   .filter((v) => v.status === "sold" || v.status === "reserved")
   .map((v) => ({
     company_id: COMPANY, vehicle_id: v.id, customer_name: pick(CUSTOMERS),
-    customer_phone: `07700 9${between(10000, 99999)}`, selling_agent: USER,
+    customer_phone: `07700 900${String(between(0, 999)).padStart(3, "0")}`, selling_agent: USER,
     stage: v.status === "sold" ? "completed_sale" : "deposit_taken",
     agreed_price: v.selling_price ?? v.listing_price,
     completion_date: v.status === "sold" ? v.date_sold : null,

@@ -1,20 +1,8 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogPanel,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Modal, TextField } from "@/components/polaris";
 
 interface Props {
   open: boolean;
@@ -30,10 +18,8 @@ interface Props {
  */
 export function AddVehicleModal({ open, onOpenChange, extraParams }: Props) {
   const router = useRouter();
-  const regInputRef = useRef<HTMLInputElement>(null);
   const regId = useId();
   const mileageId = useId();
-  const mileageHintId = `${mileageId}-hint`;
   const [reg, setReg] = useState("");
   const [mileage, setMileage] = useState("");
   const [navigating, setNavigating] = useState(false);
@@ -41,9 +27,26 @@ export function AddVehicleModal({ open, onOpenChange, extraParams }: Props) {
   const cleanedReg = reg.toUpperCase().replace(/[^A-Z0-9]/g, "");
   const canLookup = cleanedReg.length >= 4 && cleanedReg.length <= 8;
 
+  // The Modal focuses its dialog on open; start the user in the reg field.
+  // (Parent effects run after the Modal's, so this focus wins.)
+  useEffect(() => {
+    if (open) document.getElementById(regId)?.focus();
+  }, [open, regId]);
+
+  function reset() {
+    setReg("");
+    setMileage("");
+    setNavigating(false);
+  }
+
+  function close() {
+    reset();
+    onOpenChange(false);
+  }
+
   function go(withLookup: boolean) {
     if (withLookup && !canLookup) {
-      regInputRef.current?.focus();
+      document.getElementById(regId)?.focus();
       return;
     }
     const params = new URLSearchParams(extraParams ?? {});
@@ -57,100 +60,57 @@ export function AddVehicleModal({ open, onOpenChange, extraParams }: Props) {
     setNavigating(true);
     router.push(`/inventory/add-vehicle${qs ? `?${qs}` : ""}`);
     // Close after kicking off navigation (also resets state for a clean re-open).
-    onOpenChange(false);
-  }
-
-  function reset() {
-    setReg("");
-    setMileage("");
-    setNavigating(false);
+    close();
   }
 
   return (
-    <Dialog
+    <Modal
       open={open}
-      // Fires on user-initiated close (backdrop / Esc / close button) — sync
-      // React state so the controlled `open` prop doesn't re-open it.
-      onOpenChange={(next) => {
-        if (!next) {
-          reset();
-          onOpenChange(false);
-        }
+      onClose={close}
+      title="Add a vehicle"
+      primaryAction={{
+        content: "Look up and continue",
+        onAction: () => go(true),
+        loading: navigating,
       }}
-      // Also reset after a programmatic close (e.g. go() → onOpenChange(false)),
-      // which doesn't route through onOpenChange above.
-      onOpenChangeComplete={(isOpen) => {
-        if (!isOpen) reset();
-      }}
+      secondaryActions={[
+        { content: "Continue manually", onAction: () => go(false) },
+      ]}
     >
-      <DialogContent aria-label="Add a vehicle">
-        <DialogHeader>
-          <DialogTitle>Add a vehicle</DialogTitle>
-          <DialogDescription>
-            Start a new stock record, look it up automatically or enter it by
-            hand.
-          </DialogDescription>
-        </DialogHeader>
-
-        <DialogPanel>
-          <div className="flex flex-col gap-4">
-            <p className="text-sm text-muted-foreground">
-              Enter the registration and mileage; we&apos;ll pull make, model,
-              derivative, tax, MOT and an AutoTrader valuation automatically.
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={regId}>Registration</Label>
-                <Input
-                  id={regId}
-                  ref={regInputRef}
-                  value={reg}
-                  onChange={(e) => setReg(e.target.value.toUpperCase())}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && canLookup) go(true);
-                  }}
-                  placeholder="EK18 FUT"
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="font-mono uppercase"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={mileageId}>Mileage</Label>
-                <Input
-                  id={mileageId}
-                  type="number"
-                  inputMode="numeric"
-                  aria-describedby={mileageHintId}
-                  value={mileage}
-                  onChange={(e) => setMileage(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && canLookup) go(true);
-                  }}
-                  placeholder="e.g. 45000"
-                />
-                <p id={mileageHintId} className="text-xs text-muted-foreground">
-                  Needed for an accurate AutoTrader valuation.
-                </p>
-              </div>
-            </div>
-          </div>
-        </DialogPanel>
-
-        <DialogFooter>
-          <Button
-            variant="ghost"
-            onClick={() => go(false)}
-            disabled={navigating}
-          >
-            Continue manually
-          </Button>
-          <Button onClick={() => go(true)} loading={navigating}>
-            {!navigating && <Search />}
-            Look up &amp; continue
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <div
+        className="flex flex-col gap-4"
+        // Enter in either field runs the lookup, as the primary action does.
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && canLookup) go(true);
+        }}
+      >
+        <p className="text-sm text-(--text-secondary)">
+          Start a new stock record, look it up automatically or enter it by
+          hand. Enter the registration and mileage; we&apos;ll pull make,
+          model, derivative, tax, MOT and an AutoTrader valuation
+          automatically.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextField
+            id={regId}
+            label="Registration"
+            value={reg}
+            onChange={(v) => setReg(v.toUpperCase())}
+            placeholder="EK18 FUT"
+            autoComplete="off"
+          />
+          <TextField
+            id={mileageId}
+            label="Mileage"
+            type="number"
+            inputMode="numeric"
+            value={mileage}
+            onChange={setMileage}
+            placeholder="e.g. 45000"
+            helpText="Needed for an accurate AutoTrader valuation."
+          />
+        </div>
+      </div>
+    </Modal>
   );
 }

@@ -2,20 +2,24 @@
 
 import { useEffect, useId, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Eye, Mail, Pencil, Printer, Receipt } from "lucide-react";
 import {
-  CheckCircle2,
-  Clock,
-  Eye,
-  Mail,
-  Pencil,
-  Plus,
-  Printer,
-  Receipt,
-  RotateCcw,
-  TrendingUp,
-  Upload,
-  type LucideIcon,
-} from "lucide-react";
+  Avatar,
+  Badge,
+  Banner,
+  Card,
+  EmptyState,
+  IndexTable,
+  Labelled,
+  Modal,
+  Page,
+  Select,
+  SkeletonBodyText,
+  Tabs,
+  TextField,
+  type BadgeProgress,
+  type BadgeTone,
+} from "@/components/polaris";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import { invoiceService } from "@/lib/services/invoice-service";
@@ -35,49 +39,41 @@ import {
   useFilterState,
   type SelectFilter,
 } from "@/components/filters/filter-bar";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+// Row actions keep the app Button: the edit action relies on `title` (the
+// permission hint) and `data-testid`, which the Polaris Button doesn't take.
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { EmptyState } from "@/components/shared/empty-state";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 
 type Filter = InvoiceType | "all";
 type TopTab = "sales" | "purchase" | "external_job";
 
-const TOP_TAB_VALUES: ReadonlySet<TopTab> = new Set([
-  "sales",
-  "purchase",
-  "external_job",
-]);
+// Tab names must say what their dataset IS (GEN-46): the first tab is the
+// company invoice LEDGER (sale/refund/purchase types — the type tabs below
+// filter it); the other two are the vendor-bill modules. The old "Sales" /
+// "Purchase Invoices" pair meant a purchase invoice lived under "Sales" while
+// "Purchase Invoices" sat empty.
+const TOP_TABS: { id: TopTab; content: string }[] = [
+  { id: "sales", content: "All invoices" },
+  { id: "purchase", content: "Auction purchases" },
+  { id: "external_job", content: "External job bills" },
+];
+
+const TYPE_TABS: { id: Filter; content: string }[] = [
+  { id: "all", content: "All" },
+  { id: "purchase", content: "Purchase" },
+  { id: "sale", content: "Sales" },
+  { id: "refund", content: "Refunds / cancellations" },
+];
+
+const UPLOAD_TYPE_OPTIONS = [
+  { label: "Purchase", value: "purchase" },
+  { label: "Sale", value: "sale" },
+];
 
 function parseTopTab(v: string | null): TopTab {
-  return v && TOP_TAB_VALUES.has(v as TopTab) ? (v as TopTab) : "sales";
+  return TOP_TABS.some((t) => t.id === v) ? (v as TopTab) : "sales";
 }
 
 export default function InvoicingPage() {
@@ -305,7 +301,7 @@ export default function InvoicingPage() {
 
   async function handleUpload() {
     if (!user || !company) return;
-    const total = Number(uploadFields.total);
+    const total = Number(uploadFields.total.replace(/[£,\s]/g, ""));
     if (Number.isNaN(total) || total <= 0) {
       toast.error("Enter a valid total");
       return;
@@ -352,387 +348,339 @@ export default function InvoicingPage() {
     void refresh();
   }
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Invoicing</h1>
-          <p className="text-sm text-muted-foreground">
-            Every invoice in one place: the company ledger (sales, refunds and
-            recorded purchase invoices), auction purchase bills, and external
-            job bills.
-          </p>
-        </div>
-        {topTab === "sales" && canUpload ? (
-        <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Upload className="mr-1.5 h-4 w-4" />
-              Upload Invoice
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Upload Invoice</DialogTitle>
-              <DialogDescription>
-                Capture an external invoice (PDF / image attachment).
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-3 px-6 pb-6">
-              <div>
-                <Label htmlFor={uploadTypeId}>Type</Label>
-                <Select
-                  value={uploadFields.type}
-                  onValueChange={(v) =>
-                    setUploadFields((f) => ({ ...f, type: v as InvoiceType }))
-                  }
-                >
-                  <SelectTrigger id={uploadTypeId}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="purchase">Purchase</SelectItem>
-                    <SelectItem value="sale">Sale</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor={partyNameId}>Party name</Label>
-                <Input
-                  id={partyNameId}
-                  value={uploadFields.partyName}
-                  onChange={(e) =>
-                    setUploadFields((f) => ({ ...f, partyName: e.target.value }))
-                  }
-                />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label htmlFor={invoiceDateId}>Invoice date</Label>
-                  <Input
-                    id={invoiceDateId}
-                    type="date"
-                    value={uploadFields.invoiceDate}
-                    onChange={(e) =>
-                      setUploadFields((f) => ({
-                        ...f,
-                        invoiceDate: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div>
-                  <Label htmlFor={totalId}>Total (£)</Label>
-                  <Input
-                    id={totalId}
-                    type="number"
-                    step="0.01"
-                    value={uploadFields.total}
-                    onChange={(e) =>
-                      setUploadFields((f) => ({ ...f, total: e.target.value }))
-                    }
-                  />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor={attachmentId}>Attachment</Label>
-                <Input
-                  id={attachmentId}
-                  type="file"
-                  accept="application/pdf,image/*"
-                  onChange={(e) =>
-                    setUploadFile(e.target.files?.[0] ?? null)
-                  }
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setUploadOpen(false)}>
-                Cancel
+  const invoiceRows = (searched ?? []).map((inv) => {
+    const vehicle = inv.vehicleId ? vehicleById.get(inv.vehicleId) : undefined;
+    const canSend = can("invoice:send");
+    return {
+      id: inv.id,
+      cells: [
+        <Button
+          key="number"
+          variant="link"
+          className="h-auto font-mono text-xs"
+          onClick={(e) => {
+            e.stopPropagation();
+            setViewing(inv);
+          }}
+        >
+          {inv.invoiceNumber}
+        </Button>,
+        <span key="type" className="inline-flex items-center gap-1">
+          <TypeBadge type={inv.type} />
+          {refundedSaleIds.has(inv.id) && <Badge tone="warning">Refunded</Badge>}
+        </span>,
+        <span key="party" className="flex items-center gap-2">
+          <span aria-hidden className="inline-flex">
+            <Avatar
+              size="xs"
+              name={
+                inv.partyName && inv.partyName !== "—" ? inv.partyName : undefined
+              }
+            />
+          </span>
+          <span className="truncate">{inv.partyName}</span>
+        </span>,
+        vehicle ? (
+          <RegPlate key="reg" registration={vehicle.registration} size="sm" />
+        ) : (
+          <span key="reg" className="text-(--text-disabled)">
+            —
+          </span>
+        ),
+        <span key="date" className="text-(--text-secondary)">
+          {formatDate(inv.invoiceDate)}
+        </span>,
+        formatCurrency(inv.subtotal),
+        <span key="vat" className="text-(--text-secondary)">
+          {formatCurrency(inv.vatAmount)}
+        </span>,
+        <span key="total" className="font-semibold">
+          {formatCurrency(inv.total)}
+        </span>,
+        <StatusBadge key="status" status={inv.status} />,
+        <div key="actions" className="flex justify-end gap-1">
+          {inv.type === "sale" &&
+            inv.status !== "paid" &&
+            inv.status !== "cancelled" && (
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                disabled={!canEdit}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/sales/invoice-generation?invoiceId=${inv.id}`);
+                }}
+                title={canEdit ? "Edit" : "Permission required: Edit Invoice"}
+                aria-label="Edit invoice"
+                data-testid={`edit-invoice-${inv.id}`}
+              >
+                <Pencil />
               </Button>
-              <Button onClick={handleUpload}>Save</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        ) : null}
-      </div>
+            )}
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              setViewing(inv);
+            }}
+            title="View"
+            aria-label="View invoice"
+          >
+            <Eye />
+          </Button>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            disabled={!canSend}
+            onClick={(e) => {
+              e.stopPropagation();
+              setEmailing(inv);
+            }}
+            title={canSend ? "Email" : "Permission required: Send Invoice"}
+            aria-label="Email invoice"
+          >
+            <Mail />
+          </Button>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              void handlePrint(inv);
+            }}
+            title="Print PDF"
+            aria-label="Print invoice PDF"
+          >
+            <Printer />
+          </Button>
+        </div>,
+      ],
+    };
+  });
 
-      <Tabs value={topTab} onValueChange={(v) => setTopTab(v as TopTab)}>
-        {/* Tab names must say what their dataset IS (GEN-46): the first tab is
-            the company invoice LEDGER (sale/refund/purchase types — the chips
-            below filter it); the other two are the vendor-bill modules. The
-            old "Sales" / "Purchase Invoices" pair meant a purchase invoice
-            lived under "Sales" while "Purchase Invoices" sat empty. */}
-        <TabsList>
-          <TabsTrigger value="sales">All Invoices</TabsTrigger>
-          <TabsTrigger value="purchase">Auction Purchases</TabsTrigger>
-          <TabsTrigger value="external_job">External Job Bills</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="sales" className="mt-4 flex flex-col gap-4">
-
-      {/* KPI cards (Variation A) */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard
-          icon={TrendingUp}
-          label="Total invoiced"
-          value={formatCurrency(kpis.invoiced)}
-          sub={`${kpis.invoicedN} invoice${kpis.invoicedN === 1 ? "" : "s"}`}
-        />
-        <KpiCard
-          icon={Clock}
-          label="Outstanding"
-          value={formatCurrency(kpis.outstanding)}
-          sub={`${kpis.outstandingN} unpaid`}
-          tone="text-amber-600 dark:text-amber-400"
-        />
-        <KpiCard
-          icon={CheckCircle2}
-          label="Paid"
-          value={formatCurrency(kpis.paid)}
-          sub={`${kpis.paidN} settled`}
-          tone="text-emerald-600 dark:text-emerald-400"
-        />
-        <KpiCard
-          icon={RotateCcw}
-          label="Refunds"
-          value={formatCurrency(kpis.refunds)}
-          sub={`${kpis.refundsN} issued`}
-          tone="text-rose-600 dark:text-rose-400"
-        />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="purchase">Purchase</TabsTrigger>
-            <TabsTrigger value="sale">Sales</TabsTrigger>
-            <TabsTrigger value="refund">Refunds / Cancellations</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-
-      <FilterBar
-        state={filters}
-        onChange={setFilters}
-        searchPlaceholder="Search invoice #, customer, reg…"
-        dateLabel="Invoice"
-        selects={statusFilters}
+  return (
+    <Page
+      title="Invoicing"
+      subtitle="Every invoice in one place: the company ledger, auction purchase bills and external job bills."
+      fullWidth
+      primaryAction={
+        topTab === "sales" && canUpload
+          ? { content: "Upload invoice", onAction: () => setUploadOpen(true) }
+          : undefined
+      }
+    >
+      <Tabs
+        tabs={TOP_TABS}
+        selected={Math.max(
+          0,
+          TOP_TABS.findIndex((t) => t.id === topTab),
+        )}
+        onSelect={(i) => setTopTab(TOP_TABS[i].id)}
       />
 
-      {filter === "refund" && (
-        <Card className="flex flex-wrap gap-6 p-4 text-sm">
-          <div>
-            <div className="text-[13px] font-medium text-muted-foreground">
-              Refunds this month
+      {topTab === "sales" ? (
+        <>
+          {/* KPI tiles — derived from sale + refund invoices. */}
+          <Card padding="0">
+            <div className="grid grid-cols-2 gap-px bg-(--border-secondary) lg:grid-cols-4">
+              <KpiTile
+                label="Total invoiced"
+                value={formatCurrency(kpis.invoiced)}
+                sub={`${kpis.invoicedN} invoice${kpis.invoicedN === 1 ? "" : "s"}`}
+              />
+              <KpiTile
+                label="Outstanding"
+                value={formatCurrency(kpis.outstanding)}
+                sub={`${kpis.outstandingN} unpaid`}
+                tone="text-(--text-warning)"
+              />
+              <KpiTile
+                label="Paid"
+                value={formatCurrency(kpis.paid)}
+                sub={`${kpis.paidN} settled`}
+                tone="text-(--text-success)"
+              />
+              <KpiTile
+                label="Refunds"
+                value={formatCurrency(kpis.refunds)}
+                sub={`${kpis.refundsN} issued`}
+                tone="text-(--text-critical)"
+              />
             </div>
-            <div className="mt-0.5 font-semibold tabular-nums">
-              {formatCurrency(refundSummary.month)}
-            </div>
-          </div>
-          <div>
-            <div className="text-[13px] font-medium text-muted-foreground">
-              Refunds YTD
-            </div>
-            <div className="mt-0.5 font-semibold tabular-nums">
-              {formatCurrency(refundSummary.ytd)}
-            </div>
-          </div>
-          <div>
-            <div className="text-[13px] font-medium text-muted-foreground">
-              Total refund invoices
-            </div>
-            <div className="mt-0.5 font-semibold tabular-nums">
-              {refundSummary.count}
-            </div>
-          </div>
-        </Card>
-      )}
+          </Card>
 
-      {!searched ? (
-        <Skeleton className="h-72" />
-      ) : searched.length === 0 ? (
-        <EmptyState
-          icon={Receipt}
-          title="No invoices in this view"
-          description="Switch tabs or create one."
-        />
+          {/* Type views for the ledger: their own tab row, outside any card. */}
+          <Tabs
+            tabs={TYPE_TABS}
+            selected={Math.max(
+              0,
+              TYPE_TABS.findIndex((t) => t.id === filter),
+            )}
+            onSelect={(i) => setFilter(TYPE_TABS[i].id)}
+          />
+
+          {/* Search / date / status filters for the ledger (FilterBar is its
+              own bordered bar, as on Activity log and Deals). */}
+          <FilterBar
+            state={filters}
+            onChange={setFilters}
+            searchPlaceholder="Search invoice #, customer, reg…"
+            dateLabel="Invoice"
+            selects={statusFilters}
+          />
+
+          {filter === "refund" && (
+            <Card>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <SummaryStat
+                  label="Refunds this month"
+                  value={formatCurrency(refundSummary.month)}
+                />
+                <SummaryStat
+                  label="Refunds YTD"
+                  value={formatCurrency(refundSummary.ytd)}
+                />
+                <SummaryStat
+                  label="Total refund invoices"
+                  value={String(refundSummary.count)}
+                />
+              </div>
+            </Card>
+          )}
+
+          {!searched ? (
+            <Card>
+              <SkeletonBodyText lines={8} />
+            </Card>
+          ) : searched.length === 0 ? (
+            <EmptyState icon={<Receipt />} heading="No invoices in this view">
+              Switch tabs or create one.
+            </EmptyState>
+          ) : (
+            // Clicking anywhere on a row opens the invoice, as before. The
+            // table owns its rows, so the click is picked up here and mapped
+            // back by row position; the invoice number is the keyboard route.
+            <div
+              className="[&_tbody_tr]:cursor-pointer"
+              onClick={(e) => {
+                const tr = (e.target as HTMLElement).closest<HTMLTableRowElement>(
+                  "tbody tr",
+                );
+                const inv = tr ? searched[tr.sectionRowIndex] : undefined;
+                if (inv) setViewing(inv);
+              }}
+            >
+              <IndexTable
+                selectable={false}
+                headings={[
+                  { title: "Invoice #" },
+                  { title: "Type" },
+                  { title: "Party" },
+                  { title: "Reg" },
+                  { title: "Date" },
+                  { title: "Subtotal", alignment: "end" },
+                  { title: "VAT", alignment: "end" },
+                  { title: "Total", alignment: "end" },
+                  { title: "Status" },
+                  { title: "" },
+                ]}
+                rows={invoiceRows}
+              />
+            </div>
+          )}
+
+          <Card title="VAT summary">
+            <p className="text-xs text-(--text-secondary)">
+              Input VAT (purchases) − Output VAT (sales) = net.
+            </p>
+            {vat ? (
+              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                <VatStat label="Input VAT (purchases)" value={vat.inputVat} />
+                <VatStat label="Output VAT (sales)" value={vat.outputVat} />
+                <VatStat
+                  label="Net VAT"
+                  value={vat.net}
+                  tone={vat.net > 0 ? "negative" : "positive"}
+                />
+              </div>
+            ) : (
+              <SkeletonBodyText lines={2} />
+            )}
+          </Card>
+        </>
+      ) : topTab === "purchase" ? (
+        <ExternalInvoiceList kind="auction_purchase" />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-card">
-          <table className="w-full min-w-[760px] text-sm">
-            <thead>
-              <tr className="border-b border-border bg-[#f7f7f7] text-left text-xs text-[#4a4a4a]">
-                <th className="px-3 py-2.5 font-medium">Invoice #</th>
-                <th className="px-3 py-2.5 font-medium">Type</th>
-                <th className="px-3 py-2.5 font-medium">Party</th>
-                <th className="px-3 py-2.5 font-medium">Reg</th>
-                <th className="px-3 py-2.5 font-medium">Date</th>
-                <th className="px-3 py-2.5 text-right font-medium">Subtotal</th>
-                <th className="px-3 py-2.5 text-right font-medium">VAT</th>
-                <th className="px-3 py-2.5 text-right font-medium">Total</th>
-                <th className="px-3 py-2.5 font-medium">Status</th>
-                <th className="px-3 py-2.5 font-medium"> </th>
-              </tr>
-            </thead>
-            <tbody>
-              {searched.map((inv) => (
-                <tr
-                  key={inv.id}
-                  onClick={() => setViewing(inv)}
-                  className="cursor-pointer border-b border-border last:border-0 hover:bg-accent/30"
-                >
-                  <td className="whitespace-nowrap px-3 py-2.5">
-                    <span className="font-mono text-xs">
-                      {inv.invoiceNumber}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <span className="inline-flex items-center gap-1">
-                      <TypeChip type={inv.type} />
-                      {refundedSaleIds.has(inv.id) && (
-                        <span className="inline-flex items-center rounded-md bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
-                          Refunded
-                        </span>
-                      )}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <span className="flex items-center gap-2">
-                      <Avatar name={inv.partyName} />
-                      <span className="truncate">{inv.partyName}</span>
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2.5">
-                    {inv.vehicleId && vehicleById.get(inv.vehicleId) ? (
-                      <RegPlate
-                        registration={vehicleById.get(inv.vehicleId)!.registration}
-                        size="sm"
-                      />
-                    ) : (
-                      <span className="text-muted-foreground/50">—</span>
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">
-                    {formatDate(inv.invoiceDate)}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">
-                    {formatCurrency(inv.subtotal)}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-muted-foreground">
-                    {formatCurrency(inv.vatAmount)}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-right font-medium tabular-nums">
-                    {formatCurrency(inv.total)}
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <StatusPill status={inv.status} />
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <div className="flex justify-end gap-1">
-                      {inv.type === "sale" &&
-                        inv.status !== "paid" &&
-                        inv.status !== "cancelled" && (
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8"
-                            disabled={!canEdit}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(
-                                `/sales/invoice-generation?invoiceId=${inv.id}`,
-                              );
-                            }}
-                            title={
-                              canEdit
-                                ? "Edit"
-                                : "Permission required: Edit Invoice"
-                            }
-                            data-testid={`edit-invoice-${inv.id}`}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        )}
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setViewing(inv);
-                        }}
-                        title="View"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        disabled={!can("invoice:send")}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEmailing(inv);
-                        }}
-                        title={
-                          can("invoice:send")
-                            ? "Email"
-                            : "Permission required: Send Invoice"
-                        }
-                      >
-                        <Mail className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void handlePrint(inv);
-                        }}
-                        title="Print PDF"
-                      >
-                        <Printer className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ExternalInvoiceList kind="external_job" />
       )}
 
-      <Card className="p-5">
-        <h2 className="text-sm font-semibold">VAT summary</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Input VAT (purchases) − Output VAT (sales) = net.
-        </p>
-        {vat ? (
-          <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
-            <Stat label="Input VAT (purchases)" value={vat.inputVat} />
-            <Stat label="Output VAT (sales)" value={vat.outputVat} />
-            <Stat
-              label="Net VAT"
-              value={vat.net}
-              tone={vat.net > 0 ? "negative" : "positive"}
+      {/* Upload modal */}
+      <Modal
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        title="Upload invoice"
+        primaryAction={{
+          content: "Save invoice",
+          onAction: () => void handleUpload(),
+        }}
+        secondaryActions={[
+          { content: "Cancel", onAction: () => setUploadOpen(false) },
+        ]}
+      >
+        <div className="grid gap-3">
+          <p className="text-(--text-secondary)">
+            Capture an external invoice (PDF or image attachment).
+          </p>
+          <Select
+            id={uploadTypeId}
+            label="Type"
+            options={UPLOAD_TYPE_OPTIONS}
+            value={uploadFields.type}
+            onChange={(v) =>
+              setUploadFields((f) => ({ ...f, type: v as InvoiceType }))
+            }
+          />
+          <TextField
+            id={partyNameId}
+            label="Party name"
+            value={uploadFields.partyName}
+            onChange={(v) => setUploadFields((f) => ({ ...f, partyName: v }))}
+          />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Labelled id={invoiceDateId} label="Invoice date">
+              <Input
+                id={invoiceDateId}
+                type="date"
+                value={uploadFields.invoiceDate}
+                onChange={(e) =>
+                  setUploadFields((f) => ({
+                    ...f,
+                    invoiceDate: e.target.value,
+                  }))
+                }
+              />
+            </Labelled>
+            <TextField
+              id={totalId}
+              label="Total"
+              prefix="£"
+              inputMode="decimal"
+              placeholder="0.00"
+              value={uploadFields.total}
+              onChange={(v) => setUploadFields((f) => ({ ...f, total: v }))}
             />
           </div>
-        ) : (
-          <Skeleton className="mt-3 h-10" />
-        )}
-      </Card>
-        </TabsContent>
-
-        <TabsContent value="purchase" className="mt-4">
-          <ExternalInvoiceList kind="auction_purchase" />
-        </TabsContent>
-
-        <TabsContent value="external_job" className="mt-4">
-          <ExternalInvoiceList kind="external_job" />
-        </TabsContent>
-      </Tabs>
+          <Labelled id={attachmentId} label="Attachment">
+            <Input
+              id={attachmentId}
+              type="file"
+              accept="application/pdf,image/*"
+              onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+            />
+          </Labelled>
+        </div>
+      </Modal>
 
       {/* View modal — shared in-app invoice detail (also used on Closed Deals). */}
       <InvoiceDetailDialog
@@ -747,163 +695,114 @@ export default function InvoicingPage() {
       />
 
       {/* Email modal */}
-      <Dialog
+      <Modal
         open={emailing !== null}
-        onOpenChange={(o) => {
-          if (!o) setEmailing(null);
+        onClose={() => setEmailing(null)}
+        title={emailing ? `Email ${emailing.invoiceNumber}` : "Email invoice"}
+        primaryAction={{
+          content: "Send email",
+          onAction: () => void handleSendEmail(),
         }}
+        secondaryActions={[{ content: "Cancel", onAction: () => setEmailing(null) }]}
       >
-        <DialogContent>
-          {emailing && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Email {emailing.invoiceNumber}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-3 px-6 pb-6">
-                <div>
-                  <Label htmlFor={emailToId}>To</Label>
-                  <Input
-                    id={emailToId}
-                    defaultValue={emailing.partyEmail ?? ""}
-                    placeholder="recipient@example.com"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor={emailSubjectId}>Subject</Label>
-                  <Input
-                    id={emailSubjectId}
-                    defaultValue={`Invoice ${emailing.invoiceNumber}`}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor={emailMessageId}>Message</Label>
-                  <Textarea
-                    id={emailMessageId}
-                    defaultValue={`Please find your invoice attached.`}
-                    className="min-h-24"
-                  />
-                </div>
-                <p className="rounded bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
-                  Mock send: marks invoice as sent and writes activity log.
-                </p>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setEmailing(null)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSendEmail}>
-                  <Plus className="mr-1.5 h-4 w-4" /> Send
-                </Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+        {emailing && (
+          <div key={emailing.id} className="grid gap-3">
+            <TextField
+              id={emailToId}
+              label="To"
+              type="email"
+              defaultValue={emailing.partyEmail ?? ""}
+              placeholder="recipient@example.com"
+            />
+            <TextField
+              id={emailSubjectId}
+              label="Subject"
+              defaultValue={`Invoice ${emailing.invoiceNumber}`}
+            />
+            <TextField
+              id={emailMessageId}
+              label="Message"
+              multiline={4}
+              defaultValue="Please find your invoice attached."
+            />
+            <Banner tone="info">
+              Mock send: marks the invoice as sent and writes the activity log.
+            </Banner>
+          </div>
+        )}
+      </Modal>
+    </Page>
   );
 }
 
-/* Variation A helpers --------------------------------------------------- */
+/* Helpers --------------------------------------------------------------- */
 
-function KpiCard({
-  icon: Icon,
+function KpiTile({
   label,
   value,
   sub,
   tone,
 }: {
-  icon: LucideIcon;
   label: string;
   value: string;
   sub: string;
+  /** Text colour token class for the value. */
   tone?: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-background p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">
-          {label}
-        </span>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </div>
-      <div
-        className={cn("mt-1.5 text-xl font-bold tabular-nums", tone)}
-      >
-        {value}
-      </div>
-      <div className="mt-0.5 text-xs text-muted-foreground">{sub}</div>
+    <div className="bg-(--bg-surface) p-4">
+      <div className="text-xs font-medium text-(--text-secondary)">{label}</div>
+      <div className={cn("heading-lg mt-1 tabular-nums", tone)}>{value}</div>
+      <div className="mt-0.5 text-xs text-(--text-secondary)">{sub}</div>
     </div>
   );
 }
 
-const INV_STATUS: Record<string, { label: string; cls: string }> = {
-  draft: { label: "Draft", cls: "bg-muted text-muted-foreground" },
-  issued: {
-    label: "Issued",
-    cls: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
-  },
-  sent: {
-    label: "Sent",
-    cls: "bg-[#d5ebff] text-[#003a5a]",
-  },
-  paid: {
-    label: "Paid",
-    cls: "bg-[#affebf] text-[#014b40]",
-  },
-  cancelled: {
-    label: "Cancelled",
-    cls: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
-  },
+function SummaryStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-xs font-medium text-(--text-secondary)">{label}</div>
+      <div className="mt-0.5 font-semibold tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+/** Invoice status → badge. Unpaid states get an empty pip, Paid a full one. */
+const INV_STATUS: Record<
+  string,
+  { label: string; tone?: BadgeTone; progress?: BadgeProgress }
+> = {
+  draft: { label: "Draft", progress: "incomplete" },
+  issued: { label: "Issued", tone: "info", progress: "incomplete" },
+  sent: { label: "Sent", tone: "info", progress: "incomplete" },
+  overdue: { label: "Overdue", tone: "critical", progress: "incomplete" },
+  paid: { label: "Paid", tone: "success", progress: "complete" },
+  cancelled: { label: "Cancelled" },
 };
 
-function StatusPill({ status }: { status: string }) {
-  const m =
-    INV_STATUS[status] ?? { label: status, cls: "bg-muted text-muted-foreground" };
+function StatusBadge({ status }: { status: string }) {
+  const m = INV_STATUS[status] ?? {
+    label: status.charAt(0).toUpperCase() + status.slice(1),
+  };
   return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize",
-        m.cls,
-      )}
-    >
+    <Badge tone={m.tone} progress={m.progress}>
       {m.label}
-    </span>
+    </Badge>
   );
 }
 
-function TypeChip({ type }: { type: InvoiceType }) {
-  if (type === "refund") {
-    return (
-      <span className="inline-flex items-center rounded-md bg-rose-100 px-1.5 py-0.5 text-xs font-medium text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
-        Refund
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[13px] font-medium text-foreground/75">
-      {type}
-    </span>
-  );
+const TYPE_BADGE: Record<InvoiceType, { label: string; tone?: BadgeTone }> = {
+  sale: { label: "Sale" },
+  purchase: { label: "Purchase" },
+  refund: { label: "Refund", tone: "critical" },
+};
+
+function TypeBadge({ type }: { type: InvoiceType }) {
+  const m = TYPE_BADGE[type] ?? { label: type };
+  return <Badge tone={m.tone}>{m.label}</Badge>;
 }
 
-function Avatar({ name }: { name: string }) {
-  const initials =
-    !name || name === "—"
-      ? "?"
-      : name
-          .split(" ")
-          .map((w) => w[0])
-          .slice(0, 2)
-          .join("")
-          .toUpperCase();
-  return (
-    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-      {initials}
-    </span>
-  );
-}
-
-function Stat({
+function VatStat({
   label,
   value,
   tone,
@@ -913,18 +812,14 @@ function Stat({
   tone?: "positive" | "negative";
 }) {
   return (
-    <div className="rounded-md border bg-background p-3">
-      <div className="text-[13px] font-medium text-muted-foreground">
-        {label}
-      </div>
+    <div className="rounded-(--radius-200) bg-(--bg-surface-secondary) p-3">
+      <div className="text-xs font-medium text-(--text-secondary)">{label}</div>
       <div
-        className={`mt-1 text-base font-semibold tabular-nums ${
-          tone === "positive"
-            ? "text-emerald-600"
-            : tone === "negative"
-              ? "text-rose-600"
-              : ""
-        }`}
+        className={cn(
+          "mt-1 text-base font-semibold tabular-nums",
+          tone === "positive" && "text-(--text-success)",
+          tone === "negative" && "text-(--text-critical)",
+        )}
       >
         {formatCurrency(value)}
       </div>

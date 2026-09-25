@@ -55,27 +55,34 @@ export function CustomerSearchStep({
   return (
     <div className="flex flex-col gap-4">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search
+          aria-hidden
+          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-(--text-secondary)"
+        />
         <Input
           ref={inputRef}
+          aria-label="Search customers"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by name, phone, email, or postcode…"
           className="pl-9"
         />
         {isLoading && (
-          <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+          <Loader2
+            aria-hidden
+            className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-(--text-secondary)"
+          />
         )}
       </div>
 
       <div className="flex flex-col gap-2">
         {trimmed.length < 2 ? (
-          <p className="rounded-md border border-dashed border-border bg-muted/30 px-3 py-6 text-center text-xs text-muted-foreground">
+          <p className="rounded-(--radius-200) border border-dashed border-(--border) bg-(--bg-surface-secondary) px-3 py-6 text-center text-xs text-(--text-secondary)">
             Type at least 2 characters to search.<br />
             Tip: try a name, mobile prefix like <code>07712</code>, or a postcode.
           </p>
         ) : results.length === 0 && !isLoading ? (
-          <p className="rounded-md border border-dashed border-border bg-muted/30 px-3 py-4 text-center text-xs text-muted-foreground">
+          <p className="rounded-(--radius-200) border border-dashed border-(--border) bg-(--bg-surface-secondary) px-3 py-4 text-center text-xs text-(--text-secondary)">
             No matches for &ldquo;{trimmed}&rdquo;. Continue with a new customer below.
           </p>
         ) : (

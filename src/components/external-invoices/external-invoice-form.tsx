@@ -2,10 +2,16 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "@/lib/toast";
-import { Button } from "@/components/ui/button";
+import {
+  Button,
+  ChoiceList,
+  Labelled,
+  Select,
+  TextField,
+} from "@/components/polaris";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+// Stays on the app Dialog: it hosts the VehiclePicker combobox popup and the
+// nested "Add new vendor" dialog, which both need the app overlay stack.
 import {
   Dialog,
   DialogContent,
@@ -17,13 +23,6 @@ import {
 } from "@/components/ui/dialog";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { VehiclePicker } from "@/components/shared/vehicle-picker";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAuth } from "@/contexts/auth-context";
 import { externalInvoiceService } from "@/lib/services/external-invoice-service";
 import { vendorService } from "@/lib/services/vendor-service";
@@ -36,8 +35,12 @@ import type {
   Vendor,
 } from "@/lib/types";
 import { INVOICE_KIND_LABELS } from "@/lib/types";
-import { VendorInlineAdd } from "./vendor-inline-add";
+import { SPECIALITY_LABELS, VendorInlineAdd } from "./vendor-inline-add";
 import { AttachmentUploader } from "./attachment-uploader";
+
+const KIND_CHOICES = (["auction_purchase", "external_job"] as InvoiceKind[]).map(
+  (k) => ({ label: INVOICE_KIND_LABELS[k], value: k }),
+);
 
 interface Props {
   open: boolean;
@@ -313,6 +316,11 @@ export function ExternalInvoiceForm({
 
   if (!company?.id || !user?.id) return null;
 
+  const vendorOptions = vendors.map((v) => ({
+    value: v.id,
+    label: `${v.name} · ${SPECIALITY_LABELS[v.speciality] ?? v.speciality}`,
+  }));
+
   return (
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="max-w-lg">
@@ -326,114 +334,79 @@ export function ExternalInvoiceForm({
         </DialogHeader>
 
         <DialogPanel className="grid gap-4">
-          {/* Kind toggle */}
-          <div className="grid gap-1">
-            <p className="inline-flex items-center gap-2 font-medium text-base/4.5 text-foreground sm:text-sm/4">
-              Kind
-            </p>
-            <div className="flex gap-2">
-              {(["auction_purchase", "external_job"] as InvoiceKind[]).map((k) => (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => setKind(k)}
-                  className={
-                    "rounded-md border px-3 py-1.5 text-sm transition-colors " +
-                    (kind === k
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border text-muted-foreground hover:bg-[#f7f7f7]")
-                  }
-                >
-                  {INVOICE_KIND_LABELS[k]}
-                </button>
-              ))}
-            </div>
-          </div>
+          <ChoiceList
+            title="Kind"
+            choices={KIND_CHOICES}
+            selected={[kind]}
+            onChange={(next) => {
+              if (next[0]) setKind(next[0] as InvoiceKind);
+            }}
+          />
 
           {/* Vendor + inline add */}
-          <div className="grid gap-1">
-            <Label htmlFor={vendorFieldId}>
-              Vendor <span className="text-destructive">*</span>
-            </Label>
-            <div className="flex gap-2">
+          <div className="flex items-end gap-2">
+            <div className="min-w-0 flex-1">
               <Select
-                items={Object.fromEntries(vendors.map((v) => [v.id, v.name]))}
+                id={vendorFieldId}
+                // Select has no requiredIndicator; match the other fields' " *".
+                label="Vendor *"
+                placeholder="Pick a vendor"
+                options={vendorOptions}
                 value={vendorId}
-                onValueChange={setVendorId}
-              >
-                <SelectTrigger id={vendorFieldId} className="flex-1">
-                  <SelectValue placeholder="Pick a vendor…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {vendors.map((v) => (
-                    <SelectItem key={v.id} value={v.id}>
-                      {v.name}
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        {v.speciality}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <VendorInlineAdd
-                companyId={company.id}
-                existingVendors={vendors}
-                onCreated={(v) => {
-                  setVendors((curr) =>
-                    curr.some((x) => x.id === v.id) ? curr : [...curr, v],
-                  );
-                  setVendorId(v.id);
-                }}
+                onChange={setVendorId}
               />
             </div>
+            <VendorInlineAdd
+              companyId={company.id}
+              existingVendors={vendors}
+              onCreated={(v) => {
+                setVendors((curr) =>
+                  curr.some((x) => x.id === v.id) ? curr : [...curr, v],
+                );
+                setVendorId(v.id);
+              }}
+            />
           </div>
 
           {/* Auction-specific details — only meaningful for an auction purchase */}
           {kind === "auction_purchase" && (
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="grid gap-1">
-                <Label htmlFor={previousOwnerFieldId}>Previous owner</Label>
-                <Input
-                  id={previousOwnerFieldId}
-                  value={previousOwner}
-                  onChange={(e) => setPreviousOwner(e.target.value)}
-                  placeholder="If disclosed by the auction house"
-                />
-              </div>
-              <div className="grid gap-1">
-                <Label htmlFor={serviceHistoryRefFieldId}>Service history reference</Label>
-                <Input
-                  id={serviceHistoryRefFieldId}
-                  value={serviceHistoryRef}
-                  onChange={(e) => setServiceHistoryRef(e.target.value)}
-                  placeholder="Booklet / pack reference"
-                />
-              </div>
+              <TextField
+                id={previousOwnerFieldId}
+                label="Previous owner"
+                value={previousOwner}
+                onChange={setPreviousOwner}
+                placeholder="If disclosed by the auction house"
+              />
+              <TextField
+                id={serviceHistoryRefFieldId}
+                label="Service history reference"
+                value={serviceHistoryRef}
+                onChange={setServiceHistoryRef}
+                placeholder="Booklet / pack reference"
+              />
             </div>
           )}
 
           {/* Vehicle — read-only chip when locked to one car, else a picker */}
-          <div className="grid gap-1.5">
-            <Label htmlFor={fixedVehicleId ? undefined : vehicleFieldId}>
-              Vehicle <span className="text-destructive">*</span>
-            </Label>
+          <Labelled id={vehicleFieldId} label="Vehicle" requiredIndicator>
             {fixedVehicleId ? (
-              <div className="flex items-center gap-2.5 rounded-lg border bg-[#f7f7f7] px-3 py-2">
+              <div className="flex items-center gap-2.5 rounded-(--radius-200) border border-(--border) bg-(--bg-surface-secondary) px-3 py-2">
                 {selectedVehicle ? (
                   <>
                     <RegPlate registration={selectedVehicle.registration} size="sm" />
                     <span className="text-sm font-medium">
                       {selectedVehicle.make} {selectedVehicle.model}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-(--text-secondary)">
                       · {selectedVehicle.stockId}
                     </span>
-                    <span className="ml-auto text-xs font-medium text-muted-foreground">
+                    <span className="ml-auto text-xs font-medium text-(--text-secondary)">
                       Locked
                     </span>
                   </>
                 ) : (
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-(--text-secondary)">
                     Loading vehicle…
                   </span>
                 )}
@@ -448,104 +421,83 @@ export function ExternalInvoiceForm({
                 onChange={(v) => setVehicleId(v?.id ?? "")}
               />
             )}
-          </div>
+          </Labelled>
 
           {/* Invoice number + date */}
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="grid gap-1">
-              <Label htmlFor={invoiceNumberFieldId}>Invoice number</Label>
-              <Input
-                id={invoiceNumberFieldId}
-                value={invoiceNumber}
-                onChange={(e) => setInvoiceNumber(e.target.value)}
-                placeholder="vendor's reference"
-              />
-            </div>
-            <div className="grid gap-1">
-              <Label htmlFor={invoiceDateFieldId}>
-                Invoice date <span className="text-destructive">*</span>
-              </Label>
+            <TextField
+              id={invoiceNumberFieldId}
+              label="Invoice number"
+              value={invoiceNumber}
+              onChange={setInvoiceNumber}
+              placeholder="Vendor's reference"
+            />
+            <Labelled
+              id={invoiceDateFieldId}
+              label="Invoice date"
+              requiredIndicator
+            >
               <Input
                 id={invoiceDateFieldId}
                 type="date"
                 value={invoiceDate}
                 onChange={(e) => setInvoiceDate(e.target.value)}
               />
-            </div>
+            </Labelled>
           </div>
 
           {/* Money trio */}
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="grid gap-1">
-              <Label htmlFor={totalFieldId}>
-                Total (inc. VAT) <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id={totalFieldId}
-                inputMode="decimal"
-                value={total}
-                onChange={(e) => setTotal(e.target.value)}
-                placeholder="£0.00"
-              />
-            </div>
-            <div className="grid gap-1">
-              <Label htmlFor={vatFieldId}>VAT</Label>
-              <Input
-                id={vatFieldId}
-                inputMode="decimal"
-                value={vat}
-                onChange={(e) => setVat(e.target.value)}
-                placeholder="£0.00"
-                aria-invalid={vatExceedsTotal ? true : undefined}
-              />
-            </div>
-            <div className="grid gap-1">
-              <Label className="text-muted-foreground" htmlFor={preVatFieldId}>
-                Pre-VAT (auto)
-              </Label>
-              <Input
-                id={preVatFieldId}
-                value={penceToPounds(preVatPence)}
-                readOnly
-                tabIndex={-1}
-                className="bg-muted/40"
-              />
-            </div>
-          </div>
-          {vatExceedsTotal ? (
-            <p className="-mt-1 text-xs text-destructive">
-              VAT can&apos;t exceed Total.
-            </p>
-          ) : null}
-
-          {/* Description */}
-          <div className="grid gap-1">
-            <Label htmlFor={descriptionFieldId}>
-              Description <span className="text-destructive">*</span>
-            </Label>
-            <Textarea
-              id={descriptionFieldId}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="What was the job / what was purchased?"
-              className="min-h-16"
+            <TextField
+              id={totalFieldId}
+              label="Total (inc. VAT)"
+              requiredIndicator
+              prefix="£"
+              inputMode="decimal"
+              value={total}
+              onChange={setTotal}
+              placeholder="0.00"
+            />
+            <TextField
+              id={vatFieldId}
+              label="VAT"
+              prefix="£"
+              inputMode="decimal"
+              value={vat}
+              onChange={setVat}
+              placeholder="0.00"
+              error={vatExceedsTotal ? "VAT can't exceed the total" : undefined}
+            />
+            <TextField
+              id={preVatFieldId}
+              label="Pre-VAT (auto)"
+              prefix="£"
+              value={penceToPounds(preVatPence)}
+              readOnly
             />
           </div>
 
-          {/* Notes */}
-          <div className="grid gap-1">
-            <Label htmlFor={notesFieldId}>Notes (optional)</Label>
-            <Textarea
-              id={notesFieldId}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="min-h-12"
-            />
-          </div>
+          <TextField
+            id={descriptionFieldId}
+            label="Description"
+            requiredIndicator
+            multiline={3}
+            value={description}
+            onChange={setDescription}
+            placeholder="What was the job / what was purchased?"
+          />
+
+          <TextField
+            id={notesFieldId}
+            label="Notes (optional)"
+            multiline={2}
+            value={notes}
+            onChange={setNotes}
+          />
 
           {/* Attachment */}
           <div className="grid gap-1">
-            <p className="inline-flex items-center gap-2 font-medium text-base/4.5 text-foreground sm:text-sm/4">
+            <p className="text-sm font-medium text-(--text)">
               Attachment (optional)
             </p>
             <AttachmentUploader
@@ -560,23 +512,18 @@ export function ExternalInvoiceForm({
 
         <DialogFooter>
           <Button
-            type="button"
-            variant="outline"
             onClick={() => handleDialogOpenChange(false)}
             disabled={submitting}
           >
             Cancel
           </Button>
           <Button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!valid || submitting}
+            variant="primary"
+            onClick={() => void handleSubmit()}
+            disabled={!valid}
+            loading={submitting}
           >
-            {submitting
-              ? "Saving…"
-              : editing
-                ? "Save changes"
-                : "Save invoice"}
+            {editing ? "Save changes" : "Save invoice"}
           </Button>
         </DialogFooter>
       </DialogContent>

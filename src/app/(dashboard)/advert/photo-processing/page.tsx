@@ -1,38 +1,43 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Image as ImageIcon, Loader2, Search, Wand2 } from "lucide-react";
+import { Image as ImageIcon, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import type { Vehicle } from "@/lib/types";
-import { Card } from "@/components/ui/card";
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Page,
+  TextField,
+} from "@/components/polaris";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { vehicleMatches } from "@/components/shared/vehicle-picker";
-import { EmptyState } from "@/components/shared/empty-state";
 import { VehicleImage } from "@/components/shared/vehicle-image";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 
+// Swatches preview the physical backdrop the car is composed onto, so they are
+// content colours (like the registration-plate yellow), not UI chrome: they
+// must look the same in light and dark mode, hence the fixed palette values.
 const BACKGROUNDS = [
-  { id: "white", label: "White Studio", swatch: "bg-zinc-50", hint: "seamless white cyclorama" },
-  { id: "grey", label: "Grey Studio", swatch: "bg-zinc-300", hint: "soft grey cyclorama" },
-  { id: "showroom", label: "Showroom Floor", swatch: "bg-amber-100", hint: "polished marble dealership floor with overhead halogen lighting" },
-  { id: "driveway", label: "Outdoor Driveway", swatch: "bg-stone-300", hint: "suburban driveway with brick paving and soft daylight" },
-  { id: "luxury", label: "Luxury Gradient", swatch: "bg-gradient-to-br from-violet-200 to-rose-200", hint: "abstract violet-to-rose gradient" },
-  { id: "sunset", label: "Sunset", swatch: "bg-gradient-to-br from-orange-300 to-rose-400", hint: "dramatic sunset over coastal road" },
-  { id: "mountain", label: "Mountain", swatch: "bg-gradient-to-br from-sky-300 to-emerald-300", hint: "scenic mountain pass at golden hour" },
-  { id: "beach", label: "Beach", swatch: "bg-gradient-to-br from-sky-200 to-amber-100", hint: "sandy beach with calm sea horizon" },
-  { id: "garage", label: "Garage", swatch: "bg-zinc-700", hint: "concrete garage with directional spotlights" },
-  { id: "black", label: "Plain Black", swatch: "bg-black", hint: "infinite black void with rim lighting" },
+  { id: "white", label: "White studio", swatch: "bg-zinc-50", hint: "seamless white cyclorama" }, // audit-ignore: content swatch
+  { id: "grey", label: "Grey studio", swatch: "bg-zinc-300", hint: "soft grey cyclorama" }, // audit-ignore: content swatch
+  { id: "showroom", label: "Showroom floor", swatch: "bg-amber-100", hint: "polished marble dealership floor with overhead halogen lighting" }, // audit-ignore: content swatch
+  { id: "driveway", label: "Outdoor driveway", swatch: "bg-stone-300", hint: "suburban driveway with brick paving and soft daylight" }, // audit-ignore: content swatch
+  { id: "luxury", label: "Luxury gradient", swatch: "bg-gradient-to-br from-violet-200 to-rose-200", hint: "abstract violet-to-rose gradient" }, // audit-ignore: content swatch
+  { id: "sunset", label: "Sunset", swatch: "bg-gradient-to-br from-orange-300 to-rose-400", hint: "dramatic sunset over coastal road" }, // audit-ignore: content swatch
+  { id: "mountain", label: "Mountain", swatch: "bg-gradient-to-br from-sky-300 to-emerald-300", hint: "scenic mountain pass at golden hour" }, // audit-ignore: content swatch
+  { id: "beach", label: "Beach", swatch: "bg-gradient-to-br from-sky-200 to-amber-100", hint: "sandy beach with calm sea horizon" }, // audit-ignore: content swatch
+  { id: "garage", label: "Garage", swatch: "bg-zinc-700", hint: "concrete garage with directional spotlights" }, // audit-ignore: content swatch
+  { id: "black", label: "Plain black", swatch: "bg-black", hint: "infinite black void with rim lighting" }, // audit-ignore: content swatch
 ];
 
 export default function PhotoProcessingPage() {
@@ -138,86 +143,87 @@ export default function PhotoProcessingPage() {
 
 
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-semibold">
-          Photo Processing
-        </h1>
-        <p className="text-[13px] text-muted-foreground">
-          Prepare vehicle photos for advertising. Remove backgrounds, apply
-          backdrops, and generate AI images.
-        </p>
-      </div>
+    <Page
+      title="Photo processing"
+      subtitle="Prepare vehicle photos for advertising. Remove backgrounds, apply backdrops, and generate AI images."
+      fullWidth
+    >
       {!vehicles ? (
-        <Skeleton className="h-72" />
+        <Skeleton className="h-72 rounded-(--radius-300)" />
       ) : vehicles.length === 0 ? (
-        <EmptyState
-          icon={ImageIcon}
-          title="No vehicles in stock"
-          description="Add a vehicle first, then come back here to manage photos."
-        />
+        <Card padding="0">
+          <EmptyState heading="No vehicles in stock" icon="ProductsMinor">
+            Add a vehicle first, then come back here to manage photos.
+          </EmptyState>
+        </Card>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
-          <Card className="flex max-h-[70vh] flex-col gap-1 p-2">
-            <div className="relative shrink-0">
-              <Search className="pointer-events-none absolute left-2 top-1/2 z-10 size-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
+          <Card padding="0" className="max-h-[70vh] gap-1 p-2">
+            <div className="shrink-0">
+              <TextField
+                label="Search vehicles"
+                labelHidden
+                prefix="SearchMinor"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={setQuery}
                 placeholder="Search reg, stock ID or model…"
-                className="h-8 pl-7 text-[13px]"
+                clearButton
+                onClearButtonClick={() => setQuery("")}
               />
             </div>
             <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
-            {shownVehicles.length === 0 && (
-              <p className="px-2 py-3 text-xs text-muted-foreground">
-                No vehicle matches that reg.
-              </p>
-            )}
-            {shownVehicles.map((v) => (
-              <button
-                key={v.id}
-                type="button"
-                onClick={() => {
-                  setSelected(v.id);
-                  setBgRemoved(false);
-                }}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg p-2 text-left transition-colors",
-                  selected === v.id ? "bg-secondary" : "hover:bg-muted",
-                )}
-              >
-                <RegPlate registration={v.registration} size="sm" />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] font-[550]">
-                    {v.make} {v.model}
+              {shownVehicles.length === 0 && (
+                <p className="body-sm px-2 py-3 text-(--text-secondary)">
+                  No vehicle matches that reg.
+                </p>
+              )}
+              {shownVehicles.map((v) => (
+                <button
+                  key={v.id}
+                  type="button"
+                  aria-pressed={selected === v.id}
+                  onClick={() => {
+                    setSelected(v.id);
+                    setBgRemoved(false);
+                  }}
+                  className={cn(
+                    "flex items-center gap-2 rounded-(--radius-200) p-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-(--border-focus)",
+                    selected === v.id
+                      ? "bg-(--bg-surface-selected)"
+                      : "hover:bg-(--bg-surface-hover)",
+                  )}
+                >
+                  <RegPlate registration={v.registration} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <div className="body-md-semibold truncate">
+                      {v.make} {v.model}
+                    </div>
+                    <div className="body-sm text-(--text-secondary)">
+                      {v.imagesCount} photos
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {v.imagesCount} photos
-                  </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              ))}
             </div>
           </Card>
 
-          <Card className="flex flex-col gap-4 p-4">
+          <Card className="gap-4">
             {vehicle && (
               <>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <h3 className="text-sm font-semibold">
+                    <h2 className="heading-sm">
                       {vehicle.make} {vehicle.model}
-                    </h3>
-                    <p className="text-[13px] text-muted-foreground">
+                    </h2>
+                    <p className="body-md text-(--text-secondary)">
                       {vehicle.imagesCount} photos · {vehicle.stockId}
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    {/* v4.1 TC-P2-008/009: Mark Photos Ready transitions
+                    {/* v4.1 TC-P2-008/009: Mark photos ready transitions
                         photos_pending → photos_ready → ready */}
                     <Button
-                      size="sm"
+                      variant="primary"
                       onClick={async () => {
                         if (!user) return;
                         // Both photos_pending and photos_ready advance to
@@ -232,7 +238,7 @@ export default function PhotoProcessingPage() {
                             "ready",
                             user.id,
                           );
-                          toast.success(`${vehicle.registration} marked Ready`);
+                          toast.success(`${vehicle.registration} marked ready`);
                           if (company)
                             setVehicles(
                               await vehicleService.getAll(company.id),
@@ -244,101 +250,108 @@ export default function PhotoProcessingPage() {
                         vehicle.status !== "photos_ready"
                       }
                     >
-                      Mark Photos Ready
+                      Mark photos ready
                     </Button>
-                    <Button asChild size="sm" variant="outline">
-                      <Link href={vehicleDetailHref(vehicle.id, pathname)}>
-                        Open vehicle
-                      </Link>
+                    <Button url={vehicleDetailHref(vehicle.id, pathname)}>
+                      Open vehicle
                     </Button>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      <div className="relative overflow-hidden rounded-lg border">
-                        <VehicleImage
-                          vehicle={vehicle}
-                          variant="card"
-                          className="h-44 rounded-none"
-                        />
-                        <div className="flex items-center justify-between border-t bg-card px-2 py-1.5 text-xs">
-                          <span className="font-medium">Original</span>
-                          <Badge variant="secondary" className="text-xs">
-                            AI hero
-                          </Badge>
-                        </div>
-                      </div>
-                      <ImageTile
-                        label="Processed"
-                        badge={processedUrl ? "BG removed" : "Click to process"}
-                        url={processedUrl}
-                        loading={processedLoading}
-                        fallbackTone="bg-zinc-50"
-                        overlay={
-                          !processedUrl && !processedLoading ? (
-                            <Button size="sm" onClick={handleProcess}>
-                              <Wand2 className="mr-1.5 h-4 w-4" />
-                              Process Background
-                            </Button>
-                          ) : null
-                        }
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="relative overflow-hidden rounded-(--radius-200) border border-(--border)">
+                      <VehicleImage
+                        vehicle={vehicle}
+                        variant="card"
+                        className="h-44 rounded-none"
                       />
-                      <ImageTile
-                        label="Composed"
-                        badge={swatch.label}
-                        url={composedUrl}
-                        loading={composedLoading}
-                        fallbackTone={swatch.swatch}
-                      />
+                      <TileFooter label="Original" badge="AI hero" />
                     </div>
+                    <ImageTile
+                      label="Processed"
+                      badge={processedUrl ? "Background removed" : "Not processed"}
+                      url={processedUrl}
+                      loading={processedLoading}
+                      fallbackTone="bg-(--bg-surface-secondary)"
+                      overlay={
+                        !processedUrl && !processedLoading ? (
+                          <Button icon="WandMinor" onClick={() => void handleProcess()}>
+                            Process background
+                          </Button>
+                        ) : null
+                      }
+                    />
+                    <ImageTile
+                      label="Composed"
+                      badge={swatch.label}
+                      url={composedUrl}
+                      loading={composedLoading}
+                      fallbackTone={swatch.swatch}
+                    />
+                  </div>
 
-                    <div className="flex items-center gap-3">
-                      <Label htmlFor={bgProcessingId} className="text-[13px] font-medium">Background processing</Label>
-                      <Switch
-                        id={bgProcessingId}
-                        checked={bgRemoved}
-                        onCheckedChange={setBgRemoved}
-                      />
-                      <span className="text-xs text-muted-foreground">
-                        {bgRemoved ? "On" : "Off"}
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor={bgProcessingId} className="body-md">
+                      Background processing
+                    </Label>
+                    <Switch
+                      id={bgProcessingId}
+                      checked={bgRemoved}
+                      onCheckedChange={setBgRemoved}
+                    />
+                    <span className="body-sm text-(--text-secondary)">
+                      {bgRemoved ? "On" : "Off"}
+                    </span>
+                  </div>
 
-                    <div>
-                      <p className="mb-2 block text-[13px] font-medium">
-                        Replacement background
-                      </p>
-                      <div className="grid grid-cols-5 gap-2 sm:grid-cols-10">
-                        {BACKGROUNDS.map((b) => (
-                          <button
-                            key={b.id}
-                            type="button"
-                            onClick={() => setBg(b.id)}
+                  <div>
+                    <p className="body-md-semibold mb-2">
+                      Replacement background
+                    </p>
+                    <div className="grid grid-cols-5 gap-2 sm:grid-cols-10">
+                      {BACKGROUNDS.map((b) => (
+                        <button
+                          key={b.id}
+                          type="button"
+                          aria-pressed={bg === b.id}
+                          onClick={() => setBg(b.id)}
+                          className={cn(
+                            "body-sm flex flex-col items-center gap-1 rounded-(--radius-200) p-1 transition focus-visible:outline-2 focus-visible:outline-(--border-focus)",
+                            bg === b.id
+                              ? "ring-2 ring-(--border-emphasis)"
+                              : "ring-1 ring-(--border) hover:ring-(--border-hover)",
+                          )}
+                          title={b.label}
+                        >
+                          <span
                             className={cn(
-                              "flex flex-col items-center gap-1 rounded-lg p-1 text-xs transition",
-                              bg === b.id
-                                ? "ring-2 ring-foreground"
-                                : "ring-1 ring-border hover:ring-foreground/40",
+                              "h-12 w-full rounded-(--radius-100)",
+                              b.swatch,
                             )}
-                            title={b.label}
-                          >
-                            <span
-                              className={cn("h-12 w-full rounded", b.swatch)}
-                            />
-                            <span className="line-clamp-1 text-center">
-                              {b.label}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
+                          />
+                          <span className="line-clamp-1 text-center">
+                            {b.label}
+                          </span>
+                        </button>
+                      ))}
                     </div>
+                  </div>
                 </div>
               </>
             )}
           </Card>
         </div>
       )}
+    </Page>
+  );
+}
+
+function TileFooter({ label, badge }: { label: string; badge: string }) {
+  return (
+    <div className="flex items-center justify-between gap-2 border-t border-(--border) bg-(--bg-surface) px-2 py-1.5">
+      <span className="body-sm-semibold">{label}</span>
+      <Badge>{badge}</Badge>
     </div>
   );
 }
@@ -359,7 +372,7 @@ function ImageTile({
   overlay?: React.ReactNode;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-lg border">
+    <div className="relative overflow-hidden rounded-(--radius-200) border border-(--border)">
       <div
         className={cn(
           "relative flex h-44 w-full items-center justify-center",
@@ -374,27 +387,22 @@ function ImageTile({
             className="h-full w-full object-cover"
           />
         ) : !loading ? (
-          <ImageIcon className="h-10 w-10 text-zinc-400" />
+          <ImageIcon className="h-10 w-10 text-(--icon-secondary)" />
         ) : null}
         {loading && <Skeleton className="absolute inset-0 h-full w-full rounded-none" />}
         {overlay && !loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/0 backdrop-blur-[1px]">
+          <div className="absolute inset-0 flex items-center justify-center backdrop-blur-[1px]">
             {overlay}
           </div>
         )}
         {loading && (
-          <span className="absolute bottom-1 right-1 inline-flex items-center gap-1 rounded bg-background/80 px-1.5 py-0.5 text-xs text-muted-foreground backdrop-blur">
+          <span className="body-sm absolute bottom-1 right-1 inline-flex items-center gap-1 rounded-(--radius-100) bg-(--bg-surface)/80 px-1.5 py-0.5 text-(--text-secondary) backdrop-blur">
             <Loader2 className="h-2.5 w-2.5 animate-spin" />
             Generating
           </span>
         )}
       </div>
-      <div className="flex items-center justify-between border-t bg-card px-2 py-1.5 text-xs">
-        <span className="font-medium">{label}</span>
-        <Badge variant="secondary" className="text-xs">
-          {badge}
-        </Badge>
-      </div>
+      <TileFooter label={label} badge={badge} />
     </div>
   );
 }

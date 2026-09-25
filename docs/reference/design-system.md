@@ -47,7 +47,7 @@ The page-level grid is modelled on MongoDB's LeafyGreen design system, adapted f
 | Cap | Width | When to use | How to set |
 |---|---|---|---|
 | Default | 1152px | Forms, dashboards, anything with paragraphs or single-column reading | Wrapped automatically by the dashboard layout |
-| Wide | 1400px | Master Sheet, wide data tables, side-by-side comparisons | Page returns `<PageShell wide>{…}</PageShell>` |
+| Wide | 1400px | Master Sheet, wide data tables, side-by-side comparisons | Polaris `<Page fullWidth>` |
 
 ### Breakpoint regimes
 
@@ -62,10 +62,9 @@ The page-level grid is modelled on MongoDB's LeafyGreen design system, adapted f
 
 | File | Role |
 |---|---|
-| `src/components/layout/page-shell.tsx` | `<PageShell>` (default + wide) wrapper, `<PageGrid>` 12-col primitive |
 | `src/components/layout/grid-overlay.tsx` | `<GridOverlay>` — dev-only column + 4px baseline overlay gated on `?grid=1` |
 | `src/app/globals.css` | Design tokens: `--container-content`, `--container-page`, `--grid-*-cols`, `--grid-*-gutter`, `--grid-*-margin`, `--spacing-22` (88px) |
-| `src/app/(dashboard)/layout.tsx` | Wraps every route's `{children}` in `<PageShell>` and renders the overlay |
+| `src/app/(dashboard)/layout.tsx` | Renders the Polaris shell (`NextAdminShell`: Frame + TopBar + Navigation) and the overlay; a route without a Polaris `Page` gets 24px padding from the shell |
 
 ### Column-span patterns
 
@@ -75,7 +74,7 @@ Six recommended patterns for `<PageGrid>` consumers (verbatim from the build pla
 2. **KPI tile row** — `col-span-4 sm:col-span-4 lg:col-span-2` per tile (6-up on desktop)
 3. **Content + side panel** — `col-span-4 sm:col-span-8 lg:col-span-8` + `col-span-4 sm:col-span-8 lg:col-span-4`
 4. **Two equal-weight cards** — `col-span-4 sm:col-span-8 lg:col-span-8` + `col-span-4 sm:col-span-8 lg:col-span-4`
-5. **Wide data table** — return `<PageShell wide>{table}</PageShell>` (no PageGrid)
+5. **Wide data table** — `<Page fullWidth>{table}</Page>` (no PageGrid)
 6. **Long-form reading column** — `col-span-4 sm:col-span-8 lg:col-span-8 lg:col-start-3` (centred 8 cols)
 
 When in doubt: reach for one of these before inventing a new `grid-cols-N`.

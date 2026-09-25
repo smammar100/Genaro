@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useId, useMemo, useState } from "react";
-import { Loader2, RefreshCw, Copy, Search, UserPlus } from "lucide-react";
+import { RefreshCw, Copy, Search, UserPlus } from "lucide-react";
+import { Banner } from "@/components/polaris";
 import {
   Dialog,
   DialogContent,
@@ -184,7 +185,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
               <DialogTitle className="text-sm font-semibold">
                 Add staff member
               </DialogTitle>
-              <p className="truncate text-xs font-normal text-muted-foreground">
+              <p className="truncate text-xs font-normal text-(--text-secondary)">
                 Username login, no email needed
               </p>
             </div>
@@ -193,66 +194,65 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
 
         {created ? (
           <div className="p-5">
-            <div
-              className="rounded-md border bg-emerald-50 p-4 text-sm dark:bg-emerald-950/20"
-              data-testid="add-staff-creds"
-            >
-              <p className="font-medium text-emerald-800 dark:text-emerald-300">
-                Staff login created, relay these credentials
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Send these to the staff member (WhatsApp / phone / in person).
-                They&apos;ll set their own password on first login.
-              </p>
-              <div className="mt-3 grid gap-1.5 font-mono text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Username: </span>
-                  <span className="min-w-0 flex-1 truncate">
-                    {created.username}
-                  </span>
+            <div data-testid="add-staff-creds">
+              <Banner
+                tone="success"
+                title="Staff login created, relay these credentials"
+              >
+                <p className="text-xs text-(--text-secondary)">
+                  Send these to the staff member (WhatsApp / phone / in person).
+                  They&apos;ll set their own password on first login.
+                </p>
+                <div className="mt-3 grid gap-1.5 font-mono text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-(--text-secondary)">Username: </span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {created.username}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Copy username"
+                      onClick={() => void copyField("Username", created.username)}
+                      data-testid="add-staff-copy-username-only"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-(--text-secondary)">Password: </span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {created.password}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Copy password"
+                      onClick={() => void copyField("Password", created.password)}
+                      data-testid="add-staff-copy-password-only"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-2">
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Copy username"
-                    onClick={() => void copyField("Username", created.username)}
-                    data-testid="add-staff-copy-username-only"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void copyCreds()}
+                    data-testid="add-staff-copy"
                   >
-                    <Copy className="h-3.5 w-3.5" />
+                    <Copy className="mr-1.5 h-3.5 w-3.5" />
+                    Copy credentials
+                  </Button>
+                  <Button type="button" size="sm" onClick={() => onOpenChange(false)}>
+                    Done
                   </Button>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Password: </span>
-                  <span className="min-w-0 flex-1 truncate">
-                    {created.password}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Copy password"
-                    onClick={() => void copyField("Password", created.password)}
-                    data-testid="add-staff-copy-password-only"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-              <div className="mt-3 flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => void copyCreds()}
-                  data-testid="add-staff-copy"
-                >
-                  <Copy className="mr-1.5 h-3.5 w-3.5" />
-                  Copy
-                </Button>
-                <Button type="button" size="sm" onClick={() => onOpenChange(false)}>
-                  Done
-                </Button>
-              </div>
+              </Banner>
             </div>
           </div>
         ) : (
@@ -285,7 +285,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                     placeholder="ahmed.khan"
                     data-testid="add-staff-username"
                   />
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 text-xs text-(--text-secondary)">
                     {username && !usernameOk
                       ? "3–32 chars: lowercase letters, numbers, dot, underscore or hyphen (start & end alphanumeric)."
                       : "Staff log in with this username + the password below. No email needed."}
@@ -321,7 +321,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                       <RefreshCw className="h-3.5 w-3.5" />
                     </Button>
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 text-xs text-(--text-secondary)">
                     Auto-generated. The staff member is forced to set their own
                     on first login.
                   </p>
@@ -332,7 +332,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
               <div className="flex min-h-0 flex-col">
                 <div className="flex items-center gap-2 border-b px-4 py-2.5">
                   <div className="relative min-w-0 flex-1">
-                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-(--text-secondary)" />
                     <Input
                       className="h-8 pl-8"
                       placeholder="Search views…"
@@ -342,40 +342,42 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                     />
                   </div>
                   <span
-                    className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-2xs font-medium tabular-nums text-muted-foreground"
+                    className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-2xs font-medium tabular-nums text-(--text-secondary)"
                     data-testid="add-staff-selected-count"
                   >
                     {caps.size}/{ALL_CAPABILITIES.length}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 border-b px-4 py-1.5">
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-(--text-secondary)">
                     Tick the views this staff member can access. No roles.
                   </span>
                   <div className="ml-auto flex shrink-0 gap-2">
-                    <button
-                      type="button"
+                    <Button
+                      variant="link"
+                      size="xs"
                       onClick={() => setCaps(new Set<Capability>(ALL_CAPABILITIES))}
-                      className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                      className="text-(--text-secondary) underline-offset-2 hover:text-(--text)"
                       data-testid="add-staff-select-all"
                     >
                       Select all
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      variant="link"
+                      size="xs"
                       onClick={() => setCaps(new Set<Capability>())}
-                      className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                      className="text-(--text-secondary) underline-offset-2 hover:text-(--text)"
                       data-testid="add-staff-clear"
                     >
                       Clear
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto p-2 max-sm:max-h-64">
                   {filtered.map((cap) => (
                     <label
                       key={cap}
-                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-[#f7f7f7]"
+                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-(--bg-surface-hover)"
                     >
                       <Checkbox
                         checked={caps.has(cap)}
@@ -386,7 +388,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                     </label>
                   ))}
                   {filtered.length === 0 && (
-                    <p className="px-2 py-2 text-xs text-muted-foreground">
+                    <p className="px-2 py-2 text-xs text-(--text-secondary)">
                       No views match “{search}”.
                     </p>
                   )}
@@ -396,7 +398,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
 
             <div className="flex items-center justify-between gap-3 border-t px-5 py-3.5">
               {error ? (
-                <p className="text-sm text-destructive" data-testid="add-staff-error">
+                <p className="text-sm text-(--text-critical)" data-testid="add-staff-error">
                   {error}
                 </p>
               ) : (
@@ -412,10 +414,10 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                 </Button>
                 <Button
                   onClick={() => void handleCreate()}
+                  loading={submitting}
                   disabled={!canSubmit}
                   data-testid="add-staff-submit"
                 >
-                  {submitting && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
                   Create staff login
                 </Button>
               </div>

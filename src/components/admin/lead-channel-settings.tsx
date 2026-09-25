@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Loader2, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { leadChannelService } from "@/lib/services/lead-channel-service";
 import type { LeadChannel } from "@/lib/types";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Badge,
+  Button,
+  Card,
+  Layout,
+  SkeletonBodyText,
+  TextField,
+} from "@/components/polaris";
+import { CommitTextField } from "@/components/admin/commit-text-field";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 
@@ -23,6 +25,9 @@ function slugify(label: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 48);
 }
+
+const DESCRIPTION =
+  "Where your enquiries come from: the options on the Create Lead form, in this order. Hiding a channel keeps it off new leads without changing the ones already recorded against it.";
 
 /**
  * Settings > Lead Channels (GEN-117).
@@ -124,107 +129,99 @@ export function LeadChannelSettings() {
     }, "Channel added");
   }
 
-  if (!channels) return <Skeleton className="h-64" />;
+  if (!channels) {
+    return (
+      <Layout>
+        <Layout.AnnotatedSection title="Lead channels" description={DESCRIPTION}>
+          <Card>
+            <SkeletonBodyText lines={6} />
+          </Card>
+        </Layout.AnnotatedSection>
+      </Layout>
+    );
+  }
 
   return (
-    <Card className="flex flex-col gap-4 p-5">
-      <div>
-        <h3 className="text-sm font-semibold">Lead channels</h3>
-        <p className="text-sm text-muted-foreground">
-          Where your enquiries come from. These are the options on the Create
-          Lead form, in the order shown here. Hiding a channel keeps it off new
-          leads without changing the ones already recorded against it.
-        </p>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        {channels.map((channel, i) => (
-          <div
-            key={channel.id}
-            className={cn(
-              "flex items-center gap-2 rounded-lg border bg-background p-2",
-              !channel.enabled && "opacity-64",
-            )}
-          >
-            <div className="flex flex-col">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                aria-label="Move up"
-                disabled={busy || i === 0}
-                onClick={() => handleMove(i, -1)}
+    <Layout>
+      <Layout.AnnotatedSection title="Lead channels" description={DESCRIPTION}>
+        <Card padding="0">
+          <ul className="divide-y divide-(--border-secondary)">
+            {channels.map((channel, i) => (
+              <li
+                key={channel.id}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2",
+                  !channel.enabled && "bg-(--bg-surface-secondary)",
+                )}
               >
-                <ArrowUp className="size-3.5" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                aria-label="Move down"
-                disabled={busy || i === channels.length - 1}
-                onClick={() => handleMove(i, 1)}
-              >
-                <ArrowDown className="size-3.5" />
-              </Button>
-            </div>
+                <span className="flex shrink-0 flex-col">
+                  <Button
+                    variant="tertiary"
+                    size="micro"
+                    icon="ChevronUpMinor"
+                    accessibilityLabel="Move up"
+                    disabled={busy || i === 0}
+                    onClick={() => handleMove(i, -1)}
+                  />
+                  <Button
+                    variant="tertiary"
+                    size="micro"
+                    icon="ChevronDownMinor"
+                    accessibilityLabel="Move down"
+                    disabled={busy || i === channels.length - 1}
+                    onClick={() => handleMove(i, 1)}
+                  />
+                </span>
 
-            <Input
+                <CommitTextField
+                  value={channel.label}
+                  label={`Rename ${channel.label}`}
+                  disabled={busy}
+                  onCommit={(label) => handleRename(channel, label)}
+                />
+
+                {channel.isSystem ? <Badge>Built in</Badge> : null}
+                {!channel.enabled ? <Badge tone="attention">Hidden</Badge> : null}
+
+                <Button
+                  size="micro"
+                  disabled={busy}
+                  onClick={() => handleToggle(channel, !channel.enabled)}
+                  accessibilityLabel={`${channel.enabled ? "Hide" : "Show"} ${channel.label}`}
+                >
+                  {channel.enabled ? "Hide" : "Show"}
+                </Button>
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex items-end gap-2 border-t border-(--border-secondary) p-4">
+            {/* Enter adds: TextField has no key handler, so listen on the wrapper. */}
+            <div
               className="min-w-0 flex-1"
-              defaultValue={channel.label}
-              aria-label={`Rename ${channel.label}`}
-              disabled={busy}
-              onBlur={(e) => handleRename(channel, e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") e.currentTarget.blur();
+                if (e.key === "Enter") handleAdd();
               }}
-            />
-
-            {channel.isSystem ? (
-              <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-2xs text-muted-foreground">
-                Built in
-              </span>
-            ) : null}
-
-            <label className="flex shrink-0 items-center gap-2 text-sm">
-              <Switch
-                checked={channel.enabled}
+            >
+              <TextField
+                id="new-lead-channel"
+                label="Add a channel"
+                placeholder="Facebook Marketplace"
+                value={newLabel}
                 disabled={busy}
-                onCheckedChange={(v) => handleToggle(channel, v === true)}
-                aria-label={`${channel.enabled ? "Hide" : "Show"} ${channel.label}`}
+                onChange={setNewLabel}
               />
-              <span className="text-muted-foreground">
-                {channel.enabled ? "Shown" : "Hidden"}
-              </span>
-            </label>
+            </div>
+            <Button
+              icon="PlusMinor"
+              disabled={busy || !newLabel.trim()}
+              onClick={handleAdd}
+            >
+              Add channel
+            </Button>
           </div>
-        ))}
-      </div>
-
-      <div className="flex items-end gap-2 border-t pt-4">
-        <div className="min-w-0 flex-1">
-          <Label htmlFor="new-lead-channel">Add a channel</Label>
-          <Input
-            id="new-lead-channel"
-            className="mt-1.5"
-            placeholder="Facebook Marketplace"
-            value={newLabel}
-            disabled={busy}
-            onChange={(e) => setNewLabel(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleAdd();
-            }}
-          />
-        </div>
-        <Button type="button" disabled={busy || !newLabel.trim()} onClick={handleAdd}>
-          {busy ? (
-            <Loader2 className="mr-1.5 size-3.5 animate-spin" />
-          ) : (
-            <Plus className="mr-1.5 size-3.5" />
-          )}
-          Add
-        </Button>
-      </div>
-    </Card>
+        </Card>
+      </Layout.AnnotatedSection>
+    </Layout>
   );
 }

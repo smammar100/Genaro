@@ -2,22 +2,20 @@
 
 import * as React from "react";
 import { useState } from "react";
-import { RefreshCw, ShieldCheck } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { RefreshCw } from "lucide-react";
+import { Badge, Button, Card, type BadgeTone } from "@/components/polaris";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { cn, formatDate } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
+import { formatDate } from "@/lib/utils";
 
 /**
  * ComplianceCard — read-only summary of the DVLA + DVSA fields the
  * /api/vehicle/lookup route returns. Lives between sections 3 (Documentation)
  * and 4 (Purchase Cost) on the Add Vehicle form.
  *
- * Each datum has a small Edit pencil that flips the cell into an Input so
- * Ali can override DVLA-incorrect data (e.g. taxStatus stale by a few
- * days). On blur the override propagates back to the parent via the
- * `onChange` callback.
+ * Each datum is an always-on input so Ali can override DVLA-incorrect data
+ * (e.g. taxStatus stale by a few days). On blur the override propagates back
+ * to the parent via the `onChange` callback.
  *
  * The card never throws — every value can be `null`. Missing values render
  * as "—" (em-dash) rather than empty space.
@@ -71,42 +69,21 @@ export function ComplianceCard({
   motSource,
 }: Props) {
   return (
-    <Card className="flex flex-col gap-3 p-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 text-sm font-semibold">
-          <ShieldCheck className="size-4 text-[#014b40]" />
-          Compliance &amp; Verification
-        </h2>
-        <div className="flex items-center gap-2">
-          {sources ? (
-            <span className="text-[13px] font-medium text-muted-foreground">
-              DVLA {sources.dvla === "ok" ? "✓" : "✗"} · DVSA{" "}
-              {sources.dvsa === "ok" ? "✓" : sources.dvsa === "missing_credentials" ? "—" : "✗"}{" "}
-              · AT{" "}
-              {sources.autotrader === "ok"
-                ? "✓"
-                : sources.autotrader === "missing_credentials"
-                  ? "—"
-                  : "✗"}
-            </span>
-          ) : null}
-          {onRefetch ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={onRefetch}
-              disabled={refetching}
-            >
-              <RefreshCw
-                className={cn("mr-1 size-3.5", refetching && "animate-spin")}
-              />
-              Re-fetch
-            </Button>
-          ) : null}
-        </div>
-      </div>
-
+    <Card
+      title="Compliance and verification"
+      actions={
+        onRefetch ? (
+          <Button
+            size="micro"
+            icon={<RefreshCw />}
+            onClick={onRefetch}
+            loading={refetching}
+          >
+            Re-fetch
+          </Button>
+        ) : null
+      }
+    >
       {/* Status badges — Tax + MOT, full-width row */}
       <div className="grid gap-3 sm:grid-cols-2">
         <StatusTile
@@ -138,7 +115,7 @@ export function ComplianceCard({
           sections above and below (was 3-col on lg, which looked inconsistent). */}
       <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
         <EditableField
-          label="Registration Date"
+          label="Registration date"
           value={value.registrationDate}
           type="date"
           onCommit={(v) => onChange({ registrationDate: v })}
@@ -155,7 +132,7 @@ export function ComplianceCard({
           }
         />
         <EditableField
-          label="Euro Status"
+          label="Euro status"
           value={value.euroStatus}
           type="text"
           onCommit={(v) => onChange({ euroStatus: v })}
@@ -167,7 +144,7 @@ export function ComplianceCard({
           onCommit={(v) => onChange({ wheelplan: v })}
         />
         <EditableField
-          label="Automated Vehicle"
+          label="Automated vehicle"
           value={
             value.automatedVehicle == null
               ? null
@@ -181,22 +158,34 @@ export function ComplianceCard({
           }
         />
         <EditableField
-          label="Last V5C Issued"
+          label="Last V5C issued"
           value={value.dateOfLastV5CIssued}
           type="date"
           onCommit={(v) => onChange({ dateOfLastV5CIssued: v })}
         />
       </div>
 
-      {verifiedAt ? (
-        <p className="text-xs text-muted-foreground">
-          Verified by DVLA + DVSA at {verifiedAt.toLocaleTimeString()}.
-        </p>
-      ) : (
-        <p className="text-xs italic text-muted-foreground">
-          Enter a registration above and click DVLA to populate.
-        </p>
-      )}
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-(--text-secondary)">
+        {verifiedAt ? (
+          <p>Verified by DVLA + DVSA at {verifiedAt.toLocaleTimeString()}.</p>
+        ) : (
+          <p className="italic">
+            Enter a registration above and click Fetch DVLA to populate.
+          </p>
+        )}
+        {sources ? (
+          <p className="font-medium">
+            DVLA {sources.dvla === "ok" ? "✓" : "✗"} · DVSA{" "}
+            {sources.dvsa === "ok" ? "✓" : sources.dvsa === "missing_credentials" ? "—" : "✗"}{" "}
+            · AT{" "}
+            {sources.autotrader === "ok"
+              ? "✓"
+              : sources.autotrader === "missing_credentials"
+                ? "—"
+                : "✗"}
+          </p>
+        ) : null}
+      </div>
     </Card>
   );
 }
@@ -245,21 +234,15 @@ function StatusTile({
   tone: Tone;
   subtitle: string;
 }) {
-  const badgeClass =
-    tone === "good"
-      ? "border-transparent bg-[#affebf] text-[#014b40]"
-      : tone === "bad"
-        ? "border-transparent bg-[#fed1d7] text-[#8e0b21]"
-        : "border-transparent bg-muted text-muted-foreground";
+  const badgeTone: BadgeTone | undefined =
+    tone === "good" ? "success" : tone === "bad" ? "critical" : undefined;
   return (
-    <div className="flex items-center justify-between gap-3 rounded-md border bg-card px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-(--radius-200) border border-(--border) px-3 py-2">
       <div>
-        <div className="text-[13px] font-medium text-muted-foreground">
-          {label}
-        </div>
-        <div className="mt-0.5 text-xs text-muted-foreground">{subtitle}</div>
+        <div className="text-sm font-medium text-(--text-secondary)">{label}</div>
+        <div className="mt-0.5 text-xs text-(--text-secondary)">{subtitle}</div>
       </div>
-      <Badge className={cn("text-xs", badgeClass)}>{status ?? "—"}</Badge>
+      <Badge tone={badgeTone}>{status ?? "—"}</Badge>
     </div>
   );
 }
@@ -280,6 +263,7 @@ function EditableField({
   // or sibling override updates the field. Date inputs commit on change
   // (single interaction); text/number commit on blur so typing isn't cut off.
   const [draft, setDraft] = useState(value ?? "");
+  const id = React.useId();
 
   /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
@@ -292,11 +276,12 @@ function EditableField({
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-[13px] font-medium text-muted-foreground">
+    <div className="flex flex-col gap-1">
+      <Label htmlFor={id} className="text-(--text-secondary)">
         {label}
-      </label>
+      </Label>
       <Input
+        id={id}
         type={type}
         value={draft}
         onChange={(e) => {

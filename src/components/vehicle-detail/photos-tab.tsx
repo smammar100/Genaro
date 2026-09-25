@@ -1,24 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  Check,
-  ImagePlus,
-  Images,
-  Loader2,
-  Plus,
-  Star,
-  Trash2,
-  Upload,
-  X,
-} from "lucide-react";
+import { Check, ImagePlus, Images, Star, Upload } from "lucide-react";
 import { toast } from "@/lib/toast";
 import type { Vehicle } from "@/lib/types";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import { DragHandle } from "@/components/shared/drag-handle";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge, Button, EmptyState } from "@/components/polaris";
 import {
   Dialog,
   DialogContent,
@@ -305,60 +295,61 @@ export function PhotosTab({ vehicle, onVehicleRefetch }: PhotosTabProps) {
         subtitle="Upload real photos of this vehicle, stored securely and ready for the listing."
         action={
           <Button
-            size="sm"
-            disabled={uploading}
+            icon={<Upload />}
+            loading={uploading}
             onClick={() => fileInputRef.current?.click()}
           >
-            {uploading ? (
-              <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Upload className="mr-1 h-3.5 w-3.5" />
-            )}
-            Upload
+            Upload photos
           </Button>
         }
         flush
       >
         {/* Select toolbar */}
-        <div className="flex flex-wrap items-center gap-2 border-y bg-muted/30 px-4 py-2 text-sm">
+        <div className="flex min-h-11 flex-wrap items-center gap-2 border-y border-(--border-secondary) bg-(--bg-surface-secondary) px-4 py-2 body-md">
           {hasSel ? (
             <>
-              <span className="font-medium">{sel.size} selected</span>
+              <span className="body-md-semibold">{sel.size} selected</span>
               {sel.size === 1 && (
-                <button
-                  className="ml-2 inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                <Button
+                  variant="tertiary"
+                  size="micro"
+                  icon={<Star />}
                   onClick={() => {
                     const p = photoById([...sel][0]);
                     if (p) void handleSetCover(p);
                     setSel(new Set());
                   }}
                 >
-                  <Star className="size-3.5" /> Set as cover
-                </button>
+                  Set as cover
+                </Button>
               )}
-              <button
-                className="inline-flex items-center gap-1 text-destructive hover:opacity-80"
+              <Button
+                variant="tertiary"
+                size="micro"
+                tone="critical"
+                icon="DeleteMinor"
                 onClick={() => void removeMany([...sel])}
               >
-                <Trash2 className="size-3.5" /> Delete
-              </button>
-              <button
-                className="ml-auto text-xs text-muted-foreground hover:text-foreground"
-                onClick={() => setSel(new Set())}
-              >
-                Clear
-              </button>
+                Delete
+              </Button>
+              <span className="ml-auto">
+                <Button variant="plain" onClick={() => setSel(new Set())}>
+                  Clear
+                </Button>
+              </span>
             </>
           ) : (
             <>
-              <button
-                className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground disabled:opacity-50"
+              <Button
+                variant="tertiary"
+                size="micro"
+                icon={<Check />}
                 disabled={count === 0}
                 onClick={() => setSel(new Set((photos ?? []).map((p) => p.id)))}
               >
-                <Check className="size-3.5" /> Select all
-              </button>
-              <span className="text-muted-foreground">
+                Select all
+              </Button>
+              <span className="text-(--text-secondary)">
                 · hover to tick / set cover / delete · drag to reorder
               </span>
             </>
@@ -379,29 +370,34 @@ export function PhotosTab({ vehicle, onVehicleRefetch }: PhotosTabProps) {
             setDragging(false);
             void handleFiles(e.dataTransfer.files);
           }}
-          className={cn("p-4", dragging && "rounded-md ring-2 ring-primary ring-offset-2")}
+          className={cn(
+            "p-4",
+            dragging && "rounded-(--radius-200) ring-2 ring-(--border-emphasis) ring-offset-2",
+          )}
         >
           {photos === null ? (
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-8">
+            <div className="grid grid-cols-3 gap-2 @md:grid-cols-5 @3xl:grid-cols-8">
               {Array.from({ length: 8 }).map((_, i) => (
                 <Skeleton key={i} className="aspect-[4/3] w-full rounded-md" />
               ))}
             </div>
           ) : photos.length === 0 ? (
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed py-12 text-sm text-muted-foreground transition hover:bg-muted/40"
+            // Already inside the panel's card, so the empty state drops its
+            // own card chrome; the dashed edge marks the drop target.
+            <EmptyState
+              icon={<ImagePlus />}
+              heading="No photos yet"
+              action={{
+                content: "Upload photos",
+                onAction: () => fileInputRef.current?.click(),
+              }}
+              footerContent="JPG, PNG or WebP · up to 15 MB each"
+              className="rounded-(--radius-300) border border-dashed border-(--border) bg-transparent py-12 shadow-none"
             >
-              <ImagePlus className="h-6 w-6" />
-              <span>
-                Drag photos here or{" "}
-                <span className="font-medium text-foreground">click to upload</span>
-              </span>
-              <span className="text-xs">JPG, PNG or WebP · up to 15 MB each</span>
-            </button>
+              Drag photos here, or upload them from your device.
+            </EmptyState>
           ) : (
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-8">
+            <div className="grid grid-cols-3 gap-2 @md:grid-cols-5 @3xl:grid-cols-8">
               {photos.map((p) => {
                 const isCover = p.url === coverUrl;
                 const isSel = sel.has(p.id);
@@ -431,20 +427,19 @@ export function PhotosTab({ vehicle, onVehicleRefetch }: PhotosTabProps) {
                     }}
                     className={cn(
                       // The photo fills this tile edge-to-edge, so the tile's
-                      // own line IS the image's edge treatment: pure black/white
-                      // at 10%, not the tinted --border token. Drawn as an
+                      // own line IS the image's edge treatment. Drawn as an
                       // inset outline rather than a ring so it can't collide
-                      // with the ring-2 ring-primary selection state below.
-                      "group/card group relative aspect-[4/3] cursor-grab overflow-hidden rounded-lg bg-muted outline-1 -outline-offset-1 outline-black/10 active:cursor-grabbing dark:outline-white/10",
-                      isSel && "ring-2 ring-primary ring-offset-1",
+                      // with the ring-2 selection state below.
+                      "group/card group relative aspect-[4/3] cursor-grab overflow-hidden rounded-(--radius-200) bg-(--bg-surface-secondary) outline-1 -outline-offset-1 outline-(--border-secondary) active:cursor-grabbing",
+                      isSel && "ring-2 ring-(--border-emphasis) ring-offset-1",
                       dragId === p.id && "opacity-40",
-                      overId === p.id && "ring-2 ring-primary",
+                      overId === p.id && "ring-2 ring-(--border-emphasis)",
                     )}
                   >
                     {/* Bottom-left is the only free corner: the Cover badge
                         and select control own the top-left, the hover actions
                         the top-right. */}
-                    <DragHandle className="absolute bottom-1.5 left-1.5 z-10 rounded bg-background/80 p-0.5 text-muted-foreground/70 backdrop-blur-sm" />
+                    <DragHandle className="absolute bottom-1.5 left-1.5 z-10 rounded-(--radius-100) bg-(--bg-surface) p-0.5 text-(--icon-secondary) shadow-(--shadow-100)" />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={p.url}
@@ -453,18 +448,23 @@ export function PhotosTab({ vehicle, onVehicleRefetch }: PhotosTabProps) {
                       loading="lazy"
                     />
                     {isCover && (
-                      <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-full bg-background/90 px-2 py-0.5 text-2xs font-medium shadow-sm">
-                        <Star className="size-3 fill-amber-400 text-amber-400" /> Cover
+                      <span className="absolute left-1.5 top-1.5 rounded-full shadow-(--shadow-100)">
+                        <Badge
+                          tone="attention"
+                          icon={<Star className="fill-current" />}
+                        >
+                          Cover
+                        </Badge>
                       </span>
                     )}
                     <button
                       onClick={() => toggleSel(p.id)}
                       className={cn(
-                        "absolute left-1.5 top-1.5 grid size-5 place-items-center rounded-full border bg-background/90 shadow-sm",
+                        "absolute left-1.5 top-1.5 grid size-5 place-items-center rounded-full border shadow-(--shadow-100)",
                         isCover && "left-auto right-9",
                         isSel
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border opacity-0 group-hover:opacity-100",
+                          ? "border-(--bg-fill-brand) bg-(--bg-fill-brand) text-(--text-brand-on-bg-fill)"
+                          : "border-(--border) bg-(--bg-surface) opacity-0 group-hover:opacity-100",
                       )}
                       aria-label="Select photo"
                     >
@@ -472,34 +472,34 @@ export function PhotosTab({ vehicle, onVehicleRefetch }: PhotosTabProps) {
                     </button>
                     <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition group-hover:opacity-100">
                       {!isCover && (
-                        <button
+                        <Button
+                          size="micro"
+                          icon={<Star />}
+                          accessibilityLabel="Set as cover"
                           onClick={() => void handleSetCover(p)}
-                          title="Set as cover"
-                          className="grid size-7 place-items-center rounded-full bg-background/90 text-foreground shadow-sm hover:bg-background"
-                        >
-                          <Star className="size-3.5" />
-                        </button>
+                        />
                       )}
-                      <button
+                      <Button
+                        size="micro"
+                        tone="critical"
+                        icon="DeleteMinor"
+                        accessibilityLabel="Delete"
                         onClick={() => void removeMany([p.id])}
-                        title="Delete"
-                        className="grid size-7 place-items-center rounded-full bg-background/90 text-destructive shadow-sm hover:bg-background"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
+                      />
                     </div>
                   </div>
                 );
               })}
               {/* Always-visible add/drop tile for bulk upload */}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex aspect-[4/3] flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-xs text-muted-foreground transition hover:bg-muted/40"
-              >
-                <ImagePlus className="size-5" />
-                Add photos
-              </button>
+              <div className="flex aspect-[4/3] items-center justify-center rounded-(--radius-200) border border-dashed border-(--border)">
+                <Button
+                  variant="plain"
+                  icon={<ImagePlus />}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Add photos
+                </Button>
+              </div>
             </div>
           )}
         </div>
@@ -509,17 +509,17 @@ export function PhotosTab({ vehicle, onVehicleRefetch }: PhotosTabProps) {
       <Panel
         title={
           <span className="flex items-center gap-2">
-            <Images className="size-4 text-muted-foreground" /> Vehicle angles
+            <Images className="size-4 text-(--icon-secondary)" /> Vehicle angles
           </span>
         }
         subtitle="Tag your uploaded photos by angle for the listing. Choose any uploaded photo for each slot."
       >
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 @md:grid-cols-3 @3xl:grid-cols-6">
           {ANGLES.map((a) => {
             const p = anglePhoto(a.key);
             return (
               <div key={a.key} className="flex flex-col gap-2">
-                <div className="group relative aspect-[4/3] overflow-hidden rounded-lg border bg-muted">
+                <div className="group relative aspect-[4/3] overflow-hidden rounded-(--radius-200) border border-(--border) bg-(--bg-surface-secondary)">
                   {p ? (
                     <>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -530,34 +530,35 @@ export function PhotosTab({ vehicle, onVehicleRefetch }: PhotosTabProps) {
                         loading="lazy"
                       />
                       <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition group-hover:opacity-100">
-                        <button
+                        <Button
+                          size="micro"
+                          icon={<Images />}
+                          accessibilityLabel="Change"
                           onClick={() => setPickerAngle(a.key)}
-                          title="Change"
-                          className="grid size-7 place-items-center rounded-full bg-background/90 shadow-sm hover:bg-background"
-                        >
-                          <Images className="size-3.5" />
-                        </button>
-                        <button
+                        />
+                        <Button
+                          size="micro"
+                          tone="critical"
+                          icon="CancelSmallMinor"
+                          accessibilityLabel="Clear"
                           onClick={() => void clearAngle(a.key)}
-                          title="Clear"
-                          className="grid size-7 place-items-center rounded-full bg-background/90 text-destructive shadow-sm hover:bg-background"
-                        >
-                          <X className="size-3.5" />
-                        </button>
+                        />
                       </div>
                     </>
                   ) : (
-                    <button
-                      onClick={() => setPickerAngle(a.key)}
-                      disabled={count === 0}
-                      className="flex h-full w-full flex-col items-center justify-center gap-1 text-xs text-muted-foreground transition hover:bg-muted/60 disabled:opacity-50"
-                    >
-                      <Plus className="size-4" />
-                      {count === 0 ? "Upload first" : "Choose photo"}
-                    </button>
+                    <div className="flex h-full w-full items-center justify-center">
+                      <Button
+                        variant="plain"
+                        icon="PlusMinor"
+                        onClick={() => setPickerAngle(a.key)}
+                        disabled={count === 0}
+                      >
+                        {count === 0 ? "Upload first" : "Choose photo"}
+                      </Button>
+                    </div>
                   )}
                 </div>
-                <span className="text-xs font-medium">{a.label}</span>
+                <span className="body-sm-semibold">{a.label}</span>
               </div>
             );
           })}
@@ -580,7 +581,7 @@ export function PhotosTab({ vehicle, onVehicleRefetch }: PhotosTabProps) {
           </DialogHeader>
           <DialogPanel>
             {count === 0 ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">
+              <div className="py-8 text-center body-md text-(--text-secondary)">
                 No photos uploaded yet.
               </div>
             ) : (
@@ -591,7 +592,8 @@ export function PhotosTab({ vehicle, onVehicleRefetch }: PhotosTabProps) {
                     onClick={() =>
                       pickerAngle && void assignAngle(pickerAngle, p.id)
                     }
-                    className="group relative aspect-[4/3] overflow-hidden rounded-lg border bg-muted hover:ring-2 hover:ring-primary"
+                    className="group relative aspect-[4/3] overflow-hidden rounded-(--radius-200) border border-(--border) bg-(--bg-surface-secondary) hover:ring-2 hover:ring-(--border-emphasis)"
+
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img

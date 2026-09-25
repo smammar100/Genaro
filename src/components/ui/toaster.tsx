@@ -5,8 +5,8 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Toasts — Shopify admin style: a dark pill at the bottom centre, white
- * 13px text, a close button; errors in critical red. Backed by a tiny
+ * Toasts — the Polaris Toast (`p-toast`): bg-inverse at the bottom centre,
+ * 13px inverse text, a close button; errors on the critical fill. Backed by a tiny
  * store we own end to end; src/lib/toast.ts is the public `toast.*` API.
  */
 type ToastVariant = "default" | "danger";
@@ -78,8 +78,8 @@ export function Toaster(): React.ReactElement {
           key={t.id}
           role={t.variant === "danger" ? "alert" : "status"}
           className={cn(
-            "pointer-events-auto flex max-w-md items-center gap-3 rounded-xl py-2.5 pl-4 pr-2 text-[13px] font-medium leading-5 text-white shadow-lg animate-in fade-in slide-in-from-bottom-2",
-            t.variant === "danger" ? "bg-[#c70a24]" : "bg-[#1a1a1a]",
+            "p-toast pointer-events-auto max-w-md animate-in fade-in slide-in-from-bottom-2",
+            t.variant === "danger" && "p-toast--error",
           )}
         >
           <span className="min-w-0">{t.message}</span>
@@ -87,7 +87,7 @@ export function Toaster(): React.ReactElement {
             type="button"
             onClick={() => removeToast(t.id)}
             aria-label="Dismiss"
-            className="grid size-6 shrink-0 place-items-center rounded-md text-white/70 hover:bg-white/10 hover:text-white"
+            className="p-toast__close grid size-5 shrink-0 place-items-center"
           >
             <X className="size-4" />
           </button>

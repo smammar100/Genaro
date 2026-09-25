@@ -1,21 +1,7 @@
 "use client";
 
-import { MoreHorizontal } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import type * as React from "react";
+import { Badge, Button, IndexTable, Link, Tooltip } from "@/components/polaris";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { StatusPill } from "./status-pill";
 import { ProviderBadge } from "./provider-badge";
@@ -55,7 +41,7 @@ function elapsedPct(startDate: string, endDate: string): number {
   return Math.min(100, Math.max(0, Math.round(((now - s) / (e - s)) * 100)));
 }
 
-/** Active cover ending within 30 days — the amber lane (not yet expired). */
+/** Active cover ending within 30 days — the caution lane (not yet expired). */
 function isExpiring(row: WarrantyRow): boolean {
   const d = daysRemaining(row.endDate);
   return (
@@ -63,20 +49,81 @@ function isExpiring(row: WarrantyRow): boolean {
   );
 }
 
-/** Coverage progress bar: emerald healthy, amber expiring, grey expired. */
+/**
+ * Coverage progress: success fill while healthy, caution when expiring,
+ * disabled grey once expired. Polaris ProgressBar has no caution tone, so
+ * this is the same 8px track drawn from the fill tokens.
+ */
 function CoverageBar({ row }: { row: WarrantyRow }) {
   const tone =
     effectiveWarrantyStatus(row) === "expired"
-      ? "bg-muted-foreground/50"
+      ? "bg-(--bg-fill-disabled)"
       : isExpiring(row)
-        ? "bg-amber-500"
-        : "bg-emerald-500";
+        ? "bg-(--bg-fill-caution)"
+        : "bg-(--bg-fill-success)";
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-(--bg-fill-secondary)">
       <div
         className={cn("h-full rounded-full", tone)}
         style={{ width: `${elapsedPct(row.startDate, row.endDate)}%` }}
       />
+    </div>
+  );
+}
+
+function VehicleCell({ vehicle }: { vehicle: Vehicle | null }) {
+  if (!vehicle) return <span className="text-(--text-secondary)">—</span>;
+  return (
+    <div className="flex items-center gap-2">
+      <RegPlate registration={vehicle.registration} size="sm" />
+      <span className="body-sm text-(--text-secondary)">
+        {vehicle.make} {vehicle.model}
+      </span>
+    </div>
+  );
+}
+
+function CoverageCell({ row }: { row: WarrantyRow }) {
+  return (
+    <div className="flex min-w-40 flex-col gap-1">
+      <CoverageBar row={row} />
+      <span className="body-sm tabular-nums text-(--text-secondary)">
+        {formatDate(row.startDate)} → {formatDate(row.endDate)}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * IndexTable rows only link by `url`; these rows open a sheet instead. The
+ * name in the primary cell is the keyboard route, and a click anywhere else
+ * on the row is delegated here so the whole row stays a target. Clicks on
+ * the row's own buttons and links are left to them.
+ */
+function RowClickArea<T>({
+  rows,
+  onRowClick,
+  children,
+}: {
+  rows: T[];
+  onRowClick?: (row: T) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={onRowClick ? "[&_tbody_tr]:cursor-pointer" : undefined}
+      onClick={(e) => {
+        if (!onRowClick) return;
+        const target = e.target as HTMLElement;
+        if (target.closest("button, a, input, [data-row-action]")) return;
+        const tr = target.closest("tbody tr");
+        if (!tr?.parentElement) return;
+        const index = Array.prototype.indexOf.call(tr.parentElement.children, tr);
+        const row = rows[index];
+        if (row) onRowClick(row);
+      }}
+    >
+      {children}
     </div>
   );
 }
@@ -88,140 +135,131 @@ export function WarrantyTable({
   onFileClaim,
   onMarkPurchased,
 }: WarrantyTableProps) {
+  const headings =
+    variant === "in-house"
+      ? [
+          { title: "Vehicle" },
+          { title: "Customer" },
+          { title: "Coverage period" },
+          { title: "Remaining" },
+          { title: "Claims", alignment: "end" as const },
+          { title: "Status" },
+          { title: "Actions" },
+        ]
+      : [
+          { title: "Vehicle" },
+          { title: "Customer" },
+          { title: "Provider" },
+          { title: "Coverage" },
+          { title: "Purchase" },
+          { title: "Cost", alignment: "end" as const },
+          { title: "Status" },
+          { title: "Actions" },
+        ];
+
   return (
-    <div className="overflow-hidden bg-card">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Vehicle</TableHead>
-            <TableHead>Customer</TableHead>
-            {variant === "in-house" ? (
-              <>
-                <TableHead>Coverage period</TableHead>
-                <TableHead>Remaining</TableHead>
-                <TableHead className="text-center">Claims</TableHead>
-              </>
-            ) : (
-              <>
-                <TableHead>Provider</TableHead>
-                <TableHead>Coverage</TableHead>
-                <TableHead>Purchase</TableHead>
-                <TableHead className="text-right">Cost</TableHead>
-              </>
-            )}
-            <TableHead>Status</TableHead>
-            <TableHead className="w-12"> </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row) => (
-            <TableRow
-              key={row.id}
-              onClick={(e) => {
-                if ((e.target as HTMLElement).closest("[data-row-action]")) return;
-                onRowClick(row);
-              }}
-              className={cn(
-                "cursor-pointer",
-              )}
-            >
-              <TableCell className="font-medium">
-                {row.vehicle ? (
-                  <div className="flex items-center gap-2">
-                    <RegPlate registration={row.vehicle.registration} size="sm" />
-                    <span className="text-xs text-muted-foreground">
-                      {row.vehicle.make} {row.vehicle.model}
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                )}
-              </TableCell>
-              <TableCell>
-                <div className="text-sm">{row.customerName}</div>
-                <div className="text-xs text-muted-foreground">
-                  {row.customerPhone}
-                </div>
-              </TableCell>
-              {variant === "in-house" ? (
-                <>
-                  <TableCell className="w-[24%] min-w-[180px]">
-                    <div className="flex flex-col gap-1">
-                      <CoverageBar row={row} />
-                      <span className="text-2xs tabular-nums text-muted-foreground">
-                        {formatDate(row.startDate)} → {formatDate(row.endDate)}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      "text-xs",
+    <RowClickArea rows={rows} onRowClick={onRowClick}>
+      <IndexTable
+        className="rounded-none shadow-none"
+        selectable={false}
+        primaryColumn={1}
+        headings={headings}
+        rows={rows.map((row) => {
+          const customer = (
+            <div key="customer" className="flex flex-col">
+              <Link monochrome removeUnderline onClick={() => onRowClick(row)}>
+                {row.customerName}
+              </Link>
+              <span className="body-sm font-normal text-(--text-secondary)">
+                {row.customerPhone}
+              </span>
+            </div>
+          );
+          const status = (
+            <StatusPill key="status" status={effectiveWarrantyStatus(row)} />
+          );
+          const actions = (
+            <RowActions
+              key="actions"
+              row={row}
+              variant={variant}
+              onFileClaim={onFileClaim}
+              onMarkPurchased={onMarkPurchased}
+            />
+          );
+          const cells: React.ReactNode[] =
+            variant === "in-house"
+              ? [
+                  <VehicleCell key="vehicle" vehicle={row.vehicle} />,
+                  customer,
+                  <CoverageCell key="coverage" row={row} />,
+                  <span
+                    key="remaining"
+                    className={
                       isExpiring(row)
-                        ? "font-medium text-amber-600 dark:text-amber-400"
-                        : "text-muted-foreground",
-                    )}
+                        ? "body-sm text-(--text-caution)"
+                        : "body-sm text-(--text-secondary)"
+                    }
                   >
                     {remainingLabel(row.endDate)}
-                  </TableCell>
-                  <TableCell className="text-center text-sm tabular-nums">
-                    {row.claimCount > 0 ? (
-                      <span className="font-medium">{row.claimCount}</span>
-                    ) : (
-                      <span className="text-muted-foreground">0</span>
-                    )}
-                  </TableCell>
-                </>
-              ) : (
-                <>
-                  <TableCell>
-                    <ProviderBadge provider={row.provider} />
-                  </TableCell>
-                  <TableCell className="w-[20%] min-w-[160px]">
-                    <div className="flex flex-col gap-1">
-                      <CoverageBar row={row} />
-                      <span className="text-2xs tabular-nums text-muted-foreground">
-                        {formatDate(row.startDate)} → {formatDate(row.endDate)}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill status={row.purchaseStatus} />
-                  </TableCell>
-                  <TableCell className="text-right text-sm tabular-nums">
+                  </span>,
+                  <span
+                    key="claims"
+                    className={
+                      row.claimCount > 0
+                        ? "tabular-nums"
+                        : "tabular-nums text-(--text-secondary)"
+                    }
+                  >
+                    {row.claimCount}
+                  </span>,
+                  status,
+                  actions,
+                ]
+              : [
+                  <VehicleCell key="vehicle" vehicle={row.vehicle} />,
+                  customer,
+                  <ProviderBadge key="provider" provider={row.provider} />,
+                  <CoverageCell key="coverage" row={row} />,
+                  <StatusPill key="purchase" status={row.purchaseStatus} />,
+                  <span key="cost" className="tabular-nums">
                     {formatCurrency(row.costToDealership)}
-                  </TableCell>
-                </>
-              )}
-              <TableCell>
-                <StatusPill status={effectiveWarrantyStatus(row)} />
-              </TableCell>
-              <TableCell data-row-action>
-                <RowActions
-                  row={row}
-                  variant={variant}
-                  onOpen={() => onRowClick(row)}
-                  onFileClaim={onFileClaim}
-                  onMarkPurchased={onMarkPurchased}
-                />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+                  </span>,
+                  status,
+                  actions,
+                ];
+          return { id: row.id, cells };
+        })}
+      />
+    </RowClickArea>
+  );
+}
+
+/** Wraps a disabled action so the reason shows on hover and focus. */
+function WithReason({
+  reason,
+  children,
+}: {
+  reason?: string;
+  children: React.ReactNode;
+}) {
+  return reason ? (
+    <Tooltip content={reason} preferredPosition="left">
+      {children}
+    </Tooltip>
+  ) : (
+    <>{children}</>
   );
 }
 
 function RowActions({
   row,
   variant,
-  onOpen,
   onFileClaim,
   onMarkPurchased,
 }: {
   row: WarrantyRow;
   variant: "in-house" | "external";
-  onOpen: () => void;
   onFileClaim?: (warranty: WarrantyRow) => void;
   onMarkPurchased?: (warranty: WarrantyRow) => void;
 }) {
@@ -232,53 +270,38 @@ function RowActions({
 
   if (isPendingExternal) {
     return (
-      <Button
-        type="button"
-        size="sm"
-        onClick={(e) => {
-          e.stopPropagation();
-          onMarkPurchased?.(row);
-        }}
-        disabled={!canEdit}
-        title={canEdit ? undefined : "Requires Warranty Edit capability"}
-      >
-        Mark purchased
-      </Button>
-    );
-  }
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 rounded-lg hover:bg-[#f1f1f1]"
-          onClick={(e) => e.stopPropagation()}
-          aria-label="Row actions"
+      <span data-row-action>
+        <WithReason
+          reason={canEdit ? undefined : "Requires Warranty Edit capability"}
         >
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onSelect={onOpen}>View details</DropdownMenuItem>
-        <DropdownMenuItem
-          onSelect={() => onFileClaim?.(row)}
-          disabled={row.status !== "active"}
-        >
-          File claim
-        </DropdownMenuItem>
-        {variant === "external" && row.purchaseStatus === "pending" && (
-          <DropdownMenuItem
-            onSelect={() => onMarkPurchased?.(row)}
+          <Button
+            size="micro"
+            onClick={() => onMarkPurchased?.(row)}
             disabled={!canEdit}
           >
             Mark purchased
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          </Button>
+        </WithReason>
+      </span>
+    );
+  }
+
+  const canClaim = row.status === "active";
+  return (
+    <span data-row-action>
+      <WithReason
+        reason={canClaim ? undefined : "Can only file claims on active warranties"}
+      >
+        <Button
+          size="micro"
+          variant="tertiary"
+          onClick={() => onFileClaim?.(row)}
+          disabled={!canClaim}
+        >
+          File claim
+        </Button>
+      </WithReason>
+    </span>
   );
 }
 
@@ -295,69 +318,52 @@ export function ClaimsTable({
   onRowClick?: (claim: ClaimsRow) => void;
 }) {
   return (
-    <div className="overflow-hidden bg-card">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Vehicle</TableHead>
-            <TableHead>Customer</TableHead>
-            <TableHead>Issue</TableHead>
-            <TableHead>Warranty</TableHead>
-            <TableHead className="text-right">Cost</TableHead>
-            <TableHead>Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row) => (
-            <TableRow
-              key={row.id}
-              onClick={() => onRowClick?.(row)}
-              className={
-                row.isComplaint
-                  ? "cursor-pointer bg-destructive/5 hover:bg-destructive/10"
-                  : "cursor-pointer"
-              }
-            >
-              <TableCell>
-                {row.vehicle ? (
-                  <div className="flex items-center gap-2">
-                    <RegPlate registration={row.vehicle.registration} size="sm" />
-                    <span className="text-xs text-muted-foreground">
-                      {row.vehicle.make} {row.vehicle.model}
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                )}
-              </TableCell>
-              <TableCell>
-                <div className="text-sm">{row.customerName}</div>
-                {row.isComplaint && (
-                  <div className="text-[13px] font-medium text-destructive">
-                    Complaint
-                  </div>
-                )}
-              </TableCell>
-              <TableCell className="max-w-[260px] truncate text-sm">
-                {row.issueDescription}
-              </TableCell>
-              <TableCell className="text-xs text-muted-foreground">
-                {row.warranty
-                  ? row.warranty.type === "external"
-                    ? row.warranty.provider ?? "External"
-                    : "In-house"
-                  : "—"}
-              </TableCell>
-              <TableCell className="text-right text-sm tabular-nums">
-                {formatCurrency(row.actualCost ?? row.estimatedCost ?? 0)}
-              </TableCell>
-              <TableCell>
-                <StatusPill status={row.status} />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <RowClickArea rows={rows} onRowClick={onRowClick}>
+      <IndexTable
+        className="rounded-none shadow-none"
+        selectable={false}
+        primaryColumn={1}
+        headings={[
+          { title: "Vehicle" },
+          { title: "Customer" },
+          { title: "Issue" },
+          { title: "Warranty" },
+          { title: "Cost", alignment: "end" },
+          { title: "Status" },
+        ]}
+        rows={rows.map((row) => ({
+          id: row.id,
+          cells: [
+            <VehicleCell key="vehicle" vehicle={row.vehicle} />,
+            <div key="customer" className="flex flex-col items-start gap-1">
+              {onRowClick ? (
+                <Link monochrome removeUnderline onClick={() => onRowClick(row)}>
+                  {row.customerName}
+                </Link>
+              ) : (
+                row.customerName
+              )}
+              {row.isComplaint && (
+                <Badge tone="critical">Complaint</Badge>
+              )}
+            </div>,
+            <span key="issue" className="block max-w-64 truncate font-normal">
+              {row.issueDescription}
+            </span>,
+            <span key="warranty" className="body-sm text-(--text-secondary)">
+              {row.warranty
+                ? row.warranty.type === "external"
+                  ? row.warranty.provider ?? "External"
+                  : "In-house"
+                : "—"}
+            </span>,
+            <span key="cost" className="tabular-nums">
+              {formatCurrency(row.actualCost ?? row.estimatedCost ?? 0)}
+            </span>,
+            <StatusPill key="status" status={row.status} />,
+          ],
+        }))}
+      />
+    </RowClickArea>
   );
 }

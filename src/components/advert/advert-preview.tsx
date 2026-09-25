@@ -48,8 +48,8 @@ export function AdvertPreview({
     .join(" · ");
 
   return (
-    <div className="overflow-hidden rounded-xl border bg-card shadow-[0_1px_0_rgba(0,0,0,.05)]">
-      <div className="relative aspect-[16/10] w-full bg-muted">
+    <div className="overflow-hidden rounded-(--radius-300) border border-(--border) bg-(--bg-surface)">
+      <div className="relative aspect-[16/10] w-full bg-(--bg-surface-secondary)">
         {photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -65,7 +65,7 @@ export function AdvertPreview({
           />
         )}
         {advert.attentionGrabber.trim() && (
-          <span className="absolute left-2 top-2 rounded-lg bg-[rgb(254,209,215)] px-2 py-0.5 text-xs font-medium text-[rgb(142,11,33)]">
+          <span className="body-sm absolute left-2 top-2 rounded-(--radius-200) bg-(--bg-fill-critical-secondary) px-2 py-0.5 text-(--text-critical)">
             {advert.attentionGrabber}
           </span>
         )}
@@ -74,29 +74,29 @@ export function AdvertPreview({
       <div className="flex flex-col gap-2 p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold">{title}</div>
-            <div className="truncate text-xs text-muted-foreground">{sub}</div>
+            <div className="heading-sm truncate">{title}</div>
+            <div className="body-sm truncate text-(--text-secondary)">{sub}</div>
           </div>
-          <div className="shrink-0 text-base font-semibold tabular-nums">
+          <div className="heading-md shrink-0 tabular-nums">
             {price ? formatCurrency(price) : "—"}
           </div>
         </div>
 
         {advert.keySellingPoint.trim() && (
-          <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-[rgb(175,254,191)] px-2 py-0.5 text-xs font-medium text-[rgb(1,75,64)]">
+          <div className="body-sm inline-flex w-fit items-center gap-1 rounded-(--radius-200) bg-(--bg-fill-success-secondary) px-2 py-0.5 text-(--text-success)">
             <Sparkles className="h-3 w-3" /> {advert.keySellingPoint}
           </div>
         )}
 
-        <div className="text-xs capitalize text-muted-foreground">
+        <div className="body-sm capitalize text-(--text-secondary)">
           {specLine}
         </div>
 
         {highlights.length > 0 && (
           <ul className="mt-1 grid gap-0.5">
             {highlights.slice(0, 5).map((h, i) => (
-              <li key={i} className="flex items-start gap-1.5 text-xs">
-                <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-600" />
+              <li key={i} className="body-sm flex items-start gap-1.5">
+                <Check className="mt-0.5 h-3 w-3 shrink-0 text-(--icon-success)" />
                 <span className="min-w-0">{h}</span>
               </li>
             ))}
@@ -104,13 +104,13 @@ export function AdvertPreview({
         )}
 
         {description.trim() && (
-          <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
+          <p className="body-sm mt-1 line-clamp-3 text-(--text-secondary)">
             {description}
           </p>
         )}
 
         {advert.features.length > 0 && (
-          <div className="mt-1 text-xs text-muted-foreground">
+          <div className="body-sm mt-1 text-(--text-secondary)">
             + {advert.features.length} equipment feature
             {advert.features.length === 1 ? "" : "s"}
           </div>

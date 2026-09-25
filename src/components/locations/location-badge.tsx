@@ -31,8 +31,8 @@ interface LocationBadgeProps {
 const OFF_SITE_LOCATIONS: VehicleLocation[] = ["garage", "staff"];
 
 const OFF_SITE_DOT: Record<"garage" | "staff", string> = {
-  garage: "bg-red-500",
-  staff: "bg-amber-500",
+  garage: "bg-(--bg-fill-critical)",
+  staff: "bg-(--bg-fill-warning)",
 };
 
 function formatHm(iso: string | null | undefined): string | null {
@@ -52,7 +52,7 @@ function formatHm(iso: string | null | undefined): string | null {
 
 /**
  * Inline location chip — renders the location name plus an "Off-site"
- * red/amber dot when the car is at Garage / Staff, and a clock icon when
+ * critical/warning dot when the car is at Garage / Staff, and a clock icon when
  * the customer has it out for a test drive (Decision D-A1). Tooltip on
  * either side-affordance shows the relevant context (workshop / staff /
  * expected return).
@@ -92,14 +92,14 @@ export function LocationBadge({
           className,
         )}
       >
-        <span className="text-foreground">{VEHICLE_LOCATION_LABELS[location]}</span>
+        <span className="text-(--text)">{VEHICLE_LOCATION_LABELS[location]}</span>
 
         {isOffSite ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-xs font-medium text-muted-foreground",
+                  "inline-flex items-center gap-1 rounded-full bg-(--bg-fill-secondary) px-1.5 py-0.5 text-xs font-medium text-(--text-secondary)",
                   compact && "gap-0 px-0.5 py-0",
                 )}
               >
@@ -123,7 +123,7 @@ export function LocationBadge({
           <Tooltip>
             <TooltipTrigger asChild>
               <span
-                className="inline-flex items-center text-muted-foreground"
+                className="inline-flex items-center text-(--icon-secondary)"
                 aria-label="Out for test drive"
               >
                 <Clock className="size-3" aria-hidden />

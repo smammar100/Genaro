@@ -19,7 +19,7 @@ function SheetBackdrop({
   return (
     <SheetPrimitive.Backdrop
       className={cn(
-        "fixed inset-0 z-[900] bg-black/50 transition-opacity duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
+        "fixed inset-0 z-[900] bg-(--backdrop-bg) transition-opacity duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
         className,
       )}
       data-slot="sheet-backdrop"
@@ -76,7 +76,7 @@ function SheetPopup({
       <SheetViewport side={side} variant={variant}>
         <SheetPrimitive.Popup
           className={cn(
-            "relative flex max-h-full min-h-0 w-full min-w-0 flex-col bg-popover text-[13px] text-popover-foreground shadow-[0_20px_20px_-8px_rgba(26,26,26,0.28)] transition-[opacity,translate] duration-200 ease-out will-change-transform data-ending-style:opacity-0 data-starting-style:opacity-0",
+            "relative flex max-h-full min-h-0 w-full min-w-0 flex-col bg-popover text-[13px] text-popover-foreground shadow-(--shadow-600) transition-[opacity,translate] duration-200 ease-out will-change-transform data-ending-style:opacity-0 data-starting-style:opacity-0",
             side === "bottom" &&
               "row-start-2 border-t data-ending-style:translate-y-8 data-starting-style:translate-y-8",
             side === "top" &&
@@ -96,7 +96,7 @@ function SheetPopup({
           {showCloseButton && (
             <SheetPrimitive.Close
               aria-label="Close"
-              className="absolute end-3 top-3 size-7 rounded-lg text-[#4a4a4a] hover:bg-[#f1f1f1] hover:text-foreground sm:size-7 [&_svg]:size-4"
+              className="absolute end-3 top-3 size-7 rounded-lg text-(--icon) hover:bg-(--bg-fill-transparent-hover) hover:text-(--icon-hover) sm:size-7 [&_svg]:size-4"
               render={<Button size="icon" variant="ghost" />}
               {...closeProps}
             >

@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { FileText, ImageIcon, Loader2, Upload, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { FileText, ImageIcon } from "lucide-react";
+import { Button, DropZone, Spinner } from "@/components/polaris";
 import { cn } from "@/lib/utils";
 import {
   externalInvoiceService,
@@ -31,6 +31,8 @@ interface Props {
   className?: string;
 }
 
+const ACCEPT = "image/jpeg,image/png,application/pdf";
+
 function prettyBytes(n: number | null): string {
   if (n == null) return "";
   if (n < 1024) return `${n} B`;
@@ -39,7 +41,8 @@ function prettyBytes(n: number | null): string {
 }
 
 /**
- * Spec v3.0 · Module D.4 — drag/drop or button-pick attachment slot.
+ * Spec v3.0 · Module D.4 — drag/drop or button-pick attachment slot (Polaris
+ * DropZone; it drops files that don't match `ACCEPT`).
  * Allowed: JPG, PNG, PDF up to 10 MB. Uploads to the
  * `external-invoices` Supabase Storage bucket; stores the object path.
  *
@@ -54,9 +57,7 @@ export function AttachmentUploader({
   disabled,
   className,
 }: Props) {
-  const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
 
   async function handleFile(file: File) {
     if (!vehicleId) {
@@ -100,81 +101,53 @@ export function AttachmentUploader({
 
   return (
     <div className={cn("space-y-2", className)}>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/jpeg,image/png,application/pdf"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) handleFile(f);
-          e.target.value = "";
-        }}
-        disabled={disabled || uploading}
-      />
       {hasAttachment ? (
-        <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted">
+        <div className="flex items-center gap-3 rounded-(--radius-200) border border-(--border) bg-(--bg-surface) p-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-(--radius-200) bg-(--bg-surface-secondary) text-(--icon-secondary)">
             {isImage ? (
-              <ImageIcon className="size-4 text-muted-foreground" />
+              <ImageIcon className="size-4" />
             ) : (
-              <FileText className="size-4 text-muted-foreground" />
+              <FileText className="size-4" />
             )}
           </span>
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-medium">{value.filename}</div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-(--text-secondary)">
               {prettyBytes(value.sizeBytes)} · {value.mimeType}
             </div>
           </div>
           <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
+            variant="tertiary"
+            icon="CancelMinor"
+            accessibilityLabel="Remove attachment"
             onClick={handleRemove}
             disabled={disabled || uploading}
-            aria-label="Remove attachment"
-          >
-            <X className="size-3.5" />
-          </Button>
+          />
+        </div>
+      ) : uploading ? (
+        <div
+          role="status"
+          className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-(--radius-200) border border-dashed border-(--border) bg-(--bg-surface) text-sm text-(--text-secondary)"
+        >
+          <Spinner size="small" accessibilityLabel="Uploading attachment" />
+          <span>Uploading…</span>
         </div>
       ) : (
-        <button
-          type="button"
-          disabled={disabled || uploading}
-          onClick={() => inputRef.current?.click()}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
+        <DropZone
+          accept={ACCEPT}
+          allowMultiple={false}
+          actionTitle="Add file"
+          actionHint="Drag a file here, or click to choose. JPG, PNG or PDF, up to 10 MB."
+          disabled={disabled}
+          onDrop={(files) => {
+            const f = files[0];
+            if (f) {
+              void handleFile(f);
+            } else {
+              toast.error("Choose a JPG, PNG or PDF file.");
+            }
           }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragOver(false);
-            const f = e.dataTransfer.files?.[0];
-            if (f) handleFile(f);
-          }}
-          className={cn(
-            "flex w-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed bg-card px-3 py-6 text-sm text-muted-foreground transition-colors",
-            dragOver
-              ? "border-foreground/40 bg-muted/60"
-              : "hover:bg-[#f7f7f7]",
-            disabled && "cursor-not-allowed opacity-60",
-          )}
-        >
-          {uploading ? (
-            <>
-              <Loader2 className="size-4 animate-spin" />
-              <span>Uploading…</span>
-            </>
-          ) : (
-            <>
-              <Upload className="size-4" />
-              <span>Drag a file here, or click to choose</span>
-              <span className="text-xs">JPG · PNG · PDF · ≤10MB</span>
-            </>
-          )}
-        </button>
+        />
       )}
     </div>
   );

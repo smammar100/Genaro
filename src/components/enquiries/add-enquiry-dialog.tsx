@@ -90,7 +90,7 @@ export function AddEnquiryDialog({
   };
 
   const descriptionByStep: Record<Step, string> = {
-    search: "We'll dedup against your existing customers before we create anything.",
+    search: "We check your existing customers before creating a new one.",
     actions: "Quick is for hot leads. Full captures the whole profile.",
     quick: "Just the essentials; you can always come back and complete the profile later.",
     full: "Full customer profile plus the enquiry details.",

@@ -3,20 +3,8 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { variantLabel } from "@/lib/vehicle-variant";
-import {
-  Car,
-  CalendarClock,
-  Check,
-  Megaphone,
-  MessageSquare,
-  Pencil,
-  Plus,
-  Search,
-  Send,
-  Trash2,
-  TriangleAlert,
-} from "lucide-react";
-import { useForm } from "react-hook-form";
+import { Car, CalendarClock, Megaphone, MessageSquare } from "lucide-react";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/contexts/auth-context";
@@ -32,29 +20,19 @@ import type {
   ListingStatus,
   Vehicle,
 } from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import {
+  Badge,
+  Banner,
+  Button,
+  Card,
+  EmptyState,
+  Modal,
+  Page,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogPanel,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { EmptyState } from "@/components/shared/empty-state";
+  TextField,
+  type BadgeTone,
+} from "@/components/polaris";
+import { Switch } from "@/components/ui/switch";
 import { DaysInStockChip } from "@/components/shared/days-in-stock-chip";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { VehicleImage } from "@/components/shared/vehicle-image";
@@ -73,54 +51,49 @@ const CHANNEL_LABELS: Record<Channel, string> = {
   facebook: "Facebook",
 };
 
-// Listing-status tone pills — mirrors the status colours used across the app
-// so a draft/live/reserved/sold/archived advert reads the same here as in the
-// Master Sheet. (No context lost from the original Status column.)
+// Listing-status badges: a draft/live/reserved/sold/archived advert reads the
+// same here as in the Master Sheet. Sold and archived stay neutral (no tone).
 const LISTING_STATUS_META: Record<
   ListingStatus,
-  { label: string; cls: string; dot: string }
+  { label: string; tone?: BadgeTone }
 > = {
-  draft: {
-    label: "Draft",
-    cls: "bg-black/[0.06] text-[#303030]",
-    dot: "bg-slate-400",
-  },
-  live: {
-    label: "Live",
-    cls: "bg-[rgb(175,254,191)] text-[rgb(1,75,64)]",
-    dot: "bg-emerald-500",
-  },
-  reserved: {
-    label: "Reserved",
-    cls: "bg-[rgb(213,235,255)] text-[rgb(0,58,90)]",
-    dot: "bg-pink-500",
-  },
-  sold: {
-    label: "Sold",
-    cls: "bg-black/[0.06] text-[#303030]",
-    dot: "bg-gray-400",
-  },
-  archived: {
-    label: "Archived",
-    cls: "bg-black/[0.06] text-[#616161]",
-    dot: "bg-muted-foreground/50",
-  },
+  draft: { label: "Draft", tone: "info" },
+  live: { label: "Live", tone: "success" },
+  reserved: { label: "Reserved", tone: "attention" },
+  sold: { label: "Sold" },
+  archived: { label: "Archived" },
 };
 
-function ListingStatusPill({ status }: { status: ListingStatus }) {
+function ListingStatusBadge({ status }: { status: ListingStatus }) {
   const m = LISTING_STATUS_META[status] ?? LISTING_STATUS_META.draft;
   return (
-    <span
-      className={cn(
-        "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-0.5 text-xs font-medium",
-        m.cls,
-      )}
-    >
-      <span className={cn("size-1.5 rounded-full", m.dot)} />
+    <Badge tone={m.tone} className="shrink-0 whitespace-nowrap">
       {m.label}
-    </span>
+    </Badge>
   );
 }
+
+const STATUS_OPTIONS = [
+  { label: "All statuses", value: "all" },
+  { label: "Draft", value: "draft" },
+  { label: "Live", value: "live" },
+  { label: "Reserved", value: "reserved" },
+  { label: "Sold", value: "sold" },
+  { label: "Archived", value: "archived" },
+];
+
+const CHANNEL_OPTIONS = [
+  { label: "All channels", value: "all" },
+  ...CHANNELS.map((c) => ({ label: CHANNEL_LABELS[c], value: c })),
+];
+
+const AT_INDICATOR_OPTIONS = [
+  { label: "Great", value: "great" },
+  { label: "Good", value: "good" },
+  { label: "Above average", value: "above_average" },
+  { label: "High (overpriced)", value: "high" },
+  { label: "Unrated", value: "unrated" },
+];
 
 function PreviewStat({
   icon: Icon,
@@ -132,12 +105,12 @@ function PreviewStat({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg bg-muted px-3 py-2.5">
-      <div className="mb-1 inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
+    <div className="rounded-(--radius-200) bg-(--bg-surface-secondary) px-3 py-2.5">
+      <div className="body-sm mb-1 inline-flex items-center gap-1.5 text-(--text-secondary)">
         <Icon className="size-3.5" />
         {label}
       </div>
-      <div className="text-sm font-semibold">{children}</div>
+      <div className="heading-sm">{children}</div>
     </div>
   );
 }
@@ -148,8 +121,8 @@ interface ListingRow extends Listing {
 
 const schema = z.object({
   vehicleId: z.string().min(1, "Pick a vehicle"),
-  title: z.string().min(1),
-  description: z.string().min(1),
+  title: z.string().min(1, "Enter a title"),
+  description: z.string().min(1, "Enter a description"),
   price: z.coerce.number().min(0),
   specialFeatures: z.string(),
   atPriceIndicator: z.enum([
@@ -423,252 +396,208 @@ export default function ListingsPage() {
     }
   }
 
+  const submitCreate = () => void form.handleSubmit(onSubmit)();
+  const errors = form.formState.errors;
+
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Work List</h1>
-          <p className="text-[13px] text-muted-foreground">
-            Vehicles ready to advertise. Build each advert, set pricing, and
-            publish it to your sales channels.
+    <Page
+      title="Work list"
+      subtitle="Vehicles ready to advertise. Build each advert, set pricing, and publish it to your sales channels."
+      fullWidth
+      primaryAction={{
+        content: "Create listing",
+        onAction: () => setOpen(true),
+      }}
+    >
+      {/* Create listing — react-hook-form state, fields bound via Controller. */}
+      <Modal
+        open={open}
+        onClose={() => {
+          if (!form.formState.isSubmitting) setOpen(false);
+        }}
+        title="Create listing"
+        primaryAction={{
+          content: "Save draft",
+          loading: form.formState.isSubmitting,
+          onAction: submitCreate,
+        }}
+        secondaryActions={[{ content: "Cancel", onAction: () => setOpen(false) }]}
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            submitCreate();
+          }}
+          className="grid gap-4"
+        >
+          <p className="body-md text-(--text-secondary)">
+            Build the advert and choose where it publishes. Saved as a draft.
           </p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="mr-1 h-3.5 w-3.5" /> Create Listing
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <form onSubmit={form.handleSubmit(onSubmit)} className="contents">
-              <DialogHeader>
-                <DialogTitle>Create Listing</DialogTitle>
-                <DialogDescription>
-                  Build the advert and choose where it publishes. Saved as a
-                  draft.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogPanel className="grid gap-4">
-                <div className="grid gap-1.5">
-                  <Label htmlFor={vehicleFieldId}>Vehicle</Label>
-                  <Select
-                    items={Object.fromEntries(
-                      readyVehicles.map((v) => [
-                        v.id,
-                        `${v.registration} · ${v.make} ${v.model}`,
-                      ]),
-                    )}
-                    value={form.watch("vehicleId")}
-                    onValueChange={(v) => form.setValue("vehicleId", v)}
+          <Select
+            id={vehicleFieldId}
+            label="Vehicle"
+            placeholder="Pick a ready or listed vehicle"
+            options={
+              readyVehicles.length === 0
+                ? [{ label: "No vehicles available", value: "__none", disabled: true }]
+                : readyVehicles.map((v) => ({
+                    label: `${v.registration} · ${v.make} ${v.model}`,
+                    value: v.id,
+                  }))
+            }
+            value={form.watch("vehicleId")}
+            onChange={(v) => form.setValue("vehicleId", v, { shouldValidate: true })}
+            error={errors.vehicleId?.message}
+          />
+          <Controller
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <TextField
+                id={titleFieldId}
+                label="Title"
+                name={field.name}
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.title?.message}
+              />
+            )}
+          />
+          <Controller
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <TextField
+                id={descriptionFieldId}
+                label="Description"
+                name={field.name}
+                multiline={4}
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.description?.message}
+              />
+            )}
+          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-1">
+              <Controller
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <TextField
+                    id={priceFieldId}
+                    label="Price"
+                    type="number"
+                    prefix="£"
+                    name={field.name}
+                    value={String(field.value ?? "")}
+                    onChange={field.onChange}
+                    error={errors.price?.message}
+                  />
+                )}
+              />
+              {selectedVehicle?.atRetailValuation != null && (
+                <div>
+                  <Button
+                    variant="plain"
+                    onClick={() =>
+                      form.setValue(
+                        "price",
+                        selectedVehicle.atRetailValuation as number,
+                      )
+                    }
                   >
-                    <SelectTrigger id={vehicleFieldId}>
-                      <SelectValue placeholder="Pick a ready / listed vehicle" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {readyVehicles.length === 0 ? (
-                        <SelectItem value="__none" disabled>
-                          No vehicles available
-                        </SelectItem>
-                      ) : (
-                        readyVehicles.map((v) => (
-                          <SelectItem key={v.id} value={v.id}>
-                            {v.registration} · {v.make} {v.model}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                    {`Use AutoTrader retail: £${selectedVehicle.atRetailValuation.toLocaleString()}`}
+                  </Button>
                 </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor={titleFieldId}>Title</Label>
-                  <Input id={titleFieldId} {...form.register("title")} />
-                </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor={descriptionFieldId}>Description</Label>
-                  <Textarea
-                    id={descriptionFieldId}
-                    {...form.register("description")}
-                    className="min-h-24"
+              )}
+            </div>
+            <Select
+              id={atIndicatorFieldId}
+              label="AT indicator"
+              options={AT_INDICATOR_OPTIONS}
+              value={form.watch("atPriceIndicator")}
+              onChange={(v) =>
+                form.setValue(
+                  "atPriceIndicator",
+                  v as Listing["atPriceIndicator"],
+                )
+              }
+            />
+          </div>
+          <Controller
+            control={form.control}
+            name="specialFeatures"
+            render={({ field }) => (
+              <TextField
+                id={specialFeaturesFieldId}
+                label="Special features"
+                name={field.name}
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
+          <div className="grid gap-2">
+            <p className="body-md-semibold">Publish channels</p>
+            <div className="flex flex-wrap gap-x-5 gap-y-2.5">
+              {CHANNELS.map((c) => (
+                <label key={c} className="body-md flex items-center gap-2">
+                  <Switch
+                    checked={form.watch(c)}
+                    onCheckedChange={(v) => form.setValue(c, v)}
                   />
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="grid gap-1.5">
-                    <Label htmlFor={priceFieldId}>Price</Label>
-                    <Input
-                      id={priceFieldId}
-                      type="number"
-                      step="0.01"
-                      {...form.register("price")}
-                    />
-                    {selectedVehicle?.atRetailValuation != null && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          form.setValue(
-                            "price",
-                            selectedVehicle.atRetailValuation as number,
-                          )
-                        }
-                        className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-                      >
-                        Use AutoTrader retail: £
-                        {selectedVehicle.atRetailValuation.toLocaleString()}
-                      </button>
-                    )}
-                  </div>
-                  <div className="grid gap-1.5">
-                    <Label htmlFor={atIndicatorFieldId}>AT indicator</Label>
-                    <Select
-                      value={form.watch("atPriceIndicator")}
-                      onValueChange={(v) =>
-                        form.setValue(
-                          "atPriceIndicator",
-                          v as Listing["atPriceIndicator"],
-                        )
-                      }
-                    >
-                      <SelectTrigger id={atIndicatorFieldId}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="great">Great</SelectItem>
-                        <SelectItem value="good">Good</SelectItem>
-                        <SelectItem value="above_average">Above Avg</SelectItem>
-                        <SelectItem value="high">Overpriced / High</SelectItem>
-                        <SelectItem value="unrated">Unrated</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor={specialFeaturesFieldId}>Special features</Label>
-                  <Input
-                    id={specialFeaturesFieldId}
-                    {...form.register("specialFeatures")}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <p className="text-[13px] font-medium leading-none">
-                    Publish channels
-                  </p>
-                  <div className="flex flex-wrap gap-x-5 gap-y-2.5">
-                    {CHANNELS.map((c) => (
-                      <label
-                        key={c}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        <Switch
-                          checked={form.watch(c)}
-                          onCheckedChange={(v) => form.setValue(c, v)}
-                        />
-                        {CHANNEL_LABELS[c]}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </DialogPanel>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={form.formState.isSubmitting}
-                >
-                  {form.formState.isSubmitting ? "Saving…" : "Save Draft"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+                  {CHANNEL_LABELS[c]}
+                </label>
+              ))}
+            </div>
+          </div>
+        </form>
+      </Modal>
 
       {/* Master-detail: searchable listing list (left) + advert preview (right) */}
       <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start">
         {/* LEFT — reg search, filters, and the scrollable listing list */}
-        <div className="flex flex-col overflow-hidden rounded-xl border bg-card shadow-[0_1px_0_rgba(0,0,0,.05)]">
-          <div className="flex flex-col gap-2 border-b p-2">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by reg, stock or title…"
-                aria-label="Search listings by registration, stock ID or title"
-                className="h-8 pl-8 text-[13px]"
-              />
-            </div>
-            <div className="flex gap-2">
-              {/* items map: without it the closed trigger renders the raw
-                  value ("all") instead of its label (GEN-47). */}
+        <Card padding="0">
+          <div className="flex flex-col gap-2 border-b border-(--border) p-2">
+            <TextField
+              label="Search listings by registration, stock ID or title"
+              labelHidden
+              prefix="SearchMinor"
+              value={search}
+              onChange={setSearch}
+              placeholder="Search by reg, stock or title…"
+              clearButton
+              onClearButtonClick={() => setSearch("")}
+            />
+            <div className="grid grid-cols-2 gap-2">
               <Select
-                items={{
-                  all: "All statuses",
-                  draft: "Draft",
-                  live: "Live",
-                  reserved: "Reserved",
-                  sold: "Sold",
-                  archived: "Archived",
-                }}
+                label="Status"
+                labelHidden
+                options={STATUS_OPTIONS}
                 value={statusFilter}
-                onValueChange={(v) =>
-                  setStatusFilter(v as ListingStatus | "all")
-                }
-              >
-                <SelectTrigger className="h-8 flex-1 text-[13px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All statuses</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="live">Live</SelectItem>
-                  <SelectItem value="reserved">Reserved</SelectItem>
-                  <SelectItem value="sold">Sold</SelectItem>
-                  <SelectItem value="archived">Archived</SelectItem>
-                </SelectContent>
-              </Select>
+                onChange={(v) => setStatusFilter(v as ListingStatus | "all")}
+              />
               <Select
-                items={{
-                  all: "All channels",
-                  ...Object.fromEntries(
-                    CHANNELS.map((c) => [c, CHANNEL_LABELS[c]]),
-                  ),
-                }}
+                label="Channel"
+                labelHidden
+                options={CHANNEL_OPTIONS}
                 value={channelFilter}
-                onValueChange={(v) => setChannelFilter(v as Channel | "all")}
-              >
-                <SelectTrigger className="h-8 flex-1 text-[13px]">
-                  <SelectValue placeholder="Channel" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All channels</SelectItem>
-                  {CHANNELS.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {CHANNEL_LABELS[c]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(v) => setChannelFilter(v as Channel | "all")}
+              />
             </div>
           </div>
 
           {!filtered ? (
             <div className="flex flex-col gap-1.5 p-2">
               {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-[78px] rounded-lg" />
+                <Skeleton key={i} className="h-20 rounded-(--radius-200)" />
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <EmptyState
-              icon={Megaphone}
-              title="No listings yet"
-              description="Mark a vehicle as ready, then create a listing."
-              className="rounded-none border-0"
-            />
+            <EmptyState heading="No listings yet" icon="MarketingMinor">
+              Mark a vehicle as ready, then create a listing.
+            </EmptyState>
           ) : (
             <div
               role="listbox"
@@ -685,41 +614,41 @@ export default function ListingsPage() {
                     aria-selected={isActive}
                     onClick={() => setSelectedId(l.id)}
                     className={cn(
-                      "flex w-full shrink-0 gap-3 border-t px-3 py-2.5 text-left transition-colors first:border-t-0",
+                      "flex w-full shrink-0 gap-3 border-t border-(--border-secondary) px-3 py-2.5 text-left transition-colors first:border-t-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-(--border-focus)",
                       isActive
-                        ? "bg-secondary"
-                        : "hover:bg-muted",
+                        ? "bg-(--bg-surface-selected)"
+                        : "hover:bg-(--bg-surface-hover)",
                     )}
                   >
                     {l.vehicle ? (
                       <VehicleImage
                         vehicle={l.vehicle}
                         variant="thumb"
-                        className="h-14 w-[72px] shrink-0 self-center rounded-md"
+                        className="h-14 w-18 shrink-0 self-center rounded-(--radius-200)"
                       />
                     ) : (
-                      <span className="grid h-14 w-[72px] shrink-0 self-center place-items-center rounded-md bg-muted text-muted-foreground/50">
+                      <span className="grid h-14 w-18 shrink-0 place-items-center self-center rounded-(--radius-200) bg-(--bg-surface-secondary) text-(--icon-secondary)">
                         <Car className="size-5" />
                       </span>
                     )}
                     <div className="flex min-w-0 flex-1 flex-col">
                       {/* Meta row — stock ID + status */}
                       <div className="flex items-center justify-between gap-2">
-                        <span className="truncate font-mono text-xs text-muted-foreground">
+                        <span className="truncate font-mono text-xs text-(--text-secondary)">
                           {l.vehicle?.stockId ?? "—"}
                         </span>
-                        <ListingStatusPill status={l.status} />
+                        <ListingStatusBadge status={l.status} />
                       </div>
                       {/* Title */}
-                      <span className="mt-0.5 truncate text-[13px] font-semibold">
+                      <span className="body-md-semibold mt-0.5 truncate">
                         {l.title}
                       </span>
                       {/* Price + enquiries · days */}
                       <div className="mt-1.5 flex items-center justify-between gap-2">
-                        <span className="text-[13px] tabular-nums">
+                        <span className="body-md-numeric">
                           {formatCurrency(l.price)}
                         </span>
-                        <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                        <span className="body-sm inline-flex shrink-0 items-center gap-1 text-(--text-secondary)">
                           <MessageSquare className="size-3" />
                           {enquiriesByVehicle[l.vehicleId]?.total ?? 0}
                           {l.vehicle ? ` · ${l.vehicle.daysInStock}d` : ""}
@@ -731,17 +660,18 @@ export default function ListingsPage() {
               })}
             </div>
           )}
-        </div>
+        </Card>
 
         {/* RIGHT — full advert preview for the selected listing */}
         <div className="lg:sticky lg:top-4">
           {!filtered ? (
-            <Skeleton className="h-[460px] rounded-xl" />
+            <Skeleton className="h-[460px] rounded-(--radius-300)" />
           ) : !selected ? (
-            <div className="flex h-[320px] flex-col items-center justify-center gap-2 rounded-xl border bg-card text-center text-muted-foreground shadow-[0_1px_0_rgba(0,0,0,.05)]">
-              <Megaphone className="size-6" />
-              <p className="text-[13px]">Select a listing to preview its advert.</p>
-            </div>
+            <Card padding="0">
+              <EmptyState heading="No listing selected" icon="ViewMinor">
+                Select a listing to preview its advert.
+              </EmptyState>
+            </Card>
           ) : (
             (() => {
               const channelsOn = CHANNELS.filter(
@@ -752,7 +682,7 @@ export default function ListingsPage() {
                 canPublishAT &&
                 !selected.atStockId;
               return (
-                <div className="flex flex-col gap-4 rounded-xl border bg-card p-4 shadow-[0_1px_0_rgba(0,0,0,.05)]">
+                <Card className="gap-4">
                   {/* Header — plate, stock, status, title, price, AT indicator */}
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -763,17 +693,15 @@ export default function ListingsPage() {
                             size="sm"
                           />
                         ) : null}
-                        <span className="font-mono text-xs text-muted-foreground">
+                        <span className="font-mono text-xs text-(--text-secondary)">
                           {selected.vehicle?.stockId ?? "—"}
                         </span>
-                        <ListingStatusPill status={selected.status} />
+                        <ListingStatusBadge status={selected.status} />
                       </div>
-                      <h2 className="mt-1.5 text-base font-semibold leading-snug">
-                        {selected.title}
-                      </h2>
+                      <h2 className="heading-md mt-1.5">{selected.title}</h2>
                     </div>
                     <div className="text-right">
-                      <div className="text-xl font-bold tabular-nums">
+                      <div className="heading-lg tabular-nums">
                         {formatCurrency(selected.price)}
                       </div>
                       <div className="mt-1 flex justify-end">
@@ -805,9 +733,7 @@ export default function ListingsPage() {
 
                   {/* Publish channels — wired to the live toggle service */}
                   <div>
-                    <div className="mb-2 text-sm font-semibold">
-                      Publish channels
-                    </div>
+                    <h3 className="heading-sm mb-2">Publish channels</h3>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {CHANNELS.map((c) => {
                         const on = selected.channels[c];
@@ -815,20 +741,18 @@ export default function ListingsPage() {
                           <div
                             key={c}
                             className={cn(
-                              "flex items-center justify-between rounded-lg border px-3 py-2.5",
+                              "flex items-center justify-between rounded-(--radius-200) border border-(--border) px-3 py-2.5",
                               on
-                                ? "bg-card"
-                                : "bg-muted",
+                                ? "bg-(--bg-surface)"
+                                : "bg-(--bg-surface-secondary)",
                             )}
                           >
-                            <span className="text-[13px] font-medium">
-                              {CHANNEL_LABELS[c]}
-                            </span>
+                            <span className="body-md">{CHANNEL_LABELS[c]}</span>
                             <div className="flex items-center gap-2">
                               {c === "autotrader" && selected.atStockId ? (
-                                <span className="inline-flex items-center gap-1 text-xs font-medium text-[rgb(1,75,64)]">
-                                  <Check className="size-3" /> Synced
-                                </span>
+                                <Badge tone="success" icon="TickSmallMinor">
+                                  Synced
+                                </Badge>
                               ) : null}
                               <Switch
                                 checked={on}
@@ -846,59 +770,57 @@ export default function ListingsPage() {
 
                   {/* AutoTrader sync state — preserves Synced #id / Error */}
                   {selected.atStockId ? (
-                    <div className="inline-flex items-center gap-1.5 rounded-lg bg-[rgb(175,254,191)] px-2.5 py-1.5 text-xs font-medium text-[rgb(1,75,64)]">
-                      <Check className="size-3.5" />
-                      Synced to AutoTrader · Stock ID{" "}
-                      {selected.atStockId.slice(0, 8)}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone="success" progress="complete">
+                        Synced to AutoTrader
+                      </Badge>
+                      <span className="body-sm text-(--text-secondary)">
+                        Stock ID {selected.atStockId.slice(0, 8)}
+                      </span>
                     </div>
                   ) : selected.atLastError ? (
-                    <div
-                      className="inline-flex items-start gap-1.5 rounded-lg bg-[rgb(254,209,215)] px-2.5 py-1.5 text-xs font-medium text-[rgb(142,11,33)]"
-                      title={selected.atLastError}
-                    >
-                      <TriangleAlert className="mt-px size-3.5 shrink-0" />
-                      <span className="line-clamp-2">
-                        AutoTrader error: {selected.atLastError}
-                      </span>
+                    <div title={selected.atLastError}>
+                      <Banner tone="critical">
+                        <span className="line-clamp-2">
+                          AutoTrader error: {selected.atLastError}
+                        </span>
+                      </Banner>
                     </div>
                   ) : null}
 
                   {/* Actions — delete, edit, publish (draft→live), push to AT */}
-                  <div className="mt-1 flex flex-wrap items-center gap-2 border-t pt-4">
+                  <div className="mt-1 flex flex-wrap items-center gap-2 border-t border-(--border) pt-4">
                     <Button
-                      variant="ghost"
-                      className="text-muted-foreground hover:text-destructive"
+                      variant="tertiary"
+                      tone="critical"
+                      icon="DeleteMinor"
                       onClick={() => setDeleteTarget(selected)}
                     >
-                      <Trash2 className="mr-1.5 size-4" />
                       Delete
                     </Button>
                     <div className="ml-auto flex flex-wrap items-center gap-2">
                       <Button
-                        variant="outline"
+                        icon="EditMinor"
                         onClick={() =>
                           selected.vehicleId &&
                           router.push(`/vehicles/${selected.vehicleId}/advert`)
                         }
                       >
-                        <Pencil className="mr-1.5 size-4" />
                         Edit advert
                       </Button>
                       {selected.status === "draft" ? (
                         <Button onClick={() => void handlePublish(selected.id)}>
-                          <Send className="mr-1.5 size-4" />
                           Publish
                         </Button>
                       ) : null}
                       {canPushAT ? (
                         <Button onClick={() => setAtConfirm(selected)}>
-                          <Send className="mr-1.5 size-4" />
                           Push to AutoTrader
                         </Button>
                       ) : null}
                     </div>
                   </div>
-                </div>
+                </Card>
               );
             })()
           )}
@@ -906,109 +828,95 @@ export default function ListingsPage() {
       </div>
 
       {/* AutoTrader publish confirm — gated live write to the sandbox. */}
-      <Dialog
+      <Modal
         open={atConfirm !== null}
-        onOpenChange={(o) => {
-          if (!o && !atBusy) setAtConfirm(null);
+        onClose={() => {
+          if (!atBusy) setAtConfirm(null);
         }}
+        title="Publish to AutoTrader (sandbox)"
+        size="small"
+        primaryAction={{
+          content: "Publish to AutoTrader",
+          loading: atBusy,
+          onAction: () => void confirmPublishAutoTrader(),
+        }}
+        secondaryActions={[
+          {
+            content: "Cancel",
+            onAction: () => {
+              if (!atBusy) setAtConfirm(null);
+            },
+          },
+        ]}
       >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Publish to AutoTrader (sandbox)</DialogTitle>
-          </DialogHeader>
-          <DialogPanel className="space-y-3 text-sm">
-            <p>
-              This creates a <strong>real advert</strong> on your AutoTrader
-              Connect <strong>sandbox</strong> account for{" "}
-              <strong>
-                {atConfirm?.vehicle?.registration ?? atConfirm?.title}
-              </strong>
-              .
-            </p>
-            <p className="text-muted-foreground">
-              The advert is created with all advertising locations{" "}
-              <strong>NOT_PUBLISHED</strong> (it won&apos;t go live on the
-              AutoTrader marketplace until a separate go-live step). The
-              returned Stock ID is stored against this listing.
-            </p>
-            {atConfirm &&
-            (atConfirm.vehicle?.imagesCount === 0 ||
-              !atConfirm.vehicle?.heroImageUrl) ? (
-              <p className="rounded bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                Note: this advert will be created without images (photo upload
-                pending).
-              </p>
-            ) : null}
-          </DialogPanel>
-          <DialogFooter variant="bare">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setAtConfirm(null)}
-              disabled={atBusy}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={() => void confirmPublishAutoTrader()}
-              disabled={atBusy}
-            >
-              {atBusy ? "Publishing…" : "Publish to AutoTrader"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <div className="body-md flex flex-col gap-3">
+          <p>
+            This creates a <strong>real advert</strong> on your AutoTrader
+            Connect <strong>sandbox</strong> account for{" "}
+            <strong>
+              {atConfirm?.vehicle?.registration ?? atConfirm?.title}
+            </strong>
+            .
+          </p>
+          <p className="text-(--text-secondary)">
+            The advert is created with all advertising locations{" "}
+            <strong>NOT_PUBLISHED</strong> (it won&apos;t go live on the
+            AutoTrader marketplace until a separate go-live step). The
+            returned Stock ID is stored against this listing.
+          </p>
+          {atConfirm &&
+          (atConfirm.vehicle?.imagesCount === 0 ||
+            !atConfirm.vehicle?.heroImageUrl) ? (
+            <Banner tone="warning">
+              This advert will be created without images (photo upload
+              pending).
+            </Banner>
+          ) : null}
+        </div>
+      </Modal>
 
       {/* Delete listing confirm — removes the advert, keeps the vehicle. */}
-      <Dialog
+      <Modal
         open={deleteTarget !== null}
-        onOpenChange={(o) => {
-          if (!o && !deleteBusy) setDeleteTarget(null);
+        onClose={() => {
+          if (!deleteBusy) setDeleteTarget(null);
         }}
+        title="Delete this listing?"
+        size="small"
+        primaryAction={{
+          content: "Delete listing",
+          destructive: true,
+          loading: deleteBusy,
+          onAction: () => void confirmDelete(),
+        }}
+        secondaryActions={[
+          {
+            content: "Cancel",
+            onAction: () => {
+              if (!deleteBusy) setDeleteTarget(null);
+            },
+          },
+        ]}
       >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Delete this listing?</DialogTitle>
-          </DialogHeader>
-          <DialogPanel className="space-y-3 text-sm">
-            <p>
-              This permanently deletes the advert for{" "}
-              <strong>
-                {deleteTarget?.vehicle?.registration ?? deleteTarget?.title}
-              </strong>
-              {deleteTarget?.status === "live" ? " and takes it offline" : ""}.
-              The vehicle and its photos are kept, and it returns to the Work
-              List as ready to advertise.
-            </p>
-            {deleteTarget?.atStockId ? (
-              <p className="rounded bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
-                Note: this listing is synced to AutoTrader (Stock ID{" "}
-                {deleteTarget.atStockId.slice(0, 8)}). Deleting here removes the
-                local advert only; remove it on AutoTrader separately.
-              </p>
-            ) : null}
-          </DialogPanel>
-          <DialogFooter variant="bare">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteTarget(null)}
-              disabled={deleteBusy}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => void confirmDelete()}
-              disabled={deleteBusy}
-            >
-              {deleteBusy ? "Deleting…" : "Delete listing"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+        <div className="body-md flex flex-col gap-3">
+          <p>
+            This permanently deletes the advert for{" "}
+            <strong>
+              {deleteTarget?.vehicle?.registration ?? deleteTarget?.title}
+            </strong>
+            {deleteTarget?.status === "live" ? " and takes it offline" : ""}.
+            The vehicle and its photos are kept, and it returns to the work
+            list as ready to advertise.
+          </p>
+          {deleteTarget?.atStockId ? (
+            <Banner tone="warning">
+              This listing is synced to AutoTrader (Stock ID{" "}
+              {deleteTarget.atStockId.slice(0, 8)}). Deleting here removes the
+              local advert only; remove it on AutoTrader separately.
+            </Banner>
+          ) : null}
+        </div>
+      </Modal>
+    </Page>
   );
 }

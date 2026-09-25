@@ -1,21 +1,16 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { AppHeader } from "@/components/layout/app-header";
-import { AppSidebar } from "@/components/layout/app-sidebar";
 import { GridOverlay } from "@/components/layout/grid-overlay";
-import { PageShell } from "@/components/layout/page-shell";
+import { NextAdminShell } from "@/components/layout/next-admin-shell";
 import { RouteGuard } from "@/components/layout/route-guard";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { Button } from "@/components/ui/button";
 import { OnboardingTour } from "@/components/onboarding/onboarding-tour";
 import { useIsWelcomeScreen } from "@/hooks/use-has-vehicles";
-import { cn } from "@/lib/utils";
-
-const RAIL_HIDDEN_KEY = "cc.shell.rail-hidden";
 
 export default function DashboardLayout({
   children,
@@ -23,30 +18,9 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, loading, error, revalidate } = useAuth();
-  /** Mobile nav drawer (the rail is docked from lg up). */
-  const [navOpen, setNavOpen] = useState(false);
-  /** Desktop: rail hidden by the user (remembered per browser). */
-  const [railHidden, setRailHidden] = useState(false);
-  useEffect(() => {
-    try {
-      // Post-mount read: localStorage doesn't exist during SSR.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setRailHidden(localStorage.getItem(RAIL_HIDDEN_KEY) === "1");
-    } catch {
-      // Blocked storage: rail shown.
-    }
-  }, []);
-  function setRailHiddenPersisted(hidden: boolean) {
-    setRailHidden(hidden);
-    try {
-      localStorage.setItem(RAIL_HIDDEN_KEY, hidden ? "1" : "0");
-    } catch {
-      // The in-memory choice still applies.
-    }
-  }
   const router = useRouter();
   const pathname = usePathname();
-  // The first-run screen owns the whole window: no rail beside it, because
+  // The first-run screen owns the whole window: no nav beside it, because
   // there is nothing in the system yet for any of those links to lead to.
   const isWelcome = useIsWelcomeScreen(pathname);
 
@@ -93,7 +67,7 @@ export default function DashboardLayout({
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/20 px-4">
-        <div className="w-full max-w-md rounded-lg border bg-background p-6 shadow-sm">
+        <div className="w-full max-w-md rounded-(--radius-300) bg-(--bg-surface) p-6 shadow-(--shadow-100)">
           <div className="mb-3 flex items-center gap-2 text-destructive">
             <AlertCircle className="h-5 w-5" />
             <h1 className="text-base font-semibold">Can&apos;t connect</h1>
@@ -126,37 +100,13 @@ export default function DashboardLayout({
     return null;
   }
 
-  // Shopify admin shell: a dark ground running the full height, the nav rail
-  // on it (a drawer below lg), and the page as one white rounded panel inset
-  // 4px top/right/bottom — measured from admin.shopify.com (Sep 2026).
+  // The Polaris app shell (Frame + TopBar + Navigation, see NextAdminShell);
+  // each route renders its <Page> in the Frame's <main>.
   return (
     <OnboardingTour>
-      <div className="flex min-h-dvh bg-sidebar">
-        {!isWelcome && (
-          <div className={cn(railHidden && "lg:hidden")}>
-            <AppSidebar
-              open={navOpen}
-              onClose={() => setNavOpen(false)}
-              onHide={() => setRailHiddenPersisted(true)}
-            />
-          </div>
-        )}
-        <div className={cn("min-w-0 flex-1 p-1", !railHidden && !isWelcome && "lg:pl-0")}>
-          <main
-            data-app-panel=""
-            className="flex min-h-[calc(100dvh-0.5rem)] flex-col rounded-2xl bg-card"
-          >
-            <AppHeader
-              onOpenNav={() => setNavOpen(true)}
-              railHidden={railHidden && !isWelcome}
-              onShowRail={() => setRailHiddenPersisted(false)}
-            />
-            <PageShell>
-              <RouteGuard>{children}</RouteGuard>
-            </PageShell>
-          </main>
-        </div>
-      </div>
+      <NextAdminShell navigation={!isWelcome}>
+        <RouteGuard>{children}</RouteGuard>
+      </NextAdminShell>
       <CommandPalette />
       <Suspense fallback={null}>
         <GridOverlay />

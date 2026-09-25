@@ -13,10 +13,10 @@ export const VEHICLE_STATUSES: {
   color: string;
 }[] = [
   { value: "received", label: "Received", color: "blue" },
-  { value: "inspection_pending", label: "Inspection Pending", color: "yellow" },
-  { value: "being_prepared", label: "Being Prepared", color: "orange" },
-  { value: "photos_pending", label: "Photos Pending", color: "yellow" },
-  { value: "photos_ready", label: "Photos Ready", color: "green" },
+  { value: "inspection_pending", label: "Inspection pending", color: "yellow" },
+  { value: "being_prepared", label: "Being prepared", color: "orange" },
+  { value: "photos_pending", label: "Photos pending", color: "yellow" },
+  { value: "photos_ready", label: "Photos ready", color: "green" },
   { value: "ready", label: "Ready", color: "green" },
   { value: "listed", label: "Listed", color: "purple" },
   { value: "reserved", label: "Reserved", color: "pink" },

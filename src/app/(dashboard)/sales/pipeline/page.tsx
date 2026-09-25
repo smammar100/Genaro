@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Receipt, TrendingUp, Clock, Check, Car } from "lucide-react";
+import { TrendingUp, Clock, Check, Car } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { salesService } from "@/lib/services/sales-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
@@ -16,50 +16,49 @@ import type {
   User,
   Vehicle,
 } from "@/lib/types";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Link as PolarisLink,
+  Page,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SkeletonBodyText,
+} from "@/components/polaris";
 import { RegPlate } from "@/components/shared/reg-plate";
-import { EmptyState } from "@/components/shared/empty-state";
 import { VehicleImage } from "@/components/shared/vehicle-image";
 import { DealDetailSheet } from "@/components/sales/deal-detail-sheet";
-import { cn, formatCurrency, formatRelativeTime, getInitials } from "@/lib/utils";
+import { cn, formatCurrency, formatRelativeTime } from "@/lib/utils";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import { toast } from "@/lib/toast";
 import { DragHandle } from "@/components/shared/drag-handle";
 
-// Per-stage accent dot (Shopify-style: no coloured column top-bars). The shipped stages keep the colours
-// they've always had; user-added stages cycle through the rest by position, so
-// a new column never renders unstyled (GEN-65).
-const STAGE_META: Record<string, { dot: string; bar: string }> = {
-  new_lead: { dot: "bg-slate-400", bar: "border-t-slate-400" },
-  contacted: { dot: "bg-blue-500", bar: "border-t-blue-500" },
-  test_drive: { dot: "bg-violet-500", bar: "border-t-violet-500" },
-  offer_made: { dot: "bg-amber-500", bar: "border-t-amber-500" },
-  deposit_taken: { dot: "bg-orange-500", bar: "border-t-orange-500" },
-  collection_delivery: { dot: "bg-teal-500", bar: "border-t-teal-500" },
-  completed_sale: { dot: "bg-emerald-500", bar: "border-t-emerald-500" },
-  lost: { dot: "bg-rose-500", bar: "border-t-rose-500" },
+// Per-stage accent dot (no coloured column top-bars). Semantic icon tokens,
+// so the dots follow the theme. The shipped stages keep a fixed colour; user-
+// added stages cycle through the rest by position, so a new column never
+// renders unstyled (GEN-65).
+const STAGE_DOT: Record<string, string> = {
+  new_lead: "bg-(--icon-secondary)",
+  contacted: "bg-(--icon-info)",
+  test_drive: "bg-(--icon-magic)",
+  offer_made: "bg-(--icon-caution)",
+  deposit_taken: "bg-(--icon-warning)",
+  collection_delivery: "bg-(--icon-emphasis)",
+  completed_sale: "bg-(--icon-success)",
+  lost: "bg-(--icon-critical)",
 };
 
-const FALLBACK_META: { dot: string; bar: string }[] = [
-  { dot: "bg-sky-500", bar: "border-t-sky-500" },
-  { dot: "bg-fuchsia-500", bar: "border-t-fuchsia-500" },
-  { dot: "bg-lime-500", bar: "border-t-lime-500" },
-  { dot: "bg-cyan-500", bar: "border-t-cyan-500" },
+const FALLBACK_DOT: string[] = [
+  "bg-(--icon-info)",
+  "bg-(--icon-magic)",
+  "bg-(--icon-success)",
+  "bg-(--icon-caution)",
 ];
 
-const metaFor = (slug: string, index: number) =>
-  STAGE_META[slug] ?? FALLBACK_META[index % FALLBACK_META.length];
+const dotFor = (slug: string, index: number) =>
+  STAGE_DOT[slug] ?? FALLBACK_DOT[index % FALLBACK_DOT.length];
 
 /**
  * A completed sale drops off the live board a fortnight after it closes —
@@ -75,9 +74,9 @@ const fmtTotal = (n: number): string =>
   `£${n.toLocaleString("en-GB", { maximumFractionDigits: 0 })}`;
 
 function ageTone(days: number): string {
-  if (days <= 14) return "text-muted-foreground";
-  if (days <= 30) return "text-amber-600 dark:text-amber-400";
-  return "text-rose-600 dark:text-rose-400";
+  if (days <= 14) return "text-(--text-secondary)";
+  if (days <= 30) return "text-(--text-caution)";
+  return "text-(--text-critical)";
 }
 
 export default function SalesPipelinePage() {
@@ -166,104 +165,90 @@ export default function SalesPipelinePage() {
     }
   }
 
+  const agentOptions = [
+    { label: "All agents", value: "all" },
+    ...users
+      .filter(
+        (u) => u.role === "sales" || u.role === "owner" || u.role === "admin",
+      )
+      .map((u) => ({ label: u.name, value: u.id })),
+  ];
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">
-            Sales Pipeline
-          </h1>
-          <p className="mt-0.5 text-[13px] text-muted-foreground">
-            Track every deal from new lead to completed sale. Stages are
-            yours to shape: rename, reorder, add or remove them in Settings.
-          </p>
+    <Page
+      title="Sales pipeline"
+      subtitle="Track every deal from new lead to completed sale. Rename, reorder, add or remove stages in Settings."
+      fullWidth
+    >
+      <div className="flex justify-end">
+        <div className="w-48">
+          <Select
+            label="Agent"
+            labelInline
+            options={agentOptions}
+            value={agentFilter}
+            onChange={(v) => setAgentFilter(v)}
+          />
         </div>
-        <Select
-          items={{
-            all: "All agents",
-            ...Object.fromEntries(
-              users
-                .filter(
-                  (u) =>
-                    u.role === "sales" ||
-                    u.role === "owner" ||
-                    u.role === "admin",
-                )
-                .map((u) => [u.id, u.name]),
-            ),
-          }}
-          value={agentFilter}
-          onValueChange={(v) => setAgentFilter(v)}
-        >
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Agent" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All agents</SelectItem>
-            {users
-              .filter(
-                (u) =>
-                  u.role === "sales" || u.role === "owner" || u.role === "admin",
-              )
-              .map((u) => (
-                <SelectItem key={u.id} value={u.id}>
-                  {u.name}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
       </div>
 
-      {!grouped ? (
-        <Skeleton className="h-72" />
-      ) : deals && deals.length === 0 ? (
-        <EmptyState
-          icon={TrendingUp}
-          title="No deals yet"
-          description="Convert a lead into an appointment, then a deal will appear."
-        />
+      {/* An empty board shows its empty state even before any stages
+          exist, rather than a skeleton that never resolves. */}
+      {deals && deals.length === 0 ? (
+        <EmptyState heading="No deals yet" icon={<TrendingUp />}>
+          Convert a lead into an appointment, then a deal will appear.
+        </EmptyState>
+      ) : !grouped ? (
+        <Card>
+          <SkeletonBodyText lines={8} />
+        </Card>
       ) : (
         <div className="grid auto-cols-[260px] grid-flow-col gap-3 overflow-x-auto pb-2">
           {stages.map((stage, stageIndex) => {
             const list = grouped[stage.slug] ?? [];
-            const meta = metaFor(stage.slug, stageIndex);
             const total = list.reduce((s, d) => s + (dealValue(d) ?? 0), 0);
             return (
               <div
                 key={stage.slug}
-                className="flex flex-col gap-2 rounded-xl bg-[#f7f7f7] p-2 transition-shadow dark:bg-muted/40"
+                className="flex flex-col gap-2 rounded-(--radius-300) bg-(--bg-surface-secondary) p-2 transition-shadow"
                 onDragOver={(e) => {
                   e.preventDefault();
-                  e.currentTarget.classList.add("ring-1", "ring-primary");
+                  e.currentTarget.classList.add("ring-2", "ring-(--border-focus)");
                 }}
                 onDragLeave={(e) => {
-                  e.currentTarget.classList.remove("ring-1", "ring-primary");
+                  e.currentTarget.classList.remove("ring-2", "ring-(--border-focus)");
                 }}
                 onDrop={(e) => {
                   e.preventDefault();
-                  e.currentTarget.classList.remove("ring-1", "ring-primary");
+                  e.currentTarget.classList.remove("ring-2", "ring-(--border-focus)");
                   const dealId = e.dataTransfer.getData("text/deal-id");
                   if (dealId) void handleMove(dealId, stage.slug);
                 }}
               >
                 <div className="flex flex-col gap-0.5 px-1.5 pt-1">
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold">
-                      <span className={cn("size-2 rounded-full", meta.dot)} />
+                  <div className="flex items-center justify-between gap-2">
+                    <h2 className="heading-sm inline-flex items-center gap-1.5">
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "size-2 rounded-full",
+                          dotFor(stage.slug, stageIndex),
+                        )}
+                      />
                       {stage.label}
-                    </span>
-                    <Badge className="tabular-nums">{list.length}</Badge>
+                    </h2>
+                    <Badge>{String(list.length)}</Badge>
                   </div>
                   {total > 0 ? (
-                    <span className="text-xs tabular-nums text-muted-foreground">
+                    <span className="body-sm tabular-nums text-(--text-secondary)">
                       {fmtTotal(total)}
                     </span>
                   ) : null}
                 </div>
 
-                <div className="flex min-h-[3rem] flex-col gap-2">
+                <div className="flex min-h-12 flex-col gap-2">
                   {list.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
+                    <div className="body-sm rounded-(--radius-200) border border-dashed border-(--border) p-3 text-center text-(--text-secondary)">
                       No deals
                     </div>
                   ) : (
@@ -286,9 +271,9 @@ export default function SalesPipelinePage() {
                         stage.behaviour === "reserved" ||
                         stage.behaviour === "won";
                       return (
-                        <Card
+                        <div
                           key={d.id}
-                          className="group/card relative cursor-grab overflow-hidden rounded-[10px] border border-border bg-card p-0 shadow-none transition-colors hover:border-[#c9c9c9] active:cursor-grabbing"
+                          className="group/card relative cursor-grab overflow-hidden rounded-(--radius-300) bg-(--bg-surface) shadow-(--shadow-100) transition-shadow hover:shadow-(--shadow-200) active:cursor-grabbing"
                           draggable
                           onDragStart={(e) => {
                             e.dataTransfer.setData("text/deal-id", d.id);
@@ -296,17 +281,12 @@ export default function SalesPipelinePage() {
                           }}
                         >
                           {/* The grip sits above the image rather than in
-                              it: the header is a photo under a dark gradient,
-                              and a muted glyph on that is invisible. */}
-                          <DragHandle className="absolute left-1.5 top-1.5 z-10 rounded bg-background/80 p-0.5 text-muted-foreground/70 backdrop-blur-sm" />
-                          {/* Premium image header — plate + price over a
-                              gradient, with the movable stage as a glassy chip */}
+                              it, on a surface chip so it reads over a photo. */}
+                          <DragHandle className="absolute left-1.5 top-1.5 z-10 rounded-(--radius-100) bg-(--bg-surface) p-0.5 text-(--icon-secondary) shadow-(--shadow-100)" />
+                          {/* Image header — plate + price over the photo */}
                           <div className="relative">
-                            {/* A vehicle with no hero image gets the same
-                                clean muted+car-icon placeholder the grids use.
-                                Rendering VehicleImage's striped placeholder
-                                under the photo gradient below produced a murky
-                                grey smear + a duplicate reg plate (GEN-52). */}
+                            {/* A vehicle with no hero image gets a clean
+                                surface + car-icon placeholder (GEN-52). */}
                             {v && v.heroImageUrl ? (
                               <Link
                                 href={vehicleDetailHref(v.id, pathname)}
@@ -323,21 +303,17 @@ export default function SalesPipelinePage() {
                               <Link
                                 href={vehicleDetailHref(v.id, pathname)}
                                 title="Open vehicle details"
-                                className="grid aspect-[16/10] w-full place-items-center bg-muted text-muted-foreground/50"
+                                aria-label="Open vehicle details"
+                                className="grid aspect-[16/10] w-full place-items-center bg-(--bg-surface-secondary) text-(--icon-secondary)"
                               >
                                 <Car className="size-8" strokeWidth={1.4} />
                               </Link>
                             ) : (
-                              <div className="grid aspect-[16/10] w-full place-items-center bg-muted text-muted-foreground/50">
+                              <div className="grid aspect-[16/10] w-full place-items-center bg-(--bg-surface-secondary) text-(--icon-secondary)">
                                 <Car className="size-6" />
                               </div>
                             )}
-                            {/* Legibility gradient belongs over PHOTOS only —
-                                on the light placeholder it just muddies it. */}
-                            {v?.heroImageUrl ? (
-                              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                            ) : null}
-                            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-2.5">
+                            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-2.5">
                               {v ? (
                                 <Link
                                   href={vehicleDetailHref(v.id, pathname)}
@@ -350,7 +326,7 @@ export default function SalesPipelinePage() {
                                 <span />
                               )}
                               {dealValue(d) != null ? (
-                                <span className="rounded-md bg-white/90 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-black shadow backdrop-blur">
+                                <span className="body-sm-semibold rounded-(--radius-100) bg-(--bg-surface) px-1.5 py-0.5 tabular-nums text-(--text) shadow-(--shadow-100)">
                                   {formatCurrency(dealValue(d))}
                                 </span>
                               ) : null}
@@ -358,20 +334,20 @@ export default function SalesPipelinePage() {
                           </div>
                           <div className="flex flex-col gap-1.5 p-2.5">
                             <div className="flex items-center justify-between gap-2">
-                              <button
-                                type="button"
+                              <PolarisLink
+                                monochrome
+                                removeUnderline
+                                className="heading-sm truncate text-left"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setViewDeal(d);
                                 }}
-                                className="truncate text-left text-sm font-semibold leading-tight hover:underline"
-                                title="Open deal details"
                               >
                                 {d.customerName}
-                              </button>
+                              </PolarisLink>
                               <span
                                 className={cn(
-                                  "inline-flex shrink-0 items-center gap-1",
+                                  "body-sm inline-flex shrink-0 items-center gap-1",
                                   ageTone(days),
                                 )}
                               >
@@ -379,47 +355,45 @@ export default function SalesPipelinePage() {
                                 {days}d
                               </span>
                             </div>
-                            <p className="line-clamp-1 text-xs text-muted-foreground">
+                            <p className="body-sm line-clamp-1 text-(--text-secondary)">
                               {v ? `${v.make} ${v.model}` : "—"}
                             </p>
                             <div className="flex items-center justify-between gap-2">
                               {agent ? (
-                                <span className="inline-flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-                                  <Avatar size="sm" className="size-5">
-                                    <AvatarFallback className="text-2xs">
-                                      {getInitials(agent.name)}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span className="truncate">{agent.name}</span>
-                                </span>
+                                <Avatar
+                                  name={agent.name}
+                                  size="xs"
+                                  label={
+                                    <span className="body-sm truncate text-(--text-secondary)">
+                                      {agent.name}
+                                    </span>
+                                  }
+                                  className="min-w-0"
+                                />
                               ) : (
                                 <span />
                               )}
-                              <span className="inline-flex shrink-0 items-center gap-1 text-2xs text-muted-foreground">
-                                <Check className="size-3 text-emerald-600 dark:text-emerald-400" />
+                              <span className="body-xs inline-flex shrink-0 items-center gap-1 text-(--text-secondary)">
+                                <Check className="size-3 text-(--icon-success)" />
                                 {formatRelativeTime(d.updatedAt)}
                               </span>
                             </div>
                             {showInvoiceCta && (
                               <Button
-                                asChild
-                                size="sm"
-                                className="mt-1 h-8 w-full text-xs"
+                                fullWidth
+                                icon="OrdersMinor"
+                                className="mt-1"
+                                url={
+                                  v
+                                    ? `/sales/invoice-generation?vehicleId=${v.id}`
+                                    : "/sales/invoice-generation"
+                                }
                               >
-                                <Link
-                                  href={
-                                    v
-                                      ? `/sales/invoice-generation?vehicleId=${v.id}`
-                                      : "/sales/invoice-generation"
-                                  }
-                                >
-                                  <Receipt className="mr-1 h-3 w-3" />
-                                  Generate Invoice
-                                </Link>
+                                Generate invoice
                               </Button>
                             )}
                           </div>
-                        </Card>
+                        </div>
                       );
                     })
                   )}
@@ -448,6 +422,6 @@ export default function SalesPipelinePage() {
           if (!o) setViewDeal(null);
         }}
       />
-    </div>
+    </Page>
   );
 }

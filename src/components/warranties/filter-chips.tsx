@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { Tabs } from "@/components/polaris";
 
 export interface FilterOption<T extends string> {
   value: T;
@@ -16,9 +16,8 @@ interface FilterChipsProps<T extends string> {
 }
 
 /**
- * Small toggle row used above warranty/claim tables. Built on the existing
- * shadcn Button primitive so the active/idle styling matches the rest of
- * the app's filter UI.
+ * Saved-view tabs for the warranty and claim pages — Polaris Tabs on their
+ * own row under the page header, with each view's row count as the badge.
  */
 export function FilterChips<T extends string>({
   options,
@@ -26,30 +25,23 @@ export function FilterChips<T extends string>({
   onChange,
   className,
 }: FilterChipsProps<T>) {
+  const selected = Math.max(
+    0,
+    options.findIndex((o) => o.value === activeValue),
+  );
   return (
-    <div className={cn("flex flex-wrap items-center gap-1", className)}>
-      {options.map((opt) => {
-        const active = opt.value === activeValue;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            aria-pressed={active}
-            onClick={() => onChange(opt.value)}
-            className={cn(
-              "inline-flex h-7 items-center gap-1.5 rounded-lg px-3 text-[13px] transition-colors",
-              active
-                ? "bg-[#ebebeb] font-medium text-foreground"
-                : "text-[#4a4a4a] hover:bg-[#f1f1f1]",
-            )}
-          >
-            <span>{opt.label}</span>
-            {typeof opt.count === "number" && (
-              <span className="text-xs text-muted-foreground">{opt.count}</span>
-            )}
-          </button>
-        );
-      })}
-    </div>
+    <Tabs
+      className={className}
+      tabs={options.map((o) => ({
+        id: o.value,
+        content: o.label,
+        badge: o.count,
+      }))}
+      selected={selected}
+      onSelect={(i) => {
+        const opt = options[i];
+        if (opt) onChange(opt.value);
+      }}
+    />
   );
 }

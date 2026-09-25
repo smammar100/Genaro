@@ -1,28 +1,31 @@
 "use client";
 
-import { use, useCallback, useEffect, useId, useMemo, useState } from "react";
-import Link from "next/link";
-import { ChevronLeft, ChevronDown, Plus } from "lucide-react";
+import {
+  type ReactNode,
+  use,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+} from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { dealerPartnerService } from "@/lib/services/dealer-partner-service";
 import type { DealerPartner, Vehicle } from "@/lib/types";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { EmptyState } from "@/components/shared/empty-state";
-import { AddVehicleButton } from "@/components/vehicles/add-vehicle-button";
+  Badge,
+  Button,
+  Card,
+  Checkbox,
+  EmptyState,
+  Layout,
+  Link,
+  Modal,
+  Page,
+  SkeletonBodyText,
+  TextField,
+} from "@/components/polaris";
+import { AddVehicleModal } from "@/components/vehicles/add-vehicle-modal";
 import {
   type ColumnDef,
   DataGridColumnsButton,
@@ -47,6 +50,11 @@ interface DraftPartner {
   active: boolean;
 }
 
+const BACK_ACTION = {
+  content: "Dealer partners",
+  url: "/admin/vendors?tab=dealer-partners",
+};
+
 export default function DealerPartnerDetailPage({
   params,
 }: {
@@ -62,6 +70,7 @@ export default function DealerPartnerDetailPage({
   const [notesDraft, setNotesDraft] = useState("");
   const [edit, setEdit] = useState<DraftPartner | null>(null);
   const [busy, setBusy] = useState(false);
+  const [addVehicleOpen, setAddVehicleOpen] = useState(false);
   const notesId = useId();
   const editIdBase = useId();
   const editNameId = `${editIdBase}-name`;
@@ -193,88 +202,64 @@ export default function DealerPartnerDetailPage({
 
   if (loaded && !partner) {
     return (
-      <div className="flex flex-col gap-4">
-        <Link
-          href="/admin/vendors?tab=dealer-partners"
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeft className="h-4 w-4" /> Dealer Partners
-        </Link>
-        <EmptyState
-          icon={Plus}
-          title="Partner not found"
-          description="This dealer partner doesn't exist or the table isn't migrated."
-        />
-      </div>
+      <Page title="Dealer partner" backAction={BACK_ACTION}>
+        <EmptyState heading="Partner not found">
+          This dealer partner doesn&apos;t exist or the table isn&apos;t
+          migrated.
+        </EmptyState>
+      </Page>
+    );
+  }
+
+  if (!partner) {
+    return (
+      <Page title="Dealer partner" backAction={BACK_ACTION}>
+        <Card>
+          <SkeletonBodyText lines={4} />
+        </Card>
+      </Page>
     );
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[1000px] flex-col gap-4">
-      <Link
-        href="/admin/vendors?tab=dealer-partners"
-        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" /> Dealer Partners
-      </Link>
-
-      {!partner ? (
-        <Skeleton className="h-40" />
-      ) : (
-        <>
-          <Card className="flex flex-col gap-3 p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h1 className="text-xl font-semibold">
-                  {partner.companyName ?? partner.name}
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  {partner.name}
-                  {partner.phone ? ` · ${partner.phone}` : ""}
-                  {partner.email ? ` · ${partner.email}` : ""}
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {partner.companyAddress ?? "—"}
-                  {partner.vatNumber ? ` · VAT ${partner.vatNumber}` : ""}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {!partner.active && (
-                  <Badge variant="secondary">Inactive</Badge>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setEdit({
-                      name: partner.name,
-                      phone: partner.phone ?? "",
-                      companyName: partner.companyName ?? "",
-                      email: partner.email ?? "",
-                      companyAddress: partner.companyAddress ?? "",
-                      vatNumber: partner.vatNumber ?? "",
-                      active: partner.active,
-                    })
-                  }
-                >
-                  Edit Partner
-                </Button>
-                <AddVehicleButton
-                  size="sm"
-                  extraParams={{ dealerPartner: partner.id }}
-                >
-                  <Plus className="mr-1.5 h-4 w-4" /> Add Vehicle from this
-                  Partner
-                </AddVehicleButton>
-              </div>
-            </div>
-          </Card>
-
-          <div>
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold">
-                Active Stock{" "}
-                <span className="text-muted-foreground">
+    <Page
+      title={partner.companyName ?? partner.name}
+      subtitle={partner.companyName ? partner.name : undefined}
+      backAction={BACK_ACTION}
+      titleMetadata={
+        partner.active ? (
+          <Badge tone="success">Active</Badge>
+        ) : (
+          <Badge>Inactive</Badge>
+        )
+      }
+      secondaryActions={[
+        {
+          content: "Edit partner",
+          onAction: () =>
+            setEdit({
+              name: partner.name,
+              phone: partner.phone ?? "",
+              companyName: partner.companyName ?? "",
+              email: partner.email ?? "",
+              companyAddress: partner.companyAddress ?? "",
+              vatNumber: partner.vatNumber ?? "",
+              active: partner.active,
+            }),
+        },
+      ]}
+      primaryAction={{
+        content: "Add vehicle from this partner",
+        onAction: () => setAddVehicleOpen(true),
+      }}
+    >
+      <Layout>
+        <Layout.Section>
+          <Card padding="0">
+            <div className="flex items-center justify-between gap-2 px-4 pb-2 pt-4">
+              <h2 className="heading-sm text-(--text)">
+                Active stock{" "}
+                <span className="text-(--text-secondary)">
                   ({active?.length ?? "…"})
                 </span>
               </h2>
@@ -292,193 +277,197 @@ export default function DealerPartnerDetailPage({
               </div>
             </div>
             {!active ? (
-              <Skeleton className="h-40" />
+              <div className="p-4">
+                <SkeletonBodyText lines={4} />
+              </div>
             ) : active.length === 0 ? (
-              <EmptyState
-                icon={Plus}
-                title="No active stock"
-                description="No vehicles currently in stock from this partner (sold / returned excluded)."
-              />
+              <p className="body-md px-4 pb-4 text-(--text-secondary)">
+                No vehicles currently in stock from this partner (sold /
+                returned excluded).
+              </p>
             ) : (
-              <DataGridShell>
-                <DataGridTable cols={visibleCols} density={density}>
-                  <DataGridHeaderRow cols={visibleCols} />
-                  <tbody>
-                    {active.map((v, i) => (
-                      <DataGridRow
-                        key={v.id}
-                        row={v}
-                        cols={visibleCols}
-                        index={i}
-                      />
-                    ))}
-                  </tbody>
-                </DataGridTable>
-              </DataGridShell>
+              <StockGrid rows={active} cols={visibleCols} density={density} />
             )}
-          </div>
+          </Card>
 
-          <div>
-            <button
-              type="button"
-              onClick={() => setShowHistory((s) => !s)}
-              className="flex items-center gap-1 text-sm font-semibold"
-            >
-              <ChevronDown
-                className={`h-4 w-4 transition-transform ${
-                  showHistory ? "" : "-rotate-90"
-                }`}
-              />
-              Historical Stock{" "}
-              <span className="text-muted-foreground">
-                ({historical?.length ?? "…"})
-              </span>
-            </button>
-            {showHistory &&
-              (!historical ? (
-                <Skeleton className="mt-2 h-32" />
+          <Card padding="0">
+            <div className="px-4 pb-2 pt-4">
+              <Button
+                variant="monochromePlain"
+                disclosure={showHistory ? "up" : "down"}
+                ariaExpanded={showHistory}
+                onClick={() => setShowHistory((s) => !s)}
+              >
+                {`Historical stock (${historical?.length ?? "…"})`}
+              </Button>
+            </div>
+            {showHistory ? (
+              !historical ? (
+                <div className="p-4">
+                  <SkeletonBodyText lines={3} />
+                </div>
               ) : historical.length === 0 ? (
-                <p className="mt-2 text-xs text-muted-foreground">
+                <p className="body-sm px-4 pb-4 text-(--text-secondary)">
                   No previous vehicles from this partner.
                 </p>
               ) : (
-                <div className="mt-2">
-                  <DataGridShell>
-                    <DataGridTable cols={visibleCols} density={density}>
-                      <DataGridHeaderRow cols={visibleCols} />
-                      <tbody>
-                        {historical.map((v, i) => (
-                          <DataGridRow
-                            key={v.id}
-                            row={v}
-                            cols={visibleCols}
-                            index={i}
-                          />
-                        ))}
-                      </tbody>
-                    </DataGridTable>
-                  </DataGridShell>
-                </div>
-              ))}
-          </div>
+                <StockGrid
+                  rows={historical}
+                  cols={visibleCols}
+                  density={density}
+                />
+              )
+            ) : null}
+          </Card>
+        </Layout.Section>
 
-          <Card className="flex flex-col gap-2 p-5">
-            <Label htmlFor={notesId} className="text-sm font-semibold">Notes</Label>
-            <Textarea
+        <Layout.Section variant="oneThird">
+          <Card title="Partner details">
+            <DetailRow label="Contact">{partner.name}</DetailRow>
+            <DetailRow label="Phone">{partner.phone || "—"}</DetailRow>
+            <DetailRow label="Email">
+              {partner.email ? (
+                <Link url={`mailto:${partner.email}`}>{partner.email}</Link>
+              ) : (
+                "—"
+              )}
+            </DetailRow>
+            <DetailRow label="Company address">
+              {partner.companyAddress ?? "—"}
+            </DetailRow>
+            <DetailRow label="VAT number">{partner.vatNumber || "—"}</DetailRow>
+          </Card>
+
+          <Card title="Notes">
+            <TextField
               id={notesId}
+              label="Notes"
+              labelHidden
+              multiline={4}
               value={notesDraft}
-              onChange={(e) => setNotesDraft(e.target.value)}
-              className="min-h-24"
+              onChange={setNotesDraft}
               placeholder="Free-text notes about this partner…"
             />
             <div className="flex justify-end">
               <Button
-                size="sm"
                 onClick={() => void saveNotes()}
+                loading={busy}
                 disabled={busy || notesDraft === (partner.notes ?? "")}
               >
                 Save notes
               </Button>
             </div>
           </Card>
-        </>
-      )}
+        </Layout.Section>
+      </Layout>
 
-      <Dialog
+      <AddVehicleModal
+        open={addVehicleOpen}
+        onOpenChange={setAddVehicleOpen}
+        extraParams={{ dealerPartner: partner.id }}
+      />
+
+      <Modal
         open={edit !== null}
-        onOpenChange={(o) => {
-          if (!o) setEdit(null);
+        onClose={() => setEdit(null)}
+        title="Edit dealer partner"
+        primaryAction={{
+          content: "Save dealer partner",
+          loading: busy,
+          onAction: () => void saveEdit(),
         }}
+        secondaryActions={[{ content: "Cancel", onAction: () => setEdit(null) }]}
       >
-        <DialogContent className="max-w-md">
-          {edit && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Edit Dealer Partner</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-3">
-                <div>
-                  <Label htmlFor={editNameId}>Contact name</Label>
-                  <Input
-                    id={editNameId}
-                    value={edit.name}
-                    onChange={(e) =>
-                      setEdit({ ...edit, name: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <Label htmlFor={editPhoneId}>Phone</Label>
-                    <Input
-                      id={editPhoneId}
-                      value={edit.phone}
-                      onChange={(e) =>
-                        setEdit({ ...edit, phone: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor={editEmailId}>Email</Label>
-                    <Input
-                      id={editEmailId}
-                      value={edit.email}
-                      onChange={(e) =>
-                        setEdit({ ...edit, email: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor={editCompanyNameId}>Company name</Label>
-                  <Input
-                    id={editCompanyNameId}
-                    value={edit.companyName}
-                    onChange={(e) =>
-                      setEdit({ ...edit, companyName: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label htmlFor={editCompanyAddressId}>Company address</Label>
-                  <Input
-                    id={editCompanyAddressId}
-                    value={edit.companyAddress}
-                    onChange={(e) =>
-                      setEdit({ ...edit, companyAddress: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label htmlFor={editVatNumberId}>VAT number</Label>
-                  <Input
-                    id={editVatNumberId}
-                    value={edit.vatNumber}
-                    onChange={(e) =>
-                      setEdit({ ...edit, vatNumber: e.target.value })
-                    }
-                  />
-                </div>
-                <label className="flex items-center gap-2 text-sm">
-                  <Switch
-                    checked={edit.active}
-                    onCheckedChange={(v) => setEdit({ ...edit, active: v })}
-                  />
-                  Active
-                </label>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setEdit(null)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => void saveEdit()} disabled={busy}>
-                  Save
-                </Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+        {edit && (
+          <div className="flex flex-col gap-3">
+            <TextField
+              id={editNameId}
+              label="Contact name"
+              value={edit.name}
+              onChange={(v) => setEdit({ ...edit, name: v })}
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <TextField
+                id={editPhoneId}
+                label="Phone"
+                type="tel"
+                value={edit.phone}
+                onChange={(v) => setEdit({ ...edit, phone: v })}
+              />
+              <TextField
+                id={editEmailId}
+                label="Email"
+                type="email"
+                value={edit.email}
+                onChange={(v) => setEdit({ ...edit, email: v })}
+              />
+            </div>
+            <TextField
+              id={editCompanyNameId}
+              label="Company name"
+              value={edit.companyName}
+              onChange={(v) => setEdit({ ...edit, companyName: v })}
+            />
+            <TextField
+              id={editCompanyAddressId}
+              label="Company address"
+              value={edit.companyAddress}
+              onChange={(v) => setEdit({ ...edit, companyAddress: v })}
+            />
+            <TextField
+              id={editVatNumberId}
+              label="VAT number"
+              value={edit.vatNumber}
+              onChange={(v) => setEdit({ ...edit, vatNumber: v })}
+            />
+            <Checkbox
+              label="Active"
+              checked={edit.active}
+              onChange={(v) => setEdit({ ...edit, active: v })}
+            />
+          </div>
+        )}
+      </Modal>
+    </Page>
+  );
+}
+
+/** One label/value pair in the Partner details card. */
+function DetailRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col">
+      <span className="body-sm text-(--text-secondary)">{label}</span>
+      <span className="body-md break-words text-(--text)">{children}</span>
     </div>
+  );
+}
+
+/** Stock list in the shared data-grid engine, flush inside its card. */
+function StockGrid({
+  rows,
+  cols,
+  density,
+}: {
+  rows: Vehicle[];
+  cols: ColumnDef<Vehicle>[];
+  density: ReturnType<typeof useDensity>["density"];
+}) {
+  return (
+    <DataGridShell bare className="border-t border-(--border)">
+      <DataGridTable cols={cols} density={density}>
+        <DataGridHeaderRow cols={cols} />
+        <tbody>
+          {rows.map((v, i) => (
+            <DataGridRow key={v.id} row={v} cols={cols} index={i} />
+          ))}
+        </tbody>
+      </DataGridTable>
+    </DataGridShell>
   );
 }

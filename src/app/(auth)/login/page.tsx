@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { rulesResolver, requiredIssue, type FormRules } from "@/lib/auth/form-resolver";
 import { toast } from "@/lib/toast";
@@ -13,8 +12,8 @@ import {
   syntheticEmail,
   DEFAULT_ORG_SLUG,
 } from "@/lib/auth/username";
-import { Button } from "@/components/ui/button";
-import { InputField } from "@/components/forms/input-field";
+import { Banner, Button, Link } from "@/components/polaris";
+import { AuthCard, RhfTextField } from "../_components/auth-card";
 
 interface FormValues {
   identifier: string;
@@ -111,74 +110,60 @@ function LoginInner() {
   const handleFormSubmit = form.handleSubmit(onSubmit);
 
   return (
-    // Shopify-style sign-in: one centred white card on a #f1f1f1 page.
-    <div className="flex min-h-screen items-center justify-center bg-[#f1f1f1] px-4 py-12 dark:bg-background">
-      <div className="w-full max-w-[400px] rounded-xl border border-[#e3e3e3] bg-white p-8 shadow-[0_1px_0_rgba(0,0,0,.05)] dark:bg-card">
-          <div className="mb-6 grid size-9 place-items-center rounded-lg bg-[#101010] text-xs font-bold text-white">
-            CC
-          </div>
-          <h1 className="text-xl font-semibold text-[#101010] dark:text-foreground">
-            Log in
-          </h1>
-          <p className="mt-1 text-[13px] text-muted-foreground">
-            Continue to Car Capital UK
-          </p>
+    // Polaris sign-in: one centred Card on the bg page ground.
+    <AuthCard title="Log in" subtitle="Continue to Car Capital UK">
+      {/* A deactivated account is signed out mid-session, which without
+          this reads as "my password stopped working" (GEN-125). Name the
+          cause and the person who can undo it. */}
+      {signedOutReason === "deactivated" && (
+        <Banner tone="warning" className="mb-2">
+          This account has been deactivated. Ask an administrator to restore
+          your access.
+        </Banner>
+      )}
 
-          {/* A deactivated account is signed out mid-session, which without
-              this reads as "my password stopped working" (GEN-125). Name the
-              cause and the person who can undo it. */}
-          {signedOutReason === "deactivated" && (
-            <div
-              role="status"
-              className="mt-5 rounded-lg bg-[#fff1c2] px-3 py-2.5 text-left text-[13px] text-[#4f4700] dark:bg-amber-950/30 dark:text-amber-200"
-            >
-              This account has been deactivated. Ask an administrator to restore
-              your access.
-            </div>
-          )}
+      <form onSubmit={handleFormSubmit} className="flex flex-col gap-4">
+        <RhfTextField
+          control={form.control}
+          name="identifier"
+          label="Username or email"
+          type="text"
+          autoComplete="username"
+          placeholder="username"
+        />
+        <RhfTextField
+          control={form.control}
+          name="password"
+          label="Password"
+          type="password"
+          autoComplete="current-password"
+        />
+        <Button
+          variant="primary"
+          size="large"
+          submit
+          fullWidth
+          loading={form.formState.isSubmitting}
+          className="mt-1"
+        >
+          Sign in
+        </Button>
+        <div className="self-center">
+          <Link url="/forgot-password" removeUnderline>
+            Forgot password?
+          </Link>
+        </div>
+      </form>
 
-          <form onSubmit={handleFormSubmit} className="mt-6 flex flex-col gap-4">
-            <InputField
-              control={form.control}
-              name="identifier"
-              label="Username or email"
-              type="text"
-              autoComplete="username"
-              placeholder="username"
-            />
-            <InputField
-              control={form.control}
-              name="password"
-              label="Password"
-              type="password"
-              autoComplete="current-password"
-            />
-            <Button
-              type="submit"
-              expand
-              loading={form.formState.isSubmitting}
-              className="mt-1"
-            >
-              Sign in
-            </Button>
-            <Link
-              href="/forgot-password"
-              className="self-center text-[13px] text-[#005bd3] underline-offset-4 hover:underline"
-            >
-              Forgot password?
-            </Link>
-          </form>
-
-          {process.env.NODE_ENV !== "production" && (
-            <p className="mt-8 text-xs text-muted-foreground">
-              Dev seed users: shared password{" "}
-              <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">
-                CarCapUAT!2026
-              </code>
-              .
-            </p>
-          )}
-      </div>
-    </div>
+      {process.env.NODE_ENV !== "production" && (
+        <p className="body-sm mt-8 text-(--text-secondary)">
+          Dev seed users: shared password{" "}
+          <code className="rounded-(--radius-100) bg-(--bg-surface-secondary) px-1.5 py-0.5 text-(--text)">
+            CarCapUAT!2026
+          </code>
+          .
+        </p>
+      )}
+    </AuthCard>
   );
 }

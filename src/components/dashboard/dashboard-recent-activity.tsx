@@ -17,7 +17,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { activityService } from "@/lib/services/activity-service";
 import type { ActivityActionType, ActivityLogEntry } from "@/lib/types";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button, Card, SkeletonBodyText } from "@/components/polaris";
 import { cn } from "@/lib/utils";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";
 
@@ -40,32 +40,32 @@ function categorize(type: ActivityActionType): {
     type.startsWith("lead") ||
     type.startsWith("appointment")
   )
-    return { Icon: TrendingUp, tag: "Sales", tint: "text-[#4a4a4a]" };
+    return { Icon: TrendingUp, tag: "Sales", tint: "text-(--icon)" };
   if (type.startsWith("inspection"))
     return {
       Icon: ClipboardCheck,
       tag: "Inspection",
-      tint: "text-[#4a4a4a]",
+      tint: "text-(--icon)",
     };
   if (type.startsWith("maintenance") || type.startsWith("workshop"))
     return {
       Icon: Wrench,
       tag: "Workshop",
-      tint: "text-[#4a4a4a]",
+      tint: "text-(--icon)",
     };
   if (type.startsWith("photo") || type.startsWith("listing"))
-    return { Icon: Camera, tag: "Advert", tint: "text-[#4a4a4a]" };
+    return { Icon: Camera, tag: "Advert", tint: "text-(--icon)" };
   if (type.startsWith("warranty"))
     return {
       Icon: ShieldCheck,
       tag: "Warranty",
-      tint: "text-[#4a4a4a]",
+      tint: "text-(--icon)",
     };
   if (type.includes("invoice") || type === "cost_updated")
     return {
       Icon: Receipt,
       tag: "Finance",
-      tint: "text-[#4a4a4a]",
+      tint: "text-(--icon)",
     };
   if (
     type.startsWith("user") ||
@@ -73,8 +73,8 @@ function categorize(type: ActivityActionType): {
     type.includes("channel") ||
     type === "data_migrated"
   )
-    return { Icon: Users, tag: "Admin", tint: "text-muted-foreground" };
-  return { Icon: Car, tag: "Inventory", tint: "text-muted-foreground" };
+    return { Icon: Users, tag: "Admin", tint: "text-(--icon-secondary)" };
+  return { Icon: Car, tag: "Inventory", tint: "text-(--icon-secondary)" };
 }
 
 function timeAgo(iso: string): string {
@@ -100,32 +100,24 @@ export function DashboardRecentActivity() {
   }, [company]);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-[#e3e3e3] bg-card shadow-[0_1px_0_rgba(0,0,0,.05)]">
-      <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2">
-        <div className="flex items-baseline gap-2">
-          <h2 className="text-sm font-semibold text-foreground">
-            Latest news
-          </h2>
-        </div>
-        <Link
-          className="text-[13px] text-[#005bd3] no-underline hover:underline"
-          href="/admin/activity"
-        >
+    <Card
+      className="h-full"
+      title="Latest news"
+      actions={
+        <Button variant="plain" url="/admin/activity">
           View all
-        </Link>
-      </div>
-
+        </Button>
+      }
+    >
       {entries === null ? (
-        <div className="p-4">
-          <Skeleton className="h-40" />
-        </div>
+        <SkeletonBodyText lines={5} />
       ) : entries.length === 0 ? (
-        <p className="px-6 py-10 text-center text-[13px] leading-[1.55] text-[#4a4a4a]">
+        <p className="body-md px-2 py-6 text-center text-(--text-secondary)">
           Nothing has happened today. Every sale, inspection, workshop job and
           listing change lands here as it is recorded.
         </p>
       ) : (
-        <ul className="flex flex-1 list-none flex-col justify-between py-2 pb-2.5">
+        <ul className="-mx-2 flex flex-1 list-none flex-col justify-between">
           {entries.map((e) => {
             const { Icon, tag, tint } = categorize(e.actionType);
             const href = e.vehicleId
@@ -134,26 +126,29 @@ export function DashboardRecentActivity() {
             return (
               <li key={e.id}>
                 <Link
-                  className="flex gap-2.5 px-4 py-1.5 no-underline hover:bg-[#f7f7f7]"
+                  className="flex gap-2.5 rounded-(--radius-200) px-2 py-1.5 no-underline hover:bg-(--bg-surface-hover) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
                   href={href}
                 >
                   {/* The design puts a 54x40 photo here. Activity entries carry
                       no image, so the category icon fills the same slot at the
                       same size rather than leaving a hole or inventing art. */}
-                  <span className="grid h-10 w-[54px] shrink-0 place-items-center rounded-lg bg-[#f1f1f1]">
+                  <span className="grid h-10 w-14 shrink-0 place-items-center rounded-(--radius-200) bg-(--bg-surface-secondary)">
                     <Icon className={cn("h-4 w-4", tint)} />
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="flex items-center gap-1.5">
-                      <span className="text-xs font-medium text-[#4a4a4a]">
+                      <span className="body-sm text-(--text-secondary)">
                         {tag}
                       </span>
-                      <span className="block size-[3px] rounded-full bg-[#D4D4D8]" />
-                      <span className="text-[11px] text-muted-foreground">
+                      <span
+                        aria-hidden
+                        className="block size-0.5 rounded-full bg-(--icon-secondary)"
+                      />
+                      <span className="body-sm text-(--text-secondary)">
                         {timeAgo(e.createdAt)}
                       </span>
                     </span>
-                    <span className="line-clamp-2 text-[12.5px] font-medium leading-[1.34] text-pretty">
+                    <span className="body-md line-clamp-2 text-pretty text-(--text)">
                       {e.description}
                     </span>
                   </span>
@@ -163,6 +158,6 @@ export function DashboardRecentActivity() {
           })}
         </ul>
       )}
-    </div>
+    </Card>
   );
 }

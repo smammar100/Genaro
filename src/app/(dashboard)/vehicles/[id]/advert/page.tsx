@@ -5,7 +5,14 @@ import { vehicleService } from "@/lib/services/vehicle-service";
 import { listingService } from "@/lib/services/listing-service";
 import { vehiclePhotoService } from "@/lib/services/vehicle-photo-service";
 import type { Listing, Vehicle } from "@/lib/types";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Card,
+  EmptyState,
+  Layout,
+  Page,
+  SkeletonBodyText,
+  SkeletonDisplayText,
+} from "@/components/polaris";
 import { AdvertEditor } from "@/components/advert/advert-editor";
 
 /**
@@ -37,24 +44,35 @@ export default function VehicleAdvertPage({
 
   if (vehicle === undefined || listing === undefined) {
     return (
-      <div className="flex flex-col gap-4">
-        <Skeleton className="h-16 w-full rounded-xl" />
-        <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-          <Skeleton className="h-[28rem] w-full rounded-xl" />
-          <Skeleton className="h-80 w-full rounded-xl" />
-        </div>
-      </div>
+      <Page>
+        <SkeletonDisplayText size="small" />
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <SkeletonBodyText lines={10} />
+            </Card>
+          </Layout.Section>
+          <Layout.Section variant="oneThird">
+            <Card>
+              <SkeletonBodyText lines={6} />
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
     );
   }
 
   if (vehicle === null) {
     return (
-      <div className="rounded-xl border bg-card p-10 text-center">
-        <p className="text-sm font-semibold text-foreground">Vehicle not found</p>
-        <p className="mt-1 text-[13px] text-muted-foreground">
+      <Page>
+        <EmptyState
+          icon="ProductsMinor"
+          heading="Vehicle not found"
+          action={{ content: "Back to all vehicles", url: "/vehicles" }}
+        >
           It may have been deleted or the link is out of date.
-        </p>
-      </div>
+        </EmptyState>
+      </Page>
     );
   }
 

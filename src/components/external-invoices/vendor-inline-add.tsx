@@ -3,10 +3,9 @@
 import { useId, useState } from "react";
 import { toast } from "@/lib/toast";
 import { useAutoFocus } from "@/hooks/use-auto-focus";
-import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button, Select, TextField } from "@/components/polaris";
+// Stays on the app Dialog: it opens on top of the external-invoice form,
+// which is itself an app Dialog, so it has to share that overlay stack.
 import {
   Dialog,
   DialogContent,
@@ -14,17 +13,9 @@ import {
   DialogHeader,
   DialogPanel,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { vendorService } from "@/lib/services/vendor-service";
-import type { UUID, Vendor } from "@/lib/types";
+import type { UUID, Vendor, VendorSpeciality } from "@/lib/types";
 
 interface Props {
   companyId: UUID;
@@ -38,17 +29,22 @@ interface Props {
   existingVendors?: Vendor[];
 }
 
-const SPECIALITIES = [
-  "mechanical",
-  "bodywork",
-  "tyres",
-  "electrical",
-  "mot",
-  "general",
-] as const;
+/** Display labels for vendor specialities (sentence case; MOT stays upper). */
+export const SPECIALITY_LABELS: Record<VendorSpeciality, string> = {
+  mechanical: "Mechanical",
+  bodywork: "Bodywork",
+  tyres: "Tyres",
+  electrical: "Electrical",
+  mot: "MOT",
+  general: "General",
+};
+
+const SPECIALITY_OPTIONS = (
+  ["mechanical", "bodywork", "tyres", "electrical", "mot", "general"] as const
+).map((value) => ({ value, label: SPECIALITY_LABELS[value] }));
 
 /**
- * Spec v3.0 · Module D.6 — inline "+ Add new vendor" inside the
+ * Spec v3.0 · Module D.6 — inline "Add new vendor" inside the
  * external-invoice form. Captures name (required) + speciality + phone,
  * then calls `onCreated(vendor)` so the parent can select it.
  */
@@ -63,7 +59,7 @@ export function VendorInlineAdd({
   const [speciality, setSpeciality] = useState<string>("general");
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
-  // Ids so each <Label> actually focuses its control on click.
+  // Ids so each label actually focuses its control on click.
   const baseId = useId();
   const nameId = `${baseId}-name`;
   const specialityId = `${baseId}-speciality`;
@@ -128,83 +124,68 @@ export function VendorInlineAdd({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button type="button" variant="outline" size="sm" className={className}>
-          <Plus className="mr-1 size-3.5" />
-          Add new vendor
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>New vendor</DialogTitle>
-        </DialogHeader>
-        {/* A real <form> so Enter submits — previously these inputs sat loose
-            in the panel and Enter silently did nothing. */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void save();
-          }}
-        >
-        <DialogPanel className="grid gap-4">
-          <div className="grid gap-1.5">
-            <Label htmlFor={nameId}>Name *</Label>
-            <Input
-              id={nameId}
-              ref={nameRef}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Ali's Garage"
-            />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor={specialityId}>Speciality</Label>
-            <Select value={speciality} onValueChange={setSpeciality}>
-              <SelectTrigger id={specialityId} className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SPECIALITIES.map((s) => (
-                  <SelectItem key={s} value={s} className="capitalize">
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor={phoneId}>Phone (optional)</Label>
-            <Input
-              id={phoneId}
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="02085711234"
-              inputMode="tel"
-            />
-          </div>
-        </DialogPanel>
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setOpen(false)}
-            disabled={saving}
+    <>
+      <Button icon="PlusMinor" className={className} onClick={() => setOpen(true)}>
+        Add new vendor
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>New vendor</DialogTitle>
+          </DialogHeader>
+          {/* A real <form> so Enter in any field submits via "Add vendor". */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void save();
+            }}
           >
-            Cancel
-          </Button>
-          <Button type="button" onClick={() => void save()} loading={saving}>
-            {saving ? "Saving…" : "Add vendor"}
-          </Button>
-        </DialogFooter>
-        {/* The visible Button is type="button", so without a submit button the
-            browser's implicit submission would ignore Enter in a field. This
-            hidden native submit is what makes Enter work; the two paths can't
-            both fire. */}
-        <button aria-hidden="true" className="hidden" tabIndex={-1} type="submit" />
-        </form>
-      </DialogContent>
-    </Dialog>
+            <DialogPanel className="grid gap-4">
+              <div
+                // TextField doesn't forward a ref, so hand its <input> to the
+                // auto-focus hook.
+                ref={(el) => {
+                  nameRef.current = el?.querySelector("input") ?? null;
+                }}
+              >
+                <TextField
+                  id={nameId}
+                  label="Name"
+                  requiredIndicator
+                  value={name}
+                  onChange={setName}
+                  placeholder="e.g. Ali's Garage"
+                />
+              </div>
+              <Select
+                id={specialityId}
+                label="Speciality"
+                options={SPECIALITY_OPTIONS}
+                value={speciality}
+                onChange={setSpeciality}
+              />
+              <TextField
+                id={phoneId}
+                label="Phone (optional)"
+                type="tel"
+                autoComplete="tel"
+                inputMode="tel"
+                value={phone}
+                onChange={setPhone}
+                placeholder="02085711234"
+              />
+            </DialogPanel>
+            <DialogFooter>
+              <Button onClick={() => setOpen(false)} disabled={saving}>
+                Cancel
+              </Button>
+              <Button variant="primary" submit loading={saving}>
+                Add vendor
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

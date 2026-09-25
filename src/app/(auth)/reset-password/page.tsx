@@ -11,17 +11,8 @@ import {
 import { toast } from "@/lib/toast";
 import { useAutoFocusField } from "@/hooks/use-auto-focus";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Banner, Button } from "@/components/polaris";
+import { AuthCard, RhfTextField } from "../_components/auth-card";
 
 interface FormValues {
   password: string;
@@ -96,97 +87,57 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f1f1f1] px-4 py-12 dark:bg-background">
-      <div className="w-full max-w-[400px] rounded-xl border border-[#e3e3e3] bg-white p-8 shadow-[0_1px_0_rgba(0,0,0,.05)] dark:bg-card">
-        <div className="mb-6">
-          <div className="mb-6 grid size-9 place-items-center rounded-lg bg-[#101010] text-xs font-bold text-white">
-            CC
-          </div>
-          <h1 className="text-xl font-semibold text-[#101010] dark:text-foreground">
-            Set a new password
-          </h1>
-          <p className="mt-1 text-[13px] text-muted-foreground">
-            Choose a password you haven&apos;t used before.
-          </p>
+    <AuthCard
+      title="Set a new password"
+      subtitle="Choose a password you haven't used before."
+    >
+      {status === "invalid" ? (
+        <div className="flex flex-col gap-4">
+          <Banner tone="critical" title="Reset link invalid or expired">
+            This password reset link is no longer valid. Request a new one to
+            continue.
+          </Banner>
+          <Button
+            variant="primary"
+            size="large"
+            fullWidth
+            onClick={() => router.replace("/forgot-password")}
+          >
+            Request a new link
+          </Button>
         </div>
-
-        {status === "invalid" ? (
-          <Card className="gap-0 border-0 bg-transparent p-0 shadow-none ring-0">
-            <div className="flex flex-col gap-4 text-center">
-              <h2 className="text-base font-semibold">
-                Reset link invalid or expired
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                This password reset link is no longer valid. Request a new one to
-                continue.
-              </p>
-              <Button
-                type="button"
-                onClick={() => router.replace("/forgot-password")}
-              >
-                Request a new link
-              </Button>
-            </div>
-          </Card>
-        ) : (
-        <Card className="gap-0 border-0 bg-transparent p-0 shadow-none ring-0">
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="flex flex-col gap-4"
-            >
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>New password</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        autoComplete="new-password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="confirm"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm password</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        autoComplete="new-password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                className="mt-2"
-                disabled={
-                  form.formState.isSubmitting || status !== "ready"
-                }
-              >
-                {status === "checking"
-                  ? "Verifying link…"
-                  : form.formState.isSubmitting
-                    ? "Updating…"
-                    : "Update password"}
-              </Button>
-            </form>
-          </Form>
-        </Card>
-        )}
-      </div>
-    </div>
+      ) : (
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-4"
+        >
+          <RhfTextField
+            control={form.control}
+            name="password"
+            label="New password"
+            type="password"
+            autoComplete="new-password"
+          />
+          <RhfTextField
+            control={form.control}
+            name="confirm"
+            label="Confirm password"
+            type="password"
+            autoComplete="new-password"
+          />
+          <Button
+            variant="primary"
+            size="large"
+            submit
+            fullWidth
+            loading={form.formState.isSubmitting}
+            disabled={status !== "ready"}
+            className="mt-2"
+          >
+            {status === "checking" ? "Verifying link…" : "Update password"}
+          </Button>
+        </form>
+      )}
+    </AuthCard>
   );
 }

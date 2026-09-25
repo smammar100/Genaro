@@ -94,7 +94,7 @@ const COLS: ColDef[] = [
         <VehicleImage
           vehicle={v}
           variant="thumb"
-          className="size-10 shrink-0 rounded-lg border border-[#e3e3e3]"
+          className="size-10 shrink-0 rounded-lg border border-(--border)"
         />
         <RegPlate registration={v.registration} size="sm" />
       </div>
@@ -366,7 +366,7 @@ const FILTER_FIELDS: FilterField[] = [
 export default function MasterSheetPage() {
   return (
     <VehicleSheet
-      title="Master Sheet"
+      title="Master sheet"
       cols={COLS}
       filterFields={FILTER_FIELDS}
       sections={MASTER_SHEET_SECTIONS}

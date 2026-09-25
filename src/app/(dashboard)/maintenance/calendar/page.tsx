@@ -1,5 +1,4 @@
-"use client";
-
+import { Page } from "@/components/polaris";
 import { SharedCalendar } from "@/components/calendar/shared-calendar";
 
 /**
@@ -8,17 +7,12 @@ import { SharedCalendar } from "@/components/calendar/shared-calendar";
  */
 export default function MaintenanceCalendarPage() {
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-semibold">
-          Maintenance Calendar
-        </h1>
-        <p className="text-[13px] text-muted-foreground">
-          All maintenance and inspection jobs on one calendar, colour-coded by
-          status. Click a slot to add or an event to open it.
-        </p>
-      </div>
+    <Page
+      title="Maintenance calendar"
+      subtitle="All maintenance and inspection jobs on one calendar, colour-coded by status. Click a slot to add or an event to open it."
+      fullWidth
+    >
       <SharedCalendar kinds={["maint"]} ctaLabel="Add job" lockCreateKind />
-    </div>
+    </Page>
   );
 }

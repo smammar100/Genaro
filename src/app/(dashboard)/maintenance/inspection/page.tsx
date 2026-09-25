@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardCheck, AlertTriangle } from "lucide-react";
+import { ClipboardCheck } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import { inspectionService } from "@/lib/services/inspection-service";
@@ -10,16 +10,18 @@ import { authService } from "@/lib/services/auth-service";
 import { motFlagFor } from "@/lib/services/mot-derivation";
 import { NEGATIVE_INSPECTION_STATUSES } from "@/lib/constants";
 import type { InspectionCheck, InspectionChecklistItem, User, Vehicle } from "@/lib/types";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Page,
+  ProgressBar,
   Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+  type BadgeTone,
+} from "@/components/polaris";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -28,11 +30,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { RegPlate } from "@/components/shared/reg-plate";
-import { EmptyState } from "@/components/shared/empty-state";
 import { InspectionSidePanel } from "@/components/inspection/inspection-side-panel";
-import { cn, formatDate, getInitials } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 interface Row {
   vehicle: Vehicle;
@@ -74,6 +74,7 @@ export default function MaintenanceInspectionListPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [items, setItems] = useState<InspectionChecklistItem[]>([]);
   const [selected, setSelected] = useState<Vehicle | null>(null);
+  const [tab, setTab] = useState(0);
 
   async function load() {
     if (!company) return;
@@ -116,78 +117,59 @@ export default function MaintenanceInspectionListPage() {
     return { pending: p, completed: c };
   }, [rows]);
 
+  const mode = tab === 0 ? "pending" : "completed";
+  const tabRows = tab === 0 ? pending : completed;
+
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-        <h1 className="text-xl font-semibold">Inspection Queue</h1>
-        <p className="text-[13px] text-muted-foreground">
-          Vehicles waiting on their 20-point inspection. Run a check and cars
-          move through automatically once it is done.
-        </p>
-        </div>
-      </div>
+    <Page
+      title="Inspection queue"
+      subtitle="Vehicles waiting on their 20-point inspection. Run a check and cars move through automatically once it is done."
+      fullWidth
+    >
+      {/* Queue tabs: their own row under the header, outside the card. */}
+      <Tabs
+        tabs={[
+          {
+            id: "pending",
+            content: "Pending",
+            badge: rows ? pending.length : undefined,
+          },
+          {
+            id: "completed",
+            content: "Completed",
+            badge: rows ? completed.length : undefined,
+          },
+        ]}
+        selected={tab}
+        onSelect={setTab}
+      />
 
       {!rows ? (
         <Skeleton className="h-72" />
       ) : (
-        <Card className="gap-0 overflow-hidden p-0">
-        <Tabs defaultValue="pending" className="gap-0">
-          <div className="flex items-center gap-2 border-b px-2 py-1.5">
-          <TabsList>
-            <TabsTrigger value="pending">
-              Pending
-              <Badge variant="secondary" className="ml-1.5 tabular-nums">
-                {pending.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="completed">
-              Completed
-              <Badge variant="secondary" className="ml-1.5 tabular-nums">
-                {completed.length}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
-          </div>
-
-          <TabsContent value="pending" className="mt-0">
-            {pending.length === 0 ? (
-              <EmptyState
-                icon={ClipboardCheck}
-                title="No vehicles awaiting inspection"
-                description="All current stock has cleared the inspection step."
-                className="rounded-none border-0"
-              />
-            ) : (
-              <QueueTable
-                rows={pending}
-                users={users}
-                items={items}
-                mode="pending"
-                onOpen={setSelected}
-              />
-            )}
-          </TabsContent>
-
-          <TabsContent value="completed" className="mt-0">
-            {completed.length === 0 ? (
-              <EmptyState
-                icon={ClipboardCheck}
-                title="No completed inspections yet"
-                description="Inspected vehicles will appear here."
-                className="rounded-none border-0"
-              />
-            ) : (
-              <QueueTable
-                rows={completed}
-                users={users}
-                items={items}
-                mode="completed"
-                onOpen={setSelected}
-              />
-            )}
-          </TabsContent>
-        </Tabs>
+        <Card padding="0">
+          {tabRows.length === 0 ? (
+            <EmptyState
+              heading={
+                mode === "pending"
+                  ? "No vehicles awaiting inspection"
+                  : "No completed inspections yet"
+              }
+              icon={<ClipboardCheck className="fill-none" />}
+            >
+              {mode === "pending"
+                ? "All current stock has cleared the inspection step."
+                : "Inspected vehicles will appear here."}
+            </EmptyState>
+          ) : (
+            <QueueTable
+              rows={tabRows}
+              users={users}
+              items={items}
+              mode={mode}
+              onOpen={setSelected}
+            />
+          )}
         </Card>
       )}
 
@@ -199,39 +181,29 @@ export default function MaintenanceInspectionListPage() {
         }}
         onComplete={() => void load()}
       />
-    </div>
+    </Page>
   );
 }
 
 /** Days a vehicle has been waiting, with an urgency tone past 14 / 30 days. */
 function waitInfo(receivedDate: string): {
   days: number;
-  cls: string;
+  tone: BadgeTone | undefined;
   urgent: boolean;
 } {
   const days = Math.max(
     0,
     Math.floor((Date.now() - new Date(receivedDate).getTime()) / 86_400_000),
   );
-  if (days > 30)
-    return {
-      days,
-      cls: "bg-[rgb(254,209,215)] text-[rgb(142,11,33)]",
-      urgent: true,
-    };
-  if (days > 14)
-    return {
-      days,
-      cls: "bg-[rgb(255,235,120)] text-[rgb(79,71,0)]",
-      urgent: true,
-    };
-  return { days, cls: "bg-black/[0.06] text-[#303030]", urgent: false };
+  if (days > 30) return { days, tone: "critical", urgent: true };
+  if (days > 14) return { days, tone: "attention", urgent: true };
+  return { days, tone: undefined, urgent: false };
 }
 
 const SQUARE_TONE: Record<SquareKind, string> = {
-  pass: "bg-emerald-500",
-  flag: "bg-rose-500",
-  empty: "bg-muted",
+  pass: "bg-(--bg-fill-success)",
+  flag: "bg-(--bg-fill-critical)",
+  empty: "bg-(--bg-fill-tertiary)",
 };
 
 /** 20-point progress as squares: green = passed, red = flagged, grey = not done. */
@@ -257,58 +229,55 @@ function ProgressSquares({
         the bar carry the same information in the space available.
       */}
       <div
-        className="hidden flex-nowrap gap-[3px] overflow-hidden 2xl:flex"
+        className="hidden flex-nowrap gap-0.5 overflow-hidden 2xl:flex"
         title={`${progress} of ${total} points recorded`}
       >
         {squares.map((kind, i) => (
           <span
             key={i}
-            className={cn("h-2.5 w-2.5 shrink-0 rounded-[2px]", SQUARE_TONE[kind])}
+            className={cn("size-2.5 shrink-0 rounded-(--radius-050)", SQUARE_TONE[kind])}
           />
         ))}
       </div>
 
       {/* Compact fallback: a single proportional bar that fits any column. */}
-      <div
-        className="h-1.5 w-10 shrink-0 overflow-hidden rounded-full bg-muted 2xl:hidden"
+      <span
+        className="w-10 shrink-0 2xl:hidden"
         title={`${progress} of ${total} points recorded`}
       >
-        <div
-          className={cn(
-            "h-full rounded-full",
-            squares.some((s) => s === "flag") ? "bg-rose-500" : "bg-emerald-500",
-          )}
-          style={{ width: `${total > 0 ? (progress / total) * 100 : 0}%` }}
+        <ProgressBar
+          size="small"
+          tone={squares.some((s) => s === "flag") ? "critical" : "success"}
+          progress={total > 0 ? (progress / total) * 100 : 0}
+          accessibilityLabel="Inspection progress"
         />
-      </div>
+      </span>
 
-      <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+      <span className="body-sm shrink-0 tabular-nums text-(--text-secondary)">
         {progress}/{total}
       </span>
     </div>
   );
 }
 
-const MOT_TONE: Record<string, string> = {
-  expired: "bg-[rgb(254,209,215)] text-[rgb(142,11,33)]",
-  expiring: "bg-[rgb(255,235,120)] text-[rgb(79,71,0)]",
-  unknown: "bg-black/[0.06] text-[#303030]",
+const MOT_TONE: Record<string, BadgeTone | undefined> = {
+  expired: "critical",
+  expiring: "attention",
+  unknown: undefined,
 };
 
 /** MOT expiry flag (GEN-75) — silent for a valid, not-soon-expiring MOT. */
 function MotBadge({ motExpiry }: { motExpiry: string | null }) {
   const flag = motFlagFor(motExpiry);
-  if (flag.tone === "ok") return <span className="text-muted-foreground">—</span>;
+  if (flag.tone === "ok")
+    return <span className="text-(--text-secondary)">—</span>;
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium",
-        MOT_TONE[flag.tone],
-      )}
+    <Badge
+      tone={MOT_TONE[flag.tone]}
+      icon={flag.tone !== "unknown" ? "AlertMinor" : undefined}
     >
-      {flag.tone !== "unknown" && <AlertTriangle className="size-3" />}
       {flag.label}
-    </span>
+    </Badge>
   );
 }
 
@@ -375,20 +344,20 @@ function QueueTable({
                     <span className="font-medium">
                       {vehicle.make} {vehicle.model}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="body-sm text-(--text-secondary)">
                       {vehicle.stockId} · {formatDate(vehicle.receivedDate)}
                     </span>
                     {/* Carries the hidden columns' signal on small screens so
                         nothing is lost when they drop out. */}
-                    <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground lg:hidden">
+                    <span className="body-sm mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-(--text-secondary) lg:hidden">
                       <span className="tabular-nums">
                         {progress}/{total} checked
                       </span>
-                      <span className={cn("sm:hidden", wait.urgent && "text-destructive")}>
+                      <span className={cn("sm:hidden", wait.urgent && "text-(--text-critical)")}>
                         · {wait.days}d waiting
                       </span>
                       {flagged > 0 && (
-                        <span className="text-destructive md:hidden">
+                        <span className="text-(--text-critical) md:hidden">
                           · {flagged} flagged
                         </span>
                       )}
@@ -396,31 +365,24 @@ function QueueTable({
                   </div>
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium",
-                      wait.cls,
-                    )}
+                  <Badge
+                    tone={wait.tone}
+                    icon={wait.urgent ? "AlertMinor" : undefined}
                   >
-                    {wait.urgent && <AlertTriangle className="size-3" />}
-                    {wait.days}d waiting
-                  </span>
+                    {`${wait.days}d waiting`}
+                  </Badge>
                 </TableCell>
                 <TableCell className="hidden lg:table-cell">
                   <MotBadge motExpiry={vehicle.motExpiry} />
                 </TableCell>
                 <TableCell className="hidden lg:table-cell">
                   {inspector ? (
-                    <span className="inline-flex items-center gap-2 text-muted-foreground">
-                      <Avatar size="sm" title={inspector.name}>
-                        <AvatarFallback>
-                          {getInitials(inspector.name)}
-                        </AvatarFallback>
-                      </Avatar>
+                    <span className="inline-flex items-center gap-2 text-(--text-secondary)">
+                      <Avatar size="sm" name={inspector.name} />
                       {inspector.name}
                     </span>
                   ) : (
-                    <span className="text-muted-foreground">—</span>
+                    <span className="text-(--text-secondary)">—</span>
                   )}
                 </TableCell>
                 <TableCell className="hidden lg:table-cell">
@@ -428,22 +390,15 @@ function QueueTable({
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {flagged > 0 ? (
-                    <span className="inline-flex items-center gap-1 rounded-lg bg-[rgb(254,209,215)] px-2 py-0.5 text-xs font-medium text-[rgb(142,11,33)]">
-                      <AlertTriangle className="size-3" />
-                      {flagged}
-                    </span>
+                    <Badge tone="critical" icon="AlertMinor">
+                      {String(flagged)}
+                    </Badge>
                   ) : (
-                    <span className="inline-flex items-center rounded-lg bg-black/[0.06] px-2 py-0.5 text-xs font-medium tabular-nums text-[#303030]">
-                      0
-                    </span>
+                    <Badge>0</Badge>
                   )}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    size="sm"
-                    variant={mode === "completed" ? "outline" : "default"}
-                    onClick={() => onOpen(vehicle)}
-                  >
+                  <Button onClick={() => onOpen(vehicle)}>
                     {mode === "completed"
                       ? "View"
                       : progress > 0

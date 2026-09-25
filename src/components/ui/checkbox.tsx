@@ -12,14 +12,16 @@ export function Checkbox({
     <CheckboxPrimitive.Root
       className={cn(
         hitTarget,
-        "relative inline-flex size-4 shrink-0 items-center justify-center rounded-[.25rem] border border-[#8a8a8a] bg-background outline-none ring-[#005bd3] transition-[border-color,box-shadow] hover:border-[#616161] focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-background aria-invalid:border-destructive/36 focus-visible:aria-invalid:border-destructive/64 focus-visible:aria-invalid:ring-destructive/48 data-disabled:cursor-not-allowed data-disabled:opacity-50 data-checked:border-foreground dark:not-data-checked:bg-input/32 dark:aria-invalid:ring-destructive/24",
+        // Polaris Checkbox (.p-checkbox__box): 16px, radius-100, input-border
+        // hairline, brand fill when checked, 2px focus outline.
+        "relative inline-flex size-4 shrink-0 items-center justify-center rounded-(--radius-100) border border-(--input-border) bg-(--bg-surface) outline-none transition-[border-color,background-color] hover:border-(--input-border-hover) hover:bg-(--input-bg-surface-hover) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--border-focus) aria-invalid:border-(--border-critical-secondary) aria-invalid:bg-(--bg-surface-critical) data-disabled:cursor-not-allowed data-disabled:border-transparent data-disabled:bg-(--checkbox-bg-surface-disabled) data-checked:border-transparent data-indeterminate:border-transparent",
         className,
       )}
       data-slot="checkbox"
       {...props}
     >
       <CheckboxPrimitive.Indicator
-        className="absolute -inset-px flex items-center justify-center rounded-[.25rem] text-primary-foreground data-unchecked:hidden data-checked:bg-foreground data-indeterminate:text-foreground"
+        className="absolute -inset-px flex items-center justify-center rounded-(--radius-100) text-(--text-brand-on-bg-fill) data-unchecked:hidden data-checked:bg-(--bg-fill-brand-selected) data-indeterminate:bg-(--bg-fill-brand-selected) data-disabled:bg-(--checkbox-bg-surface-disabled) data-disabled:text-(--checkbox-icon-disabled)"
         data-slot="checkbox-indicator"
         render={(
           props: React.ComponentProps<"span">,

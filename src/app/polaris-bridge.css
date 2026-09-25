@@ -1,0 +1,186 @@
+/* App-specific bridge onto the Polaris tokens (src/components/polaris/styles).
+   shadcn.css maps shadcn's core variables; this adds the status variables the
+   app's own components use, and gives plain <table>s Polaris anatomy. (Cards,
+   fields, badges and buttons get theirs in their src/components/ui wrappers.)
+   Tokens only — every value follows the theme, including a subtree themed with
+   data-theme="dark" (tokens.css and shadcn.css re-declare under that selector,
+   so the dark nav rail needs nothing here). */
+
+:root,
+[data-theme="light"],
+.light,
+[data-theme="dark"],
+.dark {
+  --success: var(--bg-fill-success);
+  --success-foreground: var(--text-success);
+  --warning: var(--bg-fill-warning);
+  --warning-foreground: var(--text-warning);
+  --info: var(--bg-fill-info);
+  --info-foreground: var(--text-info);
+}
+
+/* Polaris labels are sentence case; never shout. */
+.uppercase {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* Tables: Polaris IndexTable / DataTable anatomy for every <table> — a
+   secondary-surface header row, hairline row dividers, no zebra, no vertical
+   rules, hover and selected surfaces. */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+table thead th {
+  background-color: var(--bg-surface-secondary);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  padding-block: var(--space-200);
+  border-width: 0;
+}
+table thead th button,
+table thead th span {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+table tbody td {
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  color: var(--text);
+  padding-block: var(--space-150);
+  border-width: 1px 0 0 0;
+  border-style: solid;
+  border-color: var(--border-secondary);
+}
+table th:first-child,
+table td:first-child {
+  padding-inline-start: var(--space-300);
+}
+table tbody tr[class*="even:"]:nth-child(even),
+table tbody tr[class*="odd:"]:nth-child(odd) {
+  background-color: transparent;
+}
+table tbody tr:hover > td {
+  background-color: var(--bg-surface-hover);
+}
+table tbody tr[data-state="selected"] > td,
+table tbody tr[aria-selected="true"] > td {
+  background-color: var(--bg-surface-selected);
+}
+
+/* Lucide icons passed to Polaris icon props. The kit fills its own glyphs
+   (`.p-icon svg { fill: currentColor }`); lucide draws with strokes, so a
+   filled lucide icon turns into a solid blob. Keep them stroke-only. */
+.p-icon svg.lucide {
+  fill: none;
+}
+
+/* Nav rows grow to the 44px a finger needs on a coarse pointer (GEN-93);
+   the kit's 28px rows are sized for a mouse. */
+@media (pointer: coarse) {
+  .p-nav__item,
+  .p-nav__subitem {
+    min-height: calc(var(--space-1000) + var(--space-100));
+  }
+}
+
+/* Nav rhythm (Shopify admin): a 2px breath between rows, sub-pages tucked
+   under their section with the same gap, labels on one line. The kit's 32px
+   right padding on sub-items wrapped longer labels ("Returns and
+   cancellations") in the 240px rail; the badge keeps its own inset instead. */
+.p-nav__list > li + li,
+.p-nav__sub > li + li {
+  margin-top: var(--space-050);
+}
+.p-nav__sub {
+  margin-top: var(--space-050);
+  margin-bottom: var(--space-100);
+}
+.p-nav__subitem {
+  min-height: 28px;
+  padding-right: var(--space-200);
+  white-space: nowrap;
+}
+.p-nav__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.p-nav__subitem .p-badge,
+.p-nav__item .p-badge {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* A Page with no title has no header, and the kit only spaces the top
+   through that header — so a title-less page (the dashboard, which leads
+   with its greeting) sat flush against the top bar. Give its content the
+   header's top padding instead. */
+.p-page > .p-page__content:first-child {
+  padding-top: var(--space-600);
+}
+
+/* Breathing room for list tables — the app's ui Table and the Polaris
+   IndexTable / DataTable. Cells keep their natural width (one line each)
+   and a table wider than its card scrolls sideways inside the card rather
+   than squeezing its columns. The spreadsheet grids (data-grid, Master sheet,
+   permissions) keep their own dense rows. */
+[data-slot="table"],
+.p-indextable table,
+.p-datatable table {
+  min-width: 100%;
+  width: max-content;
+}
+[data-slot="table"] th,
+.p-indextable th,
+.p-datatable th {
+  padding-inline: var(--space-400);
+}
+[data-slot="table"] td,
+.p-indextable td,
+.p-datatable td {
+  padding: var(--space-300) var(--space-400);
+}
+[data-slot="table"] th:first-child,
+[data-slot="table"] td:first-child {
+  padding-inline-start: var(--space-400);
+}
+/* Scroll affordance: the scrollbar sits at the table's foot, which can be a
+   screen away, so let a trackpad or shift+wheel reveal it without surprise. */
+[data-slot="table-container"],
+.p-indextable__scroll,
+.p-datatable {
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+/* Long tables scroll inside their card, capped to the viewport, so the
+   header row stays pinned while the rows move and the sideways scrollbar is
+   always on screen instead of a page below. Short tables are unaffected. */
+[data-slot="table-container"],
+.p-indextable__scroll,
+.p-datatable {
+  max-height: calc(100dvh - 12rem);
+  overflow: auto;
+}
+[data-slot="table"] thead th,
+.p-indextable thead th,
+.p-datatable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: var(--bg-surface-secondary);
+}
+
+/* A flush card (padding="0") holds edge-to-edge parts — a toolbar, a table,
+   a list — that bring their own padding and dividers. The card's 8px stack
+   gap between them showed as an empty band (e.g. between a tab row and the
+   table header), so flush cards stack their parts with no gap. */
+.p-card--flush {
+  gap: 0;
+}

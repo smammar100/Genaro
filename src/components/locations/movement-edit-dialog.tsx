@@ -2,26 +2,14 @@
 
 import { useState } from "react";
 import { toast } from "@/lib/toast";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogPanel,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
+  Banner,
+  Labelled,
+  Modal,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+  TextField,
+} from "@/components/polaris";
+import { Input } from "@/components/ui/input";
 import {
   VEHICLE_LOCATION_LABELS,
   VEHICLE_LOCATIONS,
@@ -146,106 +134,79 @@ function MovementEditForm({
   }
 
   return (
-    <Dialog open={movement !== null} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-base">Edit movement</DialogTitle>
-          <DialogDescription>
-            Correct a movement recorded in error. The vehicle&apos;s current
-            location is re-derived from the timeline after saving.
-          </DialogDescription>
-        </DialogHeader>
+    <Modal
+      open={movement !== null}
+      onClose={() => onOpenChange(false)}
+      title="Edit movement"
+      primaryAction={{
+        content: "Save changes",
+        loading: saving,
+        onAction: () => void handleSave(),
+      }}
+      secondaryActions={[
+        { content: "Cancel", onAction: () => onOpenChange(false) },
+      ]}
+    >
+      <div className="flex flex-col gap-4">
+        <p className="body-md text-(--text-secondary)">
+          Correct a movement recorded in error. The vehicle&apos;s current
+          location is re-derived from the timeline after saving.
+        </p>
 
-        <DialogPanel className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="movement-destination">Location</Label>
-            <Select
-              items={Object.fromEntries(
-                VEHICLE_LOCATIONS.map((l) => [l, VEHICLE_LOCATION_LABELS[l]]),
-              )}
-              value={toLocation}
-              onValueChange={(v) => setToLocation(v as VehicleLocation)}
-            >
-              <SelectTrigger id="movement-destination" aria-label="Location">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {VEHICLE_LOCATIONS.map((l) => (
-                  <SelectItem key={l} value={l}>
-                    {VEHICLE_LOCATION_LABELS[l]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <Select
+          id="movement-destination"
+          label="Location"
+          options={VEHICLE_LOCATIONS.map((l) => ({
+            label: VEHICLE_LOCATION_LABELS[l],
+            value: l,
+          }))}
+          value={toLocation}
+          onChange={(v) => setToLocation(v as VehicleLocation)}
+        />
 
-          <div className="space-y-1.5">
-            <Label htmlFor="movement-date">Moved at</Label>
-            <Input
-              id="movement-date"
-              type="datetime-local"
-              aria-label="Moved at"
-              value={movedAt}
-              onChange={(e) => setMovedAt(e.target.value)}
-            />
-          </div>
+        <Labelled id="movement-date" label="Moved at">
+          <Input
+            id="movement-date"
+            type="datetime-local"
+            aria-label="Moved at"
+            value={movedAt}
+            onChange={(e) => setMovedAt(e.target.value)}
+          />
+        </Labelled>
 
-          {isStay && (
-            <>
-              <div className="space-y-1.5">
-                <Label htmlFor="movement-expected">Expected back</Label>
-                <Input
-                  id="movement-expected"
-                  type="datetime-local"
-                  aria-label="Expected back"
-                  value={expectedReturn}
-                  onChange={(e) => setExpectedReturn(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="movement-actual">Returned at</Label>
-                <Input
-                  id="movement-actual"
-                  type="datetime-local"
-                  aria-label="Returned at"
-                  value={actualReturn}
-                  onChange={(e) => setActualReturn(e.target.value)}
-                />
-              </div>
-            </>
-          )}
+        {isStay && (
+          <>
+            <Labelled id="movement-expected" label="Expected back">
+              <Input
+                id="movement-expected"
+                type="datetime-local"
+                aria-label="Expected back"
+                value={expectedReturn}
+                onChange={(e) => setExpectedReturn(e.target.value)}
+              />
+            </Labelled>
+            <Labelled id="movement-actual" label="Returned at">
+              <Input
+                id="movement-actual"
+                type="datetime-local"
+                aria-label="Returned at"
+                value={actualReturn}
+                onChange={(e) => setActualReturn(e.target.value)}
+              />
+            </Labelled>
+          </>
+        )}
 
-          <div className="space-y-1.5">
-            <Label htmlFor="movement-notes">Notes</Label>
-            <Textarea
-              id="movement-notes"
-              aria-label="Notes"
-              rows={3}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </div>
+        <TextField
+          id="movement-notes"
+          label="Notes"
+          multiline={3}
+          value={notes}
+          onChange={setNotes}
+        />
 
-          {error && (
-            <p role="alert" className="text-xs text-destructive">
-              {error}
-            </p>
-          )}
-        </DialogPanel>
-
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={saving}
-          >
-            Cancel
-          </Button>
-          <Button onClick={() => void handleSave()} disabled={saving}>
-            Save changes
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        {error && <Banner tone="critical">{error}</Banner>}
+      </div>
+    </Modal>
   );
 }

@@ -1,16 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Copy } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Banner, Modal } from "@/components/polaris";
 import type { User } from "@/lib/types";
 import { toast } from "@/lib/toast";
 
@@ -90,76 +81,59 @@ export function ResetPasswordDialog({ user, open, onOpenChange }: Props) {
     }
   }
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Reset password</DialogTitle>
-          {user && !creds && (
-            <DialogDescription>
-              Generate a new temporary password for <strong>{user.name}</strong>
-              . They&apos;ll be forced to set their own on next login. Relay it
-              out-of-band (WhatsApp / phone / in person).
-            </DialogDescription>
-          )}
-        </DialogHeader>
+  function close() {
+    if (!submitting) onOpenChange(false);
+  }
 
-        {creds ? (
-          <div
-            className="rounded-md border bg-emerald-50 p-4 text-sm dark:bg-emerald-950/20"
-            data-testid="reset-password-creds"
-          >
-            <p className="font-medium text-emerald-800 dark:text-emerald-300">
-              New password set, relay these
-            </p>
-            <div className="mt-2 grid gap-1 font-mono text-xs">
+  return (
+    <Modal
+      open={open}
+      onClose={close}
+      title="Reset password"
+      size="small"
+      primaryAction={
+        creds
+          ? { content: "Done", onAction: () => onOpenChange(false) }
+          : {
+              content: "Reset password",
+              loading: submitting,
+              onAction: () => void handleReset(),
+            }
+      }
+      secondaryActions={
+        creds
+          ? [{ content: "Copy credentials", onAction: () => void copyCreds() }]
+          : [{ content: "Cancel", onAction: close }]
+      }
+    >
+      {creds ? (
+        <div data-testid="reset-password-creds">
+          <Banner tone="success" title="New password set, relay these">
+            <div className="grid gap-1 font-mono text-xs">
               <div>
-                <span className="text-muted-foreground">{handleLabel}: </span>
+                <span className="text-(--text-secondary)">{handleLabel}: </span>
                 {handle}
               </div>
               <div>
-                <span className="text-muted-foreground">Password: </span>
+                <span className="text-(--text-secondary)">Password: </span>
                 {creds.password}
               </div>
             </div>
-            <div className="mt-3 flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => void copyCreds()}
-              >
-                <Copy className="mr-1.5 h-3.5 w-3.5" />
-                Copy
-              </Button>
-              <Button type="button" size="sm" onClick={() => onOpenChange(false)}>
-                Done
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={submitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => void handleReset()}
-                disabled={submitting}
-                data-testid="confirm-reset-password"
-              >
-                {submitting && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
-                Reset password
-              </Button>
-            </DialogFooter>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
+          </Banner>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {user && (
+            <p className="text-sm text-(--text-secondary)">
+              Generate a new temporary password for{" "}
+              <strong className="text-(--text)">{user.name}</strong>.
+              They&apos;ll be forced to set their own on next login. Relay it
+              out-of-band (WhatsApp / phone / in person).
+            </p>
+          )}
+          {error && <Banner tone="critical">{error}</Banner>}
+        </div>
+      )}
+    </Modal>
   );
 }

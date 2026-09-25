@@ -118,7 +118,7 @@ const GUIDED_STEPS: GuidedStep[] = [
     pointerPadding: 6,
     pointerRadius: 8,
     awaitRoute: "/vehicles",
-    actionLabel: "All Vehicles",
+    actionLabel: "All vehicles",
   },
   {
     icon: "🔍",
@@ -135,7 +135,7 @@ const GUIDED_STEPS: GuidedStep[] = [
     pointerPadding: 6,
     pointerRadius: 8,
     awaitRoute: "/maintenance/inspection",
-    actionLabel: "Inspection Queue",
+    actionLabel: "Inspection queue",
   },
   {
     icon: "🔧",
@@ -152,7 +152,7 @@ const GUIDED_STEPS: GuidedStep[] = [
     pointerPadding: 6,
     pointerRadius: 8,
     awaitRoute: "/maintenance/prep",
-    actionLabel: "Prep & Repair",
+    actionLabel: "Prep & repair",
   },
   {
     icon: "📣",
@@ -218,7 +218,7 @@ const GUIDED_STEPS: GuidedStep[] = [
     pointerPadding: 6,
     pointerRadius: 8,
     awaitRoute: "/warranties/in-house",
-    actionLabel: "In-House",
+    actionLabel: "In-house",
   },
   {
     icon: "📊",
@@ -235,7 +235,7 @@ const GUIDED_STEPS: GuidedStep[] = [
     pointerPadding: 6,
     pointerRadius: 8,
     awaitRoute: "/admin/master-sheet",
-    actionLabel: "Master Sheet",
+    actionLabel: "Master sheet",
   },
   {
     icon: "🔎",

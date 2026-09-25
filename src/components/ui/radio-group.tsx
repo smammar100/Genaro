@@ -39,14 +39,16 @@ function Radio({
     <RadioPrimitive.Root
       className={cn(
         hitTarget,
-        "relative inline-flex size-4.5 shrink-0 items-center justify-center rounded-full border border-input bg-background not-dark:bg-clip-padding shadow-xs/5 outline-none ring-ring transition-shadow before:pointer-events-none before:absolute before:inset-0 before:rounded-full not-data-disabled:not-data-checked:not-aria-invalid:before:shadow-[0_1px_--theme(--color-black/4%)] focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-background data-checked:border-primary data-checked:bg-primary aria-invalid:border-destructive/36 focus-visible:aria-invalid:border-destructive/64 focus-visible:aria-invalid:ring-destructive/48 data-disabled:cursor-not-allowed data-disabled:opacity-64 sm:size-4 dark:not-data-checked:bg-input/32 dark:aria-invalid:ring-destructive/24 dark:not-data-disabled:not-data-checked:not-aria-invalid:before:shadow-[0_-1px_--theme(--color-white/6%)] [[data-disabled],[data-checked],[aria-invalid]]:shadow-none",
+        // Polaris RadioButton (.p-radio__ring): 16px ring in input tokens, brand
+        // fill when checked, 2px focus outline.
+        "relative inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-(--input-border) bg-(--input-bg-surface) outline-none transition-[border-color,background-color] hover:border-(--input-border-hover) hover:bg-(--input-bg-surface-hover) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--border-focus) data-checked:border-transparent data-checked:bg-(--bg-fill-brand-selected) aria-invalid:border-(--border-critical-secondary) aria-invalid:bg-(--bg-surface-critical) data-disabled:cursor-not-allowed data-disabled:border-transparent data-disabled:bg-(--bg-fill-brand-disabled)",
         className,
       )}
       data-slot="radio"
       {...props}
     >
       <RadioPrimitive.Indicator
-        className="size-1.5 rounded-full bg-primary-foreground data-unchecked:hidden"
+        className="size-2 rounded-full bg-(--text-brand-on-bg-fill) data-unchecked:hidden"
         data-slot="radio-indicator"
       />
     </RadioPrimitive.Root>

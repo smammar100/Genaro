@@ -113,7 +113,7 @@ export function DateRangeCell({
 export function BooleanCell({ value }: { value: boolean | null | undefined }) {
   if (value === true) {
     return (
-      <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+      <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-(--bg-fill-success-secondary) text-(--text-success)">
         <Check className="h-2.5 w-2.5" />
       </span>
     );
@@ -145,7 +145,7 @@ export function VehicleCell({ vehicle }: { vehicle: Vehicle | null | undefined }
       <VehicleImage
         vehicle={vehicle}
         variant="thumb"
-        className="size-10 shrink-0 rounded-lg border border-[#e3e3e3]"
+        className="size-10 shrink-0 rounded-lg shadow-(--shadow-border-inset)"
       />
       <div className="flex min-w-0 flex-col gap-0.5 leading-tight">
         <RegPlate registration={vehicle.registration} size="sm" />

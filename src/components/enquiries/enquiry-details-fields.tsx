@@ -40,8 +40,8 @@ export function EnquiryDetailsFields({ vehicleLabel }: EnquiryDetailsFieldsProps
   return (
     <div className="flex flex-col gap-4">
       {vehicleLabel && (
-        <div className="rounded-md border border-dashed border-border bg-muted/30 px-3 py-2 text-sm">
-          <span className="text-muted-foreground">Vehicle of interest: </span>
+        <div className="rounded-(--radius-200) border border-dashed border-(--border) bg-(--bg-surface-secondary) px-3 py-2 text-sm text-(--text)">
+          <span className="text-(--text-secondary)">Vehicle of interest: </span>
           <span className="font-medium">{vehicleLabel}</span>
         </div>
       )}
@@ -111,12 +111,12 @@ export function EnquiryDetailsFields({ vehicleLabel }: EnquiryDetailsFieldsProps
         </div>
       </div>
 
-      <div className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2">
+      <div className="flex items-center justify-between gap-3 rounded-(--radius-200) border border-(--border) bg-(--bg-surface-secondary) px-3 py-2">
         <div>
           <Label htmlFor="financeInterest" className="cursor-pointer">
             Interested in finance
           </Label>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-(--text-secondary)">
             Flag this enquiry for the finance team&apos;s follow-up queue.
           </p>
         </div>

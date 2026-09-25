@@ -23,8 +23,6 @@ import {
   ShieldAlert,
   MapPin,
   Building2,
-  Settings,
-  PlusCircle,
   type LucideIcon,
 } from "lucide-react";
 import type { Capability } from "@/lib/capabilities";
@@ -43,9 +41,9 @@ export interface SidebarItem {
 export interface SidebarGroup {
   label: string | null;
   /**
-   * Icon for the group's own row. The rail is flat, Shopify-admin style: each
+   * Icon for the group's own row. The nav is flat, Shopify-admin style: each
    * group is one top-level row (linking to its first page) and its pages show
-   * as indented sub-rows only while you are inside it.
+   * as sub-items only while you are inside it (see nav.ts).
    */
   icon?: LucideIcon;
   items: SidebarItem[];
@@ -75,7 +73,7 @@ export interface SidebarGroup {
  * Inspection Queue because that is what a car hits first, not the Pipeline
  * overview.
  *
- * `requiredAnyOf` gates visibility by capability (see app-sidebar.tsx). Each
+ * `requiredAnyOf` gates visibility by capability (see nav.ts). Each
  * item's capabilities mirror the guard on its page so the nav and the page
  * agree on who may enter.
  */
@@ -89,7 +87,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     icon: Car,
     items: [
       {
-        label: "All Vehicles",
+        label: "All vehicles",
         href: "/vehicles",
         icon: Car,
         requiredAnyOf: [
@@ -126,13 +124,13 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     // (see the note on it below).
     items: [
       {
-        label: "Inspection Queue",
+        label: "Inspection queue",
         href: "/maintenance/inspection",
         icon: ClipboardCheck,
         requiredAnyOf: ["inspection:run", "inspection:add_note"],
       },
       {
-        label: "Prep & Repair",
+        label: "Prep & repair",
         href: "/maintenance/prep",
         icon: Hammer,
         requiredAnyOf: [
@@ -144,7 +142,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
       // "Job Pipeline", not "Pipeline": Sales owns a Pipeline too, and two
       // identically-labelled rows in one rail cannot be told apart.
       {
-        label: "Job Pipeline",
+        label: "Job pipeline",
         href: "/maintenance",
         icon: Wrench,
         requiredAnyOf: [
@@ -166,7 +164,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
       // mattered was getting it out from between Inspection and Prep, where it
       // put a stranger's car in the middle of preparing your own stock.
       {
-        label: "Workshop Jobs",
+        label: "Workshop jobs",
         href: "/maintenance/workshop",
         icon: Briefcase,
         requiredAnyOf: [
@@ -182,7 +180,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     icon: Megaphone,
     items: [
       {
-        label: "Work List",
+        label: "Work list",
         href: "/advert/work-list",
         icon: Megaphone,
         requiredAnyOf: ["advert:create", "advert:edit"],
@@ -231,13 +229,13 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         // "Completed Sale" and then looks in the rail for where it went, so
         // the two labels have to be the same words — "Closed Deals" made them
         // guess that a closed deal and a completed sale were the same thing.
-        label: "Completed Sale",
+        label: "Completed sale",
         href: "/sales/deals",
         icon: Handshake,
         requiredAnyOf: ["sales:mark_sold", "sales:edit_pipeline_stage"],
       },
       {
-        label: "Invoice Generation",
+        label: "Invoice generation",
         href: "/sales/invoice-generation",
         icon: Receipt,
         requiredAnyOf: ["invoice:generate"],
@@ -255,7 +253,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     icon: Shield,
     items: [
       {
-        label: "In-House",
+        label: "In-house",
         href: "/warranties/in-house",
         icon: Shield,
         requiredAnyOf: ["warranty:create", "warranty:edit"],
@@ -273,7 +271,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         requiredAnyOf: ["warranty:raise_claim", "warranty:resolve_claim"],
       },
       {
-        label: "Returns and Cancellations",
+        label: "Returns and cancellations",
         href: "/admin/vehicle-returns",
         icon: Undo2,
         requiredAnyOf: ["returns:create"],
@@ -286,19 +284,19 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     icon: Building2,
     items: [
       {
-        label: "Master Sheet",
+        label: "Master sheet",
         href: "/admin/master-sheet",
         icon: FileSpreadsheet,
         requiredAnyOf: ["admin:view_master_sheet"],
       },
       {
-        label: "Master Calendar",
+        label: "Master calendar",
         href: "/admin/master-calendar",
         icon: CalendarIcon,
         requiredAnyOf: ["admin:view_master_calendar"],
       },
       {
-        label: "Reports & Analytics",
+        label: "Reports & analytics",
         href: "/admin/reports",
         icon: BarChart3,
         requiredAnyOf: ["admin:view_financials"],
@@ -321,13 +319,13 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         requiredAnyOf: ["admin:manage_vendors"],
       },
       {
-        label: "Users & Permissions",
+        label: "Users & permissions",
         href: "/admin/users-and-permissions",
         icon: Users,
         requiredAnyOf: ["admin:manage_permissions", "admin:manage_users"],
       },
       {
-        label: "Activity Log",
+        label: "Activity log",
         href: "/admin/activity",
         icon: History,
         requiredAnyOf: ["admin:view_master_sheet", "admin:view_financials"],
@@ -360,7 +358,7 @@ export function activeHrefForPath(pathname: string): string | null {
   return best;
 }
 
-/** Used by AppHeader to derive the page title from the current pathname. */
+/** A page's name from its pathname (the vehicle page's back link uses it). */
 export function titleFromPath(pathname: string): string {
   const activeHref = activeHrefForPath(pathname);
   if (activeHref) {
@@ -375,21 +373,6 @@ export function titleFromPath(pathname: string): string {
   if (pathname.startsWith("/vehicles/")) return "Vehicle";
   if (pathname.startsWith("/warranties/")) return "Warranty";
   return "Car Capital UK";
-}
-
-/** The nav icon for the current page (its own item's icon), for the top bar. */
-export function iconFromPath(pathname: string): SidebarItem["icon"] | null {
-  if (pathname.startsWith("/admin/settings")) return Settings;
-  if (pathname.startsWith("/inventory/add-vehicle")) return PlusCircle;
-  if (pathname.startsWith("/vehicles/")) return Car;
-  const activeHref = activeHrefForPath(pathname);
-  if (!activeHref) return null;
-  for (const group of SIDEBAR_GROUPS) {
-    for (const item of group.items) {
-      if (item.href === activeHref) return item.icon;
-    }
-  }
-  return null;
 }
 
 /** Routes outside the sidebar that still need gating. */

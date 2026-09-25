@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "@/lib/toast";
+import { Banner } from "@/components/polaris";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -248,14 +249,10 @@ function AppointmentEditForm({
           {/* A clash is surfaced but not blocked — two salespeople can run
               parallel viewings; the requirement is that it is never silent. */}
           {!error && check.warning && (
-            <p role="status" className="text-xs text-amber-600">
-              {check.warning}
-            </p>
+            <Banner tone="warning">{check.warning}</Banner>
           )}
           {(error || (!check.ok && check.error)) && (
-            <p role="alert" className="text-xs text-destructive">
-              {error ?? check.error}
-            </p>
+            <Banner tone="critical">{error ?? check.error}</Banner>
           )}
         </DialogPanel>
 

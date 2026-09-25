@@ -18,8 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Button, InlineError } from "@/components/polaris";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -174,8 +173,8 @@ export function NewClaimDialog({
                     {(w: Warranty) => (
                       <ComboboxItem key={w.id} value={w}>
                         <div className="flex flex-col">
-                          <span className="text-sm">{w.customerName}</span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="body-md">{w.customerName}</span>
+                          <span className="body-sm text-(--text-secondary)">
                             {w.type === "external" ? w.provider : "In-house"} ·{" "}
                             {w.startDate} → {w.endDate}
                           </span>
@@ -185,10 +184,8 @@ export function NewClaimDialog({
                   </ComboboxList>
                 </ComboboxPopup>
               </Combobox>
-              {form.formState.errors.warrantyId && (
-                <p className="text-xs text-destructive">
-                  {form.formState.errors.warrantyId.message}
-                </p>
+              {form.formState.errors.warrantyId?.message && (
+                <InlineError message={form.formState.errors.warrantyId.message} />
               )}
             </div>
           )}
@@ -201,10 +198,8 @@ export function NewClaimDialog({
               placeholder="What's the customer reporting?"
               className="min-h-24"
             />
-            {form.formState.errors.issueDescription && (
-              <p className="text-xs text-destructive">
-                {form.formState.errors.issueDescription.message}
-              </p>
+            {form.formState.errors.issueDescription?.message && (
+              <InlineError message={form.formState.errors.issueDescription.message} />
             )}
           </div>
 
@@ -218,10 +213,12 @@ export function NewClaimDialog({
             />
           </div>
 
-          <Card
+          <div
             className={cn(
-              "flex flex-col gap-2 p-3 transition-colors",
-              isComplaint && "border-destructive/50 bg-destructive/5",
+              "flex flex-col gap-2 rounded-(--radius-300) border p-3 transition-colors",
+              isComplaint
+                ? "border-(--border-critical) bg-(--bg-surface-critical)"
+                : "border-(--border) bg-(--bg-surface)",
             )}
           >
             <div className="flex items-start justify-between gap-3">
@@ -229,14 +226,16 @@ export function NewClaimDialog({
                 <AlertTriangle
                   className={cn(
                     "mt-0.5 h-4 w-4",
-                    isComplaint ? "text-destructive" : "text-muted-foreground",
+                    isComplaint
+                      ? "text-(--icon-critical)"
+                      : "text-(--icon-secondary)",
                   )}
                 />
                 <div>
-                  <Label htmlFor={isComplaintId} className="text-sm font-medium">
+                  <Label htmlFor={isComplaintId} className="body-md">
                     Flag as customer complaint
                   </Label>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
+                  <p className="body-sm mt-0.5 text-(--text-secondary)">
                     Escalates SLA and flags the claim row red in the claims
                     list.
                   </p>
@@ -250,18 +249,16 @@ export function NewClaimDialog({
                 }
               />
             </div>
-          </Card>
+          </div>
 
           <DialogFooter className="-mx-6 mt-2">
+            <Button onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
+              variant="primary"
+              submit
+              loading={form.formState.isSubmitting}
             >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "Filing…" : "File claim"}
+              File claim
             </Button>
           </DialogFooter>
         </form>

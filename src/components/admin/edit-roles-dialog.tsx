@@ -1,17 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox, Modal } from "@/components/polaris";
 import {
   ROLE_DEFS,
   ROLE_GROUPS,
@@ -77,66 +67,57 @@ export function EditRolesDialog({ user, open, onOpenChange, onSaved }: Props) {
     }
   }
 
+  function close() {
+    if (!submitting) onOpenChange(false);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        showCloseButton
-        className="sm:max-w-2xl flex max-h-[80vh] flex-col gap-0 p-0"
-      >
-        <DialogHeader className="border-b px-6 pt-5 pb-4">
-          <DialogTitle>Edit roles</DialogTitle>
-          {user && (
-            <DialogDescription>
-              Update the role bundle for <strong>{user.name}</strong> ({accountHandle(user)}).
-            </DialogDescription>
-          )}
-        </DialogHeader>
-
-        <div className="flex flex-1 flex-col overflow-hidden px-6 py-5">
-          <div className="flex flex-1 flex-col overflow-y-auto">
-            {ROLE_GROUPS.map((group) => {
-              const groupRoles = assignableRoleDefs.filter((r) => r.group === group);
-              if (groupRoles.length === 0) return null;
-              return (
-                // shrink-0: this list is a scroll container (overflow-y-auto);
-                // without it the group's flex rows shrink below their content
-                // and multi-line descriptions overlap the next role (GEN-41).
-                <div key={group} className="flex shrink-0 flex-col">
-                  {groupRoles.map((r) => (
-                    <label
-                      key={r.value}
-                      className="flex cursor-pointer items-start gap-2 rounded-md px-3 py-2.5 text-sm hover:bg-[#f7f7f7]"
-                    >
-                      <Checkbox
-                        checked={roles.has(r.value)}
-                        onCheckedChange={() => toggleRole(r.value)}
-                        data-testid={`edit-role-${r.value}`}
-                        className="mt-0.5"
-                      />
-                      <div className="flex flex-col">
-                        <span className="font-medium">{r.label}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {r.description}
-                        </span>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
+    <Modal
+      open={open}
+      onClose={close}
+      title="Edit roles"
+      primaryAction={{
+        content: "Save changes",
+        loading: submitting,
+        onAction: () => void handleSave(),
+      }}
+      secondaryActions={[{ content: "Cancel", onAction: close }]}
+    >
+      <div className="flex flex-col gap-3">
+        {user && (
+          <p className="text-sm text-(--text-secondary)">
+            Update the role bundle for{" "}
+            <strong className="text-(--text)">{user.name}</strong> (
+            {accountHandle(user)}).
+          </p>
+        )}
+        <div className="flex flex-col">
+          {ROLE_GROUPS.map((group) => {
+            const groupRoles = assignableRoleDefs.filter((r) => r.group === group);
+            if (groupRoles.length === 0) return null;
+            return (
+              // shrink-0: keeps each group's rows at their content height so
+              // multi-line descriptions never overlap the next role (GEN-41).
+              <div key={group} className="flex shrink-0 flex-col">
+                {groupRoles.map((r) => (
+                  <div
+                    key={r.value}
+                    className="rounded-md px-3 py-1.5 hover:bg-(--bg-surface-hover)"
+                    data-testid={`edit-role-${r.value}`}
+                  >
+                    <Checkbox
+                      label={r.label}
+                      helpText={r.description}
+                      checked={roles.has(r.value)}
+                      onChange={() => toggleRole(r.value)}
+                    />
+                  </div>
+                ))}
+              </div>
+            );
+          })}
         </div>
-
-        <DialogFooter className="border-t px-6 py-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={submitting} data-testid="save-roles">
-            {submitting && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
-            Save changes
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </Modal>
   );
 }

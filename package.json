@@ -42,7 +42,6 @@
     "zod": "^4.4.1"
   },
   "devDependencies": {
-    "@shopify/polaris-tokens": "9.4.2",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

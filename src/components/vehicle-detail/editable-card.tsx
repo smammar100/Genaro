@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Loader2, Pencil, type LucideIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { type LucideIcon } from "lucide-react";
+import { Banner, Button, Card } from "@/components/polaris";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -200,98 +200,87 @@ export function EditableCard<T extends object>({
   }, [buildTyped, cancel, fields, onSave, record]);
 
   return (
-    <div
-      className={cn("rounded-xl border border-border bg-card", className)}
-      data-testid={`editable-card-${slug(title)}`}
-    >
-      <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
-        {Icon && <Icon className="size-4 text-muted-foreground" />}
-        <span className="text-sm font-semibold">{title}</span>
-
-        {canEdit && !editing && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="ml-auto h-7 gap-1.5 px-2 text-xs"
-            onClick={startEdit}
-            aria-label={`Edit ${title}`}
-          >
-            <Pencil className="size-3.5" />
-            Edit
-          </Button>
+    // The wrapper carries the test id and any grid placement; the Polaris
+    // Card inside stretches to the grid row's height.
+    <div className={className} data-testid={`editable-card-${slug(title)}`}>
+      <Card
+        className="h-full gap-4"
+        title={
+          <span className="flex items-center gap-2">
+            {Icon && <Icon className="size-4 text-(--icon-secondary)" />}
+            {title}
+          </span>
+        }
+        actions={
+          editing ? (
+            <>
+              <Button variant="tertiary" onClick={cancel} disabled={saving}>
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={() => void save()} loading={saving}>
+                Save
+              </Button>
+            </>
+          ) : canEdit ? (
+            <Button
+              variant="plain"
+              icon="EditMinor"
+              onClick={startEdit}
+              accessibilityLabel={`Edit ${title}`}
+            >
+              Edit
+            </Button>
+          ) : null
+        }
+      >
+        {saveFailed && (
+          <Banner tone="critical">
+            Those changes could not be saved. Your edits are still here — try
+            again, or cancel to discard them.
+          </Banner>
         )}
 
-        {editing && (
-          <div className="ml-auto flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs"
-              onClick={cancel}
-              disabled={saving}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              className="h-7 gap-1.5 px-2.5 text-xs"
-              onClick={() => void save()}
-              disabled={saving}
-            >
-              {saving && <Loader2 className="size-3.5 animate-spin" />}
-              Save
-            </Button>
+        {/* Two columns only when the card itself is wide enough. */}
+        <div className="@container">
+          <div className="grid gap-x-6 gap-y-3 @md:grid-cols-2">
+            {fields.map((f) => (
+              <div
+                key={f.key}
+                className={cn(
+                  "gap-3",
+                  editing && !f.readOnly
+                    ? "flex flex-col"
+                    : "flex items-center justify-between",
+                )}
+              >
+                <span
+                  className={cn(
+                    "shrink-0 body-sm text-(--text-secondary)",
+                    editing && !f.readOnly && "body-sm-semibold",
+                  )}
+                >
+                  {f.label}
+                </span>
+
+                {editing && !f.readOnly ? (
+                  <FieldInput
+                    field={f}
+                    value={draft[f.key]}
+                    error={errors[f.key]}
+                    onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v }))}
+                  />
+                ) : (
+                  <span className="text-right body-md tabular-nums">
+                    {f.render
+                      ? f.render(record)
+                      : defaultRender((record as Record<string, unknown>)[f.key], f)}
+                  </span>
+                )}
+              </div>
+            ))}
           </div>
-        )}
-      </div>
-
-      {saveFailed && (
-        <div
-          role="alert"
-          className="border-b border-destructive/30 bg-destructive/8 px-4 py-2 text-xs text-destructive"
-        >
-          Those changes could not be saved. Your edits are still here — try
-          again, or cancel to discard them.
         </div>
-      )}
-
-      <div className="grid gap-x-6 gap-y-3 p-4 sm:grid-cols-2">
-        {fields.map((f) => (
-          <div
-            key={f.key}
-            className={cn(
-              "gap-3",
-              editing && !f.readOnly
-                ? "flex flex-col"
-                : "flex items-center justify-between",
-            )}
-          >
-            <span
-              className={cn(
-                "shrink-0 text-xs text-muted-foreground",
-                editing && !f.readOnly && "font-medium",
-              )}
-            >
-              {f.label}
-            </span>
-
-            {editing && !f.readOnly ? (
-              <FieldInput
-                field={f}
-                value={draft[f.key]}
-                error={errors[f.key]}
-                onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v }))}
-              />
-            ) : (
-              <span className="text-right text-sm tabular-nums">
-                {f.render
-                  ? f.render(record)
-                  : defaultRender((record as Record<string, unknown>)[f.key], f)}
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
+      </Card>
     </div>
   );
 }
@@ -362,12 +351,12 @@ function FieldInput<T>({
     <div className="flex w-full flex-col gap-1">
       {control}
       {error && (
-        <span id={describedBy} role="alert" className="text-xs text-destructive">
+        <span id={describedBy} role="alert" className="body-sm text-(--text-critical)">
           {error}
         </span>
       )}
       {!error && field.hint && (
-        <span className="text-xs text-muted-foreground">{field.hint}</span>
+        <span className="body-sm text-(--text-secondary)">{field.hint}</span>
       )}
     </div>
   );
@@ -377,12 +366,12 @@ function FieldInput<T>({
 // VALUE CONVERSION
 // ============================================================
 
-/** Stored value → the string an <input> holds while editing. */
+/** Stored value → the string an input element holds while editing. */
 export function toInputValue(value: unknown, kind: FieldKind): string | boolean {
   if (kind === "boolean") return Boolean(value);
   if (value === null || value === undefined) return "";
   if (kind === "date") {
-    // <input type="date"> requires bare YYYY-MM-DD.
+    // A date-type input requires bare YYYY-MM-DD.
     return String(value).slice(0, 10);
   }
   return String(value);

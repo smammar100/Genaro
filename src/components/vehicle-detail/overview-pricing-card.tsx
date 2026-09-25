@@ -26,14 +26,14 @@ interface OverviewPricingCardProps {
 const FIELDS: EditableField<Vehicle>[] = [
   {
     key: "listingPrice",
-    label: "Web Price",
+    label: "Web price",
     kind: "currency",
     validators: [nonNegative("Web price") as never],
     render: (v) => formatCurrency(v.listingPrice),
   },
   {
     key: "minimumSalePrice",
-    label: "Floor Price",
+    label: "Floor price",
     kind: "currency",
     validators: [nonNegative("Floor price") as never],
     render: (v) => formatCurrency(v.minimumSalePrice),
@@ -41,7 +41,7 @@ const FIELDS: EditableField<Vehicle>[] = [
   },
   {
     key: "sellingPrice",
-    label: "Sold For",
+    label: "Sold for",
     kind: "currency",
     validators: [nonNegative("Selling price") as never],
     render: (v) => formatCurrency(v.sellingPrice),

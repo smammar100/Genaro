@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { AlertTriangle } from "lucide-react";
+import { Banner } from "@/components/polaris";
 import type { Warranty } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
@@ -28,9 +28,9 @@ function summarisePending(warranties: Warranty[]): {
 
 /**
  * Shown above the External warranties table when any rows are still in
- * `purchase_status = 'pending'`. A soft-red, segmented info ribbon that
- * surfaces the count, total owed to providers, and any pending longer than
- * 60 days. Purely informational — the filter chips below cover navigation.
+ * `purchase_status = 'pending'`. A warning Banner that surfaces the count,
+ * the total owed to providers, and any pending longer than 60 days. Purely
+ * informational — the view tabs below cover navigation.
  */
 export function PendingPurchaseBanner({
   warranties,
@@ -39,37 +39,16 @@ export function PendingPurchaseBanner({
 
   if (summary.count === 0) return null;
 
-  const divider = (
-    <span aria-hidden className="h-4 w-px bg-red-200 dark:bg-red-500/30" />
-  );
-
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-      <span className="inline-flex items-center gap-2 font-semibold">
-        <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
-        Pending purchase
-      </span>
-      {divider}
-      <span>
-        <strong className="font-semibold">{summary.count}</strong> warrant
-        {summary.count === 1 ? "y" : "ies"}
-      </span>
-      {divider}
-      <span>
-        <strong className="font-semibold">
-          {formatCurrency(summary.totalOwed)}
-        </strong>{" "}
-        owed to providers
-      </span>
-      {summary.overdue > 0 && (
-        <>
-          {divider}
-          <span>
-            <strong className="font-semibold">{summary.overdue}</strong> overdue
-            60+ days
-          </span>
-        </>
-      )}
-    </div>
+    <Banner
+      tone="warning"
+      title={`${summary.count} ${summary.count === 1 ? "warranty" : "warranties"} pending purchase`}
+    >
+      {formatCurrency(summary.totalOwed)} owed to providers
+      {summary.overdue > 0
+        ? ` · ${summary.overdue} overdue 60+ days`
+        : ""}
+      . Buy each one from its provider, then mark it purchased.
+    </Banner>
   );
 }

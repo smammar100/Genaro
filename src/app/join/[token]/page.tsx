@@ -11,17 +11,8 @@ import {
 } from "@/lib/auth/form-resolver";
 import { toast } from "@/lib/toast";
 import { useAutoFocusField } from "@/hooks/use-auto-focus";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Button } from "@/components/polaris";
+import { AuthCard, RhfTextField } from "@/app/(auth)/_components/auth-card";
 
 interface FormValues {
   name?: string;
@@ -84,116 +75,63 @@ export default function JoinPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-muted/40 to-background px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-xl bg-primary text-primary-foreground text-sm font-semibold tracking-widest">
-            CC
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Join the team
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Set your details to create your account.
+    <AuthCard
+      centered
+      title="Join the team"
+      subtitle="Set your details to create your account."
+    >
+      {done ? (
+        <div className="flex flex-col items-center gap-2 py-4 text-center">
+          <p className="heading-sm text-(--text)">You&apos;re all set</p>
+          <p className="body-md text-(--text-secondary)">
+            Redirecting you to sign in…
           </p>
         </div>
-
-        <Card className="p-6">
-          {done ? (
-            <div className="flex flex-col items-center gap-2 py-4 text-center">
-              <p className="text-sm font-medium">You&apos;re all set</p>
-              <p className="text-sm text-muted-foreground">
-                Redirecting you to sign in…
-              </p>
-            </div>
-          ) : (
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="flex flex-col gap-4"
-              >
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name (optional)</FormLabel>
-                      <FormControl>
-                        <Input
-                          autoComplete="name"
-                          placeholder="Jane Smith"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          autoComplete="email"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          autoComplete="new-password"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="confirm"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirm password</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          autoComplete="new-password"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="submit"
-                  className="mt-2"
-                  disabled={form.formState.isSubmitting}
-                >
-                  {form.formState.isSubmitting
-                    ? "Creating account…"
-                    : "Create account"}
-                </Button>
-              </form>
-            </Form>
-          )}
-        </Card>
-      </div>
-    </div>
+      ) : (
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-4"
+        >
+          <RhfTextField
+            control={form.control}
+            name="name"
+            label="Name (optional)"
+            autoComplete="name"
+            placeholder="Jane Smith"
+          />
+          <RhfTextField
+            control={form.control}
+            name="email"
+            label="Email"
+            type="email"
+            autoComplete="email"
+          />
+          <RhfTextField
+            control={form.control}
+            name="password"
+            label="Password"
+            type="password"
+            autoComplete="new-password"
+          />
+          <RhfTextField
+            control={form.control}
+            name="confirm"
+            label="Confirm password"
+            type="password"
+            autoComplete="new-password"
+          />
+          <Button
+            variant="primary"
+            size="large"
+            submit
+            fullWidth
+            loading={form.formState.isSubmitting}
+            className="mt-2"
+          >
+            Create account
+          </Button>
+        </form>
+      )}
+    </AuthCard>
   );
 }

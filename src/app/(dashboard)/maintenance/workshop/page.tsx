@@ -3,7 +3,6 @@
 import { useEffect, useId, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  Plus,
   Wrench,
   Phone,
   CalendarClock,
@@ -28,10 +27,15 @@ import type {
   WorkshopJob,
 } from "@/lib/types";
 import { MAINTENANCE_STATUSES } from "@/lib/constants";
-import { Card } from "@/components/ui/card";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Page,
+  Select,
+} from "@/components/polaris";
 import { ResourceList, ResourceListItem } from "@/components/ui/resource-list";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,18 +45,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Select,
+  Select as UiSelect,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { EmptyState } from "@/components/shared/empty-state";
-import { MaintenanceStatusBadge } from "@/components/shared/status-badge";
 import { RegPlate } from "@/components/shared/reg-plate";
+import {
+  JobStatusBadge,
+  jobStatusLabel,
+} from "@/components/maintenance/job-status";
 import { cn, formatCurrency, formatDate, formatTime12 } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 
@@ -75,10 +80,10 @@ type FormInput = z.input<typeof schema>;
 type FormOutput = z.output<typeof schema>;
 
 const STATUS_DOT: Record<MaintenanceStatus, string> = {
-  pending: "bg-amber-500",
-  in_progress: "bg-blue-500",
-  completed: "bg-emerald-500",
-  stalled: "bg-rose-500",
+  pending: "bg-(--bg-fill-caution)",
+  in_progress: "bg-(--bg-fill-info)",
+  completed: "bg-(--bg-fill-success)",
+  stalled: "bg-(--bg-fill-critical)",
 };
 
 export default function WorkshopPage() {
@@ -224,150 +229,148 @@ export default function WorkshopPage() {
     }
   }
 
+  const isEmpty = jobs !== null && jobs.length === 0;
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Workshop</h1>
-          <p className="text-[13px] text-muted-foreground">
-            External, walk-in customer service jobs, kept separate from internal
-            stock preparation.
-          </p>
-        </div>
-        <Dialog
-          open={open}
-          onOpenChange={(o) => {
-            setOpen(o);
-            if (!o) {
-              setEditingId(null);
-              form.reset(emptyDefaults());
-            }
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button size="sm" onClick={openAdd}>
-              <Plus className="mr-1 h-3.5 w-3.5" /> Add Workshop Job
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>
-                {editingId ? "Edit Workshop Job" : "Add Workshop Job"}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-              <div className="grid gap-4 px-6 pb-2 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={nameId}>Customer name</Label>
-                  <Input id={nameId} {...form.register("customerName")} />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={phoneId}>Customer phone</Label>
-                  <Input id={phoneId} {...form.register("customerPhone")} />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={regId}>Vehicle reg</Label>
-                  <Input
-                    id={regId}
-                    {...form.register("vehicleReg")}
-                    className="font-mono"
-                    placeholder="AB12 CDE"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={descVehicleId}>Vehicle description</Label>
-                  <Input
-                    id={descVehicleId}
-                    {...form.register("vehicleDescription")}
-                    placeholder="Vauxhall Corsa 2014"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <Label htmlFor={jobDescId}>Job description</Label>
-                  <Input
-                    id={jobDescId}
-                    {...form.register("description")}
-                    placeholder="AC re-gas + cabin filter"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={assignedId}>Assigned to</Label>
-                  <Select
-                    items={{
-                      none: "Unassigned",
-                      ...Object.fromEntries(users.map((u) => [u.id, u.name])),
-                    }}
-                    value={form.watch("assignedTo")}
-                    onValueChange={(v) => form.setValue("assignedTo", v)}
-                  >
-                    <SelectTrigger id={assignedId}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Unassigned</SelectItem>
-                      {users.map((u) => (
-                        <SelectItem key={u.id} value={u.id}>
-                          {u.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={costId}>Estimated cost</Label>
-                  <Input
-                    id={costId}
-                    type="number"
-                    step="0.01"
-                    {...form.register("estimatedCost")}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={dateId}>Date</Label>
-                  <Input id={dateId} type="date" {...form.register("scheduledDate")} />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={timeId}>Time</Label>
-                  <Input id={timeId} type="time" {...form.register("scheduledTime")} />
-                </div>
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <Label htmlFor={notesId}>Notes</Label>
-                  <Textarea id={notesId} {...form.register("notes")} className="min-h-16" />
-                </div>
+    <Page
+      title="Workshop"
+      subtitle="External, walk-in customer service jobs, kept separate from internal stock preparation."
+      fullWidth
+      // The empty state carries the one primary action when there are no jobs.
+      primaryAction={
+        isEmpty ? undefined : { content: "Add workshop job", onAction: openAdd }
+      }
+    >
+      <Dialog
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) {
+            setEditingId(null);
+            form.reset(emptyDefaults());
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {editingId ? "Edit workshop job" : "Add workshop job"}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="grid gap-4 px-6 pb-2 sm:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={nameId}>Customer name</Label>
+                <Input id={nameId} {...form.register("customerName")} />
               </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={phoneId}>Customer phone</Label>
+                <Input id={phoneId} {...form.register("customerPhone")} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={regId}>Vehicle reg</Label>
+                <Input
+                  id={regId}
+                  {...form.register("vehicleReg")}
+                  className="font-mono"
+                  placeholder="AB12 CDE"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={descVehicleId}>Vehicle description</Label>
+                <Input
+                  id={descVehicleId}
+                  {...form.register("vehicleDescription")}
+                  placeholder="Vauxhall Corsa 2014"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <Label htmlFor={jobDescId}>Job description</Label>
+                <Input
+                  id={jobDescId}
+                  {...form.register("description")}
+                  placeholder="AC re-gas + cabin filter"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={assignedId}>Assigned to</Label>
+                <UiSelect
+                  items={{
+                    none: "Unassigned",
+                    ...Object.fromEntries(users.map((u) => [u.id, u.name])),
+                  }}
+                  value={form.watch("assignedTo")}
+                  onValueChange={(v) => form.setValue("assignedTo", v)}
                 >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {editingId ? "Save changes" : "Save"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+                  <SelectTrigger id={assignedId}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Unassigned</SelectItem>
+                    {users.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </UiSelect>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={costId}>Estimated cost</Label>
+                <Input
+                  id={costId}
+                  type="number"
+                  step="0.01"
+                  {...form.register("estimatedCost")}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={dateId}>Date</Label>
+                <Input id={dateId} type="date" {...form.register("scheduledDate")} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={timeId}>Time</Label>
+                <Input id={timeId} type="time" {...form.register("scheduledTime")} />
+              </div>
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <Label htmlFor={notesId}>Notes</Label>
+                <Textarea id={notesId} {...form.register("notes")} className="min-h-16" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setOpen(false)}>Cancel</Button>
+              <Button
+                submit
+                variant="primary"
+                loading={form.formState.isSubmitting}
+              >
+                {editingId ? "Save changes" : "Save job"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {!jobs ? (
         <Skeleton className="h-64" />
-      ) : jobs.length === 0 ? (
-        <EmptyState
-          icon={Wrench}
-          title="No workshop jobs"
-          description="Track customer walk-in service appointments here."
-        />
+      ) : isEmpty ? (
+        <Card padding="0">
+          <EmptyState
+            heading="No workshop jobs"
+            icon={<Wrench className="fill-none" />}
+            action={{ content: "Add workshop job", onAction: openAdd }}
+          >
+            Track customer walk-in service appointments here.
+          </EmptyState>
+        </Card>
       ) : (
         (() => {
           const selected =
             jobs.find((j) => j.id === selectedId) ?? jobs[0] ?? null;
           return (
-            <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
+            <div className="grid items-start gap-4 lg:grid-cols-[300px_1fr]">
               {/* Job list */}
-              <Card className="gap-0 self-start p-2">
+              <Card padding="0" className="p-2">
                 <ResourceList aria-label="Workshop jobs">
                   {jobs.map((j) => {
                     const isSel = selected?.id === j.id;
@@ -375,13 +378,15 @@ export default function WorkshopPage() {
                       <ResourceListItem
                         key={j.id}
                         aria-current={isSel ? "true" : undefined}
-                        className={cn(isSel && "bg-[#f1f1f1]")}
+                        className={cn(isSel && "bg-(--bg-surface-selected)")}
                         onClick={() => setSelectedId(j.id)}
                         icon={<UserIcon />}
                         title={j.customerName}
                         description={`${j.vehicleReg} · ${formatTime12(j.scheduledTime)}`}
                         trailing={
                           <span
+                            aria-label={jobStatusLabel(j.status)}
+                            role="img"
                             className={cn(
                               "size-2 shrink-0 rounded-full",
                               STATUS_DOT[j.status],
@@ -396,55 +401,55 @@ export default function WorkshopPage() {
 
               {/* Booking detail */}
               {selected && (
-                <Card className="p-4">
+                <Card>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <h2 className="text-sm font-semibold">
-                        {selected.customerName}
-                      </h2>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="heading-sm">{selected.customerName}</h2>
+                        <JobStatusBadge status={selected.status} />
+                      </div>
                       {selected.customerPhone ? (
                         <a
                           href={`tel:${selected.customerPhone}`}
-                          className="mt-0.5 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground hover:underline"
+                          className="mt-0.5 inline-flex items-center gap-1.5 text-sm text-(--text-secondary) hover:text-(--text) hover:underline"
                         >
                           <Phone className="size-3.5" />
                           {selected.customerPhone}
                         </a>
                       ) : (
-                        <span className="mt-0.5 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <span className="mt-0.5 inline-flex items-center gap-1.5 text-sm text-(--text-secondary)">
                           <Phone className="size-3.5" />
                           Walk-in
                         </span>
                       )}
                     </div>
-                    <Select
-                      value={selected.status}
-                      onValueChange={(v) =>
-                        void handleStatus(selected.id, v as MaintenanceStatus)
-                      }
-                    >
-                      <SelectTrigger className="h-8 w-36 text-xs">
-                        <MaintenanceStatusBadge status={selected.status} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MAINTENANCE_STATUSES.map((s) => (
-                          <SelectItem key={s.value} value={s.value}>
-                            {s.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="w-40">
+                      <Select
+                        label="Status"
+                        labelHidden
+                        options={MAINTENANCE_STATUSES.map((s) => ({
+                          label: jobStatusLabel(s.value),
+                          value: s.value,
+                        }))}
+                        value={selected.status}
+                        onChange={(v) =>
+                          void handleStatus(selected.id, v as MaintenanceStatus)
+                        }
+                      />
+                    </div>
                   </div>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <Field icon={Car} label="Vehicle">
                       <span className="inline-flex flex-wrap items-center gap-2">
+                        {/* A plate-shaped link; a Polaris Button would wrap the
+                            plate in its own chrome. */}
                         <button
                           type="button"
                           onClick={() =>
                             void openVehicleFromReg(selected.vehicleReg)
                           }
-                          className="transition-opacity hover:opacity-80"
+                          className="rounded-(--radius-100) transition-opacity hover:opacity-80"
                           title="Open vehicle details"
                         >
                           <RegPlate
@@ -452,7 +457,7 @@ export default function WorkshopPage() {
                             size="sm"
                           />
                         </button>
-                        <span className="text-muted-foreground">
+                        <span className="text-(--text-secondary)">
                           {selected.vehicleDescription}
                         </span>
                       </span>
@@ -466,7 +471,7 @@ export default function WorkshopPage() {
                         "Unassigned"}
                     </Field>
                     <Field icon={PoundSterling} label="Cost">
-                      <span className="font-semibold tabular-nums">
+                      <span className="body-md-numeric font-semibold">
                         {formatCurrency(
                           selected.actualCost ?? selected.estimatedCost,
                         )}
@@ -488,19 +493,19 @@ export default function WorkshopPage() {
                     ) : null}
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between gap-2 border-t pt-4">
+                  <div className="mt-4 flex items-center justify-between gap-2 border-t border-(--border-secondary) pt-4">
                     <Button
-                      variant="ghost"
-                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      tone="critical"
                       onClick={() => void handleDelete(selected)}
                     >
-                      Delete
+                      Delete job
                     </Button>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" onClick={() => openEdit(selected)}>
-                        Edit
+                      <Button onClick={() => openEdit(selected)}>
+                        Edit job
                       </Button>
                       <Button
+                        tone="success"
                         onClick={() =>
                           void handleStatus(selected.id, "completed")
                         }
@@ -518,7 +523,7 @@ export default function WorkshopPage() {
       )}
 
       {confirmDialog}
-    </div>
+    </Page>
   );
 }
 
@@ -533,12 +538,12 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg bg-muted p-3">
-      <div className="mb-1 inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
+    <div className="rounded-(--radius-200) bg-(--bg-surface-secondary) p-3">
+      <div className="body-sm mb-1 inline-flex items-center gap-1.5 text-(--text-secondary)">
         <Icon className="size-3.5" />
         {label}
       </div>
-      <div className="text-[13px]">{children}</div>
+      <div className="body-md">{children}</div>
     </div>
   );
 }

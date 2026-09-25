@@ -100,12 +100,11 @@ Dynamic detail routes: `/vehicles/[id]/inspection/page.tsx`, `/warranties/[id]/p
 | `tooltip.tsx` | `<Tooltip>` |
 | `avatar.tsx` | `<Avatar>` initials + image |
 | `badge.tsx` | `<Badge>` variants |
-| `tabs.tsx` | `<Tabs>` + `<TabsList>` + `<TabsContent>` |
 | `switch.tsx` | `<Switch>` |
 | `checkbox.tsx` | `<Checkbox>` |
 | `calendar.tsx` | `<Calendar>` date picker (uses react-day-picker) |
 | `command.tsx` | `<Command>` palette (uses cmdk) |
-| `sidebar.tsx` | Sidebar primitives used by `components/layout/app-sidebar.tsx` |
+| `sidebar.tsx` | shadcn sidebar primitives (the app nav is the Polaris `Navigation`) |
 | `table.tsx` | `<Table>` + `<TableHeader>` etc. |
 | `sonner.tsx` | Toast container mounting sonner |
 | `breadcrumb.tsx` | `<Breadcrumb>` |
@@ -122,10 +121,14 @@ Dynamic detail routes: `/vehicles/[id]/inspection/page.tsx`, `/warranties/[id]/p
 
 | File | Owns |
 |---|---|
-| `app-header.tsx` | Top header: breadcrumb, reg-search, notifications, profile menu |
-| `app-sidebar.tsx` | Left navigation rail; collapsible |
-| `sidebar-config.ts` | The canonical sidebar groups + items + `titleFromPath()` |
-| `sidebar-badges.tsx` | Notification badge dots on sidebar items |
+| `next-admin-shell.tsx` | The dashboard shell: nav from the URL, capabilities and the running tour; used by `app/(dashboard)/layout.tsx` |
+| `admin-shell.tsx` | Polaris `Frame` + `AdminTopBar` + navigation; pads pages that don't render a Polaris `Page` |
+| `admin-top-bar.tsx` | Polaris `TopBar`: company logo (`#tour-brand`), health dot, search → ⌘K palette (`#tour-search`), notifications and account menus (Popover + ActionList) |
+| `admin-navigation.tsx` | Polaris `Navigation` (`#tour-nav`): sections, Settings at the foot |
+| `nav.ts` | Pure builders from `SIDEBAR_GROUPS` to Navigation items: capability/MVP filtering, selection, tour anchors |
+| `nav-badges.ts` | Live counts on the Warranties nav items |
+| `sidebar-config.ts` | The canonical nav groups + items + `titleFromPath()` / `activeHrefForPath()` / `navTourId()` |
+| `command-palette.tsx` | ⌘K palette shell (`openCommandPalette()`); the dialog loads on first open |
 
 ### `components/shared/`
 
@@ -329,7 +332,6 @@ Dynamic detail routes: `/vehicles/[id]/inspection/page.tsx`, `/warranties/[id]/p
 
 | File | Purpose |
 |---|---|
-| `build-polaris-theme.mjs` | Generates `src/app/polaris-theme.css` from `@shopify/polaris-tokens` |
 | `import-master-sheet.mts` | Imports the client's legacy Excel master sheet |
 | `seed-demo-vehicles.mts`, `demo-car-photos.mts` | Seed demo vehicles and their photos |
 | `lint-ratchet.mjs` | CI gate: fails if the ESLint error count exceeds the baseline |

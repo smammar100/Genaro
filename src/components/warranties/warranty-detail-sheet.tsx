@@ -1,15 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect, useState, type ReactNode } from "react";
+import NextLink from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  AlertTriangle,
-  Ban,
-  ExternalLink as ExternalLinkIcon,
-  ShieldAlert,
-  X,
-} from "lucide-react";
+import { Ban, ExternalLink as ExternalLinkIcon, ShieldAlert } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -35,10 +29,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Banner,
+  Button,
+  Card,
+  Link,
+  SkeletonBodyText,
+  TextField,
+  Tooltip,
+} from "@/components/polaris";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { StatusPill } from "./status-pill";
 import { ProviderBadge } from "./provider-badge";
@@ -109,6 +108,15 @@ export function WarrantyDetailSheet({
     warranty.type === "external"
       ? warranty.costToCustomer - warranty.costToDealership
       : null;
+  const claimBlockedReason =
+    warranty.status !== "active"
+      ? "Can only file claims on active warranties"
+      : undefined;
+  const cancelBlockedReason = !canEdit
+    ? "Requires Warranty Edit capability"
+    : warranty.status === "cancelled"
+      ? "Already cancelled"
+      : undefined;
 
   return (
     <>
@@ -116,43 +124,37 @@ export function WarrantyDetailSheet({
         <SheetContent
           side="right"
           showCloseButton={false}
-          className="flex w-full flex-col gap-0 p-0 sm:max-w-[480px]"
+          className="flex w-full flex-col gap-0 bg-(--bg-surface-secondary) p-0 sm:max-w-[480px]"
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b px-4 py-3">
+          <div className="flex items-center justify-between gap-3 border-b border-(--border) bg-(--bg-surface) px-4 py-3">
             <div className="flex min-w-0 flex-col">
-              <SheetTitle className="text-base font-semibold">
+              <SheetTitle className="heading-md">
                 {warranty.type === "external" ? "External" : "In-house"} warranty
               </SheetTitle>
-              <span className="truncate text-xs text-muted-foreground">
+              <span className="body-sm truncate text-(--text-secondary)">
                 {warranty.customerName}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <StatusPill status={warranty.status} />
-              <button
-                type="button"
-                aria-label="Close"
+              <Button
+                variant="tertiary"
+                icon="CancelMajor"
+                accessibilityLabel="Close"
                 onClick={() => onOpenChange(false)}
-                className="grid size-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              />
             </div>
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto px-4 py-4">
-            <div className="flex flex-col gap-3">
-              {/* Vehicle */}
-              <Card className="flex flex-col gap-2 p-3">
-                <h4 className="text-sm font-semibold text-foreground">
-                  Vehicle
-                </h4>
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex flex-col gap-4">
+              <Card title="Vehicle">
                 {vehicle ? (
-                  <Link
+                  <NextLink
                     href={vehicleDetailHref(vehicle.id, pathname)}
-                    className="flex items-center justify-between gap-2 rounded-md transition-colors hover:bg-accent/40"
+                    className="-m-1 flex items-center justify-between gap-2 rounded-(--radius-200) p-1 transition-colors hover:bg-(--bg-surface-hover)"
                   >
                     <div className="flex items-center gap-2">
                       <RegPlate
@@ -160,48 +162,46 @@ export function WarrantyDetailSheet({
                         size="sm"
                       />
                       <div className="flex flex-col">
-                        <span className="text-sm">
+                        <span className="body-md">
                           {vehicle.year} {vehicle.make} {vehicle.model}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="body-sm text-(--text-secondary)">
                           Stock {vehicle.stockId}
                         </span>
                       </div>
                     </div>
-                    <ExternalLinkIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                  </Link>
+                    <ExternalLinkIcon className="h-3.5 w-3.5 text-(--icon-secondary)" />
+                  </NextLink>
                 ) : (
-                  <Skeleton className="h-10" />
+                  <SkeletonBodyText lines={2} />
                 )}
               </Card>
 
-              {/* Customer */}
-              <Card className="flex flex-col gap-1 p-3">
-                <h4 className="text-sm font-semibold text-foreground">
-                  Customer
-                </h4>
-                <div className="text-sm font-medium">{warranty.customerName}</div>
-                <div className="text-xs text-muted-foreground">
+              <Card title="Customer">
+                <div className="body-md">{warranty.customerName}</div>
+                <div className="body-sm text-(--text-secondary)">
                   {warranty.customerPhone}
                   {warranty.customerEmail && ` · ${warranty.customerEmail}`}
                 </div>
               </Card>
 
-              {/* Coverage */}
-              <Card className="flex flex-col gap-2 p-3">
-                <h4 className="text-sm font-semibold text-foreground">
-                  Coverage
-                </h4>
-                <div className="flex items-center justify-between">
-                  <ProviderBadge provider={warranty.provider} />
+              <Card
+                title="Coverage"
+                actions={<ProviderBadge provider={warranty.provider} />}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="body-sm text-(--text-secondary)">
+                    {formatDate(warranty.startDate)} →{" "}
+                    {formatDate(warranty.endDate)}
+                  </span>
                   <span
                     className={cn(
-                      "text-xs",
+                      "body-sm",
                       remaining < 0
-                        ? "text-destructive"
+                        ? "text-(--text-critical)"
                         : remaining < 30
-                          ? "text-amber-600"
-                          : "text-muted-foreground",
+                          ? "text-(--text-caution)"
+                          : "text-(--text-secondary)",
                     )}
                   >
                     {remaining < 0
@@ -209,151 +209,106 @@ export function WarrantyDetailSheet({
                       : `${remaining}d remaining`}
                   </span>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {formatDate(warranty.startDate)} →{" "}
-                  {formatDate(warranty.endDate)}
-                </div>
-                <p className="text-sm">{warranty.coverageDetails}</p>
+                <p className="body-md">{warranty.coverageDetails}</p>
                 {/* Where this cover came from. Warranties issued by closing a
                     sales invoice link straight back to it (GEN-66); ones
                     raised by hand in this module have no invoice. */}
                 {invoice ? (
-                  <Link
-                    href={`/sales/invoice-generation?invoiceId=${invoice.id}`}
-                    className="flex items-center justify-between gap-2 rounded-md text-xs text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
-                  >
-                    <span>
-                      Issued by invoice{" "}
-                      <span className="font-medium">
-                        {invoice.invoiceNumber}
-                      </span>
-                    </span>
-                    <ExternalLinkIcon className="h-3.5 w-3.5" />
-                  </Link>
+                  <span className="body-sm text-(--text-secondary)">
+                    Issued by invoice{" "}
+                    <Link url={`/sales/invoice-generation?invoiceId=${invoice.id}`}>
+                      {invoice.invoiceNumber}
+                    </Link>
+                  </span>
                 ) : null}
               </Card>
 
-              {/* Pricing */}
-              <Card className="flex flex-col gap-1 p-3">
-                <h4 className="text-sm font-semibold text-foreground">
-                  Pricing
-                </h4>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Cost to customer</span>
-                  <span className="font-medium tabular-nums">
-                    {formatCurrency(warranty.costToCustomer)}
-                  </span>
-                </div>
-                {warranty.type === "external" && (
-                  <>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        Cost to dealership
-                      </span>
-                      <span className="font-medium tabular-nums">
-                        {formatCurrency(warranty.costToDealership)}
-                      </span>
-                    </div>
-                    {warranty.amountPaid != null && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">
-                          Amount paid to provider
-                        </span>
-                        <span className="font-medium tabular-nums">
-                          {formatCurrency(warranty.amountPaid)}
-                        </span>
-                      </div>
-                    )}
-                    {margin !== null && (
-                      <div className="flex items-center justify-between border-t pt-1 text-sm">
-                        <span className="text-muted-foreground">Margin</span>
-                        <span
-                          className={cn(
-                            "font-medium tabular-nums",
-                            margin < 0 && "text-destructive",
-                          )}
-                        >
-                          {formatCurrency(margin)}
-                        </span>
-                      </div>
-                    )}
-                  </>
-                )}
+              <Card title="Pricing">
+                <dl className="flex flex-col gap-1">
+                  <PriceRow
+                    label="Cost to customer"
+                    value={formatCurrency(warranty.costToCustomer)}
+                  />
+                  {warranty.type === "external" && (
+                    <>
+                      <PriceRow
+                        label="Cost to dealership"
+                        value={formatCurrency(warranty.costToDealership)}
+                      />
+                      {warranty.amountPaid != null && (
+                        <PriceRow
+                          label="Amount paid to provider"
+                          value={formatCurrency(warranty.amountPaid)}
+                        />
+                      )}
+                      {margin !== null && (
+                        <PriceRow
+                          label="Margin"
+                          value={formatCurrency(margin)}
+                          strong
+                          critical={margin < 0}
+                        />
+                      )}
+                    </>
+                  )}
+                </dl>
               </Card>
 
               {/* Purchase status — external only */}
-              {warranty.type === "external" && (
-                <Card
-                  className={cn(
-                    "flex flex-col gap-2 p-3",
-                    warranty.purchaseStatus === "pending" &&
-                      "border-amber-400/60 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-500/5",
-                  )}
-                >
-                  <h4 className="text-sm font-semibold text-foreground">
-                    Purchase status
-                  </h4>
-                  {warranty.purchaseStatus === "pending" ? (
-                    <>
-                      <div className="flex items-center gap-2 text-sm">
-                        <AlertTriangle className="h-4 w-4 text-amber-600" />
-                        <span>This warranty hasn&apos;t been bought from the provider yet.</span>
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="self-start"
-                        disabled={!canEdit}
-                        onClick={() => setMarkPurchasedOpen(true)}
-                        title={
-                          canEdit
-                            ? undefined
-                            : "Requires Warranty Edit capability"
-                        }
-                      >
-                        Mark purchased
-                      </Button>
-                    </>
-                  ) : (
-                    <div className="flex flex-col gap-1 text-sm">
+              {warranty.type === "external" &&
+                (warranty.purchaseStatus === "pending" ? (
+                  <Banner
+                    tone="warning"
+                    title="Not yet purchased"
+                    action={
+                      canEdit
+                        ? {
+                            content: "Mark purchased",
+                            onAction: () => setMarkPurchasedOpen(true),
+                          }
+                        : undefined
+                    }
+                  >
+                    This warranty hasn&apos;t been bought from the provider
+                    yet.
+                    {canEdit ? "" : " Requires Warranty Edit capability to mark it purchased."}
+                  </Banner>
+                ) : (
+                  <Card title="Purchase status">
+                    <div className="flex flex-col items-start gap-1">
                       <StatusPill status="purchased" />
                       {warranty.purchasedAt && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="body-sm text-(--text-secondary)">
                           Bought {formatDate(warranty.purchasedAt)}
                           {purchaserName && ` by ${purchaserName}`}
                         </span>
                       )}
                       {warranty.providerReference && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="body-sm text-(--text-secondary)">
                           Ref {warranty.providerReference}
                         </span>
                       )}
                     </div>
-                  )}
-                </Card>
-              )}
+                  </Card>
+                ))}
 
-              {/* Claims */}
-              <Card className="flex flex-col gap-2 p-3">
-                <h4 className="text-sm font-semibold text-foreground">
-                  Claims ({claims.length})
-                </h4>
+              <Card title={`Claims (${claims.length})`}>
                 {claims.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="body-sm text-(--text-secondary)">
                     No claims filed against this warranty.
                   </p>
                 ) : (
-                  <ul className="flex flex-col gap-2">
+                  <ul className="-mx-4 -mb-4 flex flex-col">
                     {claims.map((c) => (
                       <li
                         key={c.id}
-                        className="flex items-start justify-between gap-2 rounded-md border bg-card p-2"
+                        className="flex items-start justify-between gap-2 border-t border-(--border-secondary) px-4 py-3"
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm">
+                          <p className="body-md truncate">
                             {c.issueDescription}
                           </p>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="body-sm text-(--text-secondary)">
                             {formatDate(c.createdAt)}
                             {c.isComplaint && " · Complaint"}
                           </span>
@@ -368,40 +323,27 @@ export function WarrantyDetailSheet({
           </div>
 
           {/* Footer actions */}
-          <div className="flex items-center justify-between gap-2 border-t bg-background px-4 py-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setFileClaimOpen(true)}
-              disabled={warranty.status !== "active"}
-              title={
-                warranty.status !== "active"
-                  ? "Can only file claims on active warranties"
-                  : undefined
-              }
-            >
-              <ShieldAlert className="mr-1.5 h-4 w-4" />
-              File claim
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => setConfirmCancelOpen(true)}
-              disabled={!canEdit || warranty.status === "cancelled"}
-              title={
-                !canEdit
-                  ? "Requires Warranty Edit capability"
-                  : warranty.status === "cancelled"
-                    ? "Already cancelled"
-                    : undefined
-              }
-            >
-              <Ban className="mr-1.5 h-4 w-4" />
-              Cancel warranty
-            </Button>
+          <div className="flex items-center justify-between gap-2 border-t border-(--border) bg-(--bg-surface) px-4 py-3">
+            <MaybeTooltip reason={claimBlockedReason}>
+              <Button
+                icon={<ShieldAlert />}
+                onClick={() => setFileClaimOpen(true)}
+                disabled={!!claimBlockedReason}
+              >
+                File claim
+              </Button>
+            </MaybeTooltip>
+            <MaybeTooltip reason={cancelBlockedReason}>
+              <Button
+                variant="tertiary"
+                tone="critical"
+                icon={<Ban />}
+                onClick={() => setConfirmCancelOpen(true)}
+                disabled={!!cancelBlockedReason}
+              >
+                Cancel warranty
+              </Button>
+            </MaybeTooltip>
           </div>
         </SheetContent>
       </Sheet>
@@ -485,34 +427,72 @@ function CancelConfirmDialog({
             claims keep their state. The action is logged.
           </DialogDescription>
         </DialogHeader>
-        <div>
-          <label className="text-sm font-medium">Reason (optional)</label>
-          <Textarea
+        <div className="px-4 pb-4">
+          <TextField
+            label="Reason (optional)"
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
+            onChange={setReason}
+            multiline={3}
             placeholder="Why is this being cancelled?"
-            className="mt-1 min-h-20"
           />
         </div>
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={submitting}
-          >
+          <Button onClick={() => onOpenChange(false)} disabled={submitting}>
             Keep warranty
           </Button>
           <Button
-            type="button"
-            variant="destructive"
-            onClick={confirm}
-            disabled={submitting}
+            variant="primary"
+            tone="critical"
+            onClick={() => void confirm()}
+            loading={submitting}
           >
-            {submitting ? "Cancelling…" : "Cancel warranty"}
+            Cancel warranty
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
+}
+
+function PriceRow({
+  label,
+  value,
+  strong,
+  critical,
+}: {
+  label: string;
+  value: string;
+  strong?: boolean;
+  critical?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between",
+        strong && "mt-1 border-t border-(--border-secondary) pt-2",
+      )}
+    >
+      <dt className="body-md text-(--text-secondary)">{label}</dt>
+      <dd
+        className={cn(
+          "body-md-numeric",
+          strong && "font-semibold",
+          critical && "text-(--text-critical)",
+        )}
+      >
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+/** Explains why an action is disabled, on hover and focus. */
+function MaybeTooltip({
+  reason,
+  children,
+}: {
+  reason?: string;
+  children: ReactNode;
+}) {
+  return reason ? <Tooltip content={reason}>{children}</Tooltip> : <>{children}</>;
 }

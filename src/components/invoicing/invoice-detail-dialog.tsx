@@ -1,14 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { DataTable, Modal } from "@/components/polaris";
 import {
   companyInvoiceFields,
   downloadBlob,
@@ -72,69 +64,52 @@ export function InvoiceDetailDialog({
   }
 
   return (
-    <Dialog open={invoice !== null} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        {invoice && (
-          <>
-            <DialogHeader>
-              <DialogTitle>{invoice.invoiceNumber}</DialogTitle>
-              <DialogDescription>
-                {invoice.partyName} · {formatDate(invoice.invoiceDate)}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="overflow-x-auto px-6">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="py-1.5 pr-2 font-medium">Description</th>
-                    <th className="py-1.5 pr-2 text-right font-medium">Qty</th>
-                    <th className="py-1.5 pr-2 text-right font-medium">Unit</th>
-                    <th className="py-1.5 pr-2 text-right font-medium">VAT</th>
-                    <th className="py-1.5 pr-2 text-right font-medium">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoice.lineItems.map((li) => (
-                    <tr key={li.id} className="border-b last:border-b-0">
-                      <td className="py-1.5 pr-2">{li.description}</td>
-                      <td className="py-1.5 pr-2 text-right tabular-nums">
-                        {li.quantity}
-                      </td>
-                      <td className="py-1.5 pr-2 text-right tabular-nums">
-                        {formatCurrency(li.unitPrice)}
-                      </td>
-                      <td className="py-1.5 pr-2 text-right tabular-nums">
-                        {formatCurrency(li.vatAmount)}
-                      </td>
-                      <td className="py-1.5 pr-2 text-right tabular-nums">
-                        {formatCurrency(li.total + li.vatAmount)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+    <Modal
+      open={invoice !== null}
+      onClose={() => onOpenChange(false)}
+      title={invoice?.invoiceNumber ?? "Invoice"}
+      primaryAction={{ content: "Print invoice", onAction: () => void print() }}
+      secondaryActions={[
+        { content: "Download PDF", onAction: () => void download() },
+      ]}
+    >
+      {invoice && (
+        <div className="flex flex-col gap-4">
+          <p className="text-(--text-secondary)">
+            {invoice.partyName} · {formatDate(invoice.invoiceDate)}
+          </p>
+          <DataTable
+            columnContentTypes={["text", "numeric", "numeric", "numeric", "numeric"]}
+            headings={["Description", "Qty", "Unit", "VAT", "Total"]}
+            rows={invoice.lineItems.map((li) => [
+              li.description,
+              li.quantity,
+              formatCurrency(li.unitPrice),
+              formatCurrency(li.vatAmount),
+              formatCurrency(li.total + li.vatAmount),
+            ])}
+          />
+          <dl className="grid gap-1 text-right tabular-nums">
+            <div>
+              <dt className="inline text-(--text-secondary)">Subtotal: </dt>
+              <dd className="inline">{formatCurrency(invoice.subtotal)}</dd>
             </div>
-            <div className="grid gap-1 px-6 pb-6 text-right text-sm tabular-nums">
-              <div>Subtotal: {formatCurrency(invoice.subtotal)}</div>
-              <div>VAT: {formatCurrency(invoice.vatAmount)}</div>
-              <div className="text-base font-semibold">
-                Total: {formatCurrency(invoice.total)}
-              </div>
+            <div>
+              <dt className="inline text-(--text-secondary)">VAT: </dt>
+              <dd className="inline">{formatCurrency(invoice.vatAmount)}</dd>
             </div>
-            {/* Payments + running balance (GEN-73). Sale invoices only —
-                purchase and refund invoices aren't collected against here. */}
-            {invoice.type === "sale" ? (
-              <InvoicePaymentsPanel invoice={invoice} onChanged={onChanged} />
-            ) : null}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => void download()}>
-                Download PDF
-              </Button>
-              <Button onClick={() => void print()}>Print</Button>
-            </DialogFooter>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
+            <div className="text-base font-semibold">
+              <dt className="inline">Total: </dt>
+              <dd className="inline">{formatCurrency(invoice.total)}</dd>
+            </div>
+          </dl>
+          {/* Payments + running balance (GEN-73). Sale invoices only —
+              purchase and refund invoices aren't collected against here. */}
+          {invoice.type === "sale" ? (
+            <InvoicePaymentsPanel invoice={invoice} onChanged={onChanged} />
+          ) : null}
+        </div>
+      )}
+    </Modal>
   );
 }

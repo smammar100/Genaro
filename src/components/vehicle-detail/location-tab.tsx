@@ -8,15 +8,13 @@ import {
   Clock,
   MapPin,
   ParkingSquare,
-  Pencil,
-  Trash2,
   UserRound,
   Warehouse,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge, Button, Card } from "@/components/polaris";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -74,28 +72,28 @@ const LOCATION_TONE: Record<
   { dot: string; surface: string; ring: string; text: string }
 > = {
   forecourt: {
-    dot: "bg-[#014b40]",
-    surface: "bg-[#affebf] dark:bg-emerald-950/20",
-    ring: "ring-emerald-200 dark:ring-emerald-900/30",
-    text: "text-[#014b40] dark:text-emerald-100",
+    dot: "bg-(--bg-fill-success)",
+    surface: "bg-(--bg-surface-success)",
+    ring: "ring-(--border-success)",
+    text: "text-(--text-success)",
   },
   yard: {
-    dot: "bg-slate-500",
-    surface: "bg-slate-50 dark:bg-slate-900/30",
-    ring: "ring-slate-200 dark:ring-slate-800",
-    text: "text-slate-900 dark:text-slate-100",
+    dot: "bg-(--icon-secondary)",
+    surface: "bg-(--bg-surface-secondary)",
+    ring: "ring-(--border)",
+    text: "text-(--text)",
   },
   garage: {
-    dot: "bg-[#8e0b21]",
-    surface: "bg-[#fed1d7] dark:bg-red-950/20",
-    ring: "ring-red-200 dark:ring-red-900/30",
-    text: "text-[#8e0b21] dark:text-red-100",
+    dot: "bg-(--bg-fill-critical)",
+    surface: "bg-(--bg-surface-critical)",
+    ring: "ring-(--border-critical)",
+    text: "text-(--text-critical)",
   },
   staff: {
-    dot: "bg-[#4f4700]",
-    surface: "bg-[#fff1c2] dark:bg-amber-950/20",
-    ring: "ring-amber-200 dark:ring-amber-900/30",
-    text: "text-[#4f4700] dark:text-amber-100",
+    dot: "bg-(--bg-fill-caution)",
+    surface: "bg-(--bg-surface-caution)",
+    ring: "ring-(--border-caution)",
+    text: "text-(--text-caution)",
   },
 };
 
@@ -258,97 +256,82 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
   }
 
   if (!company?.id || !user?.id) {
-    return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
+    return <div className="p-6 body-md text-(--text-secondary)">Loading…</div>;
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Hero card — current location at a glance */}
-      <div
-        className={cn(
-          "flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-card p-4",
-        )}
-      >
-        <div className="flex items-center gap-4">
-          <span
-            className={cn(
-              "flex size-10 items-center justify-center rounded-lg bg-[#f1f1f1] text-foreground",
-            )}
-          >
-            <MapPin className="size-5" />
-          </span>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-foreground">
-                {VEHICLE_LOCATION_LABELS[vehicle.currentLocation]}
-              </span>
-              <span className={cn("size-2 rounded-full", tone.dot)} aria-hidden />
-              {vehicle.outForTestDrive ? (
-                <span className="inline-flex items-center gap-1 rounded-lg bg-black/[0.06] px-2 py-0.5 text-xs font-medium text-[#303030]">
-                  <Clock className="size-3" /> Out for test drive
-                </span>
+    <div className="flex flex-col gap-4">
+      {/* Hero card — current location at a glance, plus the presence strip */}
+      <Card className="gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <span className="flex size-10 items-center justify-center rounded-(--radius-200) bg-(--bg-fill-secondary) text-(--icon)">
+              <MapPin className="size-5" />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="heading-sm text-(--text)">
+                  {VEHICLE_LOCATION_LABELS[vehicle.currentLocation]}
+                </h2>
+                <span className={cn("size-2 rounded-full", tone.dot)} aria-hidden />
+                {vehicle.outForTestDrive ? (
+                  <Badge icon={<Clock className="size-3" />}>Out for test drive</Badge>
+                ) : null}
+              </div>
+              <div className="body-sm text-(--text-secondary)">
+                Since {shortDate(vehicle.locationSince)} · {days} day{days === 1 ? "" : "s"}
+                {totalMoves != null
+                  ? ` · ${totalMoves} movement${totalMoves === 1 ? "" : "s"} on record`
+                  : ""}
+              </div>
+              {vehicle.outForTestDrive && vehicle.testDriveExpectedBackAt ? (
+                <div className="body-sm text-(--text-secondary)">
+                  Back at {fullDateTime(vehicle.testDriveExpectedBackAt)}
+                </div>
               ) : null}
             </div>
-            <div className="text-xs text-muted-foreground">
-              Since {shortDate(vehicle.locationSince)} · {days} day{days === 1 ? "" : "s"}
-              {totalMoves != null
-                ? ` · ${totalMoves} movement${totalMoves === 1 ? "" : "s"} on record`
-                : ""}
-            </div>
-            {vehicle.outForTestDrive && vehicle.testDriveExpectedBackAt ? (
-              <div className="text-xs text-muted-foreground">
-                Back at {fullDateTime(vehicle.testDriveExpectedBackAt)}
-              </div>
-            ) : null}
           </div>
+
+          {canMove ? (
+            <Button variant="primary" onClick={() => setMoveOpen(true)}>
+              Move vehicle
+            </Button>
+          ) : null}
         </div>
 
-        {canMove ? (
-          <Button
-            type="button"
-            size="sm"
-            className="gap-1"
-            onClick={() => setMoveOpen(true)}
-          >
-            Move <ArrowRight className="size-3.5" />
-          </Button>
-        ) : null}
-      </div>
-
-      {/* Presence strip — the 4 locations, current marked "Here now" */}
-      <div className="flex flex-wrap gap-2">
-        {VEHICLE_LOCATIONS.map((loc) => {
-          const meta = LOCATION_TONE[loc];
-          const Icon = LOCATION_ICON[loc];
-          const on = loc === vehicle.currentLocation;
-          return (
-            <div
-              key={loc}
-              className={cn(
-                "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm",
-                on
-                  ? cn("border-transparent ring-1", meta.surface, meta.ring, meta.text)
-                  : "border-border text-muted-foreground",
-              )}
-            >
-              <Icon className="size-4" />
-              {VEHICLE_LOCATION_LABELS[loc]}
-              {on ? (
-                <span className="rounded-full bg-background/70 px-1.5 text-2xs font-medium">
-                  Here now
-                </span>
-              ) : OFF_SITE[loc] ? (
-                <span className={cn("size-1.5 rounded-full", meta.dot)} aria-hidden />
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
+        {/* Presence strip — the 4 locations, current marked "Here now" */}
+        <div className="flex flex-wrap gap-2">
+          {VEHICLE_LOCATIONS.map((loc) => {
+            const meta = LOCATION_TONE[loc];
+            const Icon = LOCATION_ICON[loc];
+            const on = loc === vehicle.currentLocation;
+            return (
+              <div
+                key={loc}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 body-md",
+                  on
+                    ? cn("border-transparent ring-1", meta.surface, meta.ring, meta.text)
+                    : "border-(--border) text-(--text-secondary)",
+                )}
+              >
+                <Icon className="size-4" />
+                {VEHICLE_LOCATION_LABELS[loc]}
+                {on ? (
+                  <span className="rounded-full bg-(--bg-surface) px-1.5 body-xs-semibold">
+                    Here now
+                  </span>
+                ) : OFF_SITE[loc] ? (
+                  <span className={cn("size-1.5 rounded-full", meta.dot)} aria-hidden />
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      </Card>
 
       {/* Full chronological timeline — always anchored by the arrival node */}
-      <section>
-        <h3 className="mb-3 text-sm font-medium">Movement history</h3>
-
+      <Card title="Movement history" className="gap-3">
         {movements === null ? (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -400,17 +383,17 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
                     hasBody ? (
                       <div className="space-y-2">
                         {context ? (
-                          <div className="text-xs text-muted-foreground">
+                          <div className="body-sm text-(--text-secondary)">
                             {context}
                           </div>
                         ) : null}
                         {m.expectedReturnAt ? (
                           <div
                             className={cn(
-                              "text-xs",
+                              "body-sm",
                               overdue
-                                ? "text-destructive"
-                                : "text-muted-foreground",
+                                ? "text-(--text-critical)"
+                                : "text-(--text-secondary)",
                             )}
                           >
                             Expected back: {fullDateTime(m.expectedReturnAt)}
@@ -422,16 +405,14 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
                           </div>
                         ) : null}
                         {m.notes ? (
-                          <div className="rounded-md bg-muted/40 px-3 py-2 text-xs">
+                          <div className="rounded-(--radius-200) bg-(--bg-surface-secondary) px-3 py-2 body-sm">
                             {m.notes}
                           </div>
                         ) : null}
                         <div className="flex flex-wrap items-center gap-2">
                           {isOpenStay && canMove ? (
                             <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
+                              size="micro"
                               onClick={() => handleMarkReturned(m)}
                             >
                               Mark returned
@@ -442,26 +423,23 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
                               on the wrong date was previously uncorrectable. */}
                           {canEditHistory ? (
                             <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
+                              size="micro"
+                              icon="EditMinor"
                               onClick={() => setEditing(m)}
-                              aria-label={`Edit movement ${fullDateTime(m.createdAt)}`}
+                              accessibilityLabel={`Edit movement ${fullDateTime(m.createdAt)}`}
                             >
-                              <Pencil className="size-3.5" />
                               Edit
                             </Button>
                           ) : null}
 
                           {canDeleteHistory ? (
                             <Button
-                              type="button"
-                              size="sm"
-                              variant="destructive-outline"
+                              size="micro"
+                              tone="critical"
+                              icon="DeleteMinor"
                               onClick={() => void handleDelete(m)}
-                              aria-label={`Delete movement ${fullDateTime(m.createdAt)}`}
+                              accessibilityLabel={`Delete movement ${fullDateTime(m.createdAt)}`}
                             >
-                              <Trash2 className="size-3.5" />
                               Delete
                             </Button>
                           ) : null}
@@ -470,9 +448,9 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
                     ) : undefined
                   }
                 >
-                  <span className="font-medium">
+                  <span className="body-md-semibold">
                     {fromLabel}{" "}
-                    <ArrowRight className="inline size-3 align-baseline text-muted-foreground" />{" "}
+                    <ArrowRight className="inline size-3 align-baseline text-(--icon-secondary)" />{" "}
                     {toLabel}
                   </span>
                 </TimelineItem>
@@ -497,11 +475,12 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
                 </>
               }
             >
-              <span className="font-medium">Arrived in stock</span>
+              <span className="body-md-semibold">Arrived in stock</span>
             </TimelineItem>
           </Timeline>
         )}
-      </section>
+      </Card>
+
 
       {/* Move dialog */}
       <MoveDialog

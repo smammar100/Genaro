@@ -82,25 +82,25 @@ const KIND_META: Record<
     label: "Appointments",
     singular: "appointment",
     manageHint: "Sales → Appointments",
-    dot: "bg-sky-500",
-    chip: "border-sky-200 bg-sky-100 text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/20 dark:text-sky-200",
-    block: "border-sky-500 bg-sky-500/15 text-sky-900 dark:text-sky-100",
+    dot: "bg-(--bg-fill-emphasis)",
+    chip: "border-(--border-info) bg-(--bg-surface-info) text-(--text-info)",
+    block: "border-(--border-emphasis) bg-(--bg-surface-info) text-(--text-info)",
   },
   workshop: {
     label: "Workshop",
     singular: "workshop job",
-    manageHint: "Maintenance → Workshop Jobs",
-    dot: "bg-amber-500",
-    chip: "border-amber-200 bg-amber-100 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-200",
-    block: "border-amber-500 bg-amber-500/15 text-amber-900 dark:text-amber-100",
+    manageHint: "Maintenance → Workshop jobs",
+    dot: "bg-(--bg-fill-warning)",
+    chip: "border-(--border-warning) bg-(--bg-surface-warning) text-(--text-warning)",
+    block: "border-(--bg-fill-warning) bg-(--bg-surface-warning) text-(--text-warning)",
   },
   maint: {
     label: "Maintenance",
     singular: "maintenance due",
-    manageHint: "Maintenance → Pipeline",
-    dot: "bg-violet-500",
-    chip: "border-violet-200 bg-violet-100 text-violet-900 dark:border-violet-500/30 dark:bg-violet-500/20 dark:text-violet-200",
-    block: "border-violet-500 bg-violet-500/15 text-violet-900 dark:text-violet-100",
+    manageHint: "Maintenance → Job pipeline",
+    dot: "bg-(--bg-fill-magic)",
+    chip: "border-(--border-magic) bg-(--bg-surface-magic) text-(--text-magic)",
+    block: "border-(--border-magic-secondary) bg-(--bg-surface-magic) text-(--text-magic)",
   },
 };
 
@@ -719,14 +719,14 @@ export function SharedCalendar({
 
   return (
     <>
-      <div className="flex h-[calc(100dvh-230px)] min-h-[540px] w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_0_rgba(0,0,0,0.05)]">
+      <div className="flex h-[calc(100dvh-230px)] min-h-[540px] w-full flex-col overflow-hidden rounded-(--radius-300) border border-(--border) bg-(--bg-surface) shadow-(--shadow-100)">
         {/* Toolbar row 1 — navigation, view switch, CTA */}
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
           <div className="flex min-w-0 items-center gap-2">
             <button
               type="button"
               onClick={() => setAnchor(new Date())}
-              className="h-7 rounded-lg border border-[#8a8a8a]/50 px-3 text-[13px] font-medium hover:bg-[#f7f7f7]"
+              className="h-7 rounded-lg border border-(--border) px-3 text-[13px] font-medium hover:bg-(--bg-surface-hover)"
             >
               Today
             </button>
@@ -735,7 +735,7 @@ export function SharedCalendar({
                 type="button"
                 aria-label="Previous"
                 onClick={() => navigate(-1)}
-                className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-[#f1f1f1] hover:text-foreground"
+                className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-(--bg-fill-transparent-hover) hover:text-foreground"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -743,14 +743,14 @@ export function SharedCalendar({
                 type="button"
                 aria-label="Next"
                 onClick={() => navigate(1)}
-                className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-[#f1f1f1] hover:text-foreground"
+                className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-(--bg-fill-transparent-hover) hover:text-foreground"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
             <h2 className="truncate text-sm font-semibold">{label}</h2>
             {view === "day" && toISO(anchor) === todayISO && (
-              <span className="shrink-0 rounded-lg bg-[#ebebeb] px-2 py-0.5 text-xs font-medium text-foreground">
+              <span className="shrink-0 rounded-lg bg-(--bg-fill-transparent-selected) px-2 py-0.5 text-xs font-medium text-foreground">
                 Today
               </span>
             )}
@@ -766,8 +766,8 @@ export function SharedCalendar({
                   className={cn(
                     "h-7 rounded-lg px-3 text-[13px] capitalize transition-colors",
                     view === v
-                      ? "bg-[#ebebeb] font-medium text-foreground"
-                      : "text-[#4a4a4a] hover:bg-[#f1f1f1]",
+                      ? "bg-(--bg-fill-transparent-selected) font-medium text-foreground"
+                      : "text-(--text-brand) hover:bg-(--bg-fill-transparent-hover)",
                   )}
                 >
                   {v}
@@ -793,7 +793,7 @@ export function SharedCalendar({
 
         {/* Toolbar row 2 — source filter chips + live summary */}
         {showFilters ? (
-          <div className="flex items-center gap-2 border-b border-border bg-[#f7f7f7] px-4 py-2">
+          <div className="flex items-center gap-2 border-b border-border bg-(--bg-surface-secondary) px-4 py-2">
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Filter className="h-3.5 w-3.5" />
               Filter
@@ -1179,7 +1179,7 @@ function WeekView({
                       zIndex: 1 + (depths.get(e.key) ?? 0),
                     }}
                     className={cn(
-                      "absolute overflow-hidden rounded-md border-l-2 px-1.5 py-1 text-left transition-shadow hover:shadow-md",
+                      "absolute overflow-hidden rounded-md border-l-2 px-1.5 py-1 text-left transition-shadow hover:shadow-(--shadow-300)",
                       KIND_META[e.kind].block,
                     )}
                   >
@@ -1204,8 +1204,8 @@ function WeekView({
                     top: `${((nowDecimal - gridStart) / totalHours) * 100}%`,
                   }}
                 >
-                  <div className="relative h-px bg-red-500/70">
-                    <span className="absolute -left-0.5 -top-[2.5px] h-1.5 w-1.5 rounded-full bg-red-500/70" />
+                  <div className="relative h-px bg-(--bg-fill-critical)">
+                    <span className="absolute -left-0.5 -top-[2.5px] h-1.5 w-1.5 rounded-full bg-(--bg-fill-critical)" />
                   </div>
                 </div>
               )}
@@ -1365,7 +1365,7 @@ function DayView({
                         zIndex: 1 + (depths.get(e.key) ?? 0),
                       }}
                       className={cn(
-                        "absolute overflow-hidden rounded-md border-l-2 p-2 text-left transition-shadow hover:shadow-sm",
+                        "absolute overflow-hidden rounded-md border-l-2 p-2 text-left transition-shadow hover:shadow-(--shadow-200)",
                         KIND_META[e.kind].block,
                       )}
                     >
@@ -1380,7 +1380,7 @@ function DayView({
                   );
                 })}
                 {laneAll.length === 0 && (
-                  <div className="pointer-events-none absolute inset-x-2 top-2 rounded-lg bg-[#f7f7f7] py-2 text-center">
+                  <div className="pointer-events-none absolute inset-x-2 top-2 rounded-lg bg-(--bg-surface-secondary) py-2 text-center">
                     <span className="text-2xs text-muted-foreground/60">
                       No {KIND_META[kind].singular}s, click a slot to add
                     </span>
@@ -1398,8 +1398,8 @@ function DayView({
                 left: "3rem",
               }}
             >
-              <div className="relative h-px bg-red-500/70">
-                <span className="absolute -left-1 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-red-500/70" />
+              <div className="relative h-px bg-(--bg-fill-critical)">
+                <span className="absolute -left-1 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-(--bg-fill-critical)" />
               </div>
             </div>
           )}
@@ -1446,7 +1446,7 @@ function EventModal({
 
   return (
     <div
-      className="fixed inset-0 z-[900] flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-[900] flex items-center justify-center bg-(--backdrop-bg) p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -1462,7 +1462,7 @@ function EventModal({
               ? "Edit event"
               : "Event details"
         }
-        className="max-h-full w-full max-w-md overflow-y-auto rounded-lg border border-border bg-card shadow-xl"
+        className="max-h-full w-full max-w-md overflow-y-auto rounded-(--radius-400) bg-(--bg-surface) shadow-(--shadow-600)"
       >
         {state.mode === "create" && (
           <EventForm
@@ -1627,7 +1627,7 @@ function EventForm({
           type="button"
           aria-label="Close"
           onClick={onClose}
-          className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-[#f1f1f1] hover:text-foreground"
+          className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-(--bg-fill-transparent-hover) hover:text-foreground"
         >
           <X className="h-4 w-4" />
         </button>
@@ -1880,7 +1880,7 @@ function EventDetails({
           type="button"
           aria-label="Close"
           onClick={onClose}
-          className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-[#f1f1f1] hover:text-foreground"
+          className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-(--bg-fill-transparent-hover) hover:text-foreground"
         >
           <X className="h-4 w-4" />
         </button>

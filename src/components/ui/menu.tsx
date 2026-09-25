@@ -60,7 +60,7 @@ function MenuPopup({
       >
         <MenuPrimitive.Popup
           className={cn(
-            "relative flex not-[class*='w-']:min-w-32 origin-(--transform-origin) rounded-xl bg-popover shadow-[0_4px_8px_-2px_rgba(26,26,26,0.2),0_0_0_1px_rgba(0,0,0,0.08)] outline-none focus:outline-none",
+            "relative flex not-[class*='w-']:min-w-32 origin-(--transform-origin) rounded-xl bg-popover shadow-(--shadow-300) outline-none focus:outline-none",
             className,
           )}
           data-slot="menu-popup"
@@ -87,7 +87,7 @@ function MenuItem({
   return (
     <MenuPrimitive.Item
       className={cn(
-        "flex min-h-8 cursor-default select-none items-center gap-2 rounded-lg px-2 py-1 text-[13px] text-foreground outline-none data-disabled:pointer-events-none data-highlighted:bg-[#f1f1f1] data-inset:ps-8 data-[variant=destructive]:text-destructive-foreground data-highlighted:text-accent-foreground data-disabled:opacity-64 [&>svg:not([class*='opacity-'])]:opacity-80 [&>svg:not([class*='size-'])]:size-4.5 sm:[&>svg:not([class*='size-'])]:size-4 [&>svg]:pointer-events-none [&>svg]:-mx-0.5 [&>svg]:shrink-0",
+        "flex min-h-8 cursor-default select-none items-center gap-2 rounded-lg px-2 py-1 text-[13px] text-foreground outline-none data-disabled:pointer-events-none data-highlighted:bg-(--bg-surface-secondary-hover) data-inset:ps-8 data-[variant=destructive]:text-destructive-foreground data-highlighted:text-accent-foreground data-disabled:opacity-64 [&>svg:not([class*='opacity-'])]:opacity-80 [&>svg:not([class*='size-'])]:size-4.5 sm:[&>svg:not([class*='size-'])]:size-4 [&>svg]:pointer-events-none [&>svg]:-mx-0.5 [&>svg]:shrink-0",
         className,
       )}
       data-inset={inset}

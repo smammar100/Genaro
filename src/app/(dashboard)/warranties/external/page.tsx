@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ExternalLink, Plus, Search } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { warrantyService } from "@/lib/services/warranty-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
@@ -10,13 +10,13 @@ import { claimService } from "@/lib/services/claim-service";
 import type { Vehicle, Warranty, WarrantyClaim } from "@/lib/types";
 import { useRealtimeTable } from "@/hooks/use-realtime-table";
 import { effectiveWarrantyStatus } from "@/lib/warranty-status";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/shared/empty-state";
+import { EmptyState, Page } from "@/components/polaris";
 import { KpiStrip } from "@/components/warranties/kpi-strip";
-import { FilterChips, type FilterOption } from "@/components/warranties/filter-chips";
+import {
+  FilterChips,
+  type FilterOption,
+} from "@/components/warranties/filter-chips";
+import { WarrantyListCard } from "@/components/warranties/warranty-list-card";
 import {
   WarrantyTable,
   type WarrantyRow,
@@ -137,58 +137,40 @@ export default function ExternalWarrantiesPage() {
   }, [warranties, vehicles, claims, filter, query]);
 
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">
-            External Warranties
-          </h1>
-          <p className="mt-0.5 max-w-2xl text-[13px] text-muted-foreground">
-            Third-party warranties sold alongside vehicles. See which still need
-            purchasing from the provider.
-          </p>
-        </div>
-        <Button type="button" onClick={() => setNewWarrantyOpen(true)}>
-          <Plus className="h-4 w-4" />
-          New warranty
-        </Button>
-      </header>
+    <Page
+      title="External warranties"
+      subtitle="Third-party warranties sold alongside vehicles. See which still need purchasing from the provider."
+      fullWidth
+      primaryAction={{
+        content: "New warranty",
+        onAction: () => setNewWarrantyOpen(true),
+      }}
+    >
+      {/* View tabs: their own row under the header, outside the list card. */}
 
       <KpiStrip refreshKey={refreshKey} />
 
       {warranties && <PendingPurchaseBanner warranties={warranties} />}
 
-      <Card className="gap-0 overflow-hidden rounded-xl p-0 shadow-[0_1px_0_rgba(0,0,0,.05)]">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
-          <FilterChips
-            options={filterOptions}
-            activeValue={filter}
-            onChange={setFilter}
-          />
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search customer, vehicle, provider…"
-              className="h-9 w-72 pl-8"
-            />
-          </div>
-        </div>
-
-        {!rows ? (
-          <Skeleton className="m-4 h-72" />
-        ) : rows.length === 0 ? (
-          <EmptyState
-            icon={ExternalLink}
-            title="No external warranties"
-            description={
-              query
-                ? "Try a different search term or clear the filter."
-                : "Third-party warranties show up here once they're sold with a vehicle."
-            }
-          />
-        ) : (
+      <FilterChips
+        options={filterOptions}
+        activeValue={filter}
+        onChange={setFilter}
+      />
+      <WarrantyListCard
+        query={query}
+        onQueryChange={setQuery}
+        searchLabel="Search external warranties"
+        searchPlaceholder="Search customer, vehicle, provider…"
+        loading={!rows}
+      >
+        {rows && rows.length === 0 ? (
+          <EmptyState className="rounded-none shadow-none" heading="No external warranties" icon={<ExternalLink />}>
+            {query
+              ? "Try a different search term or clear the filter."
+              : "Third-party warranties show up here once they're sold with a vehicle."}
+          </EmptyState>
+        ) : rows ? (
           <WarrantyTable
             rows={rows}
             variant="external"
@@ -196,8 +178,8 @@ export default function ExternalWarrantiesPage() {
             onFileClaim={(w) => setFileClaimFor(w)}
             onMarkPurchased={(w) => setMarkPurchasedFor(w)}
           />
-        )}
-      </Card>
+        ) : null}
+      </WarrantyListCard>
 
       <NewWarrantyDialog
         open={newWarrantyOpen}
@@ -225,6 +207,6 @@ export default function ExternalWarrantiesPage() {
         warranty={markPurchasedFor}
         onMarked={refetch}
       />
-    </div>
+    </Page>
   );
 }

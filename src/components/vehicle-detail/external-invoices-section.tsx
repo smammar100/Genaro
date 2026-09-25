@@ -6,14 +6,12 @@ import {
   Gavel,
   Image as ImageIcon,
   Paperclip,
-  Plus,
   Receipt,
-  Trash2,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "@/lib/toast";
-import { Button } from "@/components/ui/button";
+import { Badge, Button } from "@/components/polaris";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -118,21 +116,16 @@ export function ExternalInvoicesSection({ vehicleId }: Props) {
 
   return (
     <Panel
-      title="External Invoices"
+      title="External invoices"
       subtitle="Auction-purchase + external-job spend logged against this vehicle"
       action={
         canCreate ? (
           <div className="flex gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => openNew("auction_purchase")}
-            >
-              <Plus className="mr-1 size-3.5" /> Purchase
+            <Button icon="PlusMinor" onClick={() => openNew("auction_purchase")}>
+              Add purchase
             </Button>
-            <Button type="button" size="sm" onClick={() => openNew("external_job")}>
-              <Plus className="mr-1 size-3.5" /> External Job
+            <Button icon="PlusMinor" onClick={() => openNew("external_job")}>
+              Add external job
             </Button>
           </div>
         ) : (
@@ -142,22 +135,22 @@ export function ExternalInvoicesSection({ vehicleId }: Props) {
       flush
     >
       {/* Summary tiles */}
-      <div className="grid gap-3 px-4 pb-3 sm:grid-cols-3">
+      <div className="grid gap-3 px-4 pb-3 @xl:grid-cols-3">
         <InvoiceStat
           icon={Gavel}
-          label="Auction Purchase"
+          label="Auction purchase"
           total={totalsByKind.auction_purchase}
           count={(rows ?? []).filter((r) => r.invoiceKind === "auction_purchase").length}
         />
         <InvoiceStat
           icon={Wrench}
-          label="External Jobs"
+          label="External jobs"
           total={totalsByKind.external_job}
           count={(rows ?? []).filter((r) => r.invoiceKind === "external_job").length}
         />
         <InvoiceStat
           icon={Receipt}
-          label="Total Logged"
+          label="Total logged"
           total={grandTotal}
           count={(rows ?? []).length}
           accent
@@ -165,7 +158,7 @@ export function ExternalInvoicesSection({ vehicleId }: Props) {
       </div>
 
       {/* Rows */}
-      <div className="divide-y border-t">
+      <div className="divide-y divide-(--border-secondary) border-t border-(--border-secondary)">
         {rows === null ? (
           <>
             {Array.from({ length: 2 }).map((_, i) => (
@@ -180,10 +173,10 @@ export function ExternalInvoicesSection({ vehicleId }: Props) {
             ))}
           </>
         ) : rows.length === 0 ? (
-          <div className="px-4 py-4 text-xs text-muted-foreground">
+          <div className="px-4 py-4 body-sm text-(--text-secondary)">
             No external invoices logged yet, use{" "}
-            <span className="font-medium text-foreground">Purchase</span> or{" "}
-            <span className="font-medium text-foreground">External Job</span> above to add one.
+            <span className="body-sm-semibold text-(--text)">Add purchase</span> or{" "}
+            <span className="body-sm-semibold text-(--text)">Add external job</span> above to add one.
           </div>
         ) : (
           rows.map((r) => {
@@ -195,64 +188,55 @@ export function ExternalInvoicesSection({ vehicleId }: Props) {
                 className="flex flex-wrap items-center gap-3 px-4 py-3"
               >
                 {/* Kind chip */}
-                <span
-                  className={cn(
-                    "inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-xs font-medium",
-                    r.invoiceKind === "auction_purchase"
-                      ? "bg-[#fff1c2] text-[#4f4700]"
-                      : "bg-[#f1f1f1] text-[#303030]",
-                  )}
+                <Badge
+                  tone={r.invoiceKind === "auction_purchase" ? "attention" : "neutral"}
+                  className="shrink-0"
                 >
                   {INVOICE_KIND_LABELS[r.invoiceKind]}
-                </span>
+                </Badge>
                 {/* Attachment thumbnail */}
-                <button
-                  type="button"
-                  disabled={!r.attachmentUrl}
-                  onClick={() =>
-                    r.attachmentUrl && handleOpenAttachment(r.attachmentUrl)
-                  }
-                  className={cn(
-                    "flex size-9 shrink-0 items-center justify-center rounded-md border bg-muted/40",
-                    r.attachmentUrl
-                      ? "hover:bg-muted"
-                      : "opacity-50 cursor-not-allowed",
-                  )}
-                  title={
-                    r.attachmentUrl
-                      ? "Open attachment"
-                      : "No attachment"
-                  }
-                  aria-label="Open attachment"
+                <span
+                  className="shrink-0"
+                  title={r.attachmentUrl ? "Open attachment" : "No attachment"}
                 >
-                  {r.attachmentUrl ? (
-                    isImage ? (
-                      <ImageIcon className="size-4" />
-                    ) : (
-                      <FileText className="size-4" />
-                    )
-                  ) : (
-                    <Paperclip className="size-4" />
-                  )}
-                </button>
+                  <Button
+                    size="large"
+                    disabled={!r.attachmentUrl}
+                    onClick={() =>
+                      r.attachmentUrl && handleOpenAttachment(r.attachmentUrl)
+                    }
+                    accessibilityLabel="Open attachment"
+                    icon={
+                      r.attachmentUrl ? (
+                        isImage ? (
+                          <ImageIcon className="size-4" />
+                        ) : (
+                          <FileText className="size-4" />
+                        )
+                      ) : (
+                        <Paperclip className="size-4" />
+                      )
+                    }
+                  />
+                </span>
                 {/* Description + vendor */}
                 <div className="min-w-0 flex-1">
-                  <div className="line-clamp-1 text-sm font-medium">
+                  <div className="line-clamp-1 body-md-semibold">
                     {r.description}
                   </div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="body-sm text-(--text-secondary)">
                     {vendor?.name ?? "Unknown vendor"} ·{" "}
                     {formatDate(r.invoiceDate)}
                     {r.invoiceNumber ? ` · #${r.invoiceNumber}` : null}
                   </div>
                 </div>
                 {/* Total */}
-                <div className="text-right tabular-nums">
-                  <div className="font-medium">
+                <div className="text-right body-md-numeric">
+                  <div className="body-md-semibold tabular-nums">
                     {formatCurrency(r.totalPence / 100)}
                   </div>
                   {r.vatPence > 0 ? (
-                    <div className="text-xs text-muted-foreground">
+                    <div className="body-sm text-(--text-secondary)">
                       incl. VAT {formatCurrency(r.vatPence / 100)}
                     </div>
                   ) : null}
@@ -261,9 +245,7 @@ export function ExternalInvoicesSection({ vehicleId }: Props) {
                 <div className="ml-2 flex shrink-0 items-center gap-1">
                   {canEditAny ? (
                     <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
+                      variant="tertiary"
                       onClick={() => {
                         setEditing(r);
                         setDefaultKind(r.invoiceKind);
@@ -275,14 +257,12 @@ export function ExternalInvoicesSection({ vehicleId }: Props) {
                   ) : null}
                   {canDelete ? (
                     <Button
-                      type="button"
-                      size="icon-sm"
-                      variant="ghost"
-                      title="Delete"
+                      variant="tertiary"
+                      tone="critical"
+                      icon="DeleteMinor"
+                      accessibilityLabel="Delete"
                       onClick={() => handleDelete(r)}
-                    >
-                      <Trash2 className="size-3.5 text-destructive" />
-                    </Button>
+                    />
                   ) : null}
                 </div>
               </div>
@@ -322,20 +302,19 @@ function InvoiceStat({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-background p-4",
-        accent && "bg-muted/30",
+        "rounded-(--radius-300) border border-(--border) bg-(--bg-surface) p-4",
+        accent && "bg-(--bg-surface-secondary)",
       )}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">
-          {label}
-        </span>
-        <Icon className="size-4 text-muted-foreground" />
+        <span className="body-sm text-(--text-secondary)">{label}</span>
+        <Icon className="size-4 text-(--icon-secondary)" />
       </div>
       <div className="mt-1 text-xl font-semibold tabular-nums">
         {formatCurrency(total / 100)}
       </div>
-      <div className="text-2xs text-muted-foreground">
+      <div className="body-xs text-(--text-secondary)">
+
         {count} invoice{count === 1 ? "" : "s"}
       </div>
     </div>

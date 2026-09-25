@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { LeadChannel, UUID } from "@/lib/types";
+import { Badge } from "@/components/polaris";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -36,7 +37,7 @@ export function ChannelDropdown({
   channels,
   value,
   onValueChange,
-  placeholder = "Select channel…",
+  placeholder = "Choose channel",
   invalid,
   includeDisabled,
   className,
@@ -67,11 +68,7 @@ export function ChannelDropdown({
                 style={{ backgroundColor: c.colour }}
               />
               <span>{c.label}</span>
-              {!c.enabled ? (
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  disabled
-                </span>
-              ) : null}
+              {!c.enabled ? <Badge>Disabled</Badge> : null}
             </span>
           </SelectItem>
         ))}

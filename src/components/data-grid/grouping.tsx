@@ -84,7 +84,7 @@ export function DataGridGroupHeaderRow({
     <tr>
       <td
         colSpan={span}
-        className="sticky left-0 border-b bg-[#f7f7f7] px-3"
+        className="sticky left-0 border-b bg-(--bg-surface-secondary) px-3"
       >
         <button
           type="button"
@@ -93,7 +93,7 @@ export function DataGridGroupHeaderRow({
         >
           <Chevron className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           <span>{label}</span>
-          <span className="rounded-lg bg-[#ebebeb] px-2 py-0.5 text-xs font-medium tabular-nums text-[#303030]">
+          <span className="p-badge p-badge--neutral tabular-nums">
             {count}
           </span>
         </button>

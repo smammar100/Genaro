@@ -180,17 +180,17 @@ export function DetailsTab({ vehicle, onChanged }: DetailsTabProps) {
       ],
     },
     { key: "sellerName", label: "Seller", kind: "text" },
-    { key: "sellerPhone", label: "Seller Phone", kind: "text" },
+    { key: "sellerPhone", label: "Seller phone", kind: "text" },
     {
       key: "purchaseSource",
-      label: "Purchase Source",
+      label: "Purchase source",
       kind: "select",
       options: PURCHASE_SOURCES,
     },
-    { key: "auctionHouse", label: "Auction House", kind: "text" },
+    { key: "auctionHouse", label: "Auction house", kind: "text" },
     {
       key: "serviceHistory",
-      label: "Service History",
+      label: "Service history",
       kind: "select",
       options: SERVICE_HISTORY,
       render: (v) => cap(v.serviceHistory),
@@ -206,20 +206,20 @@ export function DetailsTab({ vehicle, onChanged }: DetailsTabProps) {
       plain: true,
       hint: "Only for a car from the old Excel sheet. Freezes its value addition.",
     },
-    { key: "variantCode", label: "Variant Code", kind: "text", hint: "From the BCA invoice." },
-    { key: "localOrImport", label: "Local / Import", kind: "select", options: LOCAL_IMPORT },
-    { key: "ownedBy", label: "Owned By", kind: "text" },
-    { key: "ownerDetails", label: "Owner Details", kind: "text" },
+    { key: "variantCode", label: "Variant code", kind: "text", hint: "From the BCA invoice." },
+    { key: "localOrImport", label: "Local / import", kind: "select", options: LOCAL_IMPORT },
+    { key: "ownedBy", label: "Owned by", kind: "text" },
+    { key: "ownerDetails", label: "Owner details", kind: "text" },
     {
       key: "invoiceDate",
-      label: "Invoice Date",
+      label: "Invoice date",
       kind: "date",
       render: (v) => formatDate(v.invoiceDate),
       validators: [validDate("Invoice date") as never],
     },
     {
       key: "creditNoteDate",
-      label: "Credit Note Date",
+      label: "Credit note date",
       kind: "date",
       render: (v) => formatDate(v.creditNoteDate),
       validators: [validDate("Credit note date") as never],
@@ -227,34 +227,34 @@ export function DetailsTab({ vehicle, onChanged }: DetailsTabProps) {
   ];
 
   const receiving: EditableField<Vehicle>[] = [
-    { key: "logBook", label: "Log Book", kind: "text", hint: "AVAILABLE also marks the V5 as received." },
+    { key: "logBook", label: "Log book", kind: "text", hint: "AVAILABLE also marks the V5 as received." },
     { key: "engineSizeKw", label: "Engine", kind: "integer", suffix: "kW", validators: [nonNegative("Engine size") as never] },
     { key: "numSeats", label: "Seats", kind: "integer", validators: [nonNegative("Seats") as never] },
-    { key: "formerKeepers", label: "Former Keepers", kind: "integer", validators: [nonNegative("Former keepers") as never] },
-    { key: "massInService", label: "Mass in Service", kind: "integer", suffix: "kg", validators: [nonNegative("Mass") as never] },
-    { key: "engineNumber", label: "Engine No.", kind: "text" },
-    { key: "otherItemsReceived", label: "Other Items Received", kind: "text" },
+    { key: "formerKeepers", label: "Former keepers", kind: "integer", validators: [nonNegative("Former keepers") as never] },
+    { key: "massInService", label: "Mass in service", kind: "integer", suffix: "kg", validators: [nonNegative("Mass") as never] },
+    { key: "engineNumber", label: "Engine no.", kind: "text" },
+    { key: "otherItemsReceived", label: "Other items received", kind: "text" },
   ];
 
   const sales: EditableField<Vehicle>[] = [
     {
       key: "saleStatus",
-      label: "Available / Sold",
+      label: "Available / sold",
       kind: "select",
       options: SALE_STATUS,
       render: (v) => optionLabel(SALE_STATUS, v.saleStatus) ?? "—",
     },
     {
       key: "dateSold",
-      label: "Date Sold",
+      label: "Date sold",
       kind: "date",
       render: (v) => formatDate(v.dateSold),
       validators: [validDate("Date sold") as never],
     },
-    { key: "sellingAgent", label: "Selling Agent / Lead From", kind: "text" },
+    { key: "sellingAgent", label: "Selling agent / lead from", kind: "text" },
     {
       key: "financeCompanyDeal",
-      label: "Finance Company Deal",
+      label: "Finance company deal",
       kind: "boolean",
       render: (v) =>
         v.financeCompanyDeal === null ? "—" : v.financeCompanyDeal ? "Yes" : "No",
@@ -263,7 +263,7 @@ export function DetailsTab({ vehicle, onChanged }: DetailsTabProps) {
   ];
 
   const docs: EditableField<Vehicle>[] = [
-    { key: "v5Received", label: "V5 Received", kind: "boolean" },
+    { key: "v5Received", label: "V5 received", kind: "boolean" },
     {
       key: "numKeys",
       label: "Keys",
@@ -272,18 +272,18 @@ export function DetailsTab({ vehicle, onChanged }: DetailsTabProps) {
     },
     {
       key: "lockNut",
-      label: "Lock Nut",
+      label: "Lock nut",
       kind: "boolean",
       render: (v) => (v.lockNut ? "Present" : "Missing"),
     },
     {
       key: "motExpiry",
-      label: "MOT Expiry",
+      label: "MOT expiry",
       kind: "date",
       render: (v) => formatDate(v.motExpiry),
       validators: [validDate("MOT expiry") as never],
     },
-    { key: "vin", label: "VIN / Chassis", kind: "text" },
+    { key: "vin", label: "VIN / chassis", kind: "text" },
   ];
 
   const compliance: EditableField<Vehicle>[] = [
@@ -296,7 +296,7 @@ export function DetailsTab({ vehicle, onChanged }: DetailsTabProps) {
     },
     {
       key: "motStatus",
-      label: "MOT Status",
+      label: "MOT status",
       kind: "text",
       render: (v) =>
         v.motStatus ? (
@@ -309,7 +309,7 @@ export function DetailsTab({ vehicle, onChanged }: DetailsTabProps) {
     },
     {
       key: "taxStatus",
-      label: "Tax Status",
+      label: "Tax status",
       kind: "text",
       render: (v) =>
         v.taxStatus ? (
@@ -322,23 +322,23 @@ export function DetailsTab({ vehicle, onChanged }: DetailsTabProps) {
     },
     {
       key: "taxDueDate",
-      label: "Tax Due",
+      label: "Tax due",
       kind: "date",
       render: (v) => formatDate(v.taxDueDate),
       validators: [validDate("Tax due date") as never],
     },
     {
       key: "co2Emissions",
-      label: "CO₂ Emissions",
+      label: "CO₂ emissions",
       kind: "integer",
       suffix: "g/km",
       validators: [nonNegative("CO₂ emissions") as never],
     },
-    { key: "euroStatus", label: "Euro Status", kind: "text" },
+    { key: "euroStatus", label: "Euro status", kind: "text" },
     { key: "wheelplan", label: "Wheelplan", kind: "text" },
     {
       key: "firstRegisteredDate",
-      label: "First Registered",
+      label: "First registered",
       kind: "date",
       render: (v) => formatDate(v.firstRegisteredDate),
       validators: [
@@ -348,7 +348,7 @@ export function DetailsTab({ vehicle, onChanged }: DetailsTabProps) {
     },
     {
       key: "dateOfLastV5CIssued",
-      label: "Last V5C Issued",
+      label: "Last V5C issued",
       kind: "date",
       render: (v) => formatDate(v.dateOfLastV5CIssued),
       validators: [validDate("Last V5C issued") as never],
@@ -356,7 +356,7 @@ export function DetailsTab({ vehicle, onChanged }: DetailsTabProps) {
   ];
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid gap-4 @2xl:grid-cols-2">
       <EditableCard
         title="Identity"
         icon={Car}
@@ -382,7 +382,7 @@ export function DetailsTab({ vehicle, onChanged }: DetailsTabProps) {
         canEdit={canEdit}
       />
       <EditableCard
-        title="Registration & Compliance"
+        title="Registration & compliance"
         icon={ShieldCheck}
         record={vehicle}
         fields={compliance}

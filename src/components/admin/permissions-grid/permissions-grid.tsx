@@ -9,9 +9,8 @@ import {
 } from "react";
 import { ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
+import { Card, EmptyState, TextField } from "@/components/polaris";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/shared/empty-state";
-import { DataGridSearchBar } from "@/components/data-grid";
 import { RemoveMemberDialog } from "@/components/admin/remove-member-dialog";
 import { EditRolesDialog } from "@/components/admin/edit-roles-dialog";
 import { ResetPasswordDialog } from "@/components/admin/reset-password-dialog";
@@ -66,36 +65,49 @@ export const PermissionsGrid = forwardRef<
 
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <DataGridSearchBar
-            value={filter}
-            onChange={setFilter}
-            placeholder="Filter by name or email…"
-            className="max-w-xs flex-1"
-          />
-          {toolbarAction}
-        </div>
+        <Card padding="0">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-(--border) p-3">
+            <div className="max-w-xs flex-1">
+              <TextField
+                label="Filter members"
+                labelHidden
+                type="search"
+                prefix="SearchMinor"
+                placeholder="Filter by name or email…"
+                autoComplete="off"
+                value={filter}
+                onChange={setFilter}
+                clearButton
+                onClearButtonClick={() => setFilter("")}
+              />
+            </div>
+            {toolbarAction}
+          </div>
 
-        {loading || !filtered ? (
-          <Skeleton className="h-72" />
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            icon={ShieldCheck}
-            title="No team members match"
-            description="Adjust the filter or invite a new member."
-          />
-        ) : (
-          <PermissionsGridTable
-            users={filtered}
-            localState={localState}
-            serverState={serverState}
-            currentUserId={currentUser?.id}
-            onToggle={toggleCapability}
-            onRemove={setRemoveTarget}
-            onEditRoles={setEditTarget}
-            onResetPassword={setResetTarget}
-          />
-        )}
+          {loading || !filtered ? (
+            <div className="p-3">
+              <Skeleton className="h-72" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <EmptyState
+              icon={<ShieldCheck />}
+              heading="No team members match"
+            >
+              Adjust the filter or add a new staff member.
+            </EmptyState>
+          ) : (
+            <PermissionsGridTable
+              users={filtered}
+              localState={localState}
+              serverState={serverState}
+              currentUserId={currentUser?.id}
+              onToggle={toggleCapability}
+              onRemove={setRemoveTarget}
+              onEditRoles={setEditTarget}
+              onResetPassword={setResetTarget}
+            />
+          )}
+        </Card>
 
         <PermissionsGridSaveBar
           changeCount={pendingChanges.length}

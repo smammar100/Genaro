@@ -27,7 +27,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     <EmptyState
       icon={ShieldX}
       title="Access restricted"
-      description="You don't have permission to view this page. Ask an administrator to grant access in Users & Permissions."
+      description="You don't have permission to view this page. Ask an administrator to grant access in Users & permissions."
     />
   );
 }

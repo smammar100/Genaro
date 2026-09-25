@@ -1,7 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-
 import { useEffect, useId, useMemo, useState } from "react";
 import {
   Banknote,
@@ -9,8 +7,6 @@ import {
   Check,
   Clock,
   FileText,
-  Loader2,
-  Plus,
   Undo2,
   User,
   X,
@@ -40,8 +36,18 @@ import type {
 } from "@/lib/types";
 import { RETURN_REASON_LABELS } from "@/lib/types";
 import { formatRegPlate, formatCurrency, formatDate, cn } from "@/lib/utils";
+import {
+  Badge,
+  Banner,
+  Button,
+  Card,
+  EmptyState,
+  Modal,
+  Page,
+  TextField,
+  type BadgeTone,
+} from "@/components/polaris";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -51,7 +57,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -60,7 +65,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { EmptyState } from "@/components/shared/empty-state";
 import { VehicleImage } from "@/components/shared/vehicle-image";
 import { toast } from "@/lib/toast";
 
@@ -75,24 +79,21 @@ const PATHS: { value: ReturnResolutionPath; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
+/** Status → badge tone, plus the matching fill for the list's status dot. */
 const STATUS_META: Record<
   ReturnStatus,
-  {
-    label: string;
-    variant: "warning" | "info" | "success" | "danger";
-    color: string;
-  }
+  { label: string; tone: BadgeTone; dot: string }
 > = {
-  pending: { label: "Pending", variant: "warning", color: "var(--n-color-status-warning)" },
-  in_review: { label: "In review", variant: "info", color: "var(--n-color-status-info)" },
-  resolved: { label: "Resolved", variant: "success", color: "var(--n-color-status-success)" },
-  rejected: { label: "Rejected", variant: "danger", color: "var(--n-color-status-danger)" },
+  pending: { label: "Pending", tone: "attention", dot: "bg-(--bg-fill-caution)" },
+  in_review: { label: "In review", tone: "info", dot: "bg-(--bg-fill-info)" },
+  resolved: { label: "Resolved", tone: "success", dot: "bg-(--bg-fill-success)" },
+  rejected: { label: "Rejected", tone: "critical", dot: "bg-(--bg-fill-critical)" },
 };
 
 function Field({ k, v }: { k: string; v: string }) {
   return (
     <div>
-      <div className="text-xs text-muted-foreground">{k}</div>
+      <div className="text-xs text-(--text-secondary)">{k}</div>
       <div className="text-sm font-medium">{v}</div>
     </div>
   );
@@ -107,8 +108,8 @@ function SectionHead({
 }) {
   return (
     <div className="mb-3 flex items-center gap-2">
-      <Icon className="h-4 w-4 text-muted-foreground" />
-      <h4 className="text-sm font-semibold">{children}</h4>
+      <Icon className="h-4 w-4 text-(--icon-secondary)" />
+      <h3 className="text-sm font-semibold">{children}</h3>
     </div>
   );
 }
@@ -339,11 +340,26 @@ export default function ReturnsPage() {
     [rows, selectedId],
   );
 
+  // Reject → confirmation modal (status change can't be undone from here).
+  const [rejecting, setRejecting] = useState<ReturnRow | null>(null);
+  const [rejectBusy, setRejectBusy] = useState(false);
+
   async function handleReject(ret: ReturnRow) {
     if (!user || !company) return;
     await returnService.setStatus(ret.id, "rejected", user.id, {});
     setReturns(await returnService.getAll(company.id));
     toast.success(`Return for ${ret.customerName} rejected`);
+  }
+
+  async function confirmReject() {
+    if (!rejecting) return;
+    setRejectBusy(true);
+    try {
+      await handleReject(rejecting);
+      setRejecting(null);
+    } finally {
+      setRejectBusy(false);
+    }
   }
 
   async function onSubmit(values: FormOutput) {
@@ -504,322 +520,314 @@ export default function ReturnsPage() {
   const lookupOk = lookup === "ok";
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">
-            Returns and Cancellations
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Process a sold car coming back or a cancelled sale. Enter its
-            registration to pull the original sale, then resolve it to raise a
-            refund invoice.
-          </p>
-        </div>
-        <Dialog
-          open={open}
-          onOpenChange={(o) => {
-            setOpen(o);
-            if (!o) resetDialog();
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-1.5 h-4 w-4" /> Create Return
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col overflow-hidden">
-            <DialogHeader className="shrink-0">
-              <DialogTitle>Create Return</DialogTitle>
-            </DialogHeader>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="flex min-h-0 flex-1 flex-col overflow-hidden"
-            >
-              <div className="min-h-0 flex-1 space-y-7 overflow-y-auto px-6 pb-6">
-              {/* Vehicle ------------------------------------------------- */}
-              <section>
-                <SectionHead icon={Car}>Vehicle</SectionHead>
-                <Label htmlFor={registrationFieldId}>Registration of sold vehicle</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id={registrationFieldId}
-                    {...form.register("registration")}
-                    placeholder="e.g. LF62 LGX"
-                    autoComplete="off"
-                    onBlur={() => void handleRegLookup()}
-                  />
+    <Page
+      title="Returns and cancellations"
+      subtitle="Process a sold car coming back or a cancelled sale. Enter its registration to pull the original sale, then resolve it to raise a refund invoice."
+      fullWidth
+      primaryAction={{ content: "Create return", onAction: () => setOpen(true) }}
+    >
+      <Dialog
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) resetDialog();
+        }}
+      >
+        <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col overflow-hidden">
+          <DialogHeader className="shrink-0">
+            <DialogTitle>Create return</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+          >
+            <div className="min-h-0 flex-1 space-y-7 overflow-y-auto px-6 pb-6">
+            {/* Vehicle ------------------------------------------------- */}
+            <section>
+              <SectionHead icon={Car}>Vehicle</SectionHead>
+              <Label htmlFor={registrationFieldId}>Registration of sold vehicle</Label>
+              <div className="flex gap-2">
+                <Input
+                  id={registrationFieldId}
+                  {...form.register("registration")}
+                  placeholder="e.g. LF62 LGX"
+                  autoComplete="off"
+                  onBlur={() => void handleRegLookup()}
+                />
+                <div className="flex shrink-0 items-center">
                   <Button
-                    type="button"
-                    variant="outline"
                     onClick={() => void handleRegLookup()}
-                    disabled={lookup === "loading"}
+                    loading={lookup === "loading"}
                   >
-                    {lookup === "loading" ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "Look up"
-                    )}
+                    Look up
                   </Button>
                 </div>
-                {lookupMsg && (
-                  <p
-                    className={`mt-1 text-xs ${
-                      lookup === "ok"
-                        ? "text-amber-600"
-                        : "text-rose-600"
-                    }`}
-                  >
-                    {lookupMsg}
-                  </p>
-                )}
-                {lookupOk && original && (
-                  <div className="mt-3 flex items-center gap-3 rounded-lg border border-border bg-background p-3">
-                    <div className="grid h-12 w-16 shrink-0 place-items-center rounded bg-muted text-muted-foreground">
-                      <Car className="h-6 w-6" />
+              </div>
+              {lookupMsg && (
+                <Banner
+                  tone={lookup === "ok" ? "warning" : "critical"}
+                  className="mt-2"
+                >
+                  {lookupMsg}
+                </Banner>
+              )}
+              {lookupOk && original && (
+                <div className="mt-3 flex items-center gap-3 rounded-lg border border-(--border) bg-(--bg-surface) p-3">
+                  <div className="grid h-12 w-16 shrink-0 place-items-center rounded bg-(--bg-fill-secondary) text-(--icon-secondary)">
+                    <Car className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="font-mono text-sm font-semibold">
+                      {formatRegPlate(form.watch("registration") ?? "")}
                     </div>
-                    <div>
-                      <div className="font-mono text-sm font-semibold">
-                        {formatRegPlate(form.watch("registration") ?? "")}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Invoice {original.invoiceNumber} ·{" "}
-                        {formatCurrency(original.total)}
-                      </div>
-                      <div className="text-xs text-emerald-700">
-                        Customer prefilled from sale.
-                      </div>
+                    <div className="text-sm text-(--text-secondary)">
+                      Invoice {original.invoiceNumber} ·{" "}
+                      {formatCurrency(original.total)}
+                    </div>
+                    <div className="text-xs text-(--text-success)">
+                      Customer prefilled from sale.
                     </div>
                   </div>
-                )}
-              </section>
+                </div>
+              )}
+            </section>
 
-              {/* Customer ------------------------------------------------ */}
-              <section>
-                <SectionHead icon={User}>Customer</SectionHead>
+            {/* Customer ------------------------------------------------ */}
+            <section>
+              <SectionHead icon={User}>Customer</SectionHead>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor={customerNameFieldId}>Customer name</Label>
+                  <Input
+                    id={customerNameFieldId}
+                    {...form.register("customerName")}
+                    readOnly={prefilled}
+                    className={prefilled ? "bg-(--bg-surface-secondary)" : undefined}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor={customerPhoneFieldId}>Phone</Label>
+                  <Input
+                    id={customerPhoneFieldId}
+                    {...form.register("customerPhone")}
+                    readOnly={prefilled}
+                    className={prefilled ? "bg-(--bg-surface-secondary)" : undefined}
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* Return details ----------------------------------------- */}
+            <section>
+              <SectionHead icon={FileText}>Return details</SectionHead>
+              <div className="grid gap-3">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <Label htmlFor={customerNameFieldId}>Customer name</Label>
-                    <Input
-                      id={customerNameFieldId}
-                      {...form.register("customerName")}
-                      readOnly={prefilled}
-                      className={prefilled ? "bg-muted/50" : undefined}
-                    />
+                    <Label htmlFor={returnDateFieldId}>Return date</Label>
+                    <Input id={returnDateFieldId} type="date" {...form.register("returnDate")} />
                   </div>
                   <div>
-                    <Label htmlFor={customerPhoneFieldId}>Phone</Label>
-                    <Input
-                      id={customerPhoneFieldId}
-                      {...form.register("customerPhone")}
-                      readOnly={prefilled}
-                      className={prefilled ? "bg-muted/50" : undefined}
-                    />
+                    <Label htmlFor={reasonCodeFieldId}>Reason</Label>
+                    <Select
+                      value={form.watch("reasonCode")}
+                      onValueChange={(v) =>
+                        form.setValue("reasonCode", v as ReturnReason)
+                      }
+                    >
+                      <SelectTrigger id={reasonCodeFieldId}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(
+                          Object.keys(RETURN_REASON_LABELS) as ReturnReason[]
+                        ).map((rc) => (
+                          <SelectItem key={rc} value={rc}>
+                            {RETURN_REASON_LABELS[rc]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-              </section>
-
-              {/* Return details ----------------------------------------- */}
-              <section>
-                <SectionHead icon={FileText}>Return details</SectionHead>
-                <div className="grid gap-3">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <Label htmlFor={returnDateFieldId}>Return date</Label>
-                      <Input id={returnDateFieldId} type="date" {...form.register("returnDate")} />
-                    </div>
-                    <div>
-                      <Label htmlFor={reasonCodeFieldId}>Reason</Label>
-                      <Select
-                        value={form.watch("reasonCode")}
-                        onValueChange={(v) =>
-                          form.setValue("reasonCode", v as ReturnReason)
-                        }
-                      >
-                        <SelectTrigger id={reasonCodeFieldId}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(
-                            Object.keys(RETURN_REASON_LABELS) as ReturnReason[]
-                          ).map((rc) => (
-                            <SelectItem key={rc} value={rc}>
-                              {RETURN_REASON_LABELS[rc]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor={reasonDetailFieldId}>
-                      Reason detail
-                      {form.watch("reasonCode") === "other" && (
-                        <span className="text-destructive"> *</span>
-                      )}
-                    </Label>
-                    <Textarea
-                      id={reasonDetailFieldId}
-                      {...form.register("reason")}
-                      className="min-h-16"
-                      placeholder="Describe the reason for the return…"
-                    />
-                    {form.formState.errors.reason && (
-                      <p className="mt-1 text-xs text-destructive">
-                        {form.formState.errors.reason.message}
-                      </p>
+                <div>
+                  <Label htmlFor={reasonDetailFieldId}>
+                    Reason detail
+                    {form.watch("reasonCode") === "other" && (
+                      <span className="text-(--text-critical)"> *</span>
                     )}
+                  </Label>
+                  <Textarea
+                    id={reasonDetailFieldId}
+                    {...form.register("reason")}
+                    className="min-h-16"
+                    placeholder="Describe the reason for the return…"
+                  />
+                  {form.formState.errors.reason && (
+                    <p className="mt-1 text-xs text-(--text-critical)">
+                      {form.formState.errors.reason.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* Refund & resolution ------------------------------------ */}
+            <section>
+              <SectionHead icon={Banknote}>Refund &amp; resolution</SectionHead>
+              <div className="grid gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor={refundAmountFieldId}>Refund (£)</Label>
+                    <Input
+                      id={refundAmountFieldId}
+                      type="number"
+                      step="0.01"
+                      {...form.register("refundAmount")}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={resolutionPathFieldId}>Resolution path</Label>
+                    <Select
+                      value={form.watch("resolutionPath")}
+                      onValueChange={(v) =>
+                        form.setValue(
+                          "resolutionPath",
+                          v as ReturnResolutionPath,
+                        )
+                      }
+                    >
+                      <SelectTrigger id={resolutionPathFieldId}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PATHS.map((p) => (
+                          <SelectItem key={p.value} value={p.value}>
+                            {p.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-              </section>
-
-              {/* Refund & resolution ------------------------------------ */}
-              <section>
-                <SectionHead icon={Banknote}>Refund &amp; resolution</SectionHead>
-                <div className="grid gap-3">
+                <div>
+                  <Label htmlFor={resolutionNotesFieldId}>Resolution notes</Label>
+                  <Textarea
+                    id={resolutionNotesFieldId}
+                    {...form.register("resolutionNotes")}
+                    className="min-h-16"
+                  />
+                </div>
+                <div className="rounded-lg border border-(--border-secondary) bg-(--bg-surface-secondary) p-3">
+                  <p className="mb-2 text-xs font-medium text-(--text-secondary)">
+                    Refund bank details (where the refund is paid back)
+                  </p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
-                      <Label htmlFor={refundAmountFieldId}>Refund (£)</Label>
+                      <Label htmlFor={refundBankAccountNameFieldId}>Account name</Label>
+                      <Input id={refundBankAccountNameFieldId} {...form.register("refundBankAccountName")} />
+                    </div>
+                    <div>
+                      <Label htmlFor={refundBankNameFieldId}>Bank name</Label>
+                      <Input id={refundBankNameFieldId} {...form.register("refundBankName")} />
+                    </div>
+                    <div>
+                      <Label htmlFor={refundSortCodeFieldId}>Sort code</Label>
                       <Input
-                        id={refundAmountFieldId}
-                        type="number"
-                        step="0.01"
-                        {...form.register("refundAmount")}
+                        id={refundSortCodeFieldId}
+                        {...form.register("refundSortCode")}
+                        placeholder="00-00-00"
                       />
                     </div>
                     <div>
-                      <Label htmlFor={resolutionPathFieldId}>Resolution path</Label>
-                      <Select
-                        value={form.watch("resolutionPath")}
-                        onValueChange={(v) =>
-                          form.setValue(
-                            "resolutionPath",
-                            v as ReturnResolutionPath,
-                          )
-                        }
-                      >
-                        <SelectTrigger id={resolutionPathFieldId}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PATHS.map((p) => (
-                            <SelectItem key={p.value} value={p.value}>
-                              {p.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor={resolutionNotesFieldId}>Resolution notes</Label>
-                    <Textarea
-                      id={resolutionNotesFieldId}
-                      {...form.register("resolutionNotes")}
-                      className="min-h-16"
-                    />
-                  </div>
-                  <div className="rounded-lg border bg-[#f7f7f7] p-3">
-                    <p className="mb-2 text-xs font-medium text-muted-foreground">
-                      Refund bank details (where the refund is paid back)
-                    </p>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <Label htmlFor={refundBankAccountNameFieldId}>Account name</Label>
-                        <Input id={refundBankAccountNameFieldId} {...form.register("refundBankAccountName")} />
-                      </div>
-                      <div>
-                        <Label htmlFor={refundBankNameFieldId}>Bank name</Label>
-                        <Input id={refundBankNameFieldId} {...form.register("refundBankName")} />
-                      </div>
-                      <div>
-                        <Label htmlFor={refundSortCodeFieldId}>Sort code</Label>
-                        <Input
-                          id={refundSortCodeFieldId}
-                          {...form.register("refundSortCode")}
-                          placeholder="00-00-00"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor={refundAccountNumberFieldId}>Account number</Label>
-                        <Input
-                          id={refundAccountNumberFieldId}
-                          {...form.register("refundAccountNumber")}
-                          placeholder="12345678"
-                        />
-                      </div>
+                      <Label htmlFor={refundAccountNumberFieldId}>Account number</Label>
+                      <Input
+                        id={refundAccountNumberFieldId}
+                        {...form.register("refundAccountNumber")}
+                        placeholder="12345678"
+                      />
                     </div>
                   </div>
                 </div>
-              </section>
               </div>
+            </section>
+            </div>
 
-              <DialogFooter className="shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setOpen(false);
-                    resetDialog();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={!lookupOk}>
-                  Process return
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+            <DialogFooter className="shrink-0">
+              <Button
+                onClick={() => {
+                  setOpen(false);
+                  resetDialog();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button variant="primary" submit disabled={!lookupOk}>
+                Process return
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {!rows ? (
         <Skeleton className="h-72" />
       ) : rows.length === 0 ? (
         <EmptyState
-          icon={Undo2}
-          title="No returns or cancellations yet"
-          description="Process customer returns and cancellations and track resolution paths."
-        />
+          icon={<Undo2 />}
+          heading="No returns or cancellations yet"
+          action={{ content: "Create return", onAction: () => setOpen(true) }}
+        >
+          Process customer returns and cancellations and track resolution
+          paths.
+        </EmptyState>
       ) : (
-        <div className="grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-card lg:grid-cols-[320px_1fr]">
+        <Card
+          padding="0"
+          className="grid grid-cols-1 gap-0 lg:grid-cols-[320px_1fr]"
+        >
           {/* list */}
-          <div className="border-b border-border lg:border-b-0 lg:border-r">
-            <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
-              <span className="text-sm font-semibold">Returns</span>
-              <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-normal text-muted-foreground">
-                {rows.length}
-              </span>
+          <div className="border-b border-(--border) lg:border-b-0 lg:border-r">
+            <div className="flex items-center justify-between border-b border-(--border) px-3 py-2.5">
+              <h2 className="text-sm font-semibold">Returns</h2>
+              <Badge>{String(rows.length)}</Badge>
             </div>
-            <ul className="max-h-[70vh] divide-y divide-border overflow-y-auto">
+            <ul className="max-h-[70vh] divide-y divide-(--border-secondary) overflow-y-auto">
               {rows.map((r) => {
                 const meta = STATUS_META[r.status];
                 const on = selected?.id === r.id;
                 return (
                   <li key={r.id}>
+                    {/* Master-detail picker: a row button selects the
+                        return shown on the right (no route to link to). */}
                     <button
                       type="button"
                       onClick={() => setSelectedId(r.id)}
+                      aria-pressed={on}
                       className={cn(
                         "w-full px-3 py-2.5 text-left transition-colors",
-                        on ? "bg-accent/50" : "hover:bg-accent/30",
+                        on
+                          ? "bg-(--bg-surface-selected)"
+                          : "hover:bg-(--bg-surface-hover)",
                       )}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
                           <span
-                            className="h-2 w-2 shrink-0 rounded-full"
-                            style={{ background: meta.color }}
+                            aria-hidden
+                            className={cn(
+                              "h-2 w-2 shrink-0 rounded-full",
+                              meta.dot,
+                            )}
                           />
+                          <span className="sr-only">{meta.label}:</span>
                           <span className="truncate">{r.customerName}</span>
                         </span>
-                        <span className="shrink-0 text-xs text-muted-foreground">
+                        <span className="shrink-0 text-xs text-(--text-secondary)">
                           {formatDate(r.returnDate)}
                         </span>
                       </div>
                       <div className="mt-0.5 flex items-center justify-between gap-2 pl-3.5">
-                        <span className="truncate text-xs text-muted-foreground">
+                        <span className="truncate text-xs text-(--text-secondary)">
                           {r.vehicle?.registration ?? "—"} ·{" "}
                           {r.reason ||
                             (r.reasonCode
@@ -879,18 +887,16 @@ export default function ReturnsPage() {
                           className="h-12 w-16 shrink-0 rounded"
                         />
                       ) : (
-                        <span className="h-12 w-16 shrink-0 rounded bg-muted" />
+                        <span className="h-12 w-16 shrink-0 rounded bg-(--bg-fill-secondary)" />
                       )}
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-sm font-semibold">
                             {selected.vehicle?.registration ?? "—"}
                           </span>
-                          <Badge variant={meta.variant === "danger" ? "error" : meta.variant}>
-                            {meta.label}
-                          </Badge>
+                          <Badge tone={meta.tone}>{meta.label}</Badge>
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-(--text-secondary)">
                           {selected.vehicle
                             ? `${selected.vehicle.make} ${selected.vehicle.model}`
                             : "—"}
@@ -900,14 +906,14 @@ export default function ReturnsPage() {
                     {actionable && (
                       <div className="flex gap-2">
                         <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => void handleReject(selected)}
+                          tone="critical"
+                          icon={<X />}
+                          onClick={() => setRejecting(selected)}
                         >
-                          <X className="mr-1 h-4 w-4" /> Reject
+                          Reject return
                         </Button>
                         <Button
-                          size="sm"
+                          icon={<Check />}
                           onClick={() => {
                             setResolving(selected);
                             setResolveNotes(selected.resolutionNotes ?? "");
@@ -918,13 +924,13 @@ export default function ReturnsPage() {
                             );
                           }}
                         >
-                          <Check className="mr-1 h-4 w-4" /> Approve &amp; refund
+                          Approve and refund
                         </Button>
                       </div>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-lg border border-border bg-background p-4 sm:grid-cols-3">
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-lg border border-(--border-secondary) bg-(--bg-surface-secondary) p-4 sm:grid-cols-3">
                     <Field k="Customer" v={selected.customerName} />
                     <Field k="Phone" v={selected.customerPhone || "—"} />
                     <Field k="Return date" v={formatDate(selected.returnDate)} />
@@ -952,7 +958,7 @@ export default function ReturnsPage() {
                   {selected.reason && (
                     <div>
                       <h3 className="mb-2 text-sm font-semibold">
-                        Return Detail Reason
+                        Reason detail
                       </h3>
                       <p className="text-sm">{selected.reason}</p>
                     </div>
@@ -970,8 +976,8 @@ export default function ReturnsPage() {
                             className={cn(
                               "grid h-6 w-6 shrink-0 place-items-center rounded-full",
                               s.done
-                                ? "bg-primary text-primary-foreground"
-                                : "border border-border text-muted-foreground",
+                                ? "bg-(--bg-fill-brand) text-(--text-brand-on-bg-fill)"
+                                : "border border-(--border) text-(--icon-secondary)",
                             )}
                           >
                             {s.done ? (
@@ -980,10 +986,10 @@ export default function ReturnsPage() {
                               <Clock className="h-3.5 w-3.5" />
                             )}
                           </span>
-                          <span className={cn(!s.done && "text-muted-foreground")}>
+                          <span className={cn(!s.done && "text-(--text-secondary)")}>
                             {s.label}
                           </span>
-                          <span className="ml-auto text-xs text-muted-foreground">
+                          <span className="ml-auto text-xs text-(--text-secondary)">
                             {s.at}
                           </span>
                         </li>
@@ -993,71 +999,92 @@ export default function ReturnsPage() {
                 </div>
               );
             })()}
-        </div>
+        </Card>
       )}
 
       {/* Resolve → refund-invoice dialog */}
-      <Dialog
+      <Modal
         open={resolving !== null}
-        onOpenChange={(o) => {
-          if (!o && !resolveBusy) setResolving(null);
+        onClose={() => {
+          if (!resolveBusy) setResolving(null);
         }}
+        title="Resolve return and issue refund"
+        primaryAction={{
+          content: "Resolve and generate refund",
+          loading: resolveBusy,
+          onAction: () => void handleResolve(),
+        }}
+        secondaryActions={[
+          {
+            content: "Cancel",
+            onAction: () => {
+              if (!resolveBusy) setResolving(null);
+            },
+          },
+        ]}
       >
-        <DialogContent className="max-w-md">
-          {resolving && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Resolve return &amp; issue refund</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-3 px-6 pb-6">
-                <p className="text-sm text-muted-foreground">
-                  Resolving generates a{" "}
-                  <span className="font-medium text-foreground">
-                    refund / cancellation invoice
-                  </span>{" "}
-                  for {resolving.customerName}, links it to the original
-                  sale invoice, and includes the reason, notes, refund bank
-                  details and the 14-working-day statement.
-                </p>
-                <div>
-                  <Label htmlFor={resolveAmountFieldId}>Refund amount (£)</Label>
-                  <Input
-                    id={resolveAmountFieldId}
-                    type="number"
-                    step="0.01"
-                    value={resolveAmount}
-                    onChange={(e) => setResolveAmount(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor={resolveNotesFieldId}>Resolution notes</Label>
-                  <Textarea
-                    id={resolveNotesFieldId}
-                    value={resolveNotes}
-                    onChange={(e) => setResolveNotes(e.target.value)}
-                    className="min-h-20"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setResolving(null)}
-                  disabled={resolveBusy}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={() => void handleResolve()} disabled={resolveBusy}>
-                  {resolveBusy ? (
-                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                  ) : null}
-                  Resolve &amp; generate refund
-                </Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+        {resolving && (
+          <div className="grid gap-3">
+            <p className="text-sm text-(--text-secondary)">
+              Resolving generates a{" "}
+              <span className="font-medium text-(--text)">
+                refund / cancellation invoice
+              </span>{" "}
+              for {resolving.customerName}, links it to the original sale
+              invoice, and includes the reason, notes, refund bank details and
+              the 14-working-day statement.
+            </p>
+            <TextField
+              id={resolveAmountFieldId}
+              label="Refund amount"
+              type="number"
+              step={0.01}
+              prefix="£"
+              inputMode="decimal"
+              value={resolveAmount}
+              onChange={setResolveAmount}
+            />
+            <TextField
+              id={resolveNotesFieldId}
+              label="Resolution notes"
+              multiline={3}
+              value={resolveNotes}
+              onChange={setResolveNotes}
+            />
+          </div>
+        )}
+      </Modal>
+
+      {/* Reject confirmation */}
+      <Modal
+        open={rejecting !== null}
+        onClose={() => {
+          if (!rejectBusy) setRejecting(null);
+        }}
+        title="Reject this return?"
+        size="small"
+        primaryAction={{
+          content: "Reject return",
+          destructive: true,
+          loading: rejectBusy,
+          onAction: () => void confirmReject(),
+        }}
+        secondaryActions={[
+          {
+            content: "Cancel",
+            onAction: () => {
+              if (!rejectBusy) setRejecting(null);
+            },
+          },
+        ]}
+      >
+        {rejecting && (
+          <p className="text-sm">
+            The return for {rejecting.customerName} will be marked as
+            rejected. No refund invoice is raised.
+          </p>
+        )}
+      </Modal>
+    </Page>
   );
 }

@@ -1,16 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  BarChart3,
-  BadgePoundSterling,
-  Gauge,
-  Megaphone,
-  MessageSquare,
-  Trophy,
-  TriangleAlert,
-  type LucideIcon,
-} from "lucide-react";
+import { MessageSquare, Trophy, TriangleAlert } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { listingService } from "@/lib/services/listing-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
@@ -19,24 +10,27 @@ import {
   type PerformanceStats,
 } from "@/lib/services/performance-service";
 import type { Listing, ListingChannel, Vehicle } from "@/lib/types";
+import {
+  Badge,
+  Card,
+  EmptyState,
+  Page,
+  ProgressBar,
+} from "@/components/polaris";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/shared/empty-state";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { AtIndicatorCell } from "@/components/data-grid";
-import { cn, formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 
 const STALE_DAYS = 75; // days in stock past which a live advert needs attention
 
-const CHANNELS: {
-  key: ListingChannel;
-  label: string;
-  bar: string;
-  dot: string;
-}[] = [
-  { key: "website", label: "Website", bar: "bg-sky-500", dot: "bg-sky-500" },
-  { key: "autotrader", label: "AutoTrader", bar: "bg-violet-500", dot: "bg-violet-500" },
-  { key: "ebay", label: "eBay", bar: "bg-amber-500", dot: "bg-amber-500" },
-  { key: "facebook", label: "Facebook", bar: "bg-blue-600", dot: "bg-blue-600" },
+// Each scorecard is labelled, so the share bars share one neutral fill rather
+// than a colour per channel.
+const CHANNELS: { key: ListingChannel; label: string }[] = [
+  { key: "website", label: "Website" },
+  { key: "autotrader", label: "AutoTrader" },
+  { key: "ebay", label: "eBay" },
+  { key: "facebook", label: "Facebook" },
 ];
 
 interface LiveRow extends Listing {
@@ -46,43 +40,41 @@ interface LiveRow extends Listing {
 
 /* --------------------------------------------------------------- primitives */
 
-function StatCard({
+/** One metric in the KPI strip: label, value and a short qualifier. */
+function StatTile({
   label,
   value,
   sub,
 }: {
-  icon: LucideIcon;
   label: string;
   value: string;
   sub?: string;
 }) {
   return (
-    <div className="flex flex-col gap-1 rounded-xl border bg-card px-4 py-3 shadow-[0_1px_0_rgba(0,0,0,.05)]">
-      <span className="text-[13px] font-medium text-muted-foreground underline decoration-dotted decoration-muted-foreground/50 underline-offset-4">
-        {label}
-      </span>
-      <span className="text-xl font-bold tabular-nums">{value}</span>
-      {sub ? <span className="text-xs text-muted-foreground">{sub}</span> : null}
+    <div className="flex flex-col gap-1 bg-(--bg-surface) p-4">
+      <span className="body-sm text-(--text-secondary)">{label}</span>
+      <span className="heading-lg tabular-nums">{value}</span>
+      {sub ? (
+        <span className="body-sm text-(--text-secondary)">{sub}</span>
+      ) : null}
     </div>
   );
 }
 
-function Panel({
-  title,
-  action,
-  children,
-}: {
-  title: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}) {
+/** A channel's enquiry share, 0–100, as a labelled bar. */
+function ShareOfEnquiries({ label, pct }: { label: string; pct: number }) {
   return (
-    <div className="flex flex-col gap-4 rounded-xl border bg-card px-4 py-3 shadow-[0_1px_0_rgba(0,0,0,.05)]">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold">{title}</h2>
-        {action}
+    <div>
+      <div className="body-sm mb-1 flex justify-between text-(--text-secondary)">
+        <span>Share of enquiries</span>
+        <span className="tabular-nums">{pct}%</span>
       </div>
-      {children}
+      <ProgressBar
+        progress={pct}
+        size="small"
+        tone="primary"
+        accessibilityLabel={`${label} share of enquiries`}
+      />
     </div>
   );
 }
@@ -220,83 +212,71 @@ export default function PerformancePage() {
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-semibold">Performance</h1>
-        <p className="text-[13px] text-muted-foreground">
-          How your adverts are doing across every marketplace channel:
-          enquiries, channel reach and the listings that need attention.
-        </p>
-      </div>
-
+    <Page
+      title="Performance"
+      subtitle="How your adverts are doing across every marketplace channel: enquiries, channel reach and the listings that need attention."
+      fullWidth
+    >
       {!live || !kpis || !channelStats || !stats ? (
-        <Skeleton className="h-96" />
+        <Skeleton className="h-96 rounded-(--radius-300)" />
       ) : live.length === 0 ? (
-        <EmptyState
-          icon={BarChart3}
-          title="No live listings yet"
-          description="Publish a vehicle from the Work List to start tracking performance."
-        />
+        <Card padding="0">
+          <EmptyState
+            heading="No live listings yet"
+            icon="AnalyticsMinor"
+            action={{ content: "Open work list", url: "/advert/work-list" }}
+          >
+            Publish a vehicle from the work list to start tracking performance.
+          </EmptyState>
+        </Card>
       ) : (
         <>
-          {/* KPI strip */}
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard icon={MessageSquare} label="Total enquiries" value={String(kpis.totalEnq)} sub="across live adverts" />
-            <StatCard icon={Megaphone} label="Live listings" value={String(kpis.liveCount)} sub="currently advertised" />
-            <StatCard icon={Gauge} label="Enquiries / listing" value={kpis.perListing} sub="average" />
-            <StatCard icon={BadgePoundSterling} label="Live stock value" value={formatCurrency(kpis.stockValue)} sub="total advertised price" />
-          </div>
+          {/* KPI strip — one flush card, tiles split by hairlines */}
+          <Card padding="0">
+            <div className="grid gap-px bg-(--border-secondary) sm:grid-cols-2 lg:grid-cols-4">
+              <StatTile label="Total enquiries" value={String(kpis.totalEnq)} sub="Across live adverts" />
+              <StatTile label="Live listings" value={String(kpis.liveCount)} sub="Currently advertised" />
+              <StatTile label="Enquiries per listing" value={kpis.perListing} sub="Average" />
+              <StatTile label="Live stock value" value={formatCurrency(kpis.stockValue)} sub="Total advertised price" />
+            </div>
+          </Card>
 
           {/* Trend hero — real leads-per-day */}
-          <Panel
+          <Card
             title="Enquiries over time"
-            action={
-              <span className="text-xs text-muted-foreground">
-                last {stats.trendDays} days · {stats.leadsTotal} lead{stats.leadsTotal === 1 ? "" : "s"}
+            className="gap-4"
+            actions={
+              <span className="body-sm text-(--text-secondary)">
+                Last {stats.trendDays} days · {stats.leadsTotal} lead{stats.leadsTotal === 1 ? "" : "s"}
               </span>
             }
           >
             {stats.leadsTotal === 0 ? (
-              <div className="flex h-[180px] items-center justify-center text-sm text-muted-foreground">
+              <div className="body-md flex h-45 items-center justify-center text-(--text-secondary)">
                 No leads recorded in the last {stats.trendDays} days.
               </div>
             ) : (
               <AreaChart data={stats.trend} />
             )}
-          </Panel>
+          </Card>
 
           {/* Channel scorecards — real per-marketplace attribution */}
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {channelStats.map((c) => (
-              <div key={c.key} className="flex flex-col gap-3 rounded-xl border bg-card px-4 py-3 shadow-[0_1px_0_rgba(0,0,0,.05)]">
-                <div className="flex items-center gap-2 text-sm font-semibold">
-                  <span className={cn("size-2.5 rounded-full", c.dot)} />
-                  {c.label}
-                </div>
+              <Card key={c.key} title={c.label} className="gap-3">
                 <div className="flex items-end justify-between">
                   <div>
-                    <div className="text-xl font-bold tabular-nums">{c.enquiries}</div>
-                    <div className="text-xs text-muted-foreground">enquiries</div>
+                    <div className="heading-lg tabular-nums">{c.enquiries}</div>
+                    <div className="body-sm text-(--text-secondary)">Enquiries</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-semibold tabular-nums">{c.liveCount}</div>
-                    <div className="text-xs text-muted-foreground">live</div>
+                    <div className="heading-md tabular-nums">{c.liveCount}</div>
+                    <div className="body-sm text-(--text-secondary)">Live</div>
                   </div>
                 </div>
-                <div>
-                  <div className="mb-1 flex justify-between text-xs text-muted-foreground">
-                    <span>Share of enquiries</span>
-                    <span>{shareOf(c.enquiries)}%</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className={cn("h-full rounded-full", c.bar)}
-                      style={{ width: `${shareOf(c.enquiries)}%` }}
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 border-t pt-2 text-xs text-muted-foreground">
-                  <Trophy className="size-3.5 shrink-0 text-muted-foreground" />
+                <ShareOfEnquiries label={c.label} pct={shareOf(c.enquiries)} />
+                <div className="body-sm flex items-center gap-1.5 border-t border-(--border-secondary) pt-2 text-(--text-secondary)">
+                  <Trophy className="size-3.5 shrink-0 text-(--icon-secondary)" />
                   {c.top && c.top.vehicle && c.topEnq > 0 ? (
                     <>
                       Top:&nbsp;
@@ -307,68 +287,59 @@ export default function PerformancePage() {
                     <span>No enquiries on this channel yet</span>
                   )}
                 </div>
-              </div>
+              </Card>
             ))}
             {/* Non-marketplace leads (walk-in, referral, repeat customer…) so
                 the channel cards always sum to the Total enquiries KPI. */}
             {otherEnq > 0 && (
-              <div className="flex flex-col gap-3 rounded-xl border bg-card px-4 py-3 shadow-[0_1px_0_rgba(0,0,0,.05)]">
-                <div className="flex items-center gap-2 text-sm font-semibold">
-                  <span className="size-2.5 rounded-full bg-muted-foreground/50" />
-                  Other sources
-                </div>
+              <Card title="Other sources" className="gap-3">
                 <div className="flex items-end justify-between">
                   <div>
-                    <div className="text-xl font-bold tabular-nums">{otherEnq}</div>
-                    <div className="text-xs text-muted-foreground">enquiries</div>
+                    <div className="heading-lg tabular-nums">{otherEnq}</div>
+                    <div className="body-sm text-(--text-secondary)">Enquiries</div>
                   </div>
                 </div>
-                <div>
-                  <div className="mb-1 flex justify-between text-xs text-muted-foreground">
-                    <span>Share of enquiries</span>
-                    <span>{shareOf(otherEnq)}%</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-muted-foreground/50"
-                      style={{ width: `${shareOf(otherEnq)}%` }}
-                    />
-                  </div>
-                </div>
-                <div className="border-t pt-2 text-xs text-muted-foreground">
+                <ShareOfEnquiries label="Other sources" pct={shareOf(otherEnq)} />
+                <div className="body-sm border-t border-(--border-secondary) pt-2 text-(--text-secondary)">
                   Walk-ins, referrals &amp; other non-marketplace leads
                 </div>
-              </div>
+              </Card>
             )}
           </div>
 
           {/* Leaderboards */}
-          <div className="grid gap-3 lg:grid-cols-2">
-            <Panel title="Top performing adverts" action={<Trophy className="size-4 text-muted-foreground" />}>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card
+              title="Top performing adverts"
+              actions={<Trophy className="size-4 text-(--icon-secondary)" aria-hidden />}
+            >
               <div className="flex flex-col">
                 {topAdverts.map((l, i) => (
-                  <div key={l.id} className="flex items-center gap-3 border-b py-2 last:border-0">
-                    <span className="w-4 text-center text-xs font-semibold tabular-nums text-muted-foreground">
+                  <div key={l.id} className="flex items-center gap-3 border-b border-(--border-secondary) py-2 last:border-0">
+                    <span className="body-sm-semibold w-4 text-center tabular-nums text-(--text-secondary)">
                       {i + 1}
                     </span>
                     {l.vehicle ? (
                       <RegPlate registration={l.vehicle.registration} size="sm" />
                     ) : null}
-                    <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+                    <span className="body-sm min-w-0 flex-1 truncate text-(--text-secondary)">
                       {l.title}
                     </span>
-                    <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold tabular-nums">
-                      <MessageSquare className="size-3 text-muted-foreground" />
+                    <span className="body-md-semibold inline-flex shrink-0 items-center gap-1 tabular-nums">
+                      <MessageSquare className="size-3 text-(--icon-secondary)" aria-hidden />
                       {l.enq}
                     </span>
                   </div>
                 ))}
               </div>
-            </Panel>
+            </Card>
 
-            <Panel title="Needs attention" action={<TriangleAlert className="size-4 text-muted-foreground" />}>
+            <Card
+              title="Needs attention"
+              actions={<TriangleAlert className="size-4 text-(--icon-secondary)" aria-hidden />}
+            >
               {needsAttention.length === 0 ? (
-                <div className="py-6 text-center text-sm text-muted-foreground">
+                <div className="body-md py-6 text-center text-(--text-secondary)">
                   Every live advert is fresh and getting enquiries.
                 </div>
               ) : (
@@ -377,35 +348,28 @@ export default function PerformancePage() {
                     const days = l.vehicle?.daysInStock ?? 0;
                     const noEnq = l.enq === 0;
                     return (
-                      <div key={l.id} className="flex items-center gap-3 border-b py-2 last:border-0">
+                      <div key={l.id} className="flex items-center gap-3 border-b border-(--border-secondary) py-2 last:border-0">
                         {l.vehicle ? (
                           <RegPlate registration={l.vehicle.registration} size="sm" />
                         ) : null}
-                        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+                        <span className="body-sm min-w-0 flex-1 truncate text-(--text-secondary)">
                           {l.title}
                         </span>
                         <span className="shrink-0">
                           <AtIndicatorCell indicator={l.atPriceIndicator} />
                         </span>
-                        <span
-                          className={cn(
-                            "shrink-0 rounded-lg px-2 py-0.5 text-xs font-medium",
-                            noEnq
-                              ? "bg-[rgb(255,235,120)] text-[rgb(79,71,0)]"
-                              : "bg-[rgb(254,209,215)] text-[rgb(142,11,33)]",
-                          )}
-                        >
+                        <Badge tone={noEnq ? "attention" : "critical"} className="shrink-0">
                           {noEnq ? "No enquiries" : `${days}d stale`}
-                        </span>
+                        </Badge>
                       </div>
                     );
                   })}
                 </div>
               )}
-            </Panel>
+            </Card>
           </div>
         </>
       )}
-    </div>
+    </Page>
   );
 }

@@ -3,21 +3,19 @@ import { Inter } from "next/font/google";
 import { GeistMono } from "geist/font/mono";
 import { Suspense } from "react";
 import "./globals.css";
-// After globals so `.polaris` wins over the :root token layer (same
-// specificity, later source). Generated from @shopify/polaris-tokens.
-import "./polaris-theme.css";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from "@/contexts/auth-context";
 import { NotificationsProvider } from "@/contexts/notifications-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
+import { PolarisLinkProvider } from "@/components/polaris-link-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { VercelInsights } from "@/components/vercel-insights";
 import { getInitialAuth } from "@/lib/auth-initial";
 import { AuthBoundary } from "@/components/layout/auth-boundary";
 
 // UI font is Inter — the Shopify admin's typeface (self-hosted by next/font,
-// exposed as --font-inter; polaris-theme.css makes it --font-sans).
+// exposed as --font-inter; the Polaris tokens make it --font-sans).
 // Geist Mono (--font-geist-mono) covers stock IDs, regs and other codes.
 const inter = Inter({
   subsets: ["latin"],
@@ -69,8 +67,6 @@ export default async function RootLayout({
       className={cn(
         "h-full",
         "antialiased",
-        // Shopify Polaris visual language, app-wide (src/app/polaris-theme.css).
-        "polaris",
         inter.variable,
         GeistMono.variable,
         "font-sans",
@@ -102,6 +98,7 @@ export default async function RootLayout({
           disableTransitionOnChange
           forcedTheme="light"
         >
+          <PolarisLinkProvider>
           <Suspense
             fallback={
               <AuthProvider initialUser={null} initialCompany={null}>
@@ -113,6 +110,7 @@ export default async function RootLayout({
           >
             <AuthBoundary authPromise={authPromise}>{children}</AuthBoundary>
           </Suspense>
+          </PolarisLinkProvider>
           <Toaster />
         </ThemeProvider>
         {/* Vercel sets VERCEL=1 on its builds and runtime; elsewhere (local,

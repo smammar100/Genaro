@@ -1,6 +1,7 @@
 "use client";
 
-import { Paperclip } from "lucide-react";
+import type * as React from "react";
+import { Card, Divider } from "@/components/polaris";
 import { cn, formatCurrency } from "@/lib/utils";
 
 interface Props {
@@ -13,14 +14,15 @@ interface Props {
   otherCharges?: number;
   listingPrice: number | null;
   className?: string;
+  /** Optional help line under the totals. */
+  children?: React.ReactNode;
 }
 
-// Receipt outline: rounded top corners (4px, matching --radius), straight
-// sides, zigzag torn-paper bottom. Top corners approximated with a 3-point
-// quarter-arc so the rounding follows the global radius scale.
-const TEAR =
-  "polygon(0 4px, 1.17px 1.17px, 4px 0, calc(100% - 4px) 0, calc(100% - 1.17px) 1.17px, 100% 4px, 100% calc(100% - 8px), 95.65% 100%, 91.30% calc(100% - 8px), 86.96% 100%, 82.61% calc(100% - 8px), 78.26% 100%, 73.91% calc(100% - 8px), 69.57% 100%, 65.22% calc(100% - 8px), 60.87% 100%, 56.52% calc(100% - 8px), 52.17% 100%, 47.83% calc(100% - 8px), 43.48% 100%, 39.13% calc(100% - 8px), 34.78% 100%, 30.43% calc(100% - 8px), 26.09% 100%, 21.74% calc(100% - 8px), 17.39% 100%, 13.04% calc(100% - 8px), 8.70% 100%, 4.35% calc(100% - 8px), 0 100%)";
-
+/**
+ * Live cost summary for the Add vehicle form's sidebar. Uses the same roll-up
+ * as the saved record: total buying (the master sheet's AI: price + fees + VAT
+ * paid), then the app-only lines on top for the base cost.
+ */
 export function CostSummaryReceipt({
   buyingPrice,
   feesAndCharges,
@@ -30,6 +32,7 @@ export function CostSummaryReceipt({
   otherCharges = 0,
   listingPrice,
   className,
+  children,
 }: Props) {
   // Total buying = the master sheet's AI (price + fees + VAT paid). Other
   // charges are not a sheet column, so they sit below it.
@@ -39,139 +42,94 @@ export function CostSummaryReceipt({
   const profit = listingPrice !== null ? listingPrice - baseCost : null;
 
   return (
-    <div
-      className={cn("relative", className)}
-      style={{
-        // 1px ring at 5% foreground (matches `ring-1 ring-foreground/5` on the
-        // shadcn Card) plus the maybe `shadow-md` recipe — both traced via
-        // drop-shadow so they follow the clip-path zigzag instead of clipping
-        // to a rectangle.
-        filter:
-          "drop-shadow(1px 0 0 rgba(23,23,23,0.05)) drop-shadow(-1px 0 0 rgba(23,23,23,0.05)) drop-shadow(0 1px 0 rgba(23,23,23,0.05)) drop-shadow(0 -1px 0 rgba(23,23,23,0.05)) drop-shadow(0 4px 8px rgba(11,11,11,0.06))",
-      }}
-    >
-      {/* Paperclip — pinned to the right edge */}
-      <div className="absolute -top-3 right-4 z-10 flex h-12 w-9 -rotate-12 items-center justify-center">
-        <Paperclip
-          className="h-9 w-9 text-muted-foreground/50"
-          strokeWidth={1.25}
+    <Card title="Cost summary" className={className}>
+      <dl className="flex flex-col gap-1">
+        <Row
+          label="Buying price"
+          hint="Negotiated purchase amount"
+          value={buyingPrice}
         />
-      </div>
-
-      {/* Receipt body — torn-paper bottom via clip-path */}
-      <div
-        className="relative bg-card px-5 pb-8 pt-7 text-sm leading-snug text-foreground"
-        style={{ clipPath: TEAR }}
-      >
-        <div className="mb-3 text-left">
-          <p className="text-base font-semibold tracking-tight">
-            Cost Summary
-          </p>
-        </div>
-
-        <div className="border-t border-dashed border-border" />
-
-        <table className="w-full">
-          <tbody>
-            <Row label="Buying Price" value={buyingPrice} />
-            <SubItem text="Negotiated purchase amount" />
-
-            <Row label="+ Fees & Charges" value={feesAndCharges} />
-            <SubItem text="BCA fees, collection, delivery + VAT paid" />
-
-            {otherCharges > 0 && (
-              <Row label="+ Other Charges" value={otherCharges} />
-            )}
-            <Row label="+ Stocking" value={stockingCharges} />
-            <Row label="+ Prep Costs" value={prepCosts} />
-            <Row label="+ Warranty" value={warranty} />
-          </tbody>
-          <tfoot>
-            <SectionDivider />
-            <Row label="Total Buying" value={totalBuying} bold />
-            <Row label="Base Cost" value={baseCost} bold />
-            <SectionDivider />
-            <Row
-              label="→ Listing Price"
-              value={listingPrice}
-              tone={
-                listingPrice !== null && listingPrice > 0 ? "neutral" : "muted"
-              }
-            />
-            <Row
-              label="→ Est. Profit"
-              value={profit}
-              tone={
-                profit === null
-                  ? "muted"
-                  : profit > 0
-                    ? "positive"
-                    : profit < 0
-                      ? "negative"
-                      : "neutral"
-              }
-              bold
-            />
-          </tfoot>
-        </table>
-      </div>
-    </div>
+        <Row
+          label="Fees and charges"
+          hint="BCA fees, collection, delivery and VAT paid"
+          value={feesAndCharges}
+        />
+        {otherCharges > 0 && <Row label="Other charges" value={otherCharges} />}
+        <Row label="Stocking" value={stockingCharges} />
+        <Row label="Prep costs" value={prepCosts} />
+        <Row label="Warranty" value={warranty} />
+      </dl>
+      <Divider />
+      <dl className="flex flex-col gap-1">
+        <Row label="Total buying" value={totalBuying} bold />
+        <Row label="Base cost" value={baseCost} bold />
+      </dl>
+      <Divider />
+      <dl className="flex flex-col gap-1">
+        <Row
+          label="Listing price"
+          value={listingPrice}
+          tone={listingPrice !== null && listingPrice > 0 ? "neutral" : "muted"}
+        />
+        <Row
+          label="Estimated profit"
+          value={profit}
+          tone={
+            profit === null
+              ? "muted"
+              : profit > 0
+                ? "positive"
+                : profit < 0
+                  ? "negative"
+                  : "neutral"
+          }
+          bold
+        />
+      </dl>
+      {children}
+    </Card>
   );
 }
 
 function Row({
   label,
+  hint,
   value,
   bold,
   tone,
 }: {
   label: string;
+  hint?: string;
   value: number | null;
   bold?: boolean;
   tone?: "positive" | "negative" | "muted" | "neutral";
 }) {
   return (
-    <tr>
-      <th
-        scope="row"
+    <div className="flex items-baseline justify-between gap-2">
+      <dt
         className={cn(
-          "py-1 pr-2 text-left align-baseline text-sm font-normal text-muted-foreground",
-          bold && "font-semibold text-foreground",
+          "text-sm text-(--text-secondary)",
+          bold && "font-semibold text-(--text)",
         )}
       >
         {label}
-      </th>
-      <td
+        {hint ? (
+          <span className="block text-xs font-normal text-(--text-secondary)">
+            {hint}
+          </span>
+        ) : null}
+      </dt>
+      <dd
         className={cn(
-          "py-1 text-right align-baseline text-sm tabular-nums text-foreground",
+          "text-right text-sm tabular-nums text-(--text)",
           bold && "font-semibold",
-          tone === "positive" && "text-[#014b40]",
-          tone === "negative" && "text-[#8e0b21]",
-          tone === "muted" && "text-muted-foreground/60",
+          tone === "positive" && "text-(--text-success)",
+          tone === "negative" && "text-(--text-critical)",
+          tone === "muted" && "text-(--text-secondary)",
         )}
       >
         {formatCurrency(value)}
-      </td>
-    </tr>
-  );
-}
-
-function SubItem({ text }: { text: string }) {
-  return (
-    <tr>
-      <td colSpan={2} className="pb-2 pl-3 align-baseline">
-        <span className="text-xs text-muted-foreground">· {text}</span>
-      </td>
-    </tr>
-  );
-}
-
-function SectionDivider() {
-  return (
-    <tr>
-      <td colSpan={2} className="py-1">
-        <div className="border-t border-dashed border-border" />
-      </td>
-    </tr>
+      </dd>
+    </div>
   );
 }

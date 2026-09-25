@@ -9,48 +9,47 @@ import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
 
 /**
- * Button — Shopify admin style (Polaris), a native <button>.
+ * Button — the Polaris Button, drawn with the kit's own `p-btn` classes
+ * (src/components/polaris/styles/components.css) so it matches the Polaris
+ * component exactly: 28px tall, radius-200, 12px medium text, bevelled
+ * shadows, 2px focus outline, and every colour from the theme tokens.
  *
- * Pills: fully rounded, 32px tall, 13px medium text. Primary is near-black,
- * secondary/outline white with a hairline, ghost has no chrome. Colours come
- * from the theme tokens (--primary, --border, --accent…), which polaris-theme
- * points at Shopify's values. Same API as before, so every call site —
- * including `render` / `asChild` (e.g. <Button render={<Link/>}>) — keeps
- * working unchanged.
+ * Same API as before, so every call site — including `render` / `asChild`
+ * (e.g. <Button render={<Link/>}>) — keeps working unchanged:
+ *   default → primary · secondary / outline → secondary · ghost → tertiary
+ *   link → plain · destructive → primary critical
+ *   destructive-outline → secondary critical
+ * Sizes: xs = micro (24px) · sm / default = medium (28px) · lg = large (32px).
  */
 const buttonVariants = cva(
   [
-    "relative inline-flex shrink-0 cursor-pointer select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-full border font-medium no-underline outline-none",
-    "transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
-    "disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50",
+    "p-btn gap-1",
+    "aria-disabled:pointer-events-none aria-disabled:bg-(--bg-fill-disabled) aria-disabled:text-(--text-disabled) aria-disabled:shadow-none",
     "[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   ].join(" "),
   {
     defaultVariants: { size: "default", variant: "default" },
     variants: {
       size: {
-        default: "h-8 px-3 text-[13px] leading-5",
-        icon: "size-8",
-        "icon-lg": "size-9",
-        "icon-sm": `size-7 ${hitTarget}`,
-        "icon-xl": "size-10",
-        "icon-xs": `size-6 ${hitTarget}`,
-        lg: "h-9 px-4 text-[13px] leading-5",
-        sm: `h-7 gap-1 px-2.5 text-xs ${hitTarget}`,
-        xl: "h-10 px-5 text-sm",
-        xs: `h-6 gap-1 px-2 text-xs ${hitTarget}`,
+        default: "",
+        icon: "p-btn--icon-only size-7",
+        "icon-lg": "p-btn--large p-btn--icon-only size-8",
+        "icon-sm": `p-btn--icon-only size-7 ${hitTarget}`,
+        "icon-xl": "p-btn--large p-btn--icon-only size-9",
+        "icon-xs": `p-btn--micro p-btn--icon-only size-6 ${hitTarget}`,
+        lg: "p-btn--large",
+        sm: hitTarget,
+        xl: "p-btn--large min-h-9 px-4",
+        xs: `p-btn--micro ${hitTarget}`,
       },
       variant: {
-        default:
-          "border-primary bg-primary font-semibold text-primary-foreground hover:bg-primary/85",
-        destructive:
-          "border-destructive bg-destructive text-white hover:bg-destructive/90",
-        "destructive-outline":
-          "border-border bg-card text-destructive-foreground hover:bg-destructive/5",
-        ghost: "border-transparent bg-transparent text-foreground hover:bg-accent",
-        link: "h-auto border-transparent bg-transparent px-0 text-foreground underline-offset-4 hover:underline",
-        outline: "border-border bg-card text-foreground hover:bg-accent",
-        secondary: "border-border bg-card text-foreground hover:bg-accent",
+        default: "p-btn--primary",
+        destructive: "p-btn--primary p-btn--tone-critical",
+        "destructive-outline": "p-btn--secondary p-btn--tone-critical",
+        ghost: "p-btn--tertiary",
+        link: "p-btn--plain",
+        outline: "p-btn--secondary",
+        secondary: "p-btn--secondary",
       },
     },
   },

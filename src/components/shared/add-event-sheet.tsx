@@ -47,9 +47,9 @@ interface EventDraft {
 }
 
 const KIND_DOT: Record<EventKind, string> = {
-  appointment: "bg-sky-500",
-  workshop: "bg-amber-500",
-  maintenance: "bg-violet-500",
+  appointment: "bg-(--bg-fill-emphasis)",
+  workshop: "bg-(--bg-fill-warning)",
+  maintenance: "bg-(--bg-fill-magic)",
 };
 
 const KINDS: { key: EventKind; label: string }[] = [

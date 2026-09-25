@@ -10,8 +10,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button, SkeletonBodyText } from "@/components/polaris";
 import {
   VEHICLE_LOCATION_LABELS,
   type LocationMovement,
@@ -134,7 +133,7 @@ export function LocationHistoryDrawer({
         side="right"
         className="flex flex-col gap-0 p-0 sm:max-w-md"
       >
-        <SheetHeader className="border-b px-5 py-4">
+        <SheetHeader className="border-b border-(--border) px-5 py-4">
           <SheetTitle>Location history</SheetTitle>
           <SheetDescription>
             {vehicle.stockId} · {vehicle.make} {vehicle.model}{" "}
@@ -144,13 +143,9 @@ export function LocationHistoryDrawer({
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {movements === null ? (
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
+            <SkeletonBodyText lines={8} />
           ) : movements.length === 0 ? (
-            <div className="text-sm italic text-muted-foreground">
+            <div className="body-md text-(--text-secondary)">
               No movements recorded yet.
             </div>
           ) : (
@@ -179,12 +174,12 @@ export function LocationHistoryDrawer({
                       hasBody ? (
                         <div className="space-y-2">
                           {context ? (
-                            <div className="text-xs text-muted-foreground">
+                            <div className="body-sm text-(--text-secondary)">
                               {context}
                             </div>
                           ) : null}
                           {m.expectedReturnAt ? (
-                            <div className="text-xs text-muted-foreground">
+                            <div className="body-sm text-(--text-secondary)">
                               Expected back: {fullDateTime(m.expectedReturnAt)}
                               {m.actualReturnAt ? (
                                 <>
@@ -194,17 +189,15 @@ export function LocationHistoryDrawer({
                             </div>
                           ) : null}
                           {m.notes ? (
-                            <div className="rounded-md bg-muted/40 px-2 py-1 text-xs">
+                            <div className="body-sm rounded-(--radius-200) bg-(--bg-surface-secondary) px-2 py-1 text-(--text)">
                               {m.notes}
                             </div>
                           ) : null}
                           {isOpenStaffOrGarage && canMarkReturned ? (
                             <div>
                               <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleMarkReturned(m)}
+                                size="micro"
+                                onClick={() => void handleMarkReturned(m)}
                               >
                                 Mark returned
                               </Button>
@@ -216,7 +209,7 @@ export function LocationHistoryDrawer({
                   >
                     <span className="font-medium">
                       {fromLabel}{" "}
-                      <ArrowRight className="inline size-3 align-baseline text-muted-foreground" />{" "}
+                      <ArrowRight className="inline size-3 align-baseline text-(--icon-secondary)" />{" "}
                       {toLabel}
                     </span>
                   </TimelineItem>

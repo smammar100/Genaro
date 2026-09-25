@@ -1,0 +1,5 @@
+/* Everything for apps without Tailwind: import once, e.g. in app/layout.tsx: import '@/components/polaris/styles/polaris.css'.
+ * With Tailwind v4, import the files from globals.css instead (see tailwind.css). */
+@import './tokens.css';
+@import './base.css';
+@import './components.css';

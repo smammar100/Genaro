@@ -10,6 +10,10 @@ import type { LeadChannel } from "@/lib/types";
  *
  * Pass either the resolved `channel` object or just the colour + label —
  * both shapes are accepted so callers don't always need the full LeadChannel.
+ *
+ * The dot colour is the company's own per-channel `colour` (user data), so it
+ * stays an inline style; everything else is Polaris tokens. The surround
+ * mirrors a neutral Polaris Tag.
  */
 type Props =
   | {
@@ -41,7 +45,7 @@ export function ChannelChip(props: Props) {
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-foreground",
+          "inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-(--text)",
           className,
         )}
       >
@@ -58,7 +62,7 @@ export function ChannelChip(props: Props) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-card px-2 py-0.5 text-xs font-medium text-foreground",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-(--radius-200) bg-(--bg-fill-tertiary) px-1.5 py-0.5 text-xs font-medium text-(--text)",
         className,
       )}
     >

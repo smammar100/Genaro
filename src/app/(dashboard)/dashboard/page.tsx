@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useHasVehicles } from "@/hooks/use-has-vehicles";
-import { cn } from "@/lib/utils";
+import { Grid, Page } from "@/components/polaris";
 import { DashboardGreeting } from "@/components/dashboard/dashboard-greeting";
 import { DashboardWelcome } from "@/components/dashboard/dashboard-welcome";
 import { DashboardKpiRow } from "@/components/dashboard/dashboard-kpi-row";
@@ -58,7 +58,7 @@ export default function DashboardPage() {
     Number(flags.stock) + Number(flags.calendar) + Number(flags.news);
 
   // Layout follows Dashboard Home.dc.html: greeting, KPI strip, the deals
-  // table full width, then three equal cards. Gaps are the design's 16px.
+  // table full width, then up to three equal cards.
   //
   // NOTE: the design has no "Today's updates" card, so that widget is no
   // longer mounted here. The component is kept — nothing else renders it — so
@@ -70,8 +70,12 @@ export default function DashboardPage() {
   // product looks broken. Show them what to do instead.
   if (!hasVehicles) return <DashboardWelcome />;
 
+  // Polaris analytics/home pattern: a full-width Page, the greeting header,
+  // the stat-tile card, then a Grid of cards (12 columns at lg, 6 below).
+  const row3Span = 12 / row3;
+
   return (
-    <div className="flex flex-col gap-4">
+    <Page fullWidth>
       <DashboardGreeting />
 
       <DashboardKpiRow />
@@ -79,21 +83,24 @@ export default function DashboardPage() {
       {flags.deals && <DashboardRecentDeals />}
 
       {row3 > 0 && (
-        <div
-          className={cn(
-            "grid items-stretch gap-3",
-            row3 === 3
-              ? "lg:grid-cols-3"
-              : row3 === 2
-                ? "lg:grid-cols-2"
-                : "grid-cols-1",
+        <Grid>
+          {flags.stock && (
+            <Grid.Cell columnSpan={{ xs: 6, lg: row3Span }}>
+              <DashboardStockOverview />
+            </Grid.Cell>
           )}
-        >
-          {flags.stock && <DashboardStockOverview />}
-          {flags.calendar && <DashboardUpcomingAppointments />}
-          {flags.news && <DashboardRecentActivity />}
-        </div>
+          {flags.calendar && (
+            <Grid.Cell columnSpan={{ xs: 6, lg: row3Span }}>
+              <DashboardUpcomingAppointments />
+            </Grid.Cell>
+          )}
+          {flags.news && (
+            <Grid.Cell columnSpan={{ xs: 6, lg: row3Span }}>
+              <DashboardRecentActivity />
+            </Grid.Cell>
+          )}
+        </Grid>
       )}
-    </div>
+    </Page>
   );
 }

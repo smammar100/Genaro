@@ -1,5 +1,6 @@
 "use client";
 
+import { Page } from "@/components/polaris";
 import { SharedCalendar } from "@/components/calendar/shared-calendar";
 
 /**
@@ -9,19 +10,16 @@ import { SharedCalendar } from "@/components/calendar/shared-calendar";
  */
 export default function AppointmentsPage() {
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-semibold">Appointments</h1>
-        <p className="mt-0.5 text-[13px] text-muted-foreground">
-          All booked customer test drives and viewings. Schedule new ones and
-          see what is coming up.
-        </p>
-      </div>
+    <Page
+      title="Appointments"
+      subtitle="All booked customer test drives and viewings. Schedule new ones and see what is coming up."
+      fullWidth
+    >
       <SharedCalendar
         kinds={["appt"]}
         ctaLabel="Book appointment"
         lockCreateKind
       />
-    </div>
+    </Page>
   );
 }

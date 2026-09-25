@@ -1,14 +1,12 @@
 "use client";
 import { variantLabel } from "@/lib/vehicle-variant";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Megaphone } from "lucide-react";
 import type { Listing, Vehicle } from "@/lib/types";
 import { listingService } from "@/lib/services/listing-service";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/shared/empty-state";
+import { Banner, Button, EmptyState, Tag } from "@/components/polaris";
 import { Field, FieldGrid, Panel } from "./primitives";
 import { usePermissions } from "@/hooks/use-permissions";
 import {
@@ -48,17 +46,15 @@ export function ListingTab({ vehicle }: ListingTabProps) {
   if (listing === null) {
     return (
       <EmptyState
-        icon={Megaphone}
-        title="Not listed yet"
-        description="Vehicles in 'ready' status can be listed for sale."
-        action={
-          <Button asChild size="sm">
-            <Link href={`/vehicles/${vehicle.id}/advert`}>
-              Open Advert editor
-            </Link>
-          </Button>
-        }
-      />
+        icon={<Megaphone />}
+        heading="Not listed yet"
+        action={{
+          content: "Open advert editor",
+          url: `/vehicles/${vehicle.id}/advert`,
+        }}
+      >
+        Vehicles in &lsquo;ready&rsquo; status can be listed for sale.
+      </EmptyState>
     );
   }
 
@@ -84,21 +80,18 @@ export function ListingTab({ vehicle }: ListingTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start gap-2 rounded-lg bg-[#f1f1f1] px-3 py-2 text-xs leading-relaxed text-[#303030] dark:bg-violet-500/10 dark:text-violet-200">
-        <Megaphone className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        <span>
-          Mapped to AutoTrader&apos;s taxonomy: get it wrong and the advert is
-          filtered out of search results entirely. This is how buyers see the
-          car across AutoTrader, the website and partner channels.
-        </span>
-      </div>
+      <Banner tone="info" icon={<Megaphone />}>
+        Mapped to AutoTrader&apos;s taxonomy: get it wrong and the advert is
+        filtered out of search results entirely. This is how buyers see the
+        car across AutoTrader, the website and partner channels.
+      </Banner>
 
       <Panel
-        title="Advert Specification"
+        title="Advert specification"
         subtitle="Mapped to AutoTrader's product hierarchy"
         action={
-          <Button asChild size="sm">
-            <Link href={`/vehicles/${vehicle.id}/advert`}>Edit Advert</Link>
+          <Button variant="plain" url={`/vehicles/${vehicle.id}/advert`}>
+            Edit advert
           </Button>
         }
       >
@@ -113,10 +106,10 @@ export function ListingTab({ vehicle }: ListingTabProps) {
           <Field label="Trim">
             {tax.trim ?? vehicle.trim ?? vehicle.variantName ?? "—"}
           </Field>
-          <Field label="Fuel Type">
+          <Field label="Fuel type">
             <span className="capitalize">{tax.fuelType ?? vehicle.fuelType}</span>
           </Field>
-          <Field label="Engine Size">{engineSize}</Field>
+          <Field label="Engine size">{engineSize}</Field>
           <Field label="Transmission">
             <span className="capitalize">
               {tax.transmission ?? vehicle.transmission}
@@ -129,7 +122,7 @@ export function ListingTab({ vehicle }: ListingTabProps) {
       </Panel>
 
       <Panel
-        title="Vehicle Description"
+        title="Vehicle description"
         subtitle={`${descChars.toLocaleString()} chars`}
       >
         <DescriptionEditor
@@ -140,7 +133,7 @@ export function ListingTab({ vehicle }: ListingTabProps) {
       </Panel>
 
       <Panel
-        title="Website Highlights"
+        title="Website highlights"
         subtitle="Shown as bullet points on the listing card"
       >
         <HighlightsEditor
@@ -156,16 +149,12 @@ export function ListingTab({ vehicle }: ListingTabProps) {
           title="Equipment"
           subtitle={`${features.length} feature${features.length === 1 ? "" : "s"}`}
         >
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             {features.map((f) => (
-              <span
-                key={f}
-                className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground"
-              >
-                {f}
-              </span>
+              <Tag key={f}>{f}</Tag>
             ))}
           </div>
+
         </Panel>
       )}
     </div>

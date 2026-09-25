@@ -51,7 +51,7 @@ export function PostcodeLookupField({
     }
     const [suggestion] = await lookup(postcode);
     if (!suggestion) {
-      notify.info("No address found for that postcode, enter manually");
+      notify.info("No address found for that postcode. Enter it manually.");
       return;
     }
     // Keep whatever house number/street the user already typed on line 1 —
@@ -62,7 +62,7 @@ export function PostcodeLookupField({
       suggestion.county,
       suggestion.postcode,
     ]);
-    notify.success("Area filled, add your house number and street");
+    notify.success("Area filled. Add the house number and street.");
   }
 
   return (
@@ -90,15 +90,15 @@ export function PostcodeLookupField({
           className="w-full sm:w-auto"
         >
           {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 aria-hidden className="mr-2 size-4 animate-spin" />
           ) : (
-            <Search className="mr-2 h-4 w-4" />
+            <Search aria-hidden className="mr-2 size-4" />
           )}
-          {isLoading ? "Looking up…" : "Lookup address"}
+          {isLoading ? "Looking up…" : "Look up address"}
         </Button>
       </div>
       <div className="sm:col-span-3">
-        <p>Address</p>
+        <p className="mb-1 text-sm font-medium text-(--text)">Address</p>
         <div className="flex flex-col gap-2">
           {lines.map((line, i) => (
             <Input

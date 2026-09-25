@@ -1,19 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Building2, RefreshCw } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
 import { notify } from "@/lib/toast";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Badge,
+  Banner,
+  Card,
+  DataTable,
+  EmptyState,
+  Page,
+  Pagination,
+  SkeletonBodyText,
+  type BadgeTone,
+} from "@/components/polaris";
 import type { AdvertiserRecord } from "@/lib/types";
 
 const PAGE_SIZE = 20;
@@ -36,6 +36,11 @@ function formatWhen(iso: string | null): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+/** Live/active advertisers read as healthy; any other AutoTrader status stays neutral. */
+function statusTone(status: string): BadgeTone | undefined {
+  return /^(active|live|enabled)$/i.test(status.trim()) ? "success" : undefined;
 }
 
 /**
@@ -135,143 +140,106 @@ export default function AdvertisersPage() {
   }, [load]);
 
   if (permsLoading) {
-    return <div className="text-sm text-muted-foreground">Loading session…</div>;
+    return (
+      <Page title="Advertisers">
+        <p className="body-md text-(--text-secondary)">Loading session…</p>
+      </Page>
+    );
   }
   if (!canRead) {
     return (
-      <div className="text-sm text-muted-foreground">
-        You don&apos;t have access to AutoTrader Advertisers.
-      </div>
+      <Page title="Advertisers">
+        <Banner tone="warning">
+          You don&apos;t have access to AutoTrader advertisers.
+        </Banner>
+      </Page>
     );
   }
 
   const advertisers = data?.advertisers ?? [];
   const total = data?.totalResults ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const currentPage = data?.page ?? page;
 
   return (
     // Padding comes from the layout's PageShell — pages don't add their own
     // (GEN-61).
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-xl font-semibold">
-            <Building2 className="size-5" /> Advertisers
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Dealers configured on our AutoTrader Connect integration. Sync pulls
-            the latest list; updates arrive automatically via notifications.
-          </p>
-        </div>
-        {canSync ? (
-          <Button onClick={handleSync} disabled={syncing}>
-            <RefreshCw className={syncing ? "size-4 animate-spin" : "size-4"} />
-            {syncing ? "Syncing…" : "Sync now"}
-          </Button>
-        ) : null}
-      </header>
-
-      {/* bg-card: this wrapper had a border but no surface, so the table sat
-          straight on the page grey (GEN-62). */}
-      <div className="overflow-hidden rounded-lg border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Advertiser ID</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Postcode</TableHead>
-              <TableHead>Synced</TableHead>
-              <TableHead>Updated</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-muted-foreground">
-                  Loading…
-                </TableCell>
-              </TableRow>
-            ) : loadError ? (
-              <TableRow>
-                <TableCell colSpan={6}>
-                  <div className="flex flex-col items-start gap-2 py-4">
-                    <span className="text-sm font-medium text-destructive">
-                      Couldn&apos;t load advertisers ({loadError}).
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => void load(page)}
-                    >
-                      <RefreshCw className="size-4" />
-                      Retry
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : advertisers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-muted-foreground">
-                  No advertisers yet.{" "}
-                  {canSync ? "Run a sync to pull them from AutoTrader." : ""}
-                </TableCell>
-              </TableRow>
+    <Page
+      title="Advertisers"
+      subtitle="Dealers configured on our AutoTrader Connect integration. Sync pulls the latest list; updates arrive automatically via notifications."
+      fullWidth
+      primaryAction={
+        canSync
+          ? {
+              content: syncing ? "Syncing…" : "Sync now",
+              loading: syncing,
+              onAction: () => void handleSync(),
+            }
+          : undefined
+      }
+    >
+      {loading ? (
+        <Card>
+          <SkeletonBodyText lines={6} />
+        </Card>
+      ) : loadError ? (
+        <Banner
+          tone="critical"
+          title="Couldn't load advertisers"
+          action={{ content: "Retry", onAction: () => void load(page) }}
+        >
+          {loadError}
+        </Banner>
+      ) : advertisers.length === 0 ? (
+        <EmptyState heading="No advertisers yet">
+          {canSync ? "Run a sync to pull them from AutoTrader." : undefined}
+        </EmptyState>
+      ) : (
+        <DataTable
+          headings={[
+            "Advertiser ID",
+            "Name",
+            "Status",
+            "Postcode",
+            "Synced",
+            "Updated",
+          ]}
+          rows={advertisers.map((a) => [
+            <span key="id" className="body-sm font-mono">
+              {a.advertiserId}
+            </span>,
+            a.name ?? "—",
+            a.status ? (
+              <Badge key="status" tone={statusTone(a.status)}>
+                {a.status}
+              </Badge>
             ) : (
-              advertisers.map((a) => (
-                <TableRow key={a.advertiserId}>
-                  <TableCell className="font-mono text-xs">
-                    {a.advertiserId}
-                  </TableCell>
-                  <TableCell>{a.name ?? "—"}</TableCell>
-                  <TableCell>
-                    {a.status ? (
-                      <Badge variant="secondary">{a.status}</Badge>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-                  <TableCell>{a.postcode ?? "—"}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {formatWhen(a.syncedAt)}
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {formatWhen(a.atUpdatedAt)}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              "—"
+            ),
+            a.postcode ?? "—",
+            <span key="synced" className="body-sm text-(--text-secondary)">
+              {formatWhen(a.syncedAt)}
+            </span>,
+            <span key="updated" className="body-sm text-(--text-secondary)">
+              {formatWhen(a.atUpdatedAt)}
+            </span>,
+          ])}
+        />
+      )}
 
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className="body-md text-(--text-secondary)">
           {loadError
             ? "—"
-            : `${total} advertiser${total === 1 ? "" : "s"} · page ${
-                data?.page ?? page
-              } of ${totalPages}`}
+            : `${total} advertiser${total === 1 ? "" : "s"} · page ${currentPage} of ${totalPages}`}
         </span>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={loading || (data?.page ?? page) <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={loading || (data?.page ?? page) >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Next
-          </Button>
-        </div>
+        <Pagination
+          hasPrevious={!loading && currentPage > 1}
+          hasNext={!loading && currentPage < totalPages}
+          onPrevious={() => setPage((p) => Math.max(1, p - 1))}
+          onNext={() => setPage((p) => p + 1)}
+        />
       </div>
-    </div>
+    </Page>
   );
 }

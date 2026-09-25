@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, History as HistoryIcon, MapPin } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { History as HistoryIcon } from "lucide-react";
+import { Button, Card, SkeletonBodyText } from "@/components/polaris";
 import {
   VEHICLE_LOCATION_LABELS,
   type LocationMovement,
@@ -104,41 +103,35 @@ export function LocationCard({
 
   const days = daysSince(vehicle.locationSince);
   return (
-    <div className="rounded-2xl border bg-card p-4">
-      <div className="mb-3 flex items-center gap-2 text-[13px] font-medium text-muted-foreground">
-        <MapPin className="size-3.5" /> Location
-      </div>
-
-      <div className="space-y-1">
-        <div className="text-sm">
+    <Card title="Location">
+      <div className="flex flex-col gap-1">
+        <div className="body-md text-(--text)">
           Currently at:{" "}
-          <span className="font-medium text-foreground">
+          <span className="font-semibold">
             {VEHICLE_LOCATION_LABELS[vehicle.currentLocation]}
           </span>
         </div>
-        <div className="text-xs text-muted-foreground">
+        <div className="body-sm text-(--text-secondary)">
           Since {shortDate(vehicle.locationSince)} · {days} day{days === 1 ? "" : "s"}
           {vehicle.outForTestDrive ? " · out for test drive" : ""}
         </div>
       </div>
 
-      <div className="mt-4 space-y-1">
-        <div className="text-xs font-medium text-muted-foreground">Recent moves</div>
+      <div className="mt-2 flex flex-col gap-1">
+        <div className="body-sm font-semibold text-(--text-secondary)">
+          Recent moves
+        </div>
         {movements === null ? (
-          <div className="space-y-1.5 pt-1">
-            <Skeleton className="h-3 w-full" />
-            <Skeleton className="h-3 w-5/6" />
-            <Skeleton className="h-3 w-4/6" />
-          </div>
+          <SkeletonBodyText lines={3} />
         ) : movements.length === 0 ? (
-          <div className="text-xs italic text-muted-foreground">
+          <div className="body-sm text-(--text-secondary)">
             No movements yet.
           </div>
         ) : (
-          <ul className="space-y-1 text-xs">
+          <ul className="flex flex-col gap-1">
             {movements.map((m) => (
-              <li key={m.id} className="flex items-baseline gap-2">
-                <span className="tabular-nums text-muted-foreground">
+              <li key={m.id} className="body-sm flex items-baseline gap-2 text-(--text)">
+                <span className="tabular-nums text-(--text-secondary)">
                   {shortDate(m.createdAt)}
                 </span>
                 <span>{describeMovement(m, vendorNames, staffNames)}</span>
@@ -148,25 +141,22 @@ export function LocationCard({
         )}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        {onViewHistory ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="gap-1"
-            onClick={onViewHistory}
-          >
-            <HistoryIcon className="size-3.5" />
-            View full history
-          </Button>
-        ) : null}
-        {onMove ? (
-          <Button type="button" size="sm" className="ml-auto gap-1" onClick={onMove}>
-            Move <ArrowRight className="size-3.5" />
-          </Button>
-        ) : null}
-      </div>
-    </div>
+      {onViewHistory || onMove ? (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {onViewHistory ? (
+            <Button variant="tertiary" icon={<HistoryIcon />} onClick={onViewHistory}>
+              View full history
+            </Button>
+          ) : null}
+          {onMove ? (
+            <div className="ml-auto">
+              <Button icon="ArrowRightMinor" onClick={onMove}>
+                Move vehicle
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </Card>
   );
 }

@@ -1,11 +1,12 @@
 "use client";
 
 /**
- * Global command palette — Ctrl/Cmd+K anywhere in the dashboard.
+ * Global command palette — Ctrl/Cmd+K anywhere in the dashboard, or the top
+ * bar's search field (via `openCommandPalette`).
  *
  * This shell only owns the shortcut and the open state. The dialog (cmdk and
  * its Radix dialog, see ./command-palette-dialog) is fetched on the first
- * Ctrl/Cmd+K, so pages that never open it never download it.
+ * open, so pages that never open it never download it.
  */
 
 import { useEffect, useState } from "react";
@@ -14,6 +15,14 @@ import dynamic from "next/dynamic";
 const CommandPaletteDialog = dynamic(() => import("./command-palette-dialog"), {
   ssr: false,
 });
+
+/** Window event that opens the palette from anywhere, without importing its state. */
+const OPEN_EVENT = "cc:open-command-palette";
+
+/** Opens the palette (loading the dialog on first use). */
+export function openCommandPalette() {
+  window.dispatchEvent(new Event(OPEN_EVENT));
+}
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
@@ -30,8 +39,16 @@ export function CommandPalette() {
         setOpen((o) => !o);
       }
     }
+    function onOpen() {
+      setRequested(true);
+      setOpen(true);
+    }
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    window.addEventListener(OPEN_EVENT, onOpen);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener(OPEN_EVENT, onOpen);
+    };
   }, []);
 
   return requested ? (

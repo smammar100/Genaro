@@ -12,9 +12,9 @@ import { useSearchParams } from "next/navigation";
  * never intercepts clicks — every interactive element underneath
  * stays clickable while the overlay is up.
  *
- * Sits inside `<main>` in the dashboard layout so it tracks the
- * scroll position naturally. Aligned to the 1152px content cap so
- * what you see is exactly what `<PageShell>` is laying out.
+ * Fixed over the viewport, aligned to a centred 1152px content cap
+ * with 24px gutters — the page padding the shell and Polaris <Page>
+ * use.
  *
  * See plan §G4 (path: `.claude/plans/`) for the spec.
  */
@@ -25,7 +25,7 @@ export function GridOverlay() {
   const columnTracks = `
     repeating-linear-gradient(
       to right,
-      rgba(59, 130, 246, 0.08) 0 calc((1152px - 11 * 24px) / 12),
+      color-mix(in srgb, var(--border-emphasis) 8%, transparent) 0 calc((1152px - 11 * 24px) / 12),
       transparent calc((1152px - 11 * 24px) / 12) calc(((1152px - 11 * 24px) / 12) + 24px)
     )
   `.trim();
@@ -33,7 +33,7 @@ export function GridOverlay() {
   const baselineRhythm = `
     repeating-linear-gradient(
       to bottom,
-      rgba(0, 0, 0, 0.04) 0 1px,
+      var(--bg-fill-transparent-hover) 0 1px,
       transparent 1px 4px
     )
   `.trim();

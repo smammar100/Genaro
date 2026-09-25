@@ -1,7 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ContextualSaveBar } from "@/components/polaris";
 
 interface Props {
   changeCount: number;
@@ -22,32 +21,21 @@ export function PermissionsGridSaveBar({
     <div
       role="toolbar"
       aria-label={`${changeCount} unsaved permission changes`}
-      className="sticky bottom-4 z-10 mx-auto flex w-full max-w-[1400px] flex-wrap items-center justify-between gap-3 rounded-xl border bg-background px-4 py-2.5 shadow-lg"
+      className="sticky bottom-4 z-10 mx-auto w-full max-w-screen-2xl"
       data-testid="permissions-save-bar"
     >
-      <span className="text-sm font-medium tabular-nums">
-        {changeCount} unsaved change{changeCount === 1 ? "" : "s"}
-      </span>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onDiscard}
-          disabled={saving}
-          data-testid="permissions-discard"
-        >
-          Discard
-        </Button>
-        <Button
-          size="sm"
-          onClick={onSave}
-          disabled={saving}
-          data-testid="permissions-save"
-        >
-          {saving && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
-          Save changes
-        </Button>
-      </div>
+      <ContextualSaveBar
+        className="rounded-(--radius-300) shadow-(--shadow-600)"
+        message={`${changeCount} unsaved change${changeCount === 1 ? "" : "s"}`}
+        discardAction={{
+          content: "Discard",
+          // Discard is disabled while a save is in flight.
+          onAction: () => {
+            if (!saving) onDiscard();
+          },
+        }}
+        saveAction={{ content: "Save changes", loading: saving, onAction: onSave }}
+      />
     </div>
   );
 }

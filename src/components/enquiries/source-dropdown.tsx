@@ -55,16 +55,16 @@ export function SourceDropdown({
           aria-invalid={invalid}
           className={cn(
             "w-full justify-between font-normal",
-            !selected && "text-muted-foreground",
+            !selected && "text-(--text-secondary)",
             invalid && "border-destructive",
           )}
         >
           {selected ? selected.label : placeholder}
-          <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+          <ChevronsUpDown aria-hidden className="ml-2 size-4 text-(--text-secondary)" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[--radix-popover-trigger-width] p-0"
+        className="w-(--anchor-width) p-0"
         align="start"
       >
         <Command>
@@ -83,7 +83,7 @@ export function SourceDropdown({
                 >
                   <Check
                     className={cn(
-                      "mr-2 h-4 w-4",
+                      "mr-2 size-4",
                       s.value === value ? "opacity-100" : "opacity-0",
                     )}
                   />

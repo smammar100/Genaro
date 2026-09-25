@@ -1,0 +1,29 @@
+/*
+ * Polaris × Tailwind CSS v4. In app/globals.css:
+ *
+ *   @import "tailwindcss";
+ *   @import "../components/polaris/styles/tokens.css";
+ *   @import "../components/polaris/styles/base.css";
+ *   @import "../components/polaris/styles/components.css" layer(components);
+ *   @import "../components/polaris/styles/tailwind.css";
+ *   @import "../components/polaris/styles/shadcn.css";      (only if you use shadcn/ui)
+ *
+ * components.css goes in the components layer so Tailwind utilities can still adjust layout around components.
+ *
+ * Styling your own markup:
+ *   - Colors, radius, shadows: reference the token directly with Tailwind's CSS-variable shorthand —
+ *       bg-(--bg-surface) text-(--text-secondary) border-(--border-secondary) rounded-(--radius-300) shadow-(--shadow-100)
+ *     The utility name + token name is the whole mapping, and it follows the theme automatically.
+ *   - Spacing: Tailwind's default 4px scale already equals Polaris space tokens: p-4 = space-400 (16px),
+ *     gap-2 = space-200 (8px), px-3 = space-300, py-1.5 = space-150, p-0.5 = space-050.
+ *   - Text: the type classes from tokens.css — heading-lg, heading-sm, body-md, body-sm, body-md-numeric…
+ */
+
+/* dark: variant matches both data-theme="dark" and class="dark" (next-themes / shadcn). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *));
+
+@theme inline {
+  /* Inter everywhere Tailwind sets font-family (font-sans, preflight). */
+  --font-sans: var(--font-inter, Inter), -apple-system, BlinkMacSystemFont, "San Francisco", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+}

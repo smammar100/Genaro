@@ -19,8 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Button, Card, InlineError } from "@/components/polaris";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -212,8 +211,7 @@ export function NewWarrantyDialog({
           className="flex flex-col gap-4 px-6"
         >
           {/* Vehicle & customer */}
-          <Card className="flex flex-col gap-3 p-4">
-            <h3 className="text-sm font-semibold">Vehicle &amp; customer</h3>
+          <Card title="Vehicle and customer">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor={vehicleFieldId}>Vehicle</Label>
@@ -241,10 +239,10 @@ export function NewWarrantyDialog({
                       {(v: Vehicle) => (
                         <ComboboxItem key={v.id} value={v}>
                           <div className="flex flex-col">
-                            <span className="text-sm">
+                            <span className="body-md">
                               {v.registration} · {v.make} {v.model}
                             </span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="body-sm text-(--text-secondary)">
                               {v.stockId} · {v.status}
                             </span>
                           </div>
@@ -253,13 +251,11 @@ export function NewWarrantyDialog({
                     </ComboboxList>
                   </ComboboxPopup>
                 </Combobox>
-                {form.formState.errors.vehicleId && (
-                  <p className="text-xs text-destructive">
-                    {form.formState.errors.vehicleId.message}
-                  </p>
+                {form.formState.errors.vehicleId?.message && (
+                  <InlineError message={form.formState.errors.vehicleId.message} />
                 )}
                 {selectedVehicle && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="body-sm text-(--text-secondary)">
                     Stock {selectedVehicle.stockId}
                   </p>
                 )}
@@ -278,8 +274,7 @@ export function NewWarrantyDialog({
 
           {/* 3. Provider (external only) */}
           {type === "external" && (
-            <Card className="flex flex-col gap-3 p-4">
-              <h3 className="text-sm font-semibold">Provider</h3>
+            <Card title="Provider">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor={providerFieldId}>Provider</Label>
@@ -300,10 +295,8 @@ export function NewWarrantyDialog({
                       ))}
                     </SelectContent>
                   </Select>
-                  {form.formState.errors.provider && (
-                    <p className="text-xs text-destructive">
-                      {form.formState.errors.provider.message}
-                    </p>
+                  {form.formState.errors.provider?.message && (
+                    <InlineError message={form.formState.errors.provider.message} />
                   )}
                 </div>
                 <Field label="Provider reference (optional)">
@@ -317,8 +310,7 @@ export function NewWarrantyDialog({
           )}
 
           {/* 4. Coverage */}
-          <Card className="flex flex-col gap-3 p-4">
-            <h3 className="text-sm font-semibold">Coverage</h3>
+          <Card title="Coverage">
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor={durationFieldId}>Duration</Label>
@@ -362,8 +354,7 @@ export function NewWarrantyDialog({
           </Card>
 
           {/* 5. Pricing */}
-          <Card className="flex flex-col gap-3 p-4">
-            <h3 className="text-sm font-semibold">Pricing</h3>
+          <Card title="Pricing">
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Cost to customer (£)">
                 <Input
@@ -388,15 +379,13 @@ export function NewWarrantyDialog({
               its own px-6 lines up flush with the dialog edges, matching the
               header. mt-2 keeps a little breathing room above the divider. */}
           <DialogFooter className="-mx-6 mt-2">
+            <Button onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
+              variant="primary"
+              submit
+              loading={form.formState.isSubmitting}
             >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "Creating…" : "Create warranty"}
+              Create warranty
             </Button>
           </DialogFooter>
         </form>
@@ -419,7 +408,7 @@ function Field({
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={id}>{label}</Label>
       {isValidElement(children) ? cloneElement(children, { id }) : children}
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <InlineError message={error} />}
     </div>
   );
 }

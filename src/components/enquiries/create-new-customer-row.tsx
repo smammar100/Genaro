@@ -20,36 +20,39 @@ export function CreateNewCustomerRow({
   query,
 }: CreateNewCustomerRowProps) {
   const trimmed = query.trim();
+  // Same full-row selectable layout as CustomerResultRow (radio indicator,
+  // icon tile, two text lines), so it stays a token-styled native <button>.
   return (
     <button
       type="button"
       onClick={onSelect}
+      aria-pressed={selected}
       className={cn(
-        "group flex w-full items-center gap-3 rounded-md border border-dashed p-3 text-left transition-colors",
+        "group flex w-full items-center gap-3 rounded-(--radius-200) border border-dashed p-3 text-left text-(--text) transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--border-focus)",
         selected
-          ? "border-primary bg-primary/5"
-          : "border-border hover:border-primary/40 hover:bg-accent/40",
+          ? "border-(--border-emphasis) bg-(--bg-surface-secondary-selected)"
+          : "border-(--border) bg-(--bg-surface) hover:border-(--border-hover) hover:bg-(--bg-surface-hover)",
       )}
     >
       <div
         className={cn(
-          "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border",
-          selected ? "border-primary" : "border-border",
+          "flex size-5 shrink-0 items-center justify-center rounded-full border",
+          selected ? "border-(--border-emphasis)" : "border-(--border)",
         )}
       >
         {selected && (
-          <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+          <span className="size-2.5 rounded-full bg-(--bg-fill-emphasis)" />
         )}
       </div>
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
-        <Plus className="h-4 w-4 text-muted-foreground" />
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-(--bg-surface-secondary)">
+        <Plus aria-hidden className="size-4 text-(--text-secondary)" />
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="text-sm font-medium">Create new customer</span>
-        <p className="truncate text-xs text-muted-foreground">
+        <p className="truncate text-xs text-(--text-secondary)">
           {trimmed
-            ? `No good match for "${trimmed}", capture a fresh record.`
-            : "Capture a brand-new customer record."}
+            ? `No good match for “${trimmed}”. Create a new customer record.`
+            : "Create a new customer record."}
         </p>
       </div>
     </button>

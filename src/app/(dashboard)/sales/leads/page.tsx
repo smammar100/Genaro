@@ -3,14 +3,10 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Plus,
   UserPlus,
-  Search,
   Phone,
   Mail,
-  AlertTriangle,
   Car,
-  CalendarPlus,
   Clock,
   User as UserIcon,
   ArrowRight,
@@ -40,12 +36,22 @@ import type {
   Vehicle,
 } from "@/lib/types";
 import { ChannelChip, ChannelDropdown } from "@/components/lead-channels";
-import { Button } from "@/components/ui/button";
+import {
+  Avatar,
+  Banner,
+  Button,
+  Card,
+  ChoiceList,
+  EmptyState,
+  InlineError,
+  Page,
+  Select as PolarisSelect,
+  SkeletonBodyText,
+  TextField,
+} from "@/components/polaris";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -54,28 +60,16 @@ import {
   DialogHeader,
   DialogPanel,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { EmptyState } from "@/components/shared/empty-state";
 import { VehicleImage } from "@/components/shared/vehicle-image";
 import { VehiclePicker } from "@/components/shared/vehicle-picker";
-import { LeadStatusCell } from "@/components/data-grid";
-import { cn, getInitials } from "@/lib/utils";
+import {
+  LEAD_STATUS_LABEL,
+  LeadStatusBadge,
+} from "@/components/sales/status-badges";
+import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 
-const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
-  new: "New",
-  contacted: "Contacted",
-  appointment_booked: "Appointment Booked",
-  lost: "Lost",
-};
 // Pipeline order for the list + group separators.
 const STATUS_ORDER: LeadStatus[] = [
   "new",
@@ -83,12 +77,16 @@ const STATUS_ORDER: LeadStatus[] = [
   "appointment_booked",
   "lost",
 ];
+// Status dots in the lead list — icon tokens, matching the badge tones.
 const STATUS_DOT: Record<LeadStatus, string> = {
-  new: "bg-blue-500",
-  contacted: "bg-violet-500",
-  appointment_booked: "bg-amber-500",
-  lost: "bg-rose-500",
+  new: "bg-(--icon-info)",
+  contacted: "bg-(--icon-caution)",
+  appointment_booked: "bg-(--icon-success)",
+  lost: "bg-(--icon-critical)",
 };
+
+const sourceLabel = (s: LeadSource): string =>
+  s.replace("_", " ").replace(/^\w/, (c) => c.toUpperCase());
 
 interface LeadRow extends Lead {
   assigneeName: string;
@@ -126,7 +124,7 @@ type CreateOutput = z.output<typeof createSchema>;
 const STATUS_TARGETS: { value: LeadStatus; label: string; hint: string }[] = [
   { value: "new", label: "New", hint: "Fresh enquiry, not yet actioned" },
   { value: "contacted", label: "Contacted", hint: "Reached out, awaiting next step" },
-  { value: "appointment_booked", label: "Appointment Booked", hint: "Schedules a test-drive on the calendar" },
+  { value: "appointment_booked", label: "Appointment booked", hint: "Schedules a test drive on the calendar" },
   { value: "lost", label: "Lost", hint: "Dead lead, requires a reason" },
 ];
 
@@ -517,7 +515,7 @@ export default function LeadsPage() {
           specialRequirements: stSpecial || null,
           createdBy: user.id,
         });
-        toast.success("Appointment booked, added to the calendar ✓");
+        toast.success("Appointment booked and added to the calendar");
         setLeads(await leadService.getAll(company.id));
         setStatusOpen(false);
       } catch (e) {
@@ -540,7 +538,7 @@ export default function LeadsPage() {
         await leadService.changeStatus(selected.id, "lost", user.id, {
           lostReason: reason,
         });
-        toast.success("Lead marked Lost, reason saved");
+        toast.success("Lead marked lost and reason saved");
         setLeads(await leadService.getAll(company.id));
         setStatusOpen(false);
       } catch (e) {
@@ -595,240 +593,202 @@ export default function LeadsPage() {
     : null;
 
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Leads</h1>
-          <p className="mt-0.5 text-[13px] text-muted-foreground">
-            Every new buyer enquiry in one list. Capture, assign, and follow up
-            so no lead goes cold.
-          </p>
-        </div>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4" />
-              Create Lead
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <form onSubmit={create.handleSubmit(onCreate)} className="contents">
-              <DialogHeader>
-                <DialogTitle>Create Lead</DialogTitle>
-                <DialogDescription>
-                  Capture a new buyer enquiry and assign it for follow-up.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogPanel className="grid gap-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="grid gap-1.5">
-                    <Label htmlFor={nameId}>Name</Label>
-                    <Input id={nameId} {...create.register("customerName")} />
-                  </div>
-                  <div className="grid gap-1.5">
-                    <Label htmlFor={phoneId}>Phone</Label>
-                    <Input id={phoneId} {...create.register("customerPhone")} />
-                  </div>
+    <Page
+      title="Leads"
+      subtitle="Every new buyer enquiry in one list. Capture, assign and follow up so no lead goes cold."
+      fullWidth
+      primaryAction={{ content: "Create lead", onAction: () => setCreateOpen(true) }}
+    >
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-w-md">
+          <form onSubmit={create.handleSubmit(onCreate)} className="contents">
+            <DialogHeader>
+              <DialogTitle>Create lead</DialogTitle>
+              <DialogDescription>
+                Capture a new buyer enquiry and assign it for follow-up.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogPanel className="grid gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-1.5">
+                  <Label htmlFor={nameId}>Name</Label>
+                  <Input id={nameId} {...create.register("customerName")} />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor={emailId}>Email</Label>
-                  <Input id={emailId} type="email" {...create.register("customerEmail")} />
-                </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor={vehicleId_}>Vehicle</Label>
-                  {/* Reg search, not a 120-car scroll (GEN-79). */}
-                  <VehiclePicker
-                    id={vehicleId_}
-                    vehicles={eligibleVehicles}
-                    value={
-                      eligibleVehicles.find(
-                        (v) => v.id === create.watch("vehicleId"),
-                      ) ?? null
-                    }
-                    emptyOptionLabel="None / free text"
-                    placeholder="Search by reg, or leave blank for free text"
-                    onChange={(veh) => {
-                      create.setValue("vehicleId", veh?.id ?? "none");
-                      if (veh) {
-                        create.setValue(
-                          "vehicleInterest",
-                          `${veh.make} ${veh.model} (${veh.registration})`,
-                        );
-                      }
-                    }}
-                    renderMeta={(v) => {
-                      const p = inspectionProgress.get(v.id);
-                      return p && !p.complete && p.started ? (
-                        <span className="shrink-0 text-2xs text-amber-600 dark:text-amber-400">
-                          insp {p.done}/{p.total}
-                        </span>
-                      ) : null;
-                    }}
-                  />
-                </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor={vehicleInterestId}>Vehicle interest</Label>
-                  <Input id={vehicleInterestId} {...create.register("vehicleInterest")} />
-                </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor={channelId}>
-                    Lead Channel <span className="text-destructive">*</span>
-                  </Label>
-                  <ChannelDropdown
-                    id={channelId}
-                    channels={channels}
-                    value={create.watch("leadChannelId") || undefined}
-                    onValueChange={(id) =>
-                      create.setValue("leadChannelId", id, {
-                        shouldValidate: true,
-                      })
-                    }
-                    placeholder="Where did this lead come from?"
-                    invalid={!!create.formState.errors.leadChannelId}
-                  />
-                  {create.formState.errors.leadChannelId ? (
-                    <p className="text-xs text-destructive">
-                      {create.formState.errors.leadChannelId.message}
-                    </p>
-                  ) : null}
-                  {channels.find(
-                    (c) => c.id === create.watch("leadChannelId"),
-                  )?.slug === "other" ? (
-                    <Input
-                      {...create.register("channelOtherReason")}
-                      placeholder="How did they hear about us?"
+                  <Label htmlFor={phoneId}>Phone</Label>
+                  <Input id={phoneId} {...create.register("customerPhone")} />
+                  {create.formState.errors.customerPhone?.message ? (
+                    <InlineError
+                      message={create.formState.errors.customerPhone.message}
                     />
                   ) : null}
                 </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor={assignId}>Assign to</Label>
-                  <Select
-                    items={Object.fromEntries(users.map((u) => [u.id, u.name]))}
-                    value={create.watch("assignedTo")}
-                    onValueChange={(v) => create.setValue("assignedTo", v)}
-                  >
-                    <SelectTrigger id={assignId}>
-                      <SelectValue placeholder="Pick a user" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {users.map((u) => (
-                        <SelectItem key={u.id} value={u.id}>
-                          {u.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor={notesId}>Notes</Label>
-                  <Textarea id={notesId} {...create.register("notes")} className="min-h-16" />
-                </div>
-              </DialogPanel>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    clearDraft();
-                    create.reset();
-                    setCreateOpen(false);
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor={emailId}>Email</Label>
+                <Input id={emailId} type="email" {...create.register("customerEmail")} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor={vehicleId_}>Vehicle</Label>
+                {/* Reg search, not a 120-car scroll (GEN-79). */}
+                <VehiclePicker
+                  id={vehicleId_}
+                  vehicles={eligibleVehicles}
+                  value={
+                    eligibleVehicles.find(
+                      (v) => v.id === create.watch("vehicleId"),
+                    ) ?? null
+                  }
+                  emptyOptionLabel="None / free text"
+                  placeholder="Search by reg, or leave blank for free text"
+                  onChange={(veh) => {
+                    create.setValue("vehicleId", veh?.id ?? "none");
+                    if (veh) {
+                      create.setValue(
+                        "vehicleInterest",
+                        `${veh.make} ${veh.model} (${veh.registration})`,
+                      );
+                    }
                   }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={create.formState.isSubmitting}
-                >
-                  {create.formState.isSubmitting ? "Creating…" : "Create"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+                  renderMeta={(v) => {
+                    const p = inspectionProgress.get(v.id);
+                    return p && !p.complete && p.started ? (
+                      <span className="body-xs shrink-0 text-(--text-caution)">
+                        insp {p.done}/{p.total}
+                      </span>
+                    ) : null;
+                  }}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor={vehicleInterestId}>Vehicle interest</Label>
+                <Input id={vehicleInterestId} {...create.register("vehicleInterest")} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor={channelId}>
+                  Lead channel <span className="text-(--text-critical)">*</span>
+                </Label>
+                <ChannelDropdown
+                  id={channelId}
+                  channels={channels}
+                  value={create.watch("leadChannelId") || undefined}
+                  onValueChange={(id) =>
+                    create.setValue("leadChannelId", id, {
+                      shouldValidate: true,
+                    })
+                  }
+                  placeholder="Where did this lead come from?"
+                  invalid={!!create.formState.errors.leadChannelId}
+                />
+                {create.formState.errors.leadChannelId?.message ? (
+                  <InlineError
+                    message={create.formState.errors.leadChannelId.message}
+                  />
+                ) : null}
+                {channels.find(
+                  (c) => c.id === create.watch("leadChannelId"),
+                )?.slug === "other" ? (
+                  <Input
+                    {...create.register("channelOtherReason")}
+                    aria-label="How did they hear about us?"
+                    placeholder="How did they hear about us?"
+                  />
+                ) : null}
+              </div>
+              <PolarisSelect
+                label="Assign to"
+                id={assignId}
+                placeholder="Pick a user"
+                options={users.map((u) => ({ label: u.name, value: u.id }))}
+                value={create.watch("assignedTo")}
+                onChange={(v) => create.setValue("assignedTo", v)}
+              />
+              <div className="grid gap-1.5">
+                <Label htmlFor={notesId}>Notes</Label>
+                <Textarea id={notesId} {...create.register("notes")} className="min-h-16" />
+              </div>
+            </DialogPanel>
+            <DialogFooter>
+              <Button
+                onClick={() => {
+                  clearDraft();
+                  create.reset();
+                  setCreateOpen(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                submit
+                loading={create.formState.isSubmitting}
+              >
+                Create lead
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {!filtered ? (
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-          <Skeleton className="h-[480px] rounded-xl" />
-          <Skeleton className="h-[480px] rounded-xl" />
+          <Card>
+            <SkeletonBodyText lines={10} />
+          </Card>
+          <Card>
+            <SkeletonBodyText lines={10} />
+          </Card>
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[320px_1fr] lg:items-start">
           {/* LEFT — search, status + source filters, scrollable lead list */}
           <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-[0_1px_0_rgba(0,0,0,.05)]">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search name, phone or vehicle…"
-                  aria-label="Search leads"
-                  className="pl-8"
+            <Card>
+              <TextField
+                label="Search leads"
+                labelHidden
+                type="search"
+                prefix="SearchMinor"
+                value={search}
+                onChange={setSearch}
+                clearButton
+                onClearButtonClick={() => setSearch("")}
+                placeholder="Search name, phone or vehicle…"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <PolarisSelect
+                  label="Status"
+                  labelHidden
+                  options={[
+                    { label: "All statuses", value: "all" },
+                    ...STATUS_ORDER.map((st) => ({
+                      label: LEAD_STATUS_LABEL[st],
+                      value: st,
+                    })),
+                  ]}
+                  value={statusFilter}
+                  onChange={(v) => setStatusFilter(v as LeadStatus | "all")}
+                />
+                <PolarisSelect
+                  label="Source"
+                  labelHidden
+                  options={[
+                    { label: "All sources", value: "all" },
+                    ...SOURCES.map((src) => ({
+                      label: sourceLabel(src),
+                      value: src,
+                    })),
+                  ]}
+                  value={sourceFilter}
+                  onChange={(v) => setSourceFilter(v as LeadSource | "all")}
                 />
               </div>
-              <div className="flex gap-2">
-                {/* items map: without it the closed trigger renders the raw
-                    value ("all") instead of its label (GEN-47). */}
-                <Select
-                  items={{
-                    all: "All statuses",
-                    ...Object.fromEntries(
-                      STATUS_ORDER.map((s) => [s, LEAD_STATUS_LABEL[s]]),
-                    ),
-                  }}
-                  value={statusFilter}
-                  onValueChange={(v) =>
-                    setStatusFilter(v as LeadStatus | "all")
-                  }
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All statuses</SelectItem>
-                    {STATUS_ORDER.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {LEAD_STATUS_LABEL[s]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select
-                  items={{
-                    all: "All sources",
-                    ...Object.fromEntries(
-                      SOURCES.map((s) => [
-                        s,
-                        s.replace("_", " ").replace(/^\w/, (c) => c.toUpperCase()),
-                      ]),
-                    ),
-                  }}
-                  value={sourceFilter}
-                  onValueChange={(v) => setSourceFilter(v as LeadSource | "all")}
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Source" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All sources</SelectItem>
-                    {SOURCES.map((s) => (
-                      <SelectItem key={s} value={s} className="capitalize">
-                        {s.replace("_", " ")}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            </Card>
 
             {filtered.length === 0 ? (
-              <EmptyState
-                icon={UserPlus}
-                title="No leads"
-                description="Adjust your filters, or capture a new enquiry."
-              />
+              <EmptyState heading="No leads" icon={<UserPlus />}>
+                Adjust your filters, or capture a new enquiry.
+              </EmptyState>
             ) : (
               <div
                 role="listbox"
@@ -841,6 +801,8 @@ export default function LeadsPage() {
                     ? channelById.get(l.leadChannelId)
                     : null;
                   return (
+                    // A rich, selectable list row (avatar, two lines, channel
+                    // chip) — more than a Polaris Button can hold.
                     <button
                       key={l.id}
                       type="button"
@@ -848,41 +810,38 @@ export default function LeadsPage() {
                       aria-selected={isActive}
                       onClick={() => setSelectedId(l.id)}
                       className={cn(
-                        "flex w-full shrink-0 items-center gap-2.5 rounded-lg border border-border p-2.5 text-left transition-colors",
+                        "flex w-full shrink-0 items-center gap-2.5 rounded-(--radius-300) p-2.5 text-left shadow-(--shadow-100) transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--border-focus)",
                         isActive
-                          ? "bg-[#f1f1f1] dark:bg-muted"
-                          : "bg-card hover:bg-[#f7f7f7] dark:hover:bg-muted/50",
+                          ? "bg-(--bg-surface-selected)"
+                          : "bg-(--bg-surface) hover:bg-(--bg-surface-hover)",
                       )}
                     >
-                      <Avatar size="sm">
-                        <AvatarFallback className="text-2xs">
-                          {getInitials(l.customerName)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <Avatar name={l.customerName} size="md" />
                       <div className="flex min-w-0 flex-1 flex-col">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-sm font-medium">
+                          <span className="body-md-semibold truncate">
                             {l.customerName}
                           </span>
                           <span
+                            aria-hidden
                             className={cn(
                               "size-2 shrink-0 rounded-full",
                               STATUS_DOT[l.status],
                             )}
                           />
                         </div>
-                        <span className="truncate text-xs text-muted-foreground">
+                        <span className="body-sm truncate text-(--text-secondary)">
                           {l.vehicleInterest}
                         </span>
                         <div className="mt-0.5 flex items-center justify-between gap-2">
                           {ch ? (
                             <ChannelChip channel={ch} compact />
                           ) : (
-                            <span className="text-2xs capitalize text-muted-foreground">
-                              {l.source.replace("_", " ")}
+                            <span className="body-xs text-(--text-secondary)">
+                              {sourceLabel(l.source)}
                             </span>
                           )}
-                          <span className="shrink-0 text-2xs text-muted-foreground">
+                          <span className="body-xs shrink-0 text-(--text-secondary)">
                             {ageOf(l.createdAt)}
                           </span>
                         </div>
@@ -897,161 +856,154 @@ export default function LeadsPage() {
           {/* RIGHT — full follow-up panel for the selected lead */}
           <div className="lg:sticky lg:top-4">
             {!selected ? (
-              <div className="flex h-[320px] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-card text-center text-muted-foreground">
-                <UserPlus className="size-6" />
-                <p className="text-sm">Select a lead to follow up.</p>
-              </div>
+              <EmptyState heading="Select a lead" icon={<UserPlus />}>
+                Pick a lead from the list to follow it up.
+              </EmptyState>
             ) : (
-              <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 shadow-[0_1px_0_rgba(0,0,0,.05)]">
-                {/* Header */}
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar size="lg">
-                      <AvatarFallback>
-                        {getInitials(selected.customerName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h2 className="text-lg font-semibold leading-tight">
-                        {selected.customerName}
-                      </h2>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                        <a
-                          href={`tel:${selected.customerPhone.replace(/\s+/g, "")}`}
-                          className="inline-flex items-center gap-1.5 hover:text-foreground"
-                        >
-                          <Phone className="size-3.5" />
-                          {selected.customerPhone}
-                        </a>
-                        <span className="inline-flex items-center gap-1.5">
-                          <Mail className="size-3.5" />
-                          {selected.customerEmail ?? "no email"}
-                        </span>
+              <Card>
+                <div className="flex flex-col gap-4">
+                  {/* Header */}
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar name={selected.customerName} size="xl" />
+                      <div>
+                        <h2 className="heading-md">{selected.customerName}</h2>
+                        <div className="body-md mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-(--text-secondary)">
+                          <a
+                            href={`tel:${selected.customerPhone.replace(/\s+/g, "")}`}
+                            className="inline-flex items-center gap-1.5 hover:text-(--text)"
+                          >
+                            <Phone className="size-3.5" />
+                            {selected.customerPhone}
+                          </a>
+                          <span className="inline-flex items-center gap-1.5">
+                            <Mail className="size-3.5" />
+                            {selected.customerEmail ?? "No email"}
+                          </span>
+                        </div>
                       </div>
                     </div>
+                    <LeadStatusBadge status={selected.status} />
                   </div>
-                  <LeadStatusCell status={selected.status} />
-                </div>
 
-                {selectedVehicle ? (
-                  <VehicleImage
-                    vehicle={selectedVehicle}
-                    variant="card"
-                    className="w-full max-w-[260px]"
-                  />
-                ) : null}
+                  {selectedVehicle ? (
+                    <VehicleImage
+                      vehicle={selectedVehicle}
+                      variant="card"
+                      className="w-full max-w-[260px]"
+                    />
+                  ) : null}
 
-                {/* Inspection flag — a lead may be raised against a car
-                    that's still being checked (GEN-72), so say so here rather
-                    than blocking it at creation. Shows nothing once the
-                    inspection is clean. */}
-                {(() => {
-                  if (!selected.vehicleId) return null;
-                  const p = inspectionProgress.get(selected.vehicleId);
-                  if (!p || p.complete) return null;
-                  // A car the business already put on sale, with no inspection
-                  // ever raised in the app, isn't "incomplete" — it predates
-                  // this workflow. Warning on those would fire for almost the
-                  // whole forecourt and bury the cars that genuinely are
-                  // mid-inspection.
-                  const v = vehicles.find((x) => x.id === selected.vehicleId);
-                  const preSale =
-                    v?.status === "received" ||
-                    v?.status === "inspection_pending" ||
-                    v?.status === "being_prepared";
-                  if (!p.started && !preSale) return null;
-                  return (
-                    <details className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-                      <summary className="flex cursor-pointer items-center gap-2 font-medium">
-                        <AlertTriangle className="size-4 shrink-0" />
-                        {p.started
-                          ? `Inspection incomplete: ${p.done} of ${p.total} checks signed off`
-                          : "Inspection not started"}
-                        <span className="ml-auto text-xs font-normal underline">
-                          {p.outstanding.length} outstanding
-                        </span>
-                      </summary>
-                      <ul className="mt-2 grid list-disc gap-0.5 pl-8 text-xs sm:grid-cols-2">
-                        {p.outstanding.map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    </details>
-                  );
-                })()}
+                  {/* Inspection flag — a lead may be raised against a car
+                      that's still being checked (GEN-72), so say so here rather
+                      than blocking it at creation. Shows nothing once the
+                      inspection is clean. */}
+                  {(() => {
+                    if (!selected.vehicleId) return null;
+                    const p = inspectionProgress.get(selected.vehicleId);
+                    if (!p || p.complete) return null;
+                    // A car the business already put on sale, with no inspection
+                    // ever raised in the app, isn't "incomplete" — it predates
+                    // this workflow. Warning on those would fire for almost the
+                    // whole forecourt and bury the cars that genuinely are
+                    // mid-inspection.
+                    const v = vehicles.find((x) => x.id === selected.vehicleId);
+                    const preSale =
+                      v?.status === "received" ||
+                      v?.status === "inspection_pending" ||
+                      v?.status === "being_prepared";
+                    if (!p.started && !preSale) return null;
+                    return (
+                      <Banner
+                        tone="warning"
+                        title={
+                          p.started
+                            ? `Inspection incomplete: ${p.done} of ${p.total} checks signed off`
+                            : "Inspection not started"
+                        }
+                      >
+                        <details>
+                          <summary className="cursor-pointer">
+                            {p.outstanding.length} outstanding
+                          </summary>
+                          <ul className="mt-2 grid list-disc gap-0.5 pl-5 sm:grid-cols-2">
+                            {p.outstanding.map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                        </details>
+                      </Banner>
+                    );
+                  })()}
 
-                {/* Fields */}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field icon={Car} label="Vehicle of interest">
-                    {selected.vehicleInterest}
-                  </Field>
-                  <Field icon={ArrowRight} label="Channel">
-                    {(() => {
-                      const ch = selected.leadChannelId
-                        ? channelById.get(selected.leadChannelId)
-                        : null;
-                      return ch ? (
-                        <ChannelChip channel={ch} compact />
-                      ) : (
-                        <span className="capitalize">
-                          {selected.source.replace("_", " ")}
-                        </span>
-                      );
-                    })()}
-                  </Field>
-                  <Field icon={UserIcon} label="Assigned to">
-                    {selected.assigneeName}
-                  </Field>
-                  <Field icon={Clock} label="Created">
-                    {selected.createdAt.slice(0, 10)}
-                    {ageOf(selected.createdAt)
-                      ? ` · ${ageOf(selected.createdAt)} ago`
-                      : ""}
-                  </Field>
-                  <div className="sm:col-span-2">
-                    <Field icon={Mail} label="Notes">
-                      {selected.notes ?? "—"}
+                  {/* Fields */}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field icon={Car} label="Vehicle of interest">
+                      {selected.vehicleInterest}
                     </Field>
+                    <Field icon={ArrowRight} label="Channel">
+                      {(() => {
+                        const ch = selected.leadChannelId
+                          ? channelById.get(selected.leadChannelId)
+                          : null;
+                        return ch ? (
+                          <ChannelChip channel={ch} compact />
+                        ) : (
+                          <span>{sourceLabel(selected.source)}</span>
+                        );
+                      })()}
+                    </Field>
+                    <Field icon={UserIcon} label="Assigned to">
+                      {selected.assigneeName}
+                    </Field>
+                    <Field icon={Clock} label="Created">
+                      {selected.createdAt.slice(0, 10)}
+                      {ageOf(selected.createdAt)
+                        ? ` · ${ageOf(selected.createdAt)} ago`
+                        : ""}
+                    </Field>
+                    <div className="sm:col-span-2">
+                      <Field icon={Mail} label="Notes">
+                        {selected.notes ?? "—"}
+                      </Field>
+                    </div>
                   </div>
-                </div>
 
-                {/* Actions */}
-                <div className="flex flex-col gap-3 border-t pt-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {/* Primary conversion action — turns the lead into a
-                        pipeline deal. Needs a linked vehicle; when absent we
-                        keep it visible but disabled with a hint below. */}
-                    <Button
-                      type="button"
-                      disabled={creatingDeal || !selected.vehicleId}
-                      onClick={() => void handleCreateDeal()}
-                    >
-                      <Plus className="h-4 w-4" />
-                      {creatingDeal ? "Opening…" : "Create deal in pipeline"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={openStatusDialog}
-                    >
-                      <ArrowRight className="mr-1.5 size-4" />
-                      Update status
-                    </Button>
+                  {/* Actions */}
+                  <div className="flex flex-col gap-3 border-t border-(--border-secondary) pt-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Conversion action — turns the lead into a pipeline
+                          deal. Needs a linked vehicle; when absent we keep it
+                          visible but disabled with a hint below. */}
+                      <Button
+                        icon="PlusMinor"
+                        loading={creatingDeal}
+                        disabled={!selected.vehicleId}
+                        onClick={() => void handleCreateDeal()}
+                      >
+                        Create deal in pipeline
+                      </Button>
+                      <Button icon="ArrowRightMinor" onClick={openStatusDialog}>
+                        Update status
+                      </Button>
+                    </div>
+                    {!selected.vehicleId ? (
+                      <p className="body-sm text-(--text-secondary)">
+                        Link a vehicle to this lead (via Update status) to create a
+                        deal.
+                      </p>
+                    ) : null}
+                    {selected.status === "appointment_booked" ? (
+                      <Banner
+                        tone="success"
+                        action={{ content: "View appointments", url: "/sales/appointments" }}
+                      >
+                        Appointment booked. It&apos;s on the Appointments calendar.
+                      </Banner>
+                    ) : null}
                   </div>
-                  {!selected.vehicleId ? (
-                    <p className="text-xs text-muted-foreground">
-                      Link a vehicle to this lead (via Update status) to create a
-                      deal.
-                    </p>
-                  ) : null}
-                  {selected.status === "appointment_booked" ? (
-                    <p className="inline-flex items-center gap-1.5 rounded bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300">
-                      <CalendarPlus className="size-3.5" />
-                      Appointment booked, see the Appointments calendar.
-                    </p>
-                  ) : null}
                 </div>
-              </div>
+              </Card>
             )}
           </div>
         </div>
@@ -1069,56 +1021,42 @@ export default function LeadsPage() {
             <DialogTitle>Update lead status</DialogTitle>
             <DialogDescription>
               {selected
-                ? `${selected.customerName}, currently ${LEAD_STATUS_LABEL[selected.status]}`
+                ? `${selected.customerName}, currently ${LEAD_STATUS_LABEL[selected.status].toLowerCase()}`
                 : ""}
             </DialogDescription>
           </DialogHeader>
           <DialogPanel className="grid gap-4">
             {/* Target status picker */}
-            <div className="grid gap-2">
-              {STATUS_TARGETS.map((t) => {
-                const isCurrent = selected?.status === t.value;
-                const active = stTarget === t.value;
-                return (
-                  <button
-                    key={t.value}
-                    type="button"
-                    onClick={() => {
-                      setStTarget(t.value);
-                      setStError(null);
-                    }}
-                    className={cn(
-                      "flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
-                      active
-                        ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                        : "border-border hover:bg-muted/40",
-                    )}
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className={cn("size-2.5 rounded-full", STATUS_DOT[t.value])} />
-                      <span className="text-sm font-medium">{t.label}</span>
-                      {isCurrent ? (
-                        <span className="rounded-full bg-muted px-1.5 py-0.5 text-2xs text-muted-foreground">
-                          current
-                        </span>
-                      ) : null}
-                    </span>
-                    <span className="text-2xs text-muted-foreground">{t.hint}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <ChoiceList
+              title="New status"
+              titleHidden
+              choices={STATUS_TARGETS.map((t) => ({
+                value: t.value,
+                label:
+                  selected?.status === t.value ? `${t.label} (current)` : t.label,
+                helpText: t.hint,
+              }))}
+              selected={[stTarget]}
+              onChange={(next) => {
+                const v = next[0] as LeadStatus | undefined;
+                if (!v) return;
+                setStTarget(v);
+                setStError(null);
+              }}
+            />
 
-            {/* Conditional: Appointment Booked → date/time (+ vehicle if none) */}
+            {/* Conditional: Appointment booked → date/time (+ vehicle if none) */}
             {stTarget === "appointment_booked" ? (
-              <div className="grid gap-3 rounded-lg border bg-muted/20 p-3">
-                <p className="text-xs text-muted-foreground">
+              <div className="grid gap-3 rounded-(--radius-300) bg-(--bg-surface-secondary) p-3">
+                <p className="body-sm text-(--text-secondary)">
                   Books a test-drive appointment and adds it to the Appointments
                   calendar.
                 </p>
                 {selected && !selected.vehicleId ? (
                   <div className="grid gap-1.5">
-                    <Label htmlFor={stVehicleFieldId}>Stock vehicle <span className="text-destructive">*</span></Label>
+                    <Label htmlFor={stVehicleFieldId}>
+                      Stock vehicle <span className="text-(--text-critical)">*</span>
+                    </Label>
                     <VehiclePicker
                       id={stVehicleFieldId}
                       vehicles={eligibleVehicles}
@@ -1150,7 +1088,7 @@ export default function LeadsPage() {
                       step={3600}
                       onChange={(e) => setStTime(e.target.value)}
                     />
-                    <p className="text-xs text-muted-foreground">
+                    <p className="body-sm text-(--text-secondary)">
                       1-hour slot · 09:00–17:00
                     </p>
                   </div>
@@ -1166,7 +1104,7 @@ export default function LeadsPage() {
             {stTarget === "lost" ? (
               <div className="grid gap-1.5">
                 <Label htmlFor={stReasonId}>
-                  Reason lost <span className="text-destructive">*</span>
+                  Reason lost <span className="text-(--text-critical)">*</span>
                 </Label>
                 <Textarea
                   id={stReasonId}
@@ -1175,35 +1113,34 @@ export default function LeadsPage() {
                   placeholder="e.g. Bought elsewhere: found a cheaper Q3 at a rival dealer."
                   className="min-h-20"
                 />
-                <p className="text-2xs text-muted-foreground">
+                <p className="body-sm text-(--text-secondary)">
                   Saved to the lead record and the activity log.
                 </p>
               </div>
             ) : null}
 
-            {stError ? (
-              <p className="rounded bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                {stError}
-              </p>
-            ) : null}
+            {stError ? <Banner tone="critical">{stError}</Banner> : null}
           </DialogPanel>
           <DialogFooter variant="bare">
-            <Button type="button" variant="outline" onClick={() => setStatusOpen(false)} disabled={stBusy}>
+            <Button onClick={() => setStatusOpen(false)} disabled={stBusy}>
               Cancel
             </Button>
-            <Button type="button" onClick={() => void submitStatus()} disabled={stBusy}>
-              {stBusy
-                ? "Saving…"
-                : stTarget === "appointment_booked"
-                  ? "Book appointment"
-                  : stTarget === "lost"
-                    ? "Mark as Lost"
-                    : "Update status"}
+            <Button
+              variant="primary"
+              tone={stTarget === "lost" ? "critical" : undefined}
+              onClick={() => void submitStatus()}
+              loading={stBusy}
+            >
+              {stTarget === "appointment_booked"
+                ? "Book appointment"
+                : stTarget === "lost"
+                  ? "Mark as lost"
+                  : "Update status"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </Page>
   );
 }
 
@@ -1217,12 +1154,12 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border bg-muted/20 p-3">
-      <div className="mb-1 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+    <div className="rounded-(--radius-200) bg-(--bg-surface-secondary) p-3">
+      <div className="body-sm mb-1 inline-flex items-center gap-1.5 text-(--text-secondary)">
         <Icon className="size-3.5" />
         {label}
       </div>
-      <div className="text-sm">{children}</div>
+      <div className="body-md">{children}</div>
     </div>
   );
 }

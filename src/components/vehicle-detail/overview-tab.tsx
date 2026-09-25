@@ -1,16 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   AlertCircle,
-  Camera,
   Check,
-  ClipboardCheck,
   Clock,
   Coins,
   Globe,
-  Pencil,
   PoundSterling,
   RefreshCw,
   Rocket,
@@ -22,7 +18,13 @@ import type { Listing, Vehicle } from "@/lib/types";
 import { listingService } from "@/lib/services/listing-service";
 import { dvlaService } from "@/lib/services/dvla-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
-import { Button } from "@/components/ui/button";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  ProgressBar,
+  type BadgeTone,
+} from "@/components/polaris";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { KpiCard, Panel, Pill } from "./primitives";
 import { cn } from "@/lib/utils";
@@ -107,16 +109,16 @@ export function OverviewTab({
   return (
     <div className="flex flex-col gap-4">
       {/* KPI strip */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 @md:grid-cols-2 @3xl:grid-cols-4">
         <KpiCard
           icon={PoundSterling}
-          label="Web Price"
+          label="Web price"
           value={webPrice ? formatCurrency(webPrice) : "—"}
           hint={floor ? `Floor: ${formatCurrency(floor)}` : undefined}
         />
         <KpiCard
           icon={Clock}
-          label="Days in Stock"
+          label="Days in stock"
           value={vehicle.daysInStock}
           hint={
             stockingBurn
@@ -127,7 +129,7 @@ export function OverviewTab({
         />
         <KpiCard
           icon={TrendingUp}
-          label="AT Retail Avg"
+          label="AT retail avg"
           value={
             vehicle.atRetailValuation != null
               ? formatCurrency(vehicle.atRetailValuation)
@@ -137,14 +139,14 @@ export function OverviewTab({
         />
         <KpiCard
           icon={Coins}
-          label="Net Profit (live)"
+          label="Net profit (live)"
           value={netProfit > 0 ? formatCurrency(Math.round(netProfit)) : "—"}
           hint="Under HMRC margin scheme"
         />
       </div>
 
       {/* Two-col: Advert Completeness + Valuation/Marketplace stack */}
-      <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+      <div className="grid gap-4 @3xl:grid-cols-[1.5fr_1fr]">
         <AdvertCompletenessPanel
           vehicle={vehicle}
           listing={listing ?? null}
@@ -189,37 +191,29 @@ function EmptyOverview({
   onNavigate?: (tab: string) => void;
 }) {
   return (
-    <div className="grid place-items-center rounded-xl border border-dashed bg-card px-6 py-16 text-center">
-      <span className="grid h-14 w-14 place-items-center rounded-xl bg-[#f1f1f1] text-foreground">
-        <Rocket className="h-7 w-7" />
-      </span>
-      <div className="mt-4 text-lg font-semibold">
-        New to stock, let&apos;s get it sale-ready
-      </div>
-      <p className="mt-1 max-w-md text-sm text-muted-foreground">
-        There&apos;s no advert, valuation or pricing yet. The first step is a
-        quick inspection: everything else follows from what it finds.
-      </p>
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-        <Button size="sm" onClick={() => onNavigate?.("inspection")}>
-          <ClipboardCheck className="mr-1.5 h-4 w-4" />
-          Start Inspection
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => onNavigate?.("photos")}>
-          <Camera className="mr-1.5 h-4 w-4" />
-          Add Photos
-        </Button>
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/vehicles/${vehicleId}/advert`}>
-            <PoundSterling className="mr-1.5 h-4 w-4" />
-            Set Price
-          </Link>
-        </Button>
-      </div>
-      <div className="mt-6 text-2xs text-muted-foreground">
-        Then: prep &amp; repairs → photos → price → advert → list
-      </div>
-    </div>
+    <EmptyState
+      icon={<Rocket />}
+      heading="New to stock, let's get it sale-ready"
+      action={{
+        content: "Start inspection",
+        onAction: () => onNavigate?.("inspection"),
+      }}
+      secondaryAction={{
+        content: "Add photos",
+        onAction: () => onNavigate?.("photos"),
+      }}
+      footerContent={
+        <div className="flex flex-col items-center gap-3">
+          <Button variant="plain" url={`/vehicles/${vehicleId}/advert`}>
+            Set price
+          </Button>
+          <span>Then: prep &amp; repairs, photos, price, advert, list</span>
+        </div>
+      }
+    >
+      There&apos;s no advert, valuation or pricing yet. The first step is a
+      quick inspection: everything else follows from what it finds.
+    </EmptyState>
   );
 }
 
@@ -241,24 +235,24 @@ function AdvertCompletenessPanel({
 
   return (
     <Panel
-      title="Advert Completeness"
+      title="Advert completeness"
       subtitle={`${setCount} of ${checks.length} fields set · ${checks.length - setCount} to address`}
       action={
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/vehicles/${vehicle.id}/advert`}>Open Advert →</Link>
+        <Button variant="plain" url={`/vehicles/${vehicle.id}/advert`}>
+          Open advert
         </Button>
       }
       flush
     >
       <div className="px-4 pb-3">
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-[#014b40] transition-[width] duration-500"
-            style={{ width: `${(setCount / checks.length) * 100}%` }}
-          />
-        </div>
+        <ProgressBar
+          progress={(setCount / checks.length) * 100}
+          size="small"
+          tone="success"
+          accessibilityLabel="Advert completeness"
+        />
       </div>
-      <div className="divide-y border-t">
+      <div className="divide-y divide-(--border-secondary) border-t border-(--border-secondary)">
         {checks.map((c) => (
           <AdvertCheckRow key={c.key} check={c} vehicleId={vehicle.id} />
         ))}
@@ -268,9 +262,9 @@ function AdvertCompletenessPanel({
 }
 
 const STATE_MARK_STYLES: Record<AdvertCheck["state"], string> = {
-  done: "bg-[#affebf] text-[#014b40] dark:bg-emerald-500/20 dark:text-emerald-300",
-  warn: "bg-[#fff1c2] text-[#4f4700] dark:bg-amber-500/20 dark:text-amber-300",
-  miss: "bg-muted text-muted-foreground",
+  done: "bg-(--bg-surface-success) text-(--icon-success)",
+  warn: "bg-(--bg-surface-caution) text-(--icon-caution)",
+  miss: "bg-(--bg-fill-secondary) text-(--icon-secondary)",
 };
 
 const STATE_PILL_TONE: Record<AdvertCheck["state"], React.ComponentProps<typeof Pill>["tone"]> = {
@@ -324,19 +318,22 @@ function AdvertCheckRow({
         )}
       </span>
       <div className="min-w-0">
-        <div className="text-sm font-medium leading-snug">{check.name}</div>
-        <div className="mt-0.5 truncate text-xs text-muted-foreground">
+        <div className="body-md-semibold">{check.name}</div>
+        <div className="mt-0.5 truncate body-sm text-(--text-secondary)">
           {check.meta}
         </div>
       </div>
       <Pill tone={STATE_PILL_TONE[check.state]}>
         {STATE_PILL_LABEL[check.state]}
       </Pill>
-      <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs">
-        <Link href={editHref(vehicleId, check.key)}>
-          <Pencil className="mr-1 h-3 w-3" />
-          Edit
-        </Link>
+      <Button
+        variant="tertiary"
+        size="micro"
+        icon="EditMinor"
+        url={editHref(vehicleId, check.key)}
+        accessibilityLabel={`Edit ${check.name}`}
+      >
+        Edit
       </Button>
     </div>
   );
@@ -442,7 +439,7 @@ function ValuationPanel({
 
   return (
     <Panel
-      title="AutoTrader Valuation"
+      title="AutoTrader valuation"
       subtitle={
         hasValuation
           ? `${updatedLabel(vehicle.atValuationAt)} · live feed`
@@ -450,24 +447,20 @@ function ValuationPanel({
       }
       action={
         <Button
-          type="button"
-          variant="outline"
-          size="sm"
+          variant="plain"
+          icon={<RefreshCw className={cn(refreshing && "animate-spin")} />}
           onClick={() => void refresh()}
           disabled={refreshing}
         >
-          <RefreshCw
-            className={cn("mr-1 size-3.5", refreshing && "animate-spin")}
-          />
           {refreshing ? "Refreshing…" : "Refresh"}
         </Button>
       }
       flush
     >
-      <div className="grid grid-cols-3 divide-x">
+      <div className="grid grid-cols-3 divide-x divide-(--border-secondary)">
         <ValuationCell label="Trade" value={vehicle.atTradeValuation ?? 0} />
         <ValuationCell
-          label="Part Ex"
+          label="Part-ex"
           value={vehicle.atPartExchangeValuation ?? 0}
         />
         <ValuationCell
@@ -504,37 +497,30 @@ function PriceMeter({
   }
   const pos = Math.max(0, Math.min(1, (webPrice - trade) / (retail - trade))) * 100;
   const ratio = webPrice / retail;
-  const verdict =
+  const verdict: { label: string; tone: BadgeTone } =
     ratio <= 0.97
-      ? { label: "Below market", cls: "bg-[#d5ebff] text-[#003a5a] dark:bg-sky-500/15 dark:text-sky-300" }
+      ? { label: "Below market", tone: "info" }
       : ratio <= 1.03
-        ? { label: "Within market", cls: "bg-[#affebf] text-[#014b40] dark:bg-emerald-500/15 dark:text-emerald-300" }
-        : { label: "Above market", cls: "bg-[#fff1c2] text-[#4f4700] dark:bg-amber-500/15 dark:text-amber-300" };
+        ? { label: "Within market", tone: "success" }
+        : { label: "Above market", tone: "attention" };
 
   return (
-    <div className="border-t px-4 pb-4 pt-3">
+    <div className="border-t border-(--border-secondary) px-4 pt-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-[13px] font-medium text-muted-foreground">
+        <span className="body-md text-(--text-secondary)">
           Your price vs market
         </span>
-        <span
-          className={cn(
-            "rounded-full px-2 py-0.5 text-2xs font-medium",
-            verdict.cls,
-          )}
-        >
-          {verdict.label}
-        </span>
+        <Badge tone={verdict.tone}>{verdict.label}</Badge>
       </div>
-      <div className="relative h-2 rounded-full bg-[#e3e3e3]">
+      <div className="relative h-2 rounded-full bg-(--bg-fill-tertiary)">
         <div
-          className="absolute -top-1 size-4 -translate-x-1/2 rounded-full border-2 border-background bg-foreground shadow"
+          className="absolute -top-1 size-4 -translate-x-1/2 rounded-full border-2 border-(--bg-surface) bg-(--bg-fill-brand) shadow-(--shadow-100)"
           style={{ left: `${pos}%` }}
         />
       </div>
-      <div className="mt-2 flex justify-between text-2xs tabular-nums text-muted-foreground">
+      <div className="mt-2 flex justify-between body-xs tabular-nums text-(--text-secondary)">
         <span>Trade {formatCurrency(trade)}</span>
-        <span className="font-semibold text-foreground">
+        <span className="body-xs-semibold text-(--text)">
           You {formatCurrency(webPrice)}
         </span>
         <span>Retail {formatCurrency(retail)}</span>
@@ -554,13 +540,11 @@ function ValuationCell({
 }) {
   return (
     <div className="px-4 py-3">
-      <div className="text-[13px] font-medium text-muted-foreground">
-        {label}
-      </div>
+      <div className="body-md text-(--text-secondary)">{label}</div>
       <div
         className={cn(
           "mt-1 text-base font-semibold tabular-nums",
-          highlight && "text-foreground",
+          highlight && "text-(--text)",
         )}
       >
         {value ? formatCurrency(value) : "—"}
@@ -580,28 +564,28 @@ function MarketplacePanel({ listing }: { listing: Listing | null }) {
       key: "carcapital",
       name: "Car Capital UK",
       meta: "thecarcapital.co.uk",
-      iconBg: "bg-foreground text-background",
+      iconBg: "bg-(--bg-fill-brand) text-(--text-brand-on-bg-fill)",
       iconText: "CC",
     },
     {
       key: "autotrader",
       name: "AutoTrader",
       meta: listing ? "Synced" : "Not configured",
-      iconBg: "bg-blue-700 text-white",
+      iconBg: "bg-(--bg-fill-info) text-(--text-info-on-bg-fill)",
       iconText: "AT",
     },
     {
       key: "ebay",
       name: "eBay Motors",
       meta: "Not configured",
-      iconBg: "bg-[#8e0b21] text-white",
+      iconBg: "bg-(--bg-fill-critical) text-(--text-critical-on-bg-fill)",
       iconText: "eB",
     },
     {
       key: "facebook",
       name: "Facebook",
       meta: "Not configured",
-      iconBg: "bg-[#003a5a] text-white",
+      iconBg: "bg-(--bg-fill-emphasis) text-(--text-emphasis-on-bg-fill)",
       iconText: "fb",
     },
   ];
@@ -621,13 +605,13 @@ function MarketplacePanel({ listing }: { listing: Listing | null }) {
     <Panel
       title={
         <span className="flex items-center gap-2">
-          <Globe className="h-4 w-4 text-muted-foreground" />
+          <Globe className="h-4 w-4 text-(--icon-secondary)" />
           Marketplace
         </span>
       }
       flush
     >
-      <div className="divide-y">
+      <div className="divide-y divide-(--border-secondary)">
         {rows.map((r) => {
           const on = isOn(r.key);
           return (
@@ -637,15 +621,16 @@ function MarketplacePanel({ listing }: { listing: Listing | null }) {
             >
               <span
                 className={cn(
-                  "flex h-7 w-7 items-center justify-center rounded font-mono text-2xs font-bold tracking-wider",
+                  "flex h-7 w-7 items-center justify-center rounded-(--radius-100) font-mono body-xs-semibold tracking-wider",
                   r.iconBg,
                 )}
               >
                 {r.iconText}
               </span>
               <div className="min-w-0">
-                <div className="text-sm font-medium leading-snug">{r.name}</div>
-                <div className="mt-0.5 text-xs text-muted-foreground">
+                <div className="body-md-semibold">{r.name}</div>
+                <div className="mt-0.5 body-sm text-(--text-secondary)">
+
                   {r.meta}
                 </div>
               </div>

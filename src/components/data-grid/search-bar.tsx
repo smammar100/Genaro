@@ -28,7 +28,7 @@ export function DataGridSearchBar({
 }) {
   return (
     <div className={cn("relative", className)}>
-      <Search className="pointer-events-none absolute top-1/2 left-2.5 z-10 h-4 w-4 -translate-y-1/2 text-[#616161]" />
+      <Search className="pointer-events-none absolute top-1/2 left-2.5 z-10 h-4 w-4 -translate-y-1/2 text-(--text-secondary)" />
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -40,7 +40,7 @@ export function DataGridSearchBar({
           type="button"
           size="icon"
           variant="ghost"
-          className="absolute top-1/2 right-0.5 z-10 h-6 w-6 -translate-y-1/2 rounded-md text-[#616161] hover:bg-[#f1f1f1] hover:text-foreground"
+          className="absolute top-1/2 right-0.5 z-10 h-6 w-6 -translate-y-1/2 rounded-md text-(--text-secondary) hover:bg-(--bg-fill-transparent-hover) hover:text-foreground"
           onClick={() => onChange("")}
           aria-label="Clear search"
         >
