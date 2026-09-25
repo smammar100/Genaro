@@ -1,8 +1,6 @@
 "use client";
 
-import { mergeProps } from "@base-ui/react/merge-props";
 import { Select as SelectPrimitive } from "@base-ui/react/select";
-import { useRender } from "@base-ui/react/use-render";
 import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 import {
@@ -55,42 +53,7 @@ export const selectTriggerVariants = cva(
   },
 );
 
-export const selectTriggerIconClassName = "-me-1 size-4 text-[#4a4a4a]";
-
-export interface SelectButtonProps extends useRender.ComponentProps<"button"> {
-  size?: VariantProps<typeof selectTriggerVariants>["size"];
-}
-
-export function SelectButton({
-  className,
-  size,
-  render,
-  children,
-  ...props
-}: SelectButtonProps): React.ReactElement {
-  const typeValue: React.ButtonHTMLAttributes<HTMLButtonElement>["type"] =
-    render ? undefined : "button";
-
-  const defaultProps = {
-    children: (
-      <>
-        <span className="flex-1 truncate in-data-placeholder:text-muted-foreground/72">
-          {children}
-        </span>
-        <ChevronsUpDownIcon className={selectTriggerIconClassName} />
-      </>
-    ),
-    className: cn(selectTriggerVariants({ size }), "min-w-0", className),
-    "data-slot": "select-button",
-    type: typeValue,
-  };
-
-  return useRender({
-    defaultTagName: "button",
-    props: mergeProps<"button">(defaultProps, props),
-    render,
-  });
-}
+const selectTriggerIconClassName = "-me-1 size-4 text-[#4a4a4a]";
 
 export function SelectTrigger({
   className,
@@ -129,7 +92,7 @@ export function SelectValue({
   );
 }
 
-export function SelectPopup({
+function SelectPopup({
   className,
   children,
   side = "bottom",
@@ -267,16 +230,4 @@ export function SelectLabel({
   );
 }
 
-export function SelectGroupLabel(
-  props: SelectPrimitive.GroupLabel.Props,
-): React.ReactElement {
-  return (
-    <SelectPrimitive.GroupLabel
-      className="px-2 py-1.5 font-medium text-muted-foreground text-xs"
-      data-slot="select-group-label"
-      {...props}
-    />
-  );
-}
-
-export { SelectPrimitive, SelectPopup as SelectContent };
+export { SelectPopup as SelectContent };

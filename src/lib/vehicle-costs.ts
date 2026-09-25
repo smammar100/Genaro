@@ -46,7 +46,7 @@ export interface VehicleCostInputs {
   warrantyCost: number | null;
 }
 
-export interface VehicleCostTotals {
+interface VehicleCostTotals {
   /** Master sheet AI — buying price plus acquisition fees, all with VAT. */
   totalBuyingPrice: number;
   /** Total buying plus getting-it-here and getting-it-ready costs. */
@@ -109,7 +109,7 @@ export function computeGrossEarning(
 }
 
 /** The keys that feed the rollup — an edit to any of them re-derives. */
-export const COST_INPUT_KEYS = [
+const COST_INPUT_KEYS = [
   "buyingPrice",
   "vatOnBuyingPrice",
   "buyersFee",

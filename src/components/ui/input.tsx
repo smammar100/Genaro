@@ -4,7 +4,7 @@ import { Input as InputPrimitive } from "@base-ui/react/input";
 import { cn } from "@/lib/utils";
 import type * as React from "react";
 
-export type InputProps = Omit<
+type InputProps = Omit<
   InputPrimitive.Props & React.RefAttributes<HTMLInputElement>,
   "size"
 > & {
@@ -78,5 +78,3 @@ export function Input({
     </span>
   );
 }
-
-export { InputPrimitive };

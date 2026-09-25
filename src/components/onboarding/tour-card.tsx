@@ -2,7 +2,7 @@
 
 import type { CardComponentProps } from "onborda";
 import { X, MousePointerClick } from "lucide-react";
-import { useOnborda } from "onborda";
+import { useOnborda } from "./tour-context";
 import type { GuidedStep } from "@/lib/onboarding/tour-steps";
 
 /**

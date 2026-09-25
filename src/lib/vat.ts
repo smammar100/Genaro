@@ -18,7 +18,7 @@ import type { VatScheme, LegacyVatScheme } from "./types";
 
 export const STANDARD_VAT_RATE = 0.2;
 
-export type AnyVatScheme = VatScheme | LegacyVatScheme;
+type AnyVatScheme = VatScheme | LegacyVatScheme;
 type CanonicalVatScheme = "margin" | "standard" | "zero_rated";
 
 /** Collapse new + legacy scheme names to the canonical math bucket. */
@@ -37,7 +37,7 @@ export function normalizeVatScheme(scheme: AnyVatScheme): CanonicalVatScheme {
   }
 }
 
-export interface CalculateVatInput {
+interface CalculateVatInput {
   scheme: AnyVatScheme;
   /** The line subtotal (qty × unit price, signed for discounts). */
   lineNet: number;
@@ -47,7 +47,7 @@ export interface CalculateVatInput {
   vehicleCost?: number;
 }
 
-export interface CalculateVatResult {
+interface CalculateVatResult {
   vatAmount: number;
   gross: number;
 }

@@ -117,11 +117,11 @@ Auth context (`src/contexts/auth-context.tsx`) reads the URL + publishable key o
 | `src/components/pdf/` | `@react-pdf/renderer` templates |
 | `src/lib/services/` | 24 domain services — one per entity |
 | `src/lib/supabase/` | Client factories (browser, server, admin, middleware) |
-| `src/lib/` | `types.ts`, `mock-data.ts`, `capabilities.ts`, `roles.ts`, `cache.ts`, `vat.ts`, `utils.ts`, `elevated.tsx`, `surface-*.ts(x)`, `formatters.ts`, `constants.ts`, `enquiry-constants.ts`, `cache-warmup.ts`, `toast.ts` |
+| `src/lib/` | `types.ts`, `capabilities.ts`, `roles.ts`, `cache.ts`, `vat.ts`, `utils.ts`, `elevated.tsx`, `surface-*.ts(x)`, `formatters.ts`, `constants.ts`, `enquiry-constants.ts`, `cache-warmup.ts`, `toast.ts` |
 | `src/hooks/` | `use-permissions`, `use-customer-search`, `use-postcode-lookup`, `use-realtime-table`, `use-mobile` |
 | `src/contexts/` | `auth-context`, `sidebar-state-context` |
 | `middleware.ts` | Root middleware — Supabase session refresh on every request |
-| `scripts/` | One-off scripts: seed, migrate-seed-images, csv-to-seeds |
+| `scripts/` | Tooling: Polaris theme build, master-sheet import, demo-vehicle seed, lint ratchet |
 | `docs/` | This documentation tree |
 
 ## Service-layer contract
@@ -162,4 +162,3 @@ This combination keeps multi-user dashboards in sync without polling.
 | `pnpm build` | Production build |
 | `pnpm lint` | ESLint |
 | `pnpm tsc --noEmit` | Type-check |
-| `pnpm tsx scripts/seed.ts` | Seed Supabase from `src/lib/mock-data.ts` (requires `SUPABASE_SERVICE_ROLE_KEY`) |

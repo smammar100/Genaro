@@ -66,4 +66,3 @@ export function Checkbox({
   );
 }
 
-export { CheckboxPrimitive };

@@ -11,7 +11,7 @@
 ## How to run UAT
 
 1. Sign in as **Abbas Bhai** (`abbas@carcapital.uk` / `CarCap!demo1`). He's the super-user so every capability gate passes by default. For permission-gating cases (UAT-W-23) you'll switch to a non-admin user.
-2. Ensure the demo seed has the **delta** rows applied — there should be **9 in-house** warranties, **5 external** (3 pending, 2 purchased), and **4 claims**. If not, run `npx tsx --env-file=.env.local scripts/seed.ts` (it's idempotent for the warranty delta).
+2. Ensure the demo seed has the **delta** rows applied — there should be **9 in-house** warranties, **5 external** (3 pending, 2 purchased), and **4 claims**.
 3. For each numbered case below: follow the steps, compare to the expected result, tick **Pass** or **Fail**. Add a note for anything fishy even if you ticked Pass.
 4. If a case fails, file a ticket referencing the case ID (`UAT-W-NN`) so the engineer can reproduce.
 

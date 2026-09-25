@@ -22,7 +22,7 @@ const SELECT = `
   createdAt:created_at
 `;
 
-export interface CreateMovementInput {
+interface CreateMovementInput {
   vehicleId: UUID;
   toLocation: VehicleLocation;
   /** Required when `toLocation === 'garage'`. */
@@ -50,7 +50,7 @@ interface VehicleAtLocationRow {
   expectedReturnAt?: string | null;
 }
 
-export type LocationCounts = Record<VehicleLocation, number>;
+type LocationCounts = Record<VehicleLocation, number>;
 
 /**
  * Module A — Vehicle Locations (Spec v3.0).

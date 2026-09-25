@@ -500,7 +500,7 @@ const EMPTY_QUICK_ADD: QuickAdd = {
   supplierId: "",
 };
 
-export interface VehicleSheetProps {
+interface VehicleSheetProps {
   /** Page title shown in the header. */
   title: string;
   /** Optional clarifier line (PageHelper) rendered under the title. */

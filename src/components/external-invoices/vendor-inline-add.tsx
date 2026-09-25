@@ -198,13 +198,10 @@ export function VendorInlineAdd({
             {saving ? "Saving…" : "Add vendor"}
           </Button>
         </DialogFooter>
-        {/* Clicking a <nord-button type="submit"> does submit — Nord wires that
-            up itself. But the element is not form-associated
-            (customElements.get("nord-button").formAssociated === false), so the
-            browser's IMPLICIT submission algorithm can't see it, and Enter in a
-            field would do nothing. This hidden native submit is what makes
-            Enter work; the visible Button stays type="button" so the two paths
-            can't both fire. */}
+        {/* The visible Button is type="button", so without a submit button the
+            browser's implicit submission would ignore Enter in a field. This
+            hidden native submit is what makes Enter work; the two paths can't
+            both fire. */}
         <button aria-hidden="true" className="hidden" tabIndex={-1} type="submit" />
         </form>
       </DialogContent>

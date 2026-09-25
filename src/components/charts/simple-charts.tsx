@@ -38,7 +38,7 @@ function niceMax(max: number): number {
   return step * pow;
 }
 
-export interface BarDatum {
+interface BarDatum {
   label: string;
   value: number;
 }
@@ -156,7 +156,7 @@ export function BarChart({
   );
 }
 
-export interface DonutDatum {
+interface DonutDatum {
   label: string;
   value: number;
 }

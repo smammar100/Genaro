@@ -7,7 +7,8 @@ import { PanelLeft, Settings } from "lucide-react";
 import { accountHandle } from "@/lib/auth/username";
 import { GlobalSearch, NotificationsMenu, UserMenu } from "./account-menus";
 import { HealthIndicator } from "./health-indicator";
-import { useOnborda } from "onborda";
+// The tour's state only, not the tour UI (see tour-context).
+import { useOnborda } from "@/components/onboarding/tour-context";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";

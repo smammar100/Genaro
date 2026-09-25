@@ -38,7 +38,7 @@ export interface AddressSuggestion {
   isComplete: boolean;
 }
 
-export interface AddressProvider {
+interface AddressProvider {
   readonly name: string;
   /** True when this provider can return per-premise addresses. */
   readonly hasPremiseData: boolean;

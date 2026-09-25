@@ -23,7 +23,7 @@ export const ADVERT_LIMITS = {
   highlight: 40,
 } as const;
 
-export type AdvertLimitKey = keyof typeof ADVERT_LIMITS;
+type AdvertLimitKey = keyof typeof ADVERT_LIMITS;
 
 /** Website highlights shown on the listing card. */
 export const MAX_HIGHLIGHTS = 5;

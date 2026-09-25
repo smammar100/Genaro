@@ -17,7 +17,7 @@ import { capabilitiesForRoles, type RoleValue } from "@/lib/roles";
 import type { Capability } from "@/lib/capabilities";
 import { logger } from "@/lib/logger";
 
-export interface NotifyPayload {
+interface NotifyPayload {
   type: string;
   title: string;
   body?: string;

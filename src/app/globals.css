@@ -27,7 +27,6 @@
 
 @theme inline {
   --breakpoint-3xl: 1600px;
-  --breakpoint-4xl: 2000px;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -85,28 +84,12 @@
   --radius-2xl: 12px;
 
   --animate-skeleton: skeleton 2s -1s infinite linear;
-  --animate-caret-blink: 1s ease-out infinite caret-blink;
-  --animate-toast-success-odd: toast-success-odd 0.32s
-    cubic-bezier(0.5, 1, 0.89, 1);
-  --animate-toast-success-even: toast-success-even 0.32s
-    cubic-bezier(0.5, 1, 0.89, 1);
-  --animate-toast-error-odd: toast-error-odd 0.28s cubic-bezier(0.5, 1, 0.89, 1);
-  --animate-toast-error-even: toast-error-even 0.28s
-    cubic-bezier(0.5, 1, 0.89, 1);
 
   --tw-shadow-color: #000;
 
   /* ── Canonical type scale (4 sizes + 1 locked micro) ─────────────────
-     Tuned for Geist Sans. Sizes (rem) are unchanged from the previous
-     Figtree tuning — dozens of components have padding/height assumptions
-     baked in around these exact values, and re-scaling sizes app-wide is a
-     much bigger, riskier change than the font swap itself. What changed is
-     line-height and letter-spacing, recomputed for Geist's own metrics:
-     Geist has a taller x-height and more open default glyph spacing than
-     Figtree, so it needs LESS negative tracking at display/title sizes
-     (Geist is already tight; over-tightening collides ascenders/descenders)
-     and reads comfortably at a slightly looser line-height for body/label
-     text. Roles:
+     Dozens of components have padding/height assumptions baked in around
+     these exact sizes, so change them app-wide with care. Roles:
        text-2xl  display — page/modal <h1>, KPI/stat hero numbers
        text-base title   — card/panel/dialog/section titles, key numbers
        text-sm   body    — prose, descriptions, table cells, nav, inputs
@@ -134,91 +117,8 @@
       background-position: -200% 0;
     }
   }
-  @keyframes caret-blink {
-    0%,
-    70%,
-    to {
-      opacity: 1;
-    }
-    20%,
-    50% {
-      opacity: 0;
-    }
-  }
-  @keyframes toast-success-odd {
-    0% {
-      scale: 1;
-    }
-    30% {
-      scale: 1.025;
-    }
-    60% {
-      scale: 0.99;
-    }
-    100% {
-      scale: 1;
-    }
-  }
-  @keyframes toast-error-odd {
-    0% {
-      translate: 0 0;
-    }
-    25% {
-      translate: -3px 0;
-    }
-    50% {
-      translate: 3px 0;
-    }
-    75% {
-      translate: -3px 0;
-    }
-    100% {
-      translate: 0 0;
-    }
-  }
-  @keyframes toast-success-even {
-    0% {
-      scale: 1;
-    }
-    30% {
-      scale: 1.025;
-    }
-    60% {
-      scale: 0.99;
-    }
-    100% {
-      scale: 1;
-    }
-  }
-  @keyframes toast-error-even {
-    0% {
-      translate: 0 0;
-    }
-    25% {
-      translate: -3px 0;
-    }
-    50% {
-      translate: 3px 0;
-    }
-    75% {
-      translate: -3px 0;
-    }
-    100% {
-      translate: 0 0;
-    }
-  }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  :where(
-      .animate-toast-success-odd,
-      .animate-toast-success-even,
-      .animate-toast-error-odd,
-      .animate-toast-error-even
-    ) {
-    animation: none;
-  }
-}
 /* ── Genaro token layer ──────────────────────────────────────────────
    The base values every semantic token resolves to (Genaro brand values,
    declared in the @theme block at the foot of this file). The app runs with
@@ -390,9 +290,7 @@
 
    The semantic layer (bg-card, text-muted-foreground…) now resolves to
    Shopify Polaris via polaris-theme.css; these remain for the few places that
-   name a brand colour directly.
-
-   Consumed by /styleguide, which documents them. */
+   name a brand colour directly. */
 @theme {
   /* Navy — brand, nav rail, primary actions, one framing figure per screen */
   --color-navy-900: #16203a;
@@ -421,7 +319,6 @@
   --color-nav-mark: var(--color-navy-500);
 
   --color-ink: #18181b;
-  --color-body-text: #52525b;
   --color-muted-text: #71717a;
   --color-faint: #a1a1aa;
   --color-line: #e4e4e7;
@@ -431,35 +328,11 @@
 
   /* Status — meaning only, never decoration (rule 4) */
   --color-status-blocked: #b4232f;
-  --color-status-blocked-bg: #fee2e2;
-  --color-status-blocked-edge: #f6d5d0;
   --color-status-warning: #946200;
-  --color-status-warning-bg: #fef9c3;
-  --color-status-warning-edge: #fde68a;
   --color-status-clear: #117627;
-  --color-status-clear-bg: #dcfce7;
-  --color-status-clear-edge: #bbf7d0;
 
   /* Plate — registration plates and nowhere else (rule 5) */
   --color-plate: #f6cd5a;
-  --color-plate-edge: #d9ae33;
-
-  /* Interactive accent used by the Dashboard Home design: links, the primary
-     CTA, the date-chip weekday band and news tags. NOTE this is not the
-     README's primary (#16203A) — the dashboard artwork moved the CTA to this
-     lighter navy. Needs reconciling with the brand owner; until then navy-900
-     stays --primary app-wide and this is scoped to the dashboard. */
-  --color-accent-navy: #3b5ba9;
-
-  /* Stock-by-stage series, taken from Dashboard Home.dc.html. These differ
-     from the README's chart series (which is navy / navy-500 / amber / red)
-     and put green on "Ready" and amber on "In preparation" — status hues on
-     pipeline stages, which rule 4 argues against. Implemented as drawn because
-     the dashboard artwork is the later artefact; flagged for reconciliation. */
-  --color-stock-ready: #1d8633;
-  --color-stock-prep: #e0a82e;
-  --color-stock-inspection: #3e63dd;
-  --color-stock-photography: #16203a;
 
   /* Chart series, stock stages. The amber is #D9A62E, NOT plate yellow —
      kept distinct so plate yellow stays unique to plates. */
@@ -467,13 +340,6 @@
   --color-stage-prep: #4c6fb5;
   --color-stage-parts: #d9a62e;
   --color-stage-blocked: #b4232f;
-
-  /* Inspection dots */
-  --color-check-passed: #22c55e;
-  --color-check-partial: #f59e0b;
-  --color-check-failed: #ef4444;
-  --color-check-none: #a1a1aa;
-  --color-check-progress: #4c6fb5;
 
   /* The one shadow in the system: the calendar date chip. Nothing else. */
   --shadow-chip: 0 1px 1px rgb(0 0 0 / 0.04);

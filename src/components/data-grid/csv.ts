@@ -1,6 +1,6 @@
 import type { ColumnDef } from "./types";
 
-export function csvEscape(s: string): string {
+function csvEscape(s: string): string {
   if (s.includes(",") || s.includes('"') || s.includes("\n")) {
     return `"${s.replace(/"/g, '""')}"`;
   }

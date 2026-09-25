@@ -72,7 +72,7 @@ function rowsToSheet(name: string, rows: Record<string, unknown>[]): Sheet {
   };
 }
 
-export interface BackupResult {
+interface BackupResult {
   sheets: number;
   rows: number;
   /** False when the backup was produced but could not be recorded. */

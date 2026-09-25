@@ -5,9 +5,6 @@ import { cn } from "@/lib/utils";
 import { resolveRender } from "@/lib/as-child";
 import type React from "react";
 
-export const PopoverCreateHandle: typeof PopoverPrimitive.createHandle =
-  PopoverPrimitive.createHandle;
-
 export const Popover: typeof PopoverPrimitive.Root = PopoverPrimitive.Root;
 
 export function PopoverTrigger({
@@ -32,7 +29,7 @@ export function PopoverTrigger({
   );
 }
 
-export function PopoverPopup({
+function PopoverPopup({
   children,
   className,
   side = "bottom",
@@ -90,39 +87,4 @@ export function PopoverPopup({
   );
 }
 
-export function PopoverClose({
-  ...props
-}: PopoverPrimitive.Close.Props): React.ReactElement {
-  return <PopoverPrimitive.Close data-slot="popover-close" {...props} />;
-}
-
-export function PopoverTitle({
-  className,
-  ...props
-}: PopoverPrimitive.Title.Props): React.ReactElement {
-  return (
-    <PopoverPrimitive.Title
-      className={cn(
-        "font-semibold text-base text-balance leading-none",
-        className,
-      )}
-      data-slot="popover-title"
-      {...props}
-    />
-  );
-}
-
-export function PopoverDescription({
-  className,
-  ...props
-}: PopoverPrimitive.Description.Props): React.ReactElement {
-  return (
-    <PopoverPrimitive.Description
-      className={cn("text-muted-foreground text-[13px] leading-5 text-pretty", className)}
-      data-slot="popover-description"
-      {...props}
-    />
-  );
-}
-
-export { PopoverPrimitive, PopoverPopup as PopoverContent };
+export { PopoverPopup as PopoverContent };

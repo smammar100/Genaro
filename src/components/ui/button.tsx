@@ -18,7 +18,7 @@ import type * as React from "react";
  * including `render` / `asChild` (e.g. <Button render={<Link/>}>) — keeps
  * working unchanged.
  */
-export const buttonVariants = cva(
+const buttonVariants = cva(
   [
     "relative inline-flex shrink-0 cursor-pointer select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-full border font-medium no-underline outline-none",
     "transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
@@ -59,7 +59,7 @@ export const buttonVariants = cva(
 type AppVariant = NonNullable<VariantProps<typeof buttonVariants>["variant"]>;
 type AppSize = NonNullable<VariantProps<typeof buttonVariants>["size"]>;
 
-export interface ButtonProps extends useRender.ComponentProps<"button"> {
+interface ButtonProps extends useRender.ComponentProps<"button"> {
   variant?: AppVariant;
   size?: AppSize;
   loading?: boolean;

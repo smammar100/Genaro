@@ -4,14 +4,13 @@ Comprehensive acceptance tests for the role-based view system, per-role dashboar
 
 ## How to run this
 
-1. **Seed the 12 test accounts** (one per role):
-   ```bash
-   node scripts/seed-test-users.mjs
-   ```
+1. **Seed the 12 test accounts** (one per role). The seeding script was
+   removed from the repo; recover it with
+   `git show 23ff6b3:scripts/seed-test-users.mjs`.
    All accounts share the password **`CarCapUAT!2026`** and live in **Car Capital UK**.
 2. Start the app: `pnpm dev` (note the port it prints).
 3. Work each section below. Tick `[x]` on pass; record failures in **Notes**.
-4. When done: `node scripts/delete-test-users.mjs` to remove the demo accounts.
+4. When done: remove the demo accounts (`git show 23ff6b3:scripts/delete-test-users.mjs`).
 
 ### Credentials
 
@@ -397,6 +396,6 @@ The Users & Permissions grid + the Add Staff dialog present individual permissio
 - [ ] All Part 4 invite & onboarding cases pass.
 - [ ] All Part 5 username-account & login cases pass.
 - [ ] All Part 6 flat-views cases pass.
-- [ ] `node scripts/delete-test-users.mjs` run to clean up.
+- [ ] Demo accounts removed.
 
 Tester: ________________  Date: ____________

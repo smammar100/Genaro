@@ -6,16 +6,12 @@ import { cn } from "@/lib/utils";
 
 /**
  * Toasts — Shopify admin style: a dark pill at the bottom centre, white
- * 13px text, a close button; errors in critical red. Replaces the Nord
- * <nord-toast-group> (whose own dismiss timer never fired, GEN-123) with a
- * tiny store we own end to end.
- *
- * `addToast` / `removeToast` keep the old bridge's signatures, so
- * src/lib/toast.ts and every `toast.*` call site are unchanged.
+ * 13px text, a close button; errors in critical red. Backed by a tiny
+ * store we own end to end; src/lib/toast.ts is the public `toast.*` API.
  */
-export type ToastVariant = "default" | "danger";
+type ToastVariant = "default" | "danger";
 
-export interface ToastInput {
+interface ToastInput {
   message: string;
   variant?: ToastVariant;
   /** ms before it closes itself; 0/undefined = stays until closed. */

@@ -28,14 +28,14 @@ export function parseRetryAfterMs(
   return Number.isFinite(when) ? Math.max(0, when - nowMs) : null;
 }
 
-export type ForbiddenKind = "forbidden_advertiser" | "forbidden_product";
+type ForbiddenKind = "forbidden_advertiser" | "forbidden_product";
 
 /**
  * Classify a 403 body into the two AutoTrader-documented kinds:
  *   forbidden_advertiser — integration has no access to that advertiser id
  *   forbidden_product    — advertiser has no access to the requested service
- * Heuristic over the body text — confirm exact wording against a real 403 via
- * scripts/autotrader-advertisers-probe.mjs and tighten if needed.
+ * Heuristic over the body text — confirm exact wording against a real 403 and
+ * tighten if needed.
  */
 export function classify403(body: string): ForbiddenKind {
   const b = body.toLowerCase();

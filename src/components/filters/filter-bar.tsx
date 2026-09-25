@@ -18,12 +18,12 @@ import { cn } from "@/lib/utils";
  * the page (usually derived from the current data), never hard-coded here.
  */
 
-export interface DateRange {
+interface DateRange {
   from: string | null; // inclusive ISO date (yyyy-mm-dd) or null
   to: string | null; // inclusive ISO date (yyyy-mm-dd) or null
 }
 
-export interface FilterState {
+interface FilterState {
   search: string;
   date: DateRange;
   /** selectKey → selected option value ("" means "all"). */

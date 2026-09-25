@@ -37,7 +37,7 @@ function evictIfNeeded() {
   if (oldestKey) buckets.delete(oldestKey);
 }
 
-export interface RateLimitResult {
+interface RateLimitResult {
   ok: boolean;
   /** Seconds until the oldest hit leaves the window (only when !ok). */
   retryAfterSeconds: number;

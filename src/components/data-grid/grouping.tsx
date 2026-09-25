@@ -7,7 +7,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 // Row grouping
 // ────────────────────────────────────────────────────────────────────────────
 
-export interface RowGroup<T> {
+interface RowGroup<T> {
   key: string;
   label: string;
   rows: T[];

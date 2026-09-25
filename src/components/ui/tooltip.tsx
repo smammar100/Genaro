@@ -5,9 +5,6 @@ import { cn } from "@/lib/utils";
 import { resolveRender } from "@/lib/as-child";
 import type React from "react";
 
-export const TooltipCreateHandle: typeof TooltipPrimitive.createHandle =
-  TooltipPrimitive.createHandle;
-
 export const TooltipProvider: typeof TooltipPrimitive.Provider =
   TooltipPrimitive.Provider;
 
@@ -33,7 +30,7 @@ export function TooltipTrigger({
   );
 }
 
-export function TooltipPopup({
+function TooltipPopup({
   className,
   align = "center",
   sideOffset = 4,
@@ -79,4 +76,4 @@ export function TooltipPopup({
   );
 }
 
-export { TooltipPrimitive, TooltipPopup as TooltipContent };
+export { TooltipPopup as TooltipContent };

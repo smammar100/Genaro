@@ -229,7 +229,7 @@ const CATALOG: Record<FeatureCategory, string[]> = {
   ],
 };
 
-export interface CatalogFeature {
+interface CatalogFeature {
   name: string;
   category: FeatureCategory;
 }

@@ -33,14 +33,14 @@ Source of truth: `src/app/globals.css` (`@theme` type tokens).
 
 ## Method
 
-A computed-style auditor (`scripts/audit-typography.js`) walks every
+A computed-style auditor (a DevTools snippet, since removed from `scripts/`) walks every
 text-bearing element on a surface, reads its rendered `font-size` / `font-weight`,
 and flags anything outside `{10,12,14,18,24}px` or `{400,500,600}` weight
 (mono `600`/`700` exempt). It was run via the in-browser MCP on every route and on
 live overlays. A clean surface reports `OFF(0)` with only canonical sizes present.
 
-To re-run: open any route, paste `scripts/audit-typography.js` into the DevTools
-console, then call `auditTypography()` (or `auditTypography(modalEl)` for a modal).
+The snippet was removed from the repo; recover it from git history
+(`git show 23ff6b3:scripts/audit-typography.js`) to re-run the audit.
 
 ---
 
@@ -98,7 +98,7 @@ now computes to 600 with the page returning `OFF(0)`.
 ## How to re-run the UAT
 
 1. Start the dev server: `pnpm dev` (a fresh start avoids stale-`@theme` HMR).
-2. Open a route, paste `scripts/audit-typography.js` into the DevTools console.
+2. Open a route, paste the auditor (`git show 23ff6b3:scripts/audit-typography.js`) into the DevTools console.
 3. `auditTypography()` → expect `✓ … 0 offenders`.
 4. For modals/sheets: open the overlay, then
    `auditTypography(document.querySelector('[role=dialog]'))`.

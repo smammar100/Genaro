@@ -39,7 +39,7 @@ function mapRow(row: AdvertiserRow): AdvertiserRecord {
   };
 }
 
-export interface AdvertiserPage {
+interface AdvertiserPage {
   advertisers: AdvertiserRecord[];
   page: number;
   pageSize: number;

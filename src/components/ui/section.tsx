@@ -2,7 +2,7 @@ import type React from "react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-export type SectionProps = Omit<React.ComponentProps<"section">, "title"> & {
+type SectionProps = Omit<React.ComponentProps<"section">, "title"> & {
   /** 14px/600 heading shown outside (above) the card. */
   title?: React.ReactNode;
   /** One-line 13px #616161 description under the heading. */

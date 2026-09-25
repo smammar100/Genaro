@@ -32,9 +32,9 @@ import { vehicleService } from "@/lib/services/vehicle-service";
 import type { Vehicle } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { notify } from "@/lib/toast";
-export type EventKind = "appointment" | "workshop" | "maintenance";
+type EventKind = "appointment" | "workshop" | "maintenance";
 
-export interface EventDraft {
+interface EventDraft {
   kind: EventKind;
   title: string;
   /** yyyy-mm-dd */

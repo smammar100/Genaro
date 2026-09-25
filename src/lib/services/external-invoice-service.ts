@@ -33,7 +33,7 @@ const SELECT = `
   updatedAt:updated_at
 `;
 
-export interface ExternalInvoiceCreateInput {
+interface ExternalInvoiceCreateInput {
   invoiceKind: InvoiceKind;
   invoiceNumber?: string | null;
   vendorId: UUID;
@@ -54,7 +54,7 @@ export interface ExternalInvoiceCreateInput {
   attachmentMimeType?: string | null;
 }
 
-export type ExternalInvoicePatch = Partial<
+type ExternalInvoicePatch = Partial<
   Omit<ExternalInvoiceCreateInput, "vehicleId">
 >;
 

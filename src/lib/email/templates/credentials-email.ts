@@ -1,4 +1,4 @@
-export interface CredentialsEmailProps {
+interface CredentialsEmailProps {
   recipientName: string;
   companyName: string;
   loginUrl: string;

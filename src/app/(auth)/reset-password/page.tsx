@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import {
+  rulesResolver,
+  newPasswordIssues,
+  type FormRules,
+} from "@/lib/auth/form-resolver";
 import { toast } from "@/lib/toast";
 import { useAutoFocusField } from "@/hooks/use-auto-focus";
 import { createClient } from "@/lib/supabase/client";
@@ -20,20 +23,15 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
-const schema = z
-  .object({
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .max(72, "Password must be 72 characters or fewer"),
-    confirm: z.string(),
-  })
-  .refine((v) => v.password === v.confirm, {
-    message: "Passwords do not match",
-    path: ["confirm"],
-  });
+interface FormValues {
+  password: string;
+  confirm: string;
+}
 
-type FormValues = z.infer<typeof schema>;
+const rules: FormRules<FormValues> = (values) => ({
+  values,
+  issues: newPasswordIssues(values),
+});
 
 // Gate: a valid password update requires a recovery session. We only enable the
 // form once Supabase confirms one, either via the PASSWORD_RECOVERY auth event
@@ -76,7 +74,7 @@ export default function ResetPasswordPage() {
   }, []);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: rulesResolver(rules),
     defaultValues: { password: "", confirm: "" },
   });
 

@@ -31,7 +31,7 @@ export function RadioGroup({
   );
 }
 
-export function Radio({
+function Radio({
   className,
   ...props
 }: RadioPrimitive.Root.Props): React.ReactElement {

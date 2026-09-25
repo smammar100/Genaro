@@ -7,10 +7,9 @@ import { cn } from "@/lib/utils";
  * `<PageShell>` by default. Content fills the full available width
  * (minus the symmetric p-6 / md:p-8 padding) up to a 1400px outer cap.
  *
- * **Default cap = 1400px.** Earlier iterations used a 1152 "content"
- * cap inspired by LeafyGreen, but on the dealer's typical 1366px /
- * 1920px monitors that left a visibly empty band on each side of the
- * dashboard. Switching to 1400 makes content go effectively edge-to-
+ * **Default cap = 1400px.** A narrower 1152 cap left a visibly empty
+ * band on each side of the dashboard on the dealer's typical 1366px /
+ * 1920px monitors. Switching to 1400 makes content go effectively edge-to-
  * edge on a 1366 viewport (1366 − 260 sidebar − 64 padding ≈ 1042px
  * of content area, well below the cap) while still centring on
  * extra-wide monitors so paragraph line-lengths don't get absurd.

@@ -98,7 +98,7 @@ export function findConflicts(
   });
 }
 
-export interface RescheduleCheck {
+interface RescheduleCheck {
   ok: boolean;
   /** Blocking problem, if any. */
   error?: string;

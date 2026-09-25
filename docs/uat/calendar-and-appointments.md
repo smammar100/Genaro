@@ -6,7 +6,7 @@ User Acceptance Tests for the calendar UI (rich vs compact event cards) and the 
 
 1. Start the dev server (e.g. `bun dev` or `npm run dev`) and open the printed URL.
 2. Go to `/login` and pick any demo user — for full coverage use **Abbas Bhai** (Owner, all capabilities).
-3. Mock appointments live in `src/lib/mock-data.ts` (`mockAppointments` array). The seed includes appointments at varying dates/times. Maintenance jobs there default to `estimatedDurationHours: 2` so they will trigger rich cards.
+3. Make sure the company has appointments and maintenance jobs at varying dates/times. Maintenance jobs default to `estimatedDurationHours: 2` so they will trigger rich cards.
 4. Pages under test:
    - `/sales/appointments` (Calendar tab + List tab)
    - `/maintenance/calendar`

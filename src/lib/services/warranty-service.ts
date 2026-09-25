@@ -119,7 +119,7 @@ interface MarkPurchasedInput {
   notes?: string;
 }
 
-export interface WarrantyWithClaims extends Warranty {
+interface WarrantyWithClaims extends Warranty {
   claims: WarrantyClaim[];
 }
 

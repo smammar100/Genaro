@@ -1,6 +1,6 @@
 /**
  * Typed factories for characterization tests. Shapes mirror src/lib/types.ts;
- * default values are realistic UK-dealership data (cf. src/lib/mock-data.ts).
+ * default values are realistic UK-dealership data.
  */
 
 import type {

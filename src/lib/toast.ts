@@ -47,9 +47,8 @@ export const notify = {
 };
 
 /**
- * Drop-in compat shim for the ~57 files that import `toast` from `sonner`.
- * Covers the surface those call sites use (callable + success/error/info/
- * warning/message/dismiss). Migrate imports per section, then remove `sonner`.
+ * Sonner-shaped facade over `notify` (callable + success/error/info/warning/
+ * message/dismiss) — the API most call sites use.
  */
 function baseToast(message: string, opts: InfoOptions = {}): void {
   notify.info(message, opts);
@@ -66,7 +65,7 @@ export const toast = Object.assign(baseToast, {
   message: (message: string, opts: InfoOptions = {}) =>
     notify.info(message, opts),
   // Dismisses a toast early by the id returned from a `toast.*` call. A bare
-  // `dismiss()` with no id is a no-op (Nord toasts auto-dismiss on their timer).
+  // `dismiss()` with no id is a no-op (toasts auto-dismiss on their timer).
   dismiss: (id?: string | number): void => {
     if (typeof id === "string") removeToast(id);
   },

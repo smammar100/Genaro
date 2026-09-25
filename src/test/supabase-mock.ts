@@ -25,7 +25,7 @@ export interface SupabaseResult {
   count?: number | null;
 }
 
-export type Responder = (call: QueryCall) => SupabaseResult | undefined;
+type Responder = (call: QueryCall) => SupabaseResult | undefined;
 
 const CHAIN_METHODS = [
   "select",

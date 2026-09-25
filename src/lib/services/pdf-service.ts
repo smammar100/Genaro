@@ -1,6 +1,6 @@
 import type { Company, Invoice, TodoItem, Vehicle, Warranty } from "@/lib/types";
 
-export interface JobCardPdfInput {
+interface JobCardPdfInput {
   vehicle: Vehicle;
   todos: TodoItem[];
   preparedBy: string;
@@ -9,7 +9,7 @@ export interface JobCardPdfInput {
   vendorNames?: Record<string, string>;
 }
 
-export interface WarrantyPdfInput {
+interface WarrantyPdfInput {
   warranty: Warranty;
   vehicle: Vehicle | null;
   companyName: string;
@@ -17,7 +17,7 @@ export interface WarrantyPdfInput {
   vatNumber: string | null;
 }
 
-export interface InvoicePdfInput {
+interface InvoicePdfInput {
   invoice: Invoice;
   companyName: string;
   companyAddress: string;

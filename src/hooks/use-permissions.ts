@@ -6,7 +6,7 @@ import { permissionService } from "@/lib/services/permission-service";
 import { capabilitiesForRoles } from "@/lib/roles";
 import type { Capability } from "@/lib/capabilities";
 
-export interface UsePermissionsResult {
+interface UsePermissionsResult {
   /** All capabilities granted to the current user (empty for super-users — they bypass). */
   capabilities: Set<Capability>;
   /** True if the user is a super-user (bypass). */

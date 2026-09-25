@@ -30,13 +30,13 @@ export type RoleValue =
   // View only
   | "view_only";
 
-export type RoleGroup =
+type RoleGroup =
   | "Admin roles"
   | "Operations roles"
   | "Sales roles"
   | "View only roles";
 
-export interface RoleDef {
+interface RoleDef {
   value: RoleValue;
   label: string;
   group: RoleGroup;

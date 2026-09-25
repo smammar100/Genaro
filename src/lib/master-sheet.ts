@@ -10,7 +10,6 @@
 import type {
   BodyType,
   SaleStatus,
-  ServiceHistory,
   TodoItem,
   Vehicle,
   VehicleType,
@@ -20,7 +19,7 @@ import type {
  * Sections
  * ------------------------------------------------------------------ */
 
-export type MasterSheetSection =
+type MasterSheetSection =
   | "common"
   | "buying"
   | "receiving"
@@ -227,10 +226,10 @@ export function valueAdditionFromTodos(
  * Cell ↔ field mappings
  * ------------------------------------------------------------------ */
 
-export type SelectOption = { value: string; label: string };
+type SelectOption = { value: string; label: string };
 
 /** G — the sheet's one-word vehicle type, derived from type + body. */
-export type VehicleCategory = "CAR" | "SUV" | "MPV" | "VAN";
+type VehicleCategory = "CAR" | "SUV" | "MPV" | "VAN";
 
 export const VEHICLE_CATEGORY_OPTIONS: SelectOption[] = [
   { value: "CAR", label: "CAR" },
@@ -370,9 +369,4 @@ export function logBookPatch(
     logBook: text,
     v5Received: text !== null && /^(AVAILABLE|YES)\b/.test(text),
   };
-}
-
-/** AY — sheet wording for the stored service history. */
-export function serviceHistoryLabel(value: ServiceHistory): string {
-  return optionLabel(SERVICE_HISTORY_OPTIONS, value) ?? "UNKNOWN";
 }

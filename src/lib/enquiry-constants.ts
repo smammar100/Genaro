@@ -71,9 +71,6 @@ export const ENQUIRY_TYPES_LOST = [
   { value: "lost_duplicate", label: "Lost: Duplicate", reason: "duplicate" as LostReason },
 ] as const;
 
-export type EnquiryActiveTypeValue = (typeof ENQUIRY_TYPES_ACTIVE)[number]["value"];
-export type EnquiryLostTypeValue = (typeof ENQUIRY_TYPES_LOST)[number]["value"];
-
 /** Resolve the LostReason from a Lost-X type value; null for active types. */
 export function lostReasonForType(type: string): LostReason | null {
   const hit = ENQUIRY_TYPES_LOST.find((t) => t.value === type);

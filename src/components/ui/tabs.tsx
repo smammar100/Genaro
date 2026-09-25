@@ -4,7 +4,7 @@ import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import { cn } from "@/lib/utils";
 import type React from "react";
 
-export type TabsVariant = "default" | "underline";
+type TabsVariant = "default" | "underline";
 
 export function Tabs({
   className,
@@ -49,7 +49,7 @@ export function TabsList({
   );
 }
 
-export function TabsTab({
+function TabsTab({
   className,
   ...props
 }: TabsPrimitive.Tab.Props): React.ReactElement {
@@ -65,7 +65,7 @@ export function TabsTab({
   );
 }
 
-export function TabsPanel({
+function TabsPanel({
   className,
   ...props
 }: TabsPrimitive.Panel.Props): React.ReactElement {
@@ -78,4 +78,4 @@ export function TabsPanel({
   );
 }
 
-export { TabsPrimitive, TabsTab as TabsTrigger, TabsPanel as TabsContent };
+export { TabsTab as TabsTrigger, TabsPanel as TabsContent };

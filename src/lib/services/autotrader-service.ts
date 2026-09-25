@@ -35,6 +35,7 @@
 
 import "server-only";
 import { logger } from "@/lib/logger";
+import { capitalizeWords } from "@/lib/utils";
 import {
   deriveExpiryDate,
   deriveMotStatus,
@@ -433,11 +434,6 @@ interface AtVehicleResponse {
   motTests?: AtMotTest[];
 }
 
-function titleCase(s: string | undefined | null): string | null {
-  if (!s) return null;
-  return s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
 // ---------------------------------------------------------------------------
 // Vehicle lookup
 // ---------------------------------------------------------------------------
@@ -507,7 +503,7 @@ export async function lookupAutotraderVehicle(
     engineCapacityCC: v.engineCapacityCC ?? null,
     co2Emissions: v.co2EmissionGPKM ?? null,
     firstRegistrationDate: v.firstRegistrationDate ?? null,
-    colour: titleCase(v.colour),
+    colour: capitalizeWords(v.colour),
     retailValuation: val?.retail?.amountGBP ?? null,
     tradeValuation: val?.trade?.amountGBP ?? null,
     partExchangeValuation: val?.partExchange?.amountGBP ?? null,
@@ -520,8 +516,8 @@ export async function lookupAutotraderVehicle(
 // ---------------------------------------------------------------------------
 // Advertisers API (dealers configured on this integration)
 // ---------------------------------------------------------------------------
-// Raw shapes — captured live from the sandbox 2026-06-28 via
-// scripts/autotrader-advertisers-probe.mjs (advertiser 10008899). The list
+// Raw shapes — captured live from the sandbox 2026-06-28 (advertiser
+// 10008899; see docs/autotrader-sandbox-shapes.md). The list
 // envelope is { results[], totalResults }; a single advertiser is fetched
 // with ?advertiserId= (the path-style /advertisers/{id} returns 404).
 interface AtAdvertiserLocation {
@@ -579,7 +575,7 @@ function mapAdvertiser(row: AtAdvertiser): Advertiser {
   };
 }
 
-export interface AdvertiserListResult {
+interface AdvertiserListResult {
   advertisers: Advertiser[];
   page: number;
   pageSize: number;
@@ -624,7 +620,7 @@ export async function listAdvertisers(
 // ---------------------------------------------------------------------------
 // Stock create / update
 // ---------------------------------------------------------------------------
-export interface StockCreateResult {
+interface StockCreateResult {
   stockId: string;
   /** Raw advertising-location statuses echoed back (all NOT_PUBLISHED on create). */
   advertisingStatus: "not_published" | "published";

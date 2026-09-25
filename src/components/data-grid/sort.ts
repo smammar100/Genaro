@@ -3,9 +3,9 @@
 import * as React from "react";
 
 /** A column comparator: returns <0, 0, >0 like Array.prototype.sort. */
-export type Comparator<T> = (a: T, b: T) => number;
+type Comparator<T> = (a: T, b: T) => number;
 
-export interface UseSortResult<T> {
+interface UseSortResult<T> {
   /** Rows sorted by the active column (undefined while `rows` is undefined). */
   sorted: T[] | undefined;
   /** The active sort column id, or null when unsorted. */

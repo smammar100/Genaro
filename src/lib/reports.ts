@@ -11,7 +11,7 @@ import type { Vehicle } from "@/lib/types";
 /** Sentinel for "no filter applied". */
 export const ALL = "all";
 
-export interface ReportFilters {
+interface ReportFilters {
   /** Year of the vehicle's event — see `matchesFilters`. */
   year: string;
   make: string;

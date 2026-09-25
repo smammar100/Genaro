@@ -4,8 +4,7 @@ import { Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { rulesResolver, requiredIssue, type FormRules } from "@/lib/auth/form-resolver";
 import { toast } from "@/lib/toast";
 import { useAuth } from "@/contexts/auth-context";
 import { getHomeForUser } from "@/lib/user-home";
@@ -17,12 +16,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { InputField } from "@/components/forms/input-field";
 
-const schema = z.object({
-  identifier: z.string().min(1, "Enter your username or email"),
-  password: z.string().min(1, "Password is required"),
-});
+interface FormValues {
+  identifier: string;
+  password: string;
+}
 
-type FormValues = z.infer<typeof schema>;
+const rules: FormRules<FormValues> = (values) => ({
+  values,
+  issues: [
+    ...requiredIssue<FormValues>(
+      "identifier",
+      values.identifier,
+      "Enter your username or email",
+    ),
+    ...requiredIssue<FormValues>("password", values.password, "Password is required"),
+  ],
+});
 
 export default function LoginPage() {
   // useSearchParams must be inside a Suspense boundary for static prerendering.
@@ -46,7 +55,7 @@ function LoginInner() {
   const orgSlug = search.get("org") ?? DEFAULT_ORG_SLUG;
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: rulesResolver(rules),
     defaultValues: { identifier: "", password: "" },
   });
 

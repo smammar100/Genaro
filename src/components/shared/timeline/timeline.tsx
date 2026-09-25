@@ -77,7 +77,7 @@ export function Timeline({
   );
 }
 
-export interface TimelineItemProps {
+interface TimelineItemProps {
   /** Icon shown inside the node. Lucide preferred. */
   icon: LucideIcon;
   /** Visual tone for the node (controls bg / text / ring). */

@@ -35,7 +35,7 @@ export function ResourceList({
   });
 }
 
-export type ResourceListItemProps = Omit<
+type ResourceListItemProps = Omit<
   React.ComponentProps<"li">,
   "title" | "onClick"
 > & {
@@ -163,5 +163,3 @@ export function Chip({
     />
   );
 }
-
-export { ResourceList as ListCard, ResourceListItem as ListCardItem };

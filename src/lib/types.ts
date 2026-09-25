@@ -107,28 +107,6 @@ export interface UserPermission {
   grantedAt: ISODateTime;
 }
 
-/**
- * Reusable magic-link a company shares so people can self-join without an
- * email invite. One row per company; "Reset" rotates the token.
- */
-export interface TeamJoinLink {
-  id: UUID;
-  companyId: UUID;
-  token: string;
-  /** Role new joiners land with — editable later in the permissions grid. */
-  defaultRole: import("./roles").RoleValue;
-  createdBy: UUID | null;
-  createdAt: ISODateTime;
-  /** Redemption deadline — Reset refreshes this (+72h). Migration 0033. */
-  expiresAt: ISODateTime;
-  /** Optional redemption cap (null = uncapped until expiry). */
-  maxUses: number | null;
-  /** Successful redemptions so far (server-incremented). */
-  usedCount: number;
-  /** Set when an admin revokes the link without rotating it. */
-  revokedAt: ISODateTime | null;
-}
-
 // ============================================================
 // VEHICLES
 // ============================================================
@@ -185,9 +163,7 @@ export const VEHICLE_LOCATION_LABELS: Record<VehicleLocation, string> = {
 
 /**
  * Where the dealership *bought* the car (auction / private seller / trade-in
- * / dealer / other). Renamed from `SourceType` in Spec v3.0 — Decision C-1.
- * The legacy name is exported below as an alias so any straggling consumer
- * keeps compiling during the rename pass.
+ * / dealer / other).
  */
 export type PurchaseSource =
   | "auction"
@@ -195,8 +171,6 @@ export type PurchaseSource =
   | "trade_in"
   | "dealer"
   | "other";
-/** @deprecated renamed to PurchaseSource — Spec v3.0 Decision C-1. */
-export type SourceType = PurchaseSource;
 export type PurchaseChannel = "vendor" | "supplier" | "g_trader" | "direct";
 export type ServiceHistory = "full" | "partial" | "none" | "unknown";
 export type FinanceProvider =
@@ -206,37 +180,7 @@ export type FinanceProvider =
   | "infinit"
   | "none";
 
-// ── Custom Fields (SPEC Point 1) ────────────────────────────────────────────
-export type CustomFieldType =
-  | "text"
-  | "number"
-  | "date"
-  | "dropdown"
-  | "multi_select"
-  | "boolean"
-  | "currency";
-
-export interface CustomFieldDefinition {
-  id: UUID;
-  companyId: UUID;
-  /** Immutable slug auto-derived from the label at creation. */
-  fieldKey: string;
-  /** Human-readable, editable. */
-  label: string;
-  fieldType: CustomFieldType;
-  /** For dropdown / multi_select; null otherwise. */
-  options: string[] | null;
-  required: boolean;
-  showInMasterSheet: boolean;
-  showInArrivalForm: boolean;
-  displayOrder: number;
-  createdBy: UUID | null;
-  createdAt: ISODateTime;
-  /** Soft-delete — archived defs vanish from forms/tables, values persist. */
-  archivedAt: ISODateTime | null;
-}
-
-/** A per-vehicle custom field value, keyed by `CustomFieldDefinition.fieldKey`. */
+/** A per-vehicle custom field value. */
 export type CustomFieldValue =
   | string
   | number
@@ -343,9 +287,8 @@ export interface Vehicle {
   heroImageUrl: string | null;
 
   /**
-   * Custom field values keyed by CustomFieldDefinition.fieldKey
-   * (SPEC Point 1). Defaults to `{}`. Read defensively — the column is
-   * user-applied via migration 0003.
+   * Custom field values keyed by field key (SPEC Point 1). Defaults to `{}`.
+   * Read defensively — the column is user-applied via migration 0003.
    */
   customFields: Record<string, CustomFieldValue>;
 
@@ -477,19 +420,6 @@ export interface LocationMovement {
   notes: string | null;
   createdBy: UUID;
   createdAt: ISODateTime;
-}
-
-export interface VehiclePhoto {
-  id: UUID;
-  vehicleId: UUID;
-  url: string;
-  processedUrl: string | null;
-  composedUrl: string | null;
-  backgroundProcessed: boolean;
-  selectedBackground: string | null;
-  order: number;
-  uploadedBy: UUID;
-  uploadedAt: ISODateTime;
 }
 
 // ============================================================
@@ -697,16 +627,6 @@ export interface AdvertData {
   };
 }
 
-export const EMPTY_ADVERT_DATA: AdvertData = {
-  attentionGrabber: "",
-  keySellingPoint: "",
-  strapline: "",
-  subtitle: "",
-  highlights: [],
-  features: [],
-  taxonomy: {},
-};
-
 export interface Listing {
   id: UUID;
   companyId: UUID;
@@ -843,25 +763,6 @@ export interface Appointment {
   isDemo?: boolean;
   createdAt: ISODateTime;
 }
-
-// ============================================================
-// SALES PIPELINE
-// ============================================================
-
-/**
- * The stages the app ships with. Kept as a union because the service layer
- * still reasons about these specific slugs (seeding, fallbacks) — but a deal's
- * stage is NOT limited to them: companies rename, reorder, add and remove
- * stages from Settings (GEN-65).
- */
-export type BuiltInSalesStage =
-  | "new_lead"
-  | "contacted"
-  | "test_drive"
-  | "deposit_taken"
-  | "collection_delivery"
-  | "completed_sale"
-  | "lost";
 
 /** A `pipeline_stages.slug` for the deal's company. */
 export type SalesStage = string;
@@ -1479,24 +1380,14 @@ export interface Enquiry {
   updatedAt: ISODateTime;
 }
 
-export interface EnquiryHistoryEntry {
-  id: UUID;
-  enquiryId: UUID;
-  actorId: UUID;
-  fromStatus: EnquiryStatus | null;
-  toStatus: EnquiryStatus;
-  note: string | null;
-  createdAt: ISODateTime;
-}
-
 // ---------------------------------------------------------------------------
 // AutoTrader Connect — Advertisers (dealers configured on the integration)
 // ---------------------------------------------------------------------------
 /**
  * A dealer (advertiser) returned by the AutoTrader Advertisers API. Field
  * names normalise AutoTrader's raw shape — `raw` keeps the full payload so we
- * never lose data we haven't surfaced yet. Confirm raw field names against a
- * live response (scripts/autotrader-advertisers-probe.mjs).
+ * never lose data we haven't surfaced yet. Raw field names are recorded in
+ * docs/autotrader-sandbox-shapes.md.
  */
 export interface Advertiser {
   advertiserId: string;

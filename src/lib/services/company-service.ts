@@ -23,7 +23,7 @@ const SELECT = `
 export type LogoKind = "full" | "mark";
 
 /** Columns the Settings → Company form can persist. */
-export interface UpdateCompanyInput {
+interface UpdateCompanyInput {
   name?: string;
   address?: string;
   /** Empty string is normalised to null (the column is nullable). */

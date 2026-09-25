@@ -17,6 +17,7 @@
  */
 
 import type { Vehicle, Listing } from "@/lib/types";
+import { capitalizeWords } from "@/lib/utils";
 
 const ADVERT_LOCATIONS = [
   "autotraderAdvert",
@@ -27,11 +28,6 @@ const ADVERT_LOCATIONS = [
 ] as const;
 
 // --- Enum → AutoTrader vocabulary maps (validated against the sandbox) ---
-function titleCase(s: string | null | undefined): string | null {
-  if (!s) return null;
-  return s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
 function atVehicleType(v: string): string {
   return v === "van" ? "Van" : "Car";
 }
@@ -63,12 +59,12 @@ const BODY_TYPE_MAP: Record<string, string> = {
   coupe: "Coupe",
 };
 
-export interface StockMapInput {
+interface StockMapInput {
   vehicle: Vehicle;
   listing: Listing;
 }
 
-export interface StockMapResult {
+interface StockMapResult {
   body: Record<string, unknown>;
   /** Non-fatal issues the caller should surface (e.g. missing derivativeId). */
   warnings: string[];
@@ -105,14 +101,14 @@ export function buildStockCreateBody({
     vehicle: {
       vehicleType: atVehicleType(vehicle.vehicleType),
       registration: vehicle.registration.replace(/\s+/g, ""),
-      make: titleCase(vehicle.make),
-      model: titleCase(vehicle.model) ?? vehicle.derivative ?? "Unknown",
+      make: capitalizeWords(vehicle.make),
+      model: capitalizeWords(vehicle.model) ?? vehicle.derivative ?? "Unknown",
       ...(vehicle.generation ? { generation: vehicle.generation } : {}),
       ...(vehicle.derivative ? { derivative: vehicle.derivative } : {}),
       ...(vehicle.atDerivativeId ? { derivativeId: vehicle.atDerivativeId } : {}),
       fuelType: atFuelType(vehicle.fuelType),
-      bodyType: BODY_TYPE_MAP[vehicle.bodyType] ?? titleCase(vehicle.bodyType),
-      transmissionType: titleCase(vehicle.transmission),
+      bodyType: BODY_TYPE_MAP[vehicle.bodyType] ?? capitalizeWords(vehicle.bodyType),
+      transmissionType: capitalizeWords(vehicle.transmission),
       odometerReadingMiles: vehicle.mileage,
     },
     adverts: {

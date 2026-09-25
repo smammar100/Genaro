@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import type { Vehicle } from "@/lib/types";
 import {
   Tabs,
@@ -11,16 +12,47 @@ import {
 import { todoService } from "@/lib/services/todo-service";
 import { enquiryService } from "@/lib/services/enquiry-service";
 import { vehiclePhotoService } from "@/lib/services/vehicle-photo-service";
+import { Skeleton } from "@/components/ui/skeleton";
 import { OverviewTab } from "./overview-tab";
-import { DetailsTab } from "./details-tab";
-import { LocationTab } from "./location-tab";
-import { FinancialsTab } from "./financials-tab";
-import { TodoTab } from "./todo-tab";
-import { InspectionTab } from "./inspection-tab";
-import { PhotosTab } from "./photos-tab";
-import { ListingTab } from "./listing-tab";
-import { AppointmentsTab } from "./appointments-tab";
-import { ActivityTab } from "./activity-tab";
+
+// Only the active panel is mounted, and Overview is what the page opens on, so
+// the other nine tabs load on first visit instead of in the page's initial JS.
+const tabLoading = () => <Skeleton className="h-64 w-full rounded-lg" />;
+const DetailsTab = dynamic(
+  () => import("./details-tab").then((m) => m.DetailsTab),
+  { loading: tabLoading },
+);
+const LocationTab = dynamic(
+  () => import("./location-tab").then((m) => m.LocationTab),
+  { loading: tabLoading },
+);
+const FinancialsTab = dynamic(
+  () => import("./financials-tab").then((m) => m.FinancialsTab),
+  { loading: tabLoading },
+);
+const TodoTab = dynamic(() => import("./todo-tab").then((m) => m.TodoTab), {
+  loading: tabLoading,
+});
+const InspectionTab = dynamic(
+  () => import("./inspection-tab").then((m) => m.InspectionTab),
+  { loading: tabLoading },
+);
+const PhotosTab = dynamic(
+  () => import("./photos-tab").then((m) => m.PhotosTab),
+  { loading: tabLoading },
+);
+const ListingTab = dynamic(
+  () => import("./listing-tab").then((m) => m.ListingTab),
+  { loading: tabLoading },
+);
+const AppointmentsTab = dynamic(
+  () => import("./appointments-tab").then((m) => m.AppointmentsTab),
+  { loading: tabLoading },
+);
+const ActivityTab = dynamic(
+  () => import("./activity-tab").then((m) => m.ActivityTab),
+  { loading: tabLoading },
+);
 
 interface VehicleDetailShellProps {
   vehicle: Vehicle;

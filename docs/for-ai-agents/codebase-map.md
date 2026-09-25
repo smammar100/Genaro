@@ -288,7 +288,6 @@ Dynamic detail routes: `/vehicles/[id]/inspection/page.tsx`, `/warranties/[id]/p
 | File | Owns |
 |---|---|
 | `types.ts` | All TypeScript domain types + unions (~25 entities, ~30 unions) |
-| `mock-data.ts` | Seed data for dev (114 vehicles + users + customers + …) |
 | `capabilities.ts` | 38 capabilities + `CAPABILITY_GROUPS` + `CAPABILITY_LABELS` |
 | `roles.ts` | Role bundles → capability sets |
 | `cache.ts` | In-memory key-value cache (used by every service) |
@@ -330,11 +329,10 @@ Dynamic detail routes: `/vehicles/[id]/inspection/page.tsx`, `/warranties/[id]/p
 
 | File | Purpose |
 |---|---|
-| `seed.ts` | Seed Supabase from `mock-data.ts` (requires `SUPABASE_SERVICE_ROLE_KEY`) |
-| `migrate-seed-images.ts` | Upload seed vehicle photos to Supabase Storage |
-| `csv-to-seeds.mjs` | Convert CSV → TypeScript seed entries |
-| `patch-mock-data.mjs` | In-place patcher for `src/lib/mock-data.ts` |
-| `seeds.generated.txt`, `seeds.stats.txt` | Tooling output (gitignored) |
+| `build-polaris-theme.mjs` | Generates `src/app/polaris-theme.css` from `@shopify/polaris-tokens` |
+| `import-master-sheet.mts` | Imports the client's legacy Excel master sheet |
+| `seed-demo-vehicles.mts`, `demo-car-photos.mts` | Seed demo vehicles and their photos |
+| `lint-ratchet.mjs` | CI gate: fails if the ESLint error count exceeds the baseline |
 
 ---
 

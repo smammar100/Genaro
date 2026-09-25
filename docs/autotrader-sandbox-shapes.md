@@ -1,7 +1,7 @@
 # AutoTrader Connect — captured sandbox shapes
 
 Captured 2026-05-26 against `https://api-sandbox.autotrader.co.uk`,
-advertiser `10008899`, reg `EK18FUT`, via `scripts/autotrader-probe.mjs`.
+advertiser `10008899`, reg `EK18FUT`, via a one-off probe script (since removed).
 **No tokens or secrets in this file** — structure + sample public values only.
 
 ## Auth — `POST /authenticate`
@@ -114,8 +114,8 @@ casing matters: vehicleType `Car`/`Van`, fuelType `Petrol`/`Diesel`/
 
 ## Advertisers API — `GET /advertisers` (✅ captured live 2026-06-28)
 
-Captured against the sandbox, advertiser `10008899`, via
-`scripts/autotrader-advertisers-probe.mjs`. CF-RAY present on every response.
+Captured against the sandbox, advertiser `10008899`, via a one-off probe
+script (since removed). CF-RAY present on every response.
 
 Paginated list — **Go-Live requires `page` + `pageSize`** (both sent always):
 ```

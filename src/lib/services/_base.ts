@@ -1,16 +1,3 @@
-/**
- * Shared helpers for the service layer: id generation and keyset pagination.
- */
-
-export function newId(prefix: string = "id"): string {
-  // Browser-only path: crypto.randomUUID is widely supported.
-  // TODO: Supabase: replace with `gen_random_uuid()` Postgres default.
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
 // ---------------------------------------------------------------------------
 // Keyset (cursor) pagination — Track A4.
 //

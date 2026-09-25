@@ -18,7 +18,7 @@ export function sortMovements(movements: LocationMovement[]): LocationMovement[]
   });
 }
 
-export interface DerivedLocationState {
+interface DerivedLocationState {
   currentLocation: VehicleLocation | null;
   locationSince: string | null;
 }
@@ -48,7 +48,7 @@ export function isOutstanding(m: LocationMovement): boolean {
   );
 }
 
-export interface MovementEditPatch {
+interface MovementEditPatch {
   toLocation?: VehicleLocation;
   createdAt?: string;
   expectedReturnAt?: string | null;
@@ -115,7 +115,7 @@ export function validateMovementEdit(
  * becomes afterwards. Deleting the newest entry hands the car back to the
  * previous one; deleting the only entry leaves nothing to derive from.
  */
-export interface DeletionOutcome {
+interface DeletionOutcome {
   allowed: boolean;
   reason?: string;
   /** State to write onto the vehicle after the delete. */

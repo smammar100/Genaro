@@ -6,7 +6,6 @@ import {
   Hammer,
   Calendar as CalendarIcon,
   Megaphone,
-  // Image as ImageIcon, // restore with the Photo Processing nav item
   UserPlus,
   CalendarCheck,
   TrendingUp,
@@ -188,15 +187,8 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         icon: Megaphone,
         requiredAnyOf: ["advert:create", "advert:edit"],
       },
-      // Hidden for now (per request) — restore this block to bring back the
-      // Photo Processing nav item. Also re-enable the `Image as ImageIcon`
-      // import above when restoring.
-      // {
-      //   label: "Photo Processing",
-      //   href: "/advert/photo-processing",
-      //   icon: ImageIcon,
-      //   requiredAnyOf: ["photos:process"],
-      // },
+      // Photo Processing (/advert/photo-processing, photos:process) is hidden
+      // from the nav per client request; the route still exists.
       {
         label: "Performance",
         href: "/advert/performance",

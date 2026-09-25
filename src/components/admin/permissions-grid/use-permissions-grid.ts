@@ -17,7 +17,7 @@ function cloneMap(src: PermissionsMap): PermissionsMap {
   return out;
 }
 
-export interface UsePermissionsGrid {
+interface UsePermissionsGrid {
   users: User[] | null;
   localState: PermissionsMap;
   serverState: PermissionsMap;

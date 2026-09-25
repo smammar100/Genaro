@@ -10,7 +10,7 @@ import type React from "react";
  * Badge — Polaris Badge: an 8px-radius chip, 12px medium text, in Polaris's
  * tone colours (values from @shopify/polaris-tokens, light theme).
  */
-export const badgeVariants = cva(
+const badgeVariants = cva(
   "relative inline-flex shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-transparent font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg:not([class*='size-'])]:size-3 [&_svg]:pointer-events-none [&_svg]:shrink-0 [button&,a&]:cursor-pointer",
   {
     defaultVariants: {
@@ -38,7 +38,7 @@ export const badgeVariants = cva(
   },
 );
 
-export interface BadgeProps extends useRender.ComponentProps<"span"> {
+interface BadgeProps extends useRender.ComponentProps<"span"> {
   variant?: VariantProps<typeof badgeVariants>["variant"];
   size?: VariantProps<typeof badgeVariants>["size"];
 }

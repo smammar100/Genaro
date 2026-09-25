@@ -10,7 +10,7 @@
  * never the thing we render.
  */
 
-export interface VariantSource {
+interface VariantSource {
   variantName?: string | null;
   derivative?: string | null;
   variantCode?: string | null;

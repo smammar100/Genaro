@@ -1,95 +1,34 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
-import { Onborda, OnbordaProvider, useOnborda } from "onborda";
 import { useAuth } from "@/contexts/auth-context";
-import { useGuidedSteps } from "@/hooks/use-guided-steps";
-import { onboardingService } from "@/lib/services/onboarding-service";
-import { WELCOME_TOUR, type GuidedStep } from "@/lib/onboarding/tour-steps";
-import { useIsWelcomeScreen } from "@/hooks/use-has-vehicles";
-import { TourCard } from "./tour-card";
+import { WELCOME_TOUR } from "@/lib/onboarding/tour-steps";
+import { OnbordaProvider, useOnborda } from "./tour-context";
+
+// Onborda's overlay pulls in framer-motion; nobody needs it until a tour runs.
+const TourRuntime = dynamic(() => import("./tour-runtime"), { ssr: false });
 
 /**
- * Starts the tour for anyone who has never taken it, advances it when the user
- * performs a step's action, and records completion when it ends.
+ * Mounts the tour runtime once it is needed and keeps it mounted from then on.
  *
- * Must live INSIDE OnbordaProvider — `useOnborda` reads that context — which
- * is why the provider and this controller are separate components.
+ * Needed = the user has never taken the tour (it auto-starts on /dashboard),
+ * or a tour was started (Replay). It stays mounted after that because the
+ * runtime is what records completion when the tour closes — unmounting on
+ * close would drop that write.
  */
-function TourController({ steps }: { steps: GuidedStep[] }) {
-  const { user, revalidate } = useAuth();
-  const { startOnborda, isOnbordaVisible, currentStep, setCurrentStep } =
-    useOnborda();
-  const pathname = usePathname();
-
-  const userId = user?.id ?? null;
-  // Not while the first-run screen is up. Every step after the second
-  // highlights a nav item, and that screen deliberately has no nav — the tour
-  // would spotlight nothing at all. It starts on the dashboard proper, once
-  // there is a car to look at and a rail to teach.
-  const isWelcome = useIsWelcomeScreen(pathname);
-  const needsTour = Boolean(
-    user && user.onboardingCompletedAt === null && !isWelcome,
+function TourLoader() {
+  const { user } = useAuth();
+  const { isOnbordaVisible } = useOnborda();
+  const needed = Boolean(
+    (user && user.onboardingCompletedAt === null) || isOnbordaVisible,
   );
-
-  // Guards against re-opening the tour the instant it is dismissed: closing it
-  // writes the completion date, but until that refetch lands `needsTour` is
-  // still true and the effect would fire straight back up.
-  //
-  // It re-arms when the user becomes un-onboarded again, which is what makes
-  // "Replay the tour" work — that clears the date, and this effect is the one
-  // and only thing that starts a tour. A latch that never released would leave
-  // replay silently doing nothing on a session that had already been through it.
-  const startedRef = React.useRef(false);
-
-  React.useEffect(() => {
-    if (!needsTour) {
-      startedRef.current = false;
-      return;
-    }
-    // Start from the dashboard only. The Add Vehicle step points at the
-    // greeting's button, and starting on an arbitrary deep link would
-    // highlight an element that is not there.
-    if (startedRef.current || pathname !== "/dashboard") return;
-    startedRef.current = true;
-    startOnborda(WELCOME_TOUR);
-  }, [needsTour, pathname, startOnborda]);
-
-  // Advance when the user reaches the route the current step asked for. This
-  // is what makes the middle of the tour a tutorial rather than a slideshow:
-  // the step is satisfied by the real click on the real nav item, and pressing
-  // Next is not offered as a substitute.
-  React.useEffect(() => {
-    if (!isOnbordaVisible) return;
-    const step = steps[currentStep];
-    if (!step?.awaitRoute || pathname !== step.awaitRoute) return;
-    // Let the destination paint before moving the spotlight, otherwise the
-    // pointer measures the outgoing page and lands in the wrong place.
-    setCurrentStep(currentStep + 1, 450);
-  }, [pathname, currentStep, isOnbordaVisible, setCurrentStep, steps]);
-
-  // Persist completion by watching the tour close rather than by wiring a
-  // callback into every exit path. Onborda ends in three ways — Finish, Skip
-  // and the X — and all three land here, so none can slip through and leave
-  // the user marked un-onboarded.
-  const wasVisible = React.useRef(false);
-  React.useEffect(() => {
-    if (isOnbordaVisible) {
-      wasVisible.current = true;
-      return;
-    }
-    if (!wasVisible.current || !userId) return;
-    wasVisible.current = false;
-    void onboardingService
-      .markComplete(userId)
-      .then(() => revalidate({ force: true }))
-      // A failed write is not worth interrupting the user for: the cost is
-      // being offered the tour again next time, not lost work.
-      .catch(() => {});
-  }, [isOnbordaVisible, userId, revalidate]);
-
-  return null;
+  const [loaded, setLoaded] = React.useState(false);
+  // Latch during render (React's "adjust state on prop change" pattern): the
+  // runtime mounts in this same pass instead of one effect later.
+  if (needed && !loaded) setLoaded(true);
+  return loaded || needed ? <TourRuntime /> : null;
 }
 
 /**
@@ -105,7 +44,8 @@ function TourController({ steps }: { steps: GuidedStep[] }) {
  * It starts the tour directly instead of clearing the user's completion date
  * and letting the auto-start effect notice — the signed-in user is cached, so
  * that refetch is not reliable and the replay silently did nothing. Closing it
- * writes a fresh completion date exactly as a first run does.
+ * writes a fresh completion date exactly as a first run does. Starting it is
+ * also what makes TourLoader fetch the runtime.
  */
 export function useReplayTour(): () => void {
   const router = useRouter();
@@ -130,36 +70,16 @@ export function useReplayTour(): () => void {
 }
 
 /**
- * Wraps the dashboard in the guided tour.
+ * Wraps the dashboard in the guided tour's state.
  *
- * `interact` is ON because the tour is click-driven — without it the overlay
- * swallows the very clicks each step is waiting for.
- *
- * The transition is a short tween, not a spring. Onborda dims the page with
- * one enormous animated `box-shadow`, which the compositor cannot cache and
- * must repaint at full viewport size every frame; a spring keeps that repaint
- * running for its whole settle time and is what makes the tour feel heavy.
+ * Only the state lives here (a tiny context the sidebar also reads); the tour
+ * UI loads lazily via TourLoader.
  */
 export function OnboardingTour({ children }: { children: React.ReactNode }) {
-  // The tour is one script but the rail is not: a member only sees the items
-  // their capabilities allow. Showing a step that points at a hidden nav item
-  // strands them, because middle steps have no Next button -- the click IS the
-  // step (GEN-127). Build the tour from what this person can actually reach.
-  const steps = useGuidedSteps();
-
   return (
     <OnbordaProvider>
-      <Onborda
-        steps={[{ tour: WELCOME_TOUR, steps }]}
-        cardComponent={TourCard}
-        interact
-        shadowRgb="12,21,44"
-        shadowOpacity="0.6"
-        cardTransition={{ type: "tween", ease: "easeOut", duration: 0.2 }}
-      >
-        <TourController steps={steps} />
-        {children}
-      </Onborda>
+      {children}
+      <TourLoader />
     </OnbordaProvider>
   );
 }

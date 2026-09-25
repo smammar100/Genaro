@@ -14,7 +14,7 @@
 
 type Level = "debug" | "info" | "warn" | "error";
 
-export type LogContext = Record<string, unknown>;
+type LogContext = Record<string, unknown>;
 
 function serialise(context: LogContext | undefined): LogContext | undefined {
   if (!context) return undefined;

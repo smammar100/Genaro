@@ -1,4 +1,4 @@
-export interface InviteEmailProps {
+interface InviteEmailProps {
   recipientName: string;
   companyName: string;
   invitedByName: string;

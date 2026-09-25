@@ -2,6 +2,7 @@
 import { variantLabel } from "@/lib/vehicle-variant";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import {
   Camera,
   ClipboardList,
@@ -14,7 +15,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
-import { VehicleImage } from "@/components/shared/vehicle-image";
+import {
+  VehicleImage,
+  canOptimizeImage,
+} from "@/components/shared/vehicle-image";
 import { vehiclePhotoService } from "@/lib/services/vehicle-photo-service";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { VehicleStatusBadge } from "@/components/shared/status-badge";
@@ -114,16 +118,21 @@ export function VehicleHeaderCard({
           </Button>
         )}
         {heroUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          // A fixed 176x112 slot: next/image serves a 1x/2x rendition of that
+          // size instead of the full-size original.
+          <Image
             src={heroUrl}
             alt={`${vehicle.make} ${vehicle.model}`}
+            width={176}
+            height={112}
+            unoptimized={!canOptimizeImage(heroUrl)}
             className="-outline-offset-1 h-28 w-44 shrink-0 rounded-lg object-cover outline-1 outline-black/10 dark:outline-white/10"
           />
         ) : (
           <VehicleImage
             vehicle={vehicle}
             variant="card"
+            sizes="176px"
             className="h-28 w-44 shrink-0 rounded-lg"
           />
         )}

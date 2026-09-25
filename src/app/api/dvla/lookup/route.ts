@@ -23,6 +23,7 @@
 import { NextResponse } from "next/server";
 import { requireUser, authErrorResponse } from "@/lib/auth/require-user";
 import { rateLimit } from "@/lib/rate-limit";
+import { capitalizeWords } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
@@ -79,13 +80,6 @@ function mapFuelType(dvla: string | undefined): string {
     default:
       return "petrol"; // safe fallback
   }
-}
-
-function titleCase(s: string | undefined): string | null {
-  if (!s) return null;
-  return s
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function normaliseReg(raw: string): string {
@@ -237,7 +231,7 @@ export async function POST(request: Request) {
     make: dvla.make ?? null,
     model: null, // DVLA VES doesn't return model — user fills manually
     year: dvla.yearOfManufacture ?? null,
-    colour: titleCase(dvla.colour),
+    colour: capitalizeWords(dvla.colour),
     fuelType: mapFuelType(dvla.fuelType),
     engineSizeCC: dvla.engineCapacity ?? null,
     motExpiry: dvla.motExpiryDate ?? null,

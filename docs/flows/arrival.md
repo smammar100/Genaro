@@ -110,7 +110,7 @@ sequenceDiagram
 |---|---|---|
 | DVLA returns 400 (invalid format) | `dvla-service` returns `null` silently; form shows "Manual entry required" inline state | User fills fields manually |
 | DVLA rate-limited (429) | Same — `null` + console.warn | Try again later or fill manually |
-| DVLA upstream unreachable | Service falls back to `DVLA_MOCK` from `mock-data.ts` if the reg is seeded there | Demos keep working |
+| DVLA upstream unreachable | Service falls back to `DVLA_MOCK` in `dvla-service.ts` if the reg is seeded there | Demos keep working |
 | Duplicate registration on submit | `vehicleService.getByRegistration` returns existing; user gets a JS `confirm` "Add anyway?" | Returned/removed vehicles can come back — duplicate is allowed |
 | Inspection failure with no obvious owner | Things-to-Do auto-create with `vendorId: null` and `cost: null` | User assigns vendor and sets cost manually |
 | Network drop during submit | Form throws; toast shows error; no row inserted | User retries |

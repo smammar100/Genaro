@@ -1,5 +1,21 @@
-import { DVLA_MOCK } from "@/lib/mock-data";
 import type { BodyType, Transmission, Vehicle } from "@/lib/types";
+
+/** Offline DVLA fixtures, used when the live API is unreachable (see mockFallback). */
+const DVLA_MOCK: Record<string, Partial<Vehicle>> = {
+  "GK66 6NX": { make: "NISSAN", model: "JUKE", year: 2016, colour: "Grey", fuelType: "diesel", engineSizeCC: 1461 },
+  "YB19 XMD": { make: "FORD", model: "FIESTA", year: 2019, colour: "Blue", fuelType: "petrol", engineSizeCC: 998 },
+  "DE71 FRG": { make: "RANGE ROVER", model: "EVOQUE", year: 2021, colour: "Black", fuelType: "diesel", engineSizeCC: 1999 },
+  "FL22 HJK": { make: "MERCEDES", model: "C CLASS", year: 2022, colour: "Silver", fuelType: "diesel", engineSizeCC: 1950 },
+  "LX68 CZK": { make: "AUDI", model: "A3", year: 2018, colour: "Silver", fuelType: "petrol", engineSizeCC: 1395 },
+  "MV17 HFJ": { make: "AUDI", model: "Q2", year: 2017, colour: "Blue", fuelType: "petrol", engineSizeCC: 1395 },
+  "HN20 BYE": { make: "TOYOTA", model: "YARIS", year: 2020, colour: "Silver", fuelType: "hybrid", engineSizeCC: 1490 },
+  "KR71 FRP": { make: "AUDI", model: "Q3", year: 2021, colour: "White", fuelType: "petrol", engineSizeCC: 1498 },
+  // Fresh test presets (UAT round) — reg unused in seeded vehicles so TC-P1-001 etc. can run as-written.
+  "LR74 NJK": { make: "NISSAN", model: "JUKE", year: 2017, colour: "Silver", fuelType: "diesel", engineSizeCC: 1461 },
+  "MN18 ABC": { make: "TOYOTA", model: "YARIS", year: 2019, colour: "Silver", fuelType: "hybrid", engineSizeCC: 1490 },
+  "OP67 XYZ": { make: "FORD", model: "FOCUS", year: 2017, colour: "Black", fuelType: "petrol", engineSizeCC: 1499 },
+  "QR22 STU": { make: "BMW", model: "1 SERIES", year: 2022, colour: "White", fuelType: "petrol", engineSizeCC: 1998 },
+};
 
 const BODY_TYPES = new Set<BodyType>([
   "hatchback",
@@ -84,7 +100,7 @@ function mockFallback(reg: string): DvlaLookupReturn | null {
 }
 
 /** Provenance markers returned by the combined lookup route. */
-export type LookupSources = {
+type LookupSources = {
   dvla: "ok" | "error";
   dvsa: "ok" | "error" | "missing_credentials";
   autotrader: "ok" | "error" | "missing_credentials";
@@ -101,7 +117,7 @@ const DVLA_TIMEOUT_MS = 12_000;
 // --- Combined-route response shape (mirrors VehicleLookupPayload from
 // src/app/api/vehicle/lookup/route.ts but kept loose so this module stays
 // importable from server-only AND client code).
-export interface VehicleLookupResponse {
+interface VehicleLookupResponse {
   registration: string;
   make: string | null;
   model: string | null;
@@ -138,7 +154,7 @@ export interface VehicleLookupResponse {
 /** Looser return shape: a Partial<Vehicle> for the fields the existing form
  * already binds against, plus the route's provenance markers and the
  * derived registrationDate (ISO date) for the Compliance card. */
-export type DvlaLookupReturn = Partial<Vehicle> & {
+type DvlaLookupReturn = Partial<Vehicle> & {
   registrationDate: string | null;
   /** AutoTrader valuations (whole GBP) — surfaced on the form + Financials. */
   retailValuation: number | null;

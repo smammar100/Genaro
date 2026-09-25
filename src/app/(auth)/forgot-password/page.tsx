@@ -3,8 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { rulesResolver, emailIssue, type FormRules } from "@/lib/auth/form-resolver";
 import { toast } from "@/lib/toast";
 import { useAutoFocusField } from "@/hooks/use-auto-focus";
 import { createClient } from "@/lib/supabase/client";
@@ -20,17 +19,20 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
-const schema = z.object({
-  email: z.string().email("Enter a valid email address"),
-});
+interface FormValues {
+  email: string;
+}
 
-type FormValues = z.infer<typeof schema>;
+const rules: FormRules<FormValues> = (values) => ({
+  values,
+  issues: emailIssue<FormValues>("email", values.email),
+});
 
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: rulesResolver(rules),
     defaultValues: { email: "" },
   });
 

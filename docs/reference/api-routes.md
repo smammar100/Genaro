@@ -65,7 +65,7 @@ The client-side service (`dvla-service.ts`) **never throws** — every non-OK re
 
 ### Mock fallback
 
-If the upstream returns 5xx and a `DVLA_MOCK` seed exists for the registration (in `src/lib/mock-data.ts`), the service returns the mock instead of `null`. Keeps demos working when the live DVLA key is missing or revoked.
+If the upstream returns 5xx and a `DVLA_MOCK` seed exists for the registration (in `src/lib/services/dvla-service.ts`), the service returns the mock instead of `null`. Keeps demos working when the live DVLA key is missing or revoked.
 
 ---
 

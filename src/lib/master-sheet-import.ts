@@ -28,9 +28,6 @@ export type SheetRow = Record<string, Cell>;
 /** Row 4 of the sheet — used to label `legacyData` keys. */
 export type SheetHeaders = Record<string, string>;
 
-/** The columns holding dates (Excel serial numbers). */
-export const DATE_COLUMNS = ["O", "P", "AJ", "BD"] as const;
-
 const MILES_PER_KM = 0.621371;
 
 /* ------------------------------------------------------------------ *
@@ -38,7 +35,7 @@ const MILES_PER_KM = 0.621371;
  * ------------------------------------------------------------------ */
 
 /** Trimmed, single-spaced text, or null for a blank / placeholder cell. */
-export function text(c: Cell): string | null {
+function text(c: Cell): string | null {
   if (c === null || c === undefined) return null;
   const s = String(c).replace(/\s+/g, " ").trim();
   if (s === "" || s === "-" || s === "\\" || s === "¬") return null;
@@ -46,7 +43,7 @@ export function text(c: Cell): string | null {
 }
 
 /** Upper-cased `text`. */
-export function upper(c: Cell): string | null {
+function upper(c: Cell): string | null {
   return text(c)?.toUpperCase() ?? null;
 }
 
@@ -149,7 +146,7 @@ export function logBook(c: Cell): { logBook: string | null; v5Received: boolean 
 }
 
 /** BF — YES / NO → boolean, blank stays unknown. */
-export function yesNo(c: Cell): boolean | null {
+function yesNo(c: Cell): boolean | null {
   const s = upper(c);
   if (s === "YES") return true;
   if (s === "NO") return false;
@@ -279,7 +276,7 @@ export interface LegacyVehicleRow {
   legacy_data: Record<string, Cell>;
 }
 
-export type RowResult =
+type RowResult =
   | { kind: "row"; row: LegacyVehicleRow; sheetTotalBuyingPrice: number | null }
   | { kind: "skip"; reason: string };
 

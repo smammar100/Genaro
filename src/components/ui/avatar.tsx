@@ -35,19 +35,6 @@ export function Avatar({
   );
 }
 
-export function AvatarImage({
-  className,
-  ...props
-}: AvatarPrimitive.Image.Props): React.ReactElement {
-  return (
-    <AvatarPrimitive.Image
-      className={cn("size-full object-cover", className)}
-      data-slot="avatar-image"
-      {...props}
-    />
-  );
-}
-
 export function AvatarFallback({
   className,
   ...props
@@ -63,5 +50,3 @@ export function AvatarFallback({
     />
   );
 }
-
-export { AvatarPrimitive };

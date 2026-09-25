@@ -86,7 +86,7 @@ export function grandTotalInclAddons(
   return round2(subtotal(lines));
 }
 
-export interface BalanceResult {
+interface BalanceResult {
   balanceDue: number;
   overpayment: boolean;
 }
@@ -100,7 +100,7 @@ export function balanceDue(
   return { balanceDue: Math.max(0, raw), overpayment: raw < 0 };
 }
 
-export interface InvoiceTotals {
+interface InvoiceTotals {
   salesPrice: number;
   discount: number;
   paidAddonsTotal: number;

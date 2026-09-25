@@ -5,7 +5,7 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { cn } from "@/lib/utils";
 import type * as React from "react";
 
-export type TextareaProps = React.ComponentPropsWithoutRef<"textarea"> &
+type TextareaProps = React.ComponentPropsWithoutRef<"textarea"> &
   React.RefAttributes<HTMLTextAreaElement> & {
     size?: "sm" | "default" | "lg" | number;
     unstyled?: boolean;
@@ -54,5 +54,3 @@ export function Textarea({
     </span>
   );
 }
-
-export { FieldPrimitive };

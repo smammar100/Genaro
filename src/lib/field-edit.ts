@@ -126,7 +126,7 @@ export interface FieldChange {
   to: unknown;
 }
 
-export interface DiffResult<T> {
+interface DiffResult<T> {
   /** Only the keys that actually changed — safe to send straight to a PATCH. */
   patch: Partial<T>;
   changes: FieldChange[];

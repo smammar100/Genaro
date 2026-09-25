@@ -1,6 +1,1 @@
-export {
-  Timeline,
-  TimelineItem,
-  type TimelineTone,
-  type TimelineItemProps,
-} from "./timeline";
+export { Timeline, TimelineItem, type TimelineTone } from "./timeline";

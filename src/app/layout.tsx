@@ -12,8 +12,7 @@ import { NotificationsProvider } from "@/contexts/notifications-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/next";
+import { VercelInsights } from "@/components/vercel-insights";
 import { getInitialAuth } from "@/lib/auth-initial";
 import { AuthBoundary } from "@/components/layout/auth-boundary";
 
@@ -116,8 +115,9 @@ export default async function RootLayout({
           </Suspense>
           <Toaster />
         </ThemeProvider>
-        <SpeedInsights />
-        <Analytics />
+        {/* Vercel sets VERCEL=1 on its builds and runtime; elsewhere (local,
+            self-hosted `next start`) analytics has no endpoint to report to. */}
+        {process.env.VERCEL ? <VercelInsights /> : null}
       </body>
     </html>
   );

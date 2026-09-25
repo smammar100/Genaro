@@ -3,8 +3,12 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import {
+  rulesResolver,
+  emailIssue,
+  newPasswordIssues,
+  type FormRules,
+} from "@/lib/auth/form-resolver";
 import { toast } from "@/lib/toast";
 import { useAutoFocusField } from "@/hooks/use-auto-focus";
 import { Button } from "@/components/ui/button";
@@ -19,22 +23,20 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
-const schema = z
-  .object({
-    name: z.string().trim().optional(),
-    email: z.string().email("Enter a valid email address"),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .max(72, "Password must be 72 characters or fewer"),
-    confirm: z.string(),
-  })
-  .refine((v) => v.password === v.confirm, {
-    message: "Passwords do not match",
-    path: ["confirm"],
-  });
+interface FormValues {
+  name?: string;
+  email: string;
+  password: string;
+  confirm: string;
+}
 
-type FormValues = z.infer<typeof schema>;
+const rules: FormRules<FormValues> = (values) => ({
+  values: { ...values, name: values.name?.trim() },
+  issues: [
+    ...emailIssue<FormValues>("email", values.email),
+    ...newPasswordIssues(values),
+  ],
+});
 
 /**
  * Public magic-link join page. The token in the URL maps server-side to a
@@ -48,7 +50,7 @@ export default function JoinPage() {
   const [done, setDone] = useState(false);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: rulesResolver(rules),
     defaultValues: { name: "", email: "", password: "", confirm: "" },
   });
 

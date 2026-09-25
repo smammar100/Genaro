@@ -48,7 +48,7 @@ import { notify } from "@/lib/toast";
 
 /* ------------------------------------------------------------------ types */
 
-export type Kind = "appt" | "workshop" | "maint";
+type Kind = "appt" | "workshop" | "maint";
 type ViewKey = "day" | "week" | "month";
 
 interface CalEventBase {
@@ -382,7 +382,7 @@ function validateFields(f: FormFields): string | null {
 
 /* ------------------------------------------------------------------- props */
 
-export interface SharedCalendarProps {
+interface SharedCalendarProps {
   /** Which sources to load and show. Defaults to all three. */
   kinds?: Kind[];
   /** Label for the primary create button. */

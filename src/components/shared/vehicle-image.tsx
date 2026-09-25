@@ -11,11 +11,38 @@ import { RegPlate } from "./reg-plate";
 
 type Variant = "thumb" | "card" | "hero";
 
+// What the browser picks a srcset width from. Thumbs render 40-72px wide;
+// cards up to ~360px (full width on phones); pass `sizes` when a card sits in
+// a slot that is known to be smaller.
 const VARIANT_SIZES: Record<Variant, string> = {
   thumb: "64px",
   card: "(max-width: 768px) 100vw, 360px",
   hero: "(max-width: 1024px) 100vw, 720px",
 };
+
+/**
+ * Whether next/image may resize `url` through /_next/image.
+ *
+ * Mirrors `images.remotePatterns` in next.config.ts: Supabase public storage
+ * and Unsplash (demo cars). Anything else remote would be a 400 from the
+ * optimizer, so it is served as-is; data:/blob: previews cannot be fetched by
+ * the server at all. Same-origin paths (/generated/...) are always optimised.
+ */
+export function canOptimizeImage(url: string): boolean {
+  if (url.startsWith("/") && !url.startsWith("//")) return true;
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return false;
+  }
+  if (u.protocol !== "https:") return false;
+  if (u.hostname === "images.unsplash.com") return true;
+  return (
+    u.hostname.endsWith(".supabase.co") &&
+    u.pathname.startsWith("/storage/v1/object/public/")
+  );
+}
 
 interface Props {
   vehicle: Pick<Vehicle, "id" | "registration" | "heroImageUrl">;
@@ -23,6 +50,8 @@ interface Props {
   variant?: Variant;
   className?: string;
   alt?: string;
+  /** Overrides the variant's `sizes` when the slot is known to be smaller. */
+  sizes?: string;
   /** When true, ignores any cached URL and re-requests generation. */
   forceRegenerate?: boolean;
   onRegenerated?: (url: string) => void;
@@ -76,6 +105,7 @@ export function VehicleImage({
   variant = "card",
   className,
   alt,
+  sizes,
   forceRegenerate,
   onRegenerated,
 }: Props) {
@@ -205,17 +235,16 @@ export function VehicleImage({
         src={url}
         alt={alt ?? `Vehicle ${vehicle.registration}`}
         fill
-        sizes={VARIANT_SIZES[variant]}
+        sizes={sizes ?? VARIANT_SIZES[variant]}
         className={cn(
           "object-cover transition-opacity",
           pending && "opacity-0",
         )}
         onError={handleImgError}
-        unoptimized={
-          url.startsWith("data:") ||
-          url.startsWith("blob:") ||
-          /^https?:\/\//.test(url)
-        }
+        // Supabase/Unsplash originals are full-size photos; letting the
+        // optimizer resize them is what keeps a 40px thumb from downloading
+        // a multi-megabyte file.
+        unoptimized={!canOptimizeImage(url)}
       />
       {pending && variant !== "thumb" && (
         <span className="absolute bottom-1 right-1 inline-flex items-center gap-1 rounded bg-background/80 px-1.5 py-0.5 text-xs text-muted-foreground backdrop-blur">

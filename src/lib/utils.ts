@@ -99,7 +99,7 @@ export function formatRelativeTime(iso: string): string {
   return formatDate(iso);
 }
 
-export type DaysInStockColor = "green" | "amber" | "red";
+type DaysInStockColor = "green" | "amber" | "red";
 
 export function getDaysInStockColor(days: number): DaysInStockColor {
   if (days < DAYS_IN_STOCK_THRESHOLDS.green) return "green";
@@ -153,4 +153,13 @@ export function titleCase(text: string): string {
         : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(),
     )
     .join(" ");
+}
+
+/**
+ * Capitalise every word of an upstream (DVLA / AutoTrader) value, e.g.
+ * "SILVER" → "Silver". Unlike `titleCase`, acronyms are not preserved.
+ */
+export function capitalizeWords(s: string | null | undefined): string | null {
+  if (!s) return null;
+  return s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 }
