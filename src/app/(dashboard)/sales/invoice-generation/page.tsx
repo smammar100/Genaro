@@ -1491,7 +1491,7 @@ function InvoiceGenerationForm() {
         </Layout.Section>
 
         {/* Sticky cost summary */}
-        <Layout.Section variant="oneThird" className="xl:sticky xl:top-4">
+        <Layout.Section variant="oneThird" className="lg:sticky lg:top-4 lg:self-start">
           <Card title="Cost summary">
             <div className="flex flex-col gap-1.5 text-sm">
               <Row label="Vehicle (sales price)" v={totals.salesPrice} />
