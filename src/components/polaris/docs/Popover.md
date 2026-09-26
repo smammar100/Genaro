@@ -117,3 +117,7 @@ Popover is a client component, and `active` and `onClose` are state, so use it f
 - Escape and outside clicks call `onClose`.
 - The panel is portalled to the end of `<body>`, so Tab from the activator does not move into it; put focusable content first or focus it yourself when it opens. Nothing is focused automatically, and the activator gets no `aria-expanded` — set `ariaExpanded` on the activator Button.
 - Clicks inside the panel count as inside for `onClose`, even though the panel is outside the activator's DOM subtree.
+
+
+## Height
+The panel caps its height to the space between the activator and the viewport edge (12px margin) and scrolls inside, so long content never runs off screen.

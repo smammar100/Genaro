@@ -59,13 +59,21 @@ export function Popover({ activator, active, onClose, children, preferredAlignme
       const st = panel.style;
       st.position = 'fixed';
       st.zIndex = '950';
+      // Keep the panel on screen: cap it to the room between the activator and
+      // the viewport edge, and scroll inside it (long lists such as a
+      // 70-column picker would otherwise run off the bottom, unreachable).
+      const EDGE = 12;
       if (preferredPosition === 'above') {
         st.top = 'auto';
         st.bottom = `${window.innerHeight - r.top + GAP}px`;
+        st.maxHeight = `${Math.max(160, r.top - GAP - EDGE)}px`;
       } else {
         st.top = `${r.bottom + GAP}px`;
         st.bottom = 'auto';
+        st.maxHeight = `${Math.max(160, window.innerHeight - r.bottom - GAP - EDGE)}px`;
       }
+      st.overflowY = 'auto';
+      st.overscrollBehavior = 'contain';
       if (preferredAlignment === 'right') {
         st.left = 'auto';
         st.right = `${document.documentElement.clientWidth - r.right}px`;

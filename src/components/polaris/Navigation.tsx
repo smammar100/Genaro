@@ -83,6 +83,12 @@ export function NavigationSection({ items, title, fill, action, className }: Nav
               {it.icon ? <Icon source={it.icon} /> : null}
               <span className="p-nav__label">{it.label}</span>
               {it.badge ? <Badge>{it.badge}</Badge> : null}
+              {it.subNavigationItems?.length ? (
+                // Sections with pages show which way they open.
+                <span className="p-nav__chevron" aria-hidden>
+                  <Icon source={it.selected ? 'ChevronDownMinor' : 'ChevronRightMinor'} />
+                </span>
+              ) : null}
             </UnstyledLink>
             {it.selected && it.subNavigationItems ? (
               <ul className="p-nav__sub">

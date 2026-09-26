@@ -26,12 +26,12 @@ type MasterSheetSection =
   | "value_addition"
   | "sales";
 
-/** The switcher next to "Add filter". "All" is represented by `null`. */
+/** The Master sheet's section tabs. "All" is represented by `null`. */
 export const MASTER_SHEET_SECTIONS: { value: MasterSheetSection; label: string }[] = [
   { value: "buying", label: "Buying" },
   { value: "receiving", label: "Receiving" },
-  { value: "value_addition", label: "Value Addition" },
-  { value: "sales", label: "Sales Data" },
+  { value: "value_addition", label: "Value addition" },
+  { value: "sales", label: "Sales data" },
 ];
 
 /* ------------------------------------------------------------------ *

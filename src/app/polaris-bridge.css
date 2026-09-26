@@ -92,7 +92,9 @@ table tbody tr[aria-selected="true"] > td {
    under their section with the same gap, labels on one line. The kit's 32px
    right padding on sub-items wrapped longer labels ("Returns and
    cancellations") in the 240px rail; the badge keeps its own inset instead. */
-.p-nav__list > li + li,
+.p-nav__list > li + li {
+  margin-top: var(--space-100);
+}
 .p-nav__sub > li + li {
   margin-top: var(--space-050);
 }
@@ -190,4 +192,53 @@ table tbody tr[aria-selected="true"] > td {
 .p-card--flush > .p-card__header {
   padding: var(--space-300) var(--space-400);
   border-bottom: var(--border-width-025) solid var(--border-secondary);
+}
+
+/* Rail width: 15% narrower than the kit's 240px (204px), so the page gets
+   the room. The nav fills whatever the frame column gives it. */
+.p-frame__nav {
+  width: 204px;
+}
+.p-frame__nav .p-nav {
+  width: 100%;
+}
+
+/* Section chevron (right when closed, down when open) sits at the row's end,
+   after any badge, in the secondary icon colour. */
+.p-nav__chevron {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--icon-secondary);
+}
+.p-nav__item .p-badge + .p-nav__chevron {
+  margin-left: var(--space-100);
+}
+
+/* Top bar: search centred in the bar with equal space either side, and 25%
+   narrower than the kit's 580px (435px). Logo left, actions right, each in
+   an equal outer column so the middle is the true centre. Below 1040px the
+   kit's own layout (with the menu button) takes over. */
+@media (min-width: 1040px) {
+  .p-topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 435px) minmax(0, 1fr);
+    padding-inline: var(--space-400);
+  }
+  .p-topbar__logo {
+    width: auto;
+    min-width: 0;
+  }
+  .p-topbar__search {
+    width: 100%;
+    max-width: none;
+  }
+  .p-topbar__right {
+    justify-self: end;
+    margin-left: 0;
+  }
+  /* The unsaved-changes bar replaces search and actions: give it both. */
+  .p-topbar__csb {
+    grid-column: 2 / -1;
+  }
 }

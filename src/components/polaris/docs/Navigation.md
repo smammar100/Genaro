@@ -122,7 +122,7 @@ const [addingChannel, setAddingChannel] = React.useState(false); // opens an "Ad
 | `badge` | `string` | — | Count on the right. |
 | `disabled` | `boolean` | — | `text-disabled`, `aria-disabled`, removed from the Tab order, and no pointer clicks. |
 | `onClick` | `() => void` | — | Client Components only. |
-| `subNavigationItems` | `SubNavigationItem[]` | — | Shown while the item is selected. A selected sub-item gets bold text and `aria-current="page"`. |
+| `subNavigationItems` | `SubNavigationItem[]` | — | Shown while the item is selected. A selected sub-item gets bold text and `aria-current="page"`. An item with sub-items shows a chevron at the end of its row: right while closed, down while selected (open). |
 | `id` | `string` | — | DOM id on the item's link. Use it to anchor an onboarding tour or a test to a row, since items have no other stable handle. |
 
 `SubNavigationItem`

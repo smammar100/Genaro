@@ -1,27 +1,36 @@
 "use client";
 
 /**
- * Prototype page (see .claude/skills/prototype). Current feature: Add vehicle
- * — five variations grounded in Mobbin references, built with the Polaris
- * kit. Presentational only. Every case the real form handles (the five
- * sections and their fields, the DVLA lookup outcomes, "nothing mandatory",
- * VAT per cost row, to-dos, pricing, valuation, cost summary, draft, review)
- * appears in a variation or in the states strip at the foot.
+ * Prototype page (see .claude/skills/prototype). Current feature: the Master
+ * sheet — five variations grounded in Mobbin references, built with the
+ * Polaris kit. Presentational only. Each covers the pinned identity columns,
+ * the four sections of the client's Excel sheet (72 columns), computed
+ * columns, inline editing, filters/search, column picking, export and scale
+ * (1,862 legacy rows); loading / empty / saving / error states are at the foot.
  */
 import * as React from "react";
-import { CheckCircle2, Circle, CircleDot, Search, Sparkles } from "lucide-react";
+import {
+  ArrowDownUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Columns3,
+  Filter,
+  FunctionSquare,
+  Group,
+  Rows3,
+  Search,
+  X,
+} from "lucide-react";
 import {
   Badge,
   Banner,
   Button,
   Card,
   Checkbox,
-  ContextualSaveBar,
-  Layout,
+  EmptyState,
   Page,
-  ProgressBar,
-  RadioButton,
-  Select,
+  Pagination,
   SkeletonBodyText,
   Tabs,
   TextField,
@@ -29,423 +38,396 @@ import {
 } from "@/components/polaris";
 import { RegPlate } from "@/components/shared/reg-plate";
 
-const PHOTO = "https://images.unsplash.com/photo-1677517859847-0e750bfd13a9?auto=format&fit=crop&w=480&h=360&q=70";
+/* ── Sample data ───────────────────────────────────────────────────── */
 
-/* ── Shared sample pieces ──────────────────────────────────────────── */
+const img = (id: string) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=160&h=120&q=60`;
+
+type Row = {
+  stock: string;
+  reg: string;
+  photo: string;
+  make: string;
+  model: string;
+  variant: string;
+  auction: string;
+  invoice: string;
+  purchase: string;
+  buying: number;
+  received: string;
+  logBook: string;
+  keys: number;
+  service: string;
+  status: "Available" | "Sold";
+  sold: string;
+  selling: number | null;
+};
+
+const ROWS: Row[] = [
+  { stock: "D-0025", reg: "GK67 ZPL", photo: img("photo-1742021923146-039f25019c0a"), make: "Honda", model: "Jazz", variant: "SE", auction: "BCA Blackbushe", invoice: "12 Sep 2026", purchase: "Sep 2026", buying: 6120, received: "13 Sep 2026", logBook: "Available", keys: 2, service: "Full", status: "Available", sold: "", selling: null },
+  { stock: "D-0003", reg: "PK68 DPL", photo: img("photo-1718903502278-f81c5a754294"), make: "BMW", model: "3 Series", variant: "320d M Sport", auction: "BCA Paddock Wood", invoice: "30 Aug 2026", purchase: "Aug 2026", buying: 9141, received: "31 Aug 2026", logBook: "Available", keys: 2, service: "Partial", status: "Sold", sold: "24 Sep 2026", selling: 11800 },
+  { stock: "D-0035", reg: "GK17 JJD", photo: img("photo-1734554284184-4bcf245250c5"), make: "BMW", model: "3 Series", variant: "SE", auction: "Camberley", invoice: "19 Aug 2026", purchase: "Aug 2026", buying: 12396, received: "20 Aug 2026", logBook: "Not available", keys: 1, service: "Unknown", status: "Sold", sold: "19 Sep 2026", selling: 15600 },
+  { stock: "D-0019", reg: "WF69 TYU", photo: img("photo-1557775209-f28ede453ae3"), make: "Nissan", model: "Leaf", variant: "Tekna", auction: "BCA Blackbushe", invoice: "02 Aug 2026", purchase: "Aug 2026", buying: 3646, received: "04 Aug 2026", logBook: "Available", keys: 2, service: "Full", status: "Sold", sold: "02 Sep 2026", selling: 4500 },
+  { stock: "D-0023", reg: "SB19 XYU", photo: img("photo-1551206820-1a2050e76dd7"), make: "Ford", model: "Focus", variant: "ST-Line", auction: "Partex", invoice: "15 Jul 2026", purchase: "Jul 2026", buying: 7480, received: "17 Jul 2026", logBook: "Available", keys: 2, service: "Partial", status: "Available", sold: "", selling: null },
+  { stock: "D-0040", reg: "GK17 OPL", photo: img("photo-1684839371407-17bddcf946d0"), make: "Nissan", model: "Qashqai", variant: "N-Connecta", auction: "BCA Blackbushe", invoice: "22 Jun 2026", purchase: "Jun 2026", buying: 8523, received: "23 Jun 2026", logBook: "Available", keys: 2, service: "Full", status: "Sold", sold: "31 Aug 2026", selling: 10700 },
+];
+
+const gbp = (n: number | null) => (n === null ? "—" : `£${n.toLocaleString("en-GB")}`);
+const sp = (r: Row) => (r.selling === null ? null : r.selling - r.buying);
 
 const SECTIONS = [
-  { id: "identity", title: "Vehicle identity", hint: "Reg lookup and specs", blank: 2 },
-  { id: "buying", title: "Buying", hint: "Seller, owner, invoice", blank: 4 },
-  { id: "costs", title: "Purchase costs", hint: "Price, fees, VAT", blank: 1 },
-  { id: "receiving", title: "Receiving", hint: "Arrival, paperwork, to-dos", blank: 6 },
-  { id: "review", title: "Review and submit", hint: "Confirm and save", blank: 0 },
+  { id: "all", label: "All", count: 72 },
+  { id: "buying", label: "Buying", count: 20 },
+  { id: "receiving", label: "Receiving", count: 18 },
+  { id: "value", label: "Value addition", count: 22 },
+  { id: "sales", label: "Sales data", count: 9 },
 ];
 
-function Req({ children }: { children: string }) {
-  return (
-    <span>
-      {children} <span className="text-(--text-critical)" aria-hidden>*</span>
-    </span>
-  );
+type Section = "buying" | "receiving" | "value" | "sales";
+type Col = { key: string; label: string; letter: string; section: Section; computed?: boolean; num?: boolean; get: (r: Row) => React.ReactNode };
+
+const COLS: Col[] = [
+  { key: "make", label: "Make", letter: "C", section: "buying", get: (r) => r.make },
+  { key: "model", label: "Model", letter: "D", section: "buying", get: (r) => r.model },
+  { key: "variant", label: "Variant name", letter: "E", section: "buying", get: (r) => r.variant },
+  { key: "auction", label: "Auction house", letter: "L", section: "buying", get: (r) => r.auction },
+  { key: "invoice", label: "Invoice date", letter: "O", section: "buying", get: (r) => r.invoice },
+  { key: "purchase", label: "Purchase month", letter: "Q", section: "buying", computed: true, get: (r) => r.purchase },
+  { key: "buying", label: "Total buying price", letter: "AI", section: "buying", computed: true, num: true, get: (r) => gbp(r.buying) },
+  { key: "received", label: "Vehicle receiving date", letter: "AJ", section: "receiving", get: (r) => r.received },
+  { key: "confirm", label: "Receiving confirmation", letter: "AK", section: "receiving", computed: true, get: () => "Received" },
+  { key: "logbook", label: "Log book", letter: "AN", section: "receiving", get: (r) => r.logBook },
+  { key: "keys", label: "No. of keys", letter: "AU", section: "receiving", num: true, get: (r) => r.keys },
+  { key: "service", label: "Service history", letter: "AZ", section: "receiving", get: (r) => r.service },
+  { key: "status", label: "Available / sold", letter: "BK", section: "sales", get: (r) => <Badge tone={r.status === "Sold" ? "success" : "info"}>{r.status}</Badge> },
+  { key: "sold", label: "Date sold", letter: "BL", section: "sales", get: (r) => r.sold || "—" },
+  { key: "selling", label: "Selling price", letter: "BM", section: "sales", num: true, get: (r) => gbp(r.selling) },
+  {
+    key: "sp", label: "S - P", letter: "BP", section: "sales", computed: true, num: true,
+    get: (r) => {
+      const v = sp(r);
+      return v === null ? "—" : <span className={v >= 0 ? "text-(--text-success)" : "text-(--text-critical)"}>{gbp(v)}</span>;
+    },
+  },
+];
+
+const SECTION_TONE: Record<Section, string> = {
+  buying: "bg-(--bg-surface-info)",
+  receiving: "bg-(--bg-surface-success)",
+  value: "bg-(--bg-surface-warning)",
+  sales: "bg-(--bg-surface-magic)",
+};
+const SECTION_LABEL: Record<Section, string> = { buying: "Buying", receiving: "Receiving", value: "Value addition", sales: "Sales data" };
+
+function ComputedMark() {
+  return <FunctionSquare aria-label="Calculated" className="inline size-3.5 text-(--icon-secondary)" />;
 }
 
-function FromDvla() {
-  return <Badge tone="info" icon={<Sparkles className="size-3" />}>From DVLA</Badge>;
-}
-
-function RegLookup({ compact = false }: { compact?: boolean }) {
+/** Section bands over the columns (Identity over the pinned ones). */
+function SectionBands({ cols, pinned, letters = false }: { cols: Col[]; pinned: number; letters?: boolean }) {
+  const bands: { section: Section; span: number }[] = [];
+  for (const c of cols) {
+    const last = bands[bands.length - 1];
+    if (last && last.section === c.section) last.span++;
+    else bands.push({ section: c.section, span: 1 });
+  }
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-end gap-2">
-        <div className="flex-1">
-          <TextField label={<Req>Registration</Req>} defaultValue="GK66 6NX" prefix="SearchMinor" />
-        </div>
-        <Button variant={compact ? "secondary" : "primary"}>Look up</Button>
-      </div>
-      {!compact && (
-        <p className="body-sm text-(--text-secondary)">We check your stock book and fill make, year, colour and fuel from DVLA.</p>
+    <>
+      {letters && (
+        <tr>
+          <th className="sticky left-0 z-3 bg-(--bg-surface-tertiary)" />
+          <th className="bg-(--bg-surface-tertiary) text-center body-sm">A</th>
+          <th className="bg-(--bg-surface-tertiary) text-center body-sm">B</th>
+          {cols.map((c) => <th key={c.key} className="bg-(--bg-surface-tertiary) text-center body-sm">{c.letter}</th>)}
+        </tr>
       )}
-      <div><Button variant="plain">No registration yet? Save it as unregistered</Button></div>
-    </div>
-  );
-}
-
-function IdentityFields() {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <TextField label={<Req>Mileage</Req>} type="number" suffix="mi" defaultValue="47000" />
-      <TextField label={<span className="flex items-center gap-2"><Req>Make</Req><FromDvla /></span>} defaultValue="BMW" />
-      <TextField label={<span className="flex items-center gap-2"><Req>Model</Req><FromDvla /></span>} defaultValue="X1" />
-      <TextField label="Variant name" placeholder="e.g. xDrive20d M Sport" />
-      <TextField label="Variant code" placeholder="From the BCA invoice, e.g. 1.5 SE" />
-      <TextField label={<span className="flex items-center gap-2">Year <FromDvla /></span>} defaultValue="2016" />
-      <Select label="Vehicle type" options={["Car", "Van", "Motorcycle"]} />
-      <Select label="Body type" options={["SUV", "Hatchback", "Saloon", "Estate", "MPV", "Coupe"]} />
-      <Select label="Fuel type" options={["Diesel", "Petrol", "Hybrid", "Electric"]} />
-      <Select label="Transmission" options={["Automatic", "Manual"]} />
-      <TextField label="Colour" defaultValue="Silver" />
-      <TextField label="Engine size (cc)" defaultValue="1995" />
-      <TextField label="MOT expiry" defaultValue="14 Mar 2027" />
-      <TextField label="Legacy S/N" helpText="Only for cars from the old sheet." />
-    </div>
-  );
-}
-
-function BuyingFields() {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <Select label="Source type" options={["Auction", "Private seller", "Trade-in", "Dealer", "Other"]} />
-      <TextField label="Auction house" defaultValue="BCA Blackbushe" />
-      <TextField label={<Req>Seller name</Req>} />
-      <TextField label="Seller phone" type="tel" />
-      <Select label="Dealer partner" options={["None", "Southall Car Sales", "West London Autos"]} />
-      <div className="flex flex-col gap-1">
-        <span className="body-md">Local or import</span>
-        <div className="flex gap-4"><RadioButton label="Local" name="loi" defaultChecked /><RadioButton label="Import" name="loi" /></div>
-      </div>
-      <TextField label="Owned by" defaultValue="Car Capital" />
-      <TextField label="Owner details" />
-      <TextField label="Invoice date" defaultValue="22 Sep 2026" />
-      <TextField label="Credit note date" />
-      <Select label="Stocking finance" options={["None", "NextGear", "Close Brothers"]} />
-    </div>
-  );
-}
-
-const COSTS: [string, string, string][] = [
-  ["Buying price", "9,850.00", ""],
-  ["BCA buyer's fee", "395.00", "79.00"],
-  ["BCA essential check / Assured", "65.00", "13.00"],
-  ["BCA EV / hybrid Assured", "", ""],
-  ["Battery health report", "", ""],
-  ["Late payment / storage", "", ""],
-  ["Collection", "120.00", "24.00"],
-  ["Delivery / transport", "", ""],
-  ["Other charges", "", ""],
-];
-
-function CostTable() {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr><th className="text-left">Charge</th><th className="text-right">Amount</th><th className="text-right">VAT</th><th /></tr>
-        </thead>
-        <tbody>
-          {COSTS.map(([label, amount, vat], i) => (
-            <tr key={label}>
-              <td className="body-md">{label}</td>
-              <td className="w-36"><TextField label={`${label} amount`} labelHidden prefix="£" defaultValue={amount} /></td>
-              <td className="w-36">{i === 0 ? <span className="body-sm text-(--text-secondary)">No VAT</span> : <TextField label={`${label} VAT`} labelHidden prefix="£" defaultValue={vat} />}</td>
-              <td className="w-20">{i > 0 && <Button variant="plain">+20%</Button>}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function ReceivingFields() {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <TextField label="Received date" defaultValue="26 Sep 2026" />
-      <Select label="Received by" options={["Raza Jaffery", "Sam Ammar", "Tom Hughes"]} />
-      <Select label="Log book (V5)" options={["Available", "Not available", "Applied for"]} />
-      <TextField label="Number of keys" type="number" defaultValue="2" />
-      <Select label="Service history" options={["Full", "Partial", "None", "Unknown"]} />
-      <TextField label="Euro status" />
-      <TextField label="Number of seats" type="number" />
-      <TextField label="Former keepers" type="number" />
-      <TextField label="Chassis / frame no." />
-      <TextField label="Engine no." />
-      <div className="sm:col-span-2"><Checkbox label="Lock nut received" defaultChecked /></div>
-      <div className="sm:col-span-2"><TextField label="Other items received" multiline={2} /></div>
-    </div>
-  );
-}
-
-function TodoEditor() {
-  return (
-    <div className="flex flex-col gap-2">
-      {[["Full service", "180"], ["MOT", "55"]].map(([t, c]) => (
-        <div key={t} className="flex items-end gap-2">
-          <div className="flex-1"><TextField label="Description" labelHidden defaultValue={t} /></div>
-          <div className="w-28"><TextField label="Cost" labelHidden prefix="£" defaultValue={c} /></div>
-          <Button variant="tertiary" icon="DeleteMinor" accessibilityLabel={`Remove ${t}`} />
-        </div>
-      ))}
-      <div><Button icon="PlusMinor">Add item</Button></div>
-    </div>
-  );
-}
-
-function PricingFields() {
-  return (
-    <div className="grid gap-4 sm:grid-cols-3">
-      <TextField label="Listing price" prefix="£" defaultValue="13,995" />
-      <TextField label="Minimum sale price" prefix="£" defaultValue="12,750" />
-      <TextField label="Warranty cost" prefix="£" defaultValue="150" />
-    </div>
-  );
-}
-
-function ValuationCard() {
-  return (
-    <Card title="AutoTrader valuation" actions={<Button variant="plain">Refresh</Button>}>
-      <dl className="grid grid-cols-3 gap-2">
-        {[["Retail", "£14,250"], ["Trade", "£11,900"], ["Part-ex", "£11,200"]].map(([k, v]) => (
-          <div key={k}><dt className="body-sm text-(--text-secondary)">{k}</dt><dd className="heading-sm">{v}</dd></div>
+      <tr>
+        <th colSpan={pinned} className="sticky left-0 z-3 bg-(--bg-surface-secondary) body-sm">Identity</th>
+        {bands.map((b, i) => (
+          <th key={i} colSpan={b.span} className={`${SECTION_TONE[b.section]} body-sm`}>{SECTION_LABEL[b.section]}</th>
         ))}
-      </dl>
-    </Card>
+      </tr>
+    </>
   );
 }
 
-function CostSummaryCard() {
-  const rows: [string, string][] = [["Buying price", "£9,850.00"], ["Fees and charges", "£580.00"], ["VAT paid", "£116.00"], ["Things to do", "£235.00"]];
-  return (
-    <Card title="Cost summary">
-      <dl className="flex flex-col gap-2">
-        {rows.map(([k, v]) => (
-          <div key={k} className="flex justify-between gap-3"><dt className="body-md text-(--text-secondary)">{k}</dt><dd className="body-md-numeric">{v}</dd></div>
-        ))}
-        <div className="flex justify-between gap-3 border-t border-(--border-secondary) pt-2"><dt className="body-md-semibold">Total cost</dt><dd className="heading-sm">£10,781.00</dd></div>
-        <div className="flex justify-between gap-3"><dt className="body-sm text-(--text-secondary)">Margin at listing price</dt><dd className="body-md-numeric text-(--text-success)">£3,214.00</dd></div>
-      </dl>
-    </Card>
-  );
-}
-
-function DvlaFound() {
-  return <Banner tone="success" title="Found on DVLA">BMW X1, 2016, silver, diesel. We filled these in — check and adjust if needed.</Banner>;
-}
-
-/* ── A — Lookup first, then one page (Shopify Add product) ─────────── */
+/* ── A — Airtable-style grid (Airtable, Retool, AirOps) ────────────── */
 function VariationA() {
-  return (
-    <div className="flex flex-col">
-      <ContextualSaveBar message="Unsaved vehicle" saveAction={{ content: "Save vehicle" }} discardAction={{ content: "Discard" }} />
-      <Page title="Add vehicle" backAction={{ content: "Vehicles" }} secondaryActions={[{ content: "Save as draft" }]} className="w-full">
-        <Layout>
-          <Layout.Section>
-            <Card title="Start with the registration">
-              <RegLookup />
-            </Card>
-            <Card>
-              <div className="flex flex-wrap items-center gap-4">
-                <Thumbnail source={PHOTO} alt="" size="large" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2"><RegPlate registration="GK66 6NX" size="sm" /><Badge tone="success" progress="complete">Found on DVLA</Badge></div>
-                  <p className="heading-md mt-1">2016 BMW X1</p>
-                  <p className="body-sm text-(--text-secondary)">Silver · Diesel · 1,995cc · MOT until 14 Mar 2027</p>
-                </div>
-                <Button variant="plain">Edit details</Button>
-              </div>
-            </Card>
-            <Card title="Vehicle identity"><IdentityFields /></Card>
-            <Card title="Buying"><BuyingFields /></Card>
-            <Card title="Purchase costs" padding="0"><div className="p-4 pb-0 body-sm text-(--text-secondary)">VAT is only what you enter; +20% fills the standard rate.</div><CostTable /></Card>
-            <Card title="Receiving"><ReceivingFields /></Card>
-            <Card title="Things to do"><TodoEditor /></Card>
-            <Card title="Pricing"><PricingFields /></Card>
-          </Layout.Section>
-          <Layout.Section variant="oneThird">
-            <Card title="Status">
-              <Select label="Stock status" labelHidden options={["Received", "Inspection pending"]} />
-              <p className="body-sm text-(--text-secondary)">New cars start as Received and go to inspection.</p>
-            </Card>
-            <ValuationCard />
-            <CostSummaryCard />
-            <Card title="Still blank">
-              <p className="body-sm text-(--text-secondary)">Nothing is required. These important fields are empty:</p>
-              <ul className="flex flex-col gap-1 body-md">
-                <li>Seller name</li><li>Received by</li><li>Listing price</li>
-              </ul>
-            </Card>
-          </Layout.Section>
-        </Layout>
-      </Page>
-    </div>
+  const Tool = ({ icon: Icon, children, active }: { icon: typeof Filter; children: React.ReactNode; active?: boolean }) => (
+    <button type="button" className={`inline-flex h-7 items-center gap-1.5 rounded-(--radius-200) px-2 body-sm hover:bg-(--bg-surface-hover) ${active ? "bg-(--bg-surface-info) text-(--text-info)" : ""}`}>
+      <Icon className="size-4" />{children}
+    </button>
   );
-}
-
-/* ── B — One annotated page with section nav (Etsy listing) ────────── */
-function VariationB() {
-  const Section = ({ title, description, children }: { title: string; description: string; children: React.ReactNode }) => (
-    <Layout.AnnotatedSection title={title} description={description}>
-      <Card>{children}</Card>
-    </Layout.AnnotatedSection>
-  );
+  const totalBuy = ROWS.reduce((n, r) => n + r.buying, 0);
+  const totalSp = ROWS.reduce((n, r) => n + (sp(r) ?? 0), 0);
   return (
-    <Page title="Add vehicle" backAction={{ content: "Vehicles" }} fullWidth>
-      <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
-        <nav aria-label="Sections" className="hidden lg:block">
-          <div className="sticky top-4 flex flex-col gap-3">
-            <div>
-              <p className="body-sm text-(--text-secondary)">68% complete</p>
-              <ProgressBar progress={68} size="small" />
-            </div>
-            <ul className="flex flex-col gap-0.5">
-              {SECTIONS.slice(0, 4).concat({ id: "pricing", title: "Pricing", hint: "", blank: 1 }).map((s, i) => (
-                <li key={s.id}>
-                  <a href="#" className={`flex items-center justify-between rounded-(--radius-200) px-2 py-1.5 body-md hover:bg-(--bg-surface-hover) ${i === 0 ? "bg-(--bg-surface-selected) body-md-semibold" : ""}`}>
-                    {s.title}
-                    {s.blank ? <Badge tone="attention">{`${s.blank} blank`}</Badge> : <CheckCircle2 className="size-4 text-(--icon-success)" />}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </nav>
-        <div className="flex flex-col gap-2">
-          <Layout>
-            <Section title="Registration" description="Look up the car to fill its details from DVLA. No reg yet? Save it as unregistered and add the reg later.">
-              <RegLookup compact />
-              <DvlaFound />
-            </Section>
-            <Section title="Vehicle identity" description="Fields marked * matter most, but nothing blocks saving."><IdentityFields /></Section>
-            <Section title="Buying" description="Where the car came from and who owns it."><BuyingFields /></Section>
-            <Section title="Purchase costs" description="VAT is only what you enter. Use +20% for the standard rate."><CostTable /></Section>
-            <Section title="Receiving" description="Arrival, paperwork and what came with the car."><ReceivingFields /></Section>
-            <Section title="Things to do" description="Work the car needs. Each item becomes a prep job."><TodoEditor /></Section>
-            <Section title="Pricing" description="What you plan to list it at."><PricingFields /></Section>
-          </Layout>
-          <div className="sticky bottom-0 -mx-6 flex items-center justify-between gap-3 border-t border-(--border) bg-(--bg-surface) px-6 py-3">
-            <span className="body-sm text-(--text-secondary)">Total cost £10,781 · margin £3,214 at listing price</span>
-            <div className="flex gap-2"><Button>Save as draft</Button><Button variant="primary">Save vehicle</Button></div>
-          </div>
+    <Page title="Master sheet" subtitle="Every car, column for column with the Excel sheet." fullWidth secondaryActions={[{ content: "Export CSV" }]} className="w-full">
+      <Card padding="0">
+        <div className="flex flex-wrap items-center gap-1 border-b border-(--border-secondary) px-3 py-2">
+          <button type="button" className="mr-2 inline-flex h-7 items-center gap-1 rounded-(--radius-200) bg-(--bg-surface-selected) px-2 body-md-semibold">All columns <ChevronDown className="size-4" /></button>
+          <Tool icon={Columns3}>21 of 72 shown</Tool>
+          <Tool icon={Filter} active>1 filter</Tool>
+          <Tool icon={ArrowDownUp}>Sort</Tool>
+          <Tool icon={Group}>Group</Tool>
+          <Tool icon={Rows3}>Row height</Tool>
+          <div className="ml-auto w-64"><TextField label="Search" labelHidden prefix="SearchMinor" placeholder="Search reg, stock, make" /></div>
         </div>
-      </div>
+        <div className="overflow-x-auto">
+          <table data-slot="table" className="whitespace-nowrap border-separate border-spacing-0">
+            <thead>
+              <SectionBands cols={COLS} pinned={3} />
+              <tr>
+                <th className="sticky left-0 z-3 w-12 bg-(--bg-surface-secondary)"><Checkbox label="Select all" labelHidden /></th>
+                <th className="sticky left-12 z-3 w-24 bg-(--bg-surface-secondary)">Stock ID</th>
+                <th className="sticky left-36 z-3 bg-(--bg-surface-secondary) shadow-[1px_0_0_var(--border)]">Reg</th>
+                {COLS.map((c) => <th key={c.key} className={c.num ? "text-right" : ""}>{c.label} {c.computed && <ComputedMark />}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {ROWS.map((r, i) => (
+                <tr key={r.stock}>
+                  <td className="sticky left-0 z-1 w-12 bg-(--bg-surface)"><Checkbox label={`Select ${r.stock}`} labelHidden /></td>
+                  <td className="sticky left-12 z-1 w-24 bg-(--bg-surface) body-md-numeric">{r.stock}</td>
+                  <td className="sticky left-36 z-1 bg-(--bg-surface) shadow-[1px_0_0_var(--border)]"><div className="flex items-center gap-2"><Thumbnail source={r.photo} alt="" size="small" /><RegPlate registration={r.reg} size="sm" /></div></td>
+                  {COLS.map((c) => (
+                    <td key={c.key} className={`${c.num ? "text-right body-md-numeric" : ""} ${c.computed ? "bg-(--bg-surface-secondary)" : ""} ${i === 1 && c.key === "selling" ? "outline-2 -outline-offset-2 outline-(--border-focus)" : ""}`}>
+                      {c.get(r)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={3} className="sticky left-0 z-1 bg-(--bg-surface-secondary) body-sm">40 cars · 1 filter</td>
+                {COLS.map((c) => (
+                  <td key={c.key} className="bg-(--bg-surface-secondary) text-right body-sm text-(--text-secondary)">
+                    {c.key === "buying" ? `Sum ${gbp(totalBuy)}` : c.key === "sp" ? `Sum ${gbp(totalSp)}` : ""}
+                  </td>
+                ))}
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </Card>
     </Page>
   );
 }
 
-/* ── C — Refined wizard with step rail (Klook) ─────────────────────── */
-function VariationC() {
-  const current = 0;
+/* ── B — Excel-true sheet (Rows, Canva Sheets, Google Sheets) ──────── */
+function VariationB() {
   return (
-    <div className="flex flex-col">
-      <Page title="Add vehicle" subtitle="Step 1 of 5 · Vehicle identity" backAction={{ content: "Vehicles" }} fullWidth className="w-full">
-        <div className="grid gap-6 lg:grid-cols-[240px_1fr_300px]">
-          <Card>
-            <ol className="flex flex-col gap-1">
-              {SECTIONS.map((s, i) => {
-                const Icon = i < current ? CheckCircle2 : i === current ? CircleDot : Circle;
+    <Page title="Master sheet" fullWidth secondaryActions={[{ content: "Columns" }, { content: "Export CSV" }]} className="w-full">
+      <Card padding="0">
+        <div className="flex items-center gap-2 border-b border-(--border-secondary) px-3 py-2">
+          <span className="rounded-(--radius-100) border border-(--border) px-2 py-0.5 body-sm">BM3</span>
+          <span className="body-md-semibold text-(--text-secondary)">fx</span>
+          <span className="flex-1 truncate body-md">11800</span>
+          <Badge tone="info">Editable</Badge>
+        </div>
+        <div className="flex items-center gap-2 border-b border-(--border-secondary) bg-(--bg-surface-secondary) px-3 py-1.5">
+          <span className="body-sm text-(--text-secondary)">AI3</span>
+          <span className="body-md-semibold text-(--text-secondary)">fx</span>
+          <span className="body-sm text-(--text-secondary)">=SUM(S3:AH3) · Total buying price is calculated</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table data-slot="table" className="whitespace-nowrap border-separate border-spacing-0">
+            <thead>
+              <SectionBands cols={COLS} pinned={3} letters />
+              <tr>
+                <th className="sticky left-0 z-3 w-10 bg-(--bg-surface-tertiary) text-center">1</th>
+                <th className="sticky left-10 z-3 w-24 bg-(--bg-surface-secondary)">STOCK ID</th>
+                <th className="sticky left-34 z-3 bg-(--bg-surface-secondary) shadow-[1px_0_0_var(--border)]">REG. NUMBER</th>
+                {COLS.map((c) => <th key={c.key}>{c.label.toUpperCase()}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {ROWS.map((r, i) => (
+                <tr key={r.stock}>
+                  <td className="sticky left-0 z-1 w-10 bg-(--bg-surface-tertiary) text-center body-sm text-(--text-secondary)">{i + 2}</td>
+                  <td className="sticky left-10 z-1 w-24 bg-(--bg-surface) body-md-numeric">{r.stock}</td>
+                  <td className="sticky left-34 z-1 bg-(--bg-surface) shadow-[1px_0_0_var(--border)]"><RegPlate registration={r.reg} size="sm" /></td>
+                  {COLS.map((c) => (
+                    <td key={c.key} className={`${c.num ? "text-right body-md-numeric" : ""} ${c.computed ? "italic text-(--text-secondary)" : ""} ${i === 1 && c.key === "selling" ? "outline-2 -outline-offset-2 outline-(--border-focus)" : ""} ${i >= 1 && i <= 3 && c.key === "sp" ? "bg-(--bg-surface-selected)" : ""}`}>
+                      {c.get(r)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex flex-wrap items-center gap-1 border-t border-(--border-secondary) px-2 py-1.5">
+          {SECTIONS.map((s, i) => (
+            <button key={s.id} type="button" className={`rounded-(--radius-200) px-3 py-1 body-sm ${i === 0 ? "bg-(--bg-surface) shadow-(--shadow-100) body-md-semibold" : "text-(--text-secondary) hover:bg-(--bg-surface-hover)"}`}>{s.label}</button>
+          ))}
+          <span className="ml-auto body-sm text-(--text-secondary)">Selection · Sum £6,993 · Avg £2,331 · Count 3</span>
+        </div>
+      </Card>
+    </Page>
+  );
+}
+
+/* ── C — Key columns + record panel (Braintrust, Shopify bulk editor) ─ */
+function VariationC() {
+  const r = ROWS[1];
+  return (
+    <Page title="Master sheet" fullWidth secondaryActions={[{ content: "Export CSV" }]} className="w-full">
+      <div className="grid gap-4 xl:grid-cols-[1fr_400px]">
+        <Card padding="0">
+          <div className="flex items-center gap-2 border-b border-(--border-secondary) p-3">
+            <div className="flex-1"><TextField label="Search" labelHidden prefix="SearchMinor" placeholder="Search reg, stock, make" /></div>
+            <Button icon={<Filter className="size-4" />}>Filter</Button>
+          </div>
+          <table data-slot="table" className="whitespace-nowrap w-full">
+            <thead><tr><th>Car</th><th>Bought</th><th className="text-right">Total buying</th><th>Status</th><th className="text-right">S - P</th></tr></thead>
+            <tbody>
+              {ROWS.map((row) => (
+                <tr key={row.stock} aria-selected={row.stock === r.stock}>
+                  <td><div className="flex items-center gap-2"><Thumbnail source={row.photo} alt="" size="small" /><div><div className="flex items-center gap-2"><RegPlate registration={row.reg} size="sm" /><span className="body-sm text-(--text-secondary)">{row.stock}</span></div><span className="body-md">{`${row.make} ${row.model}`}</span></div></div></td>
+                  <td className="body-sm">{row.purchase}</td>
+                  <td className="text-right body-md-numeric">{gbp(row.buying)}</td>
+                  <td>{COLS.find((c) => c.key === "status")!.get(row)}</td>
+                  <td className="text-right">{COLS.find((c) => c.key === "sp")!.get(row)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+        <Card padding="0">
+          <div className="flex items-center gap-2 border-b border-(--border-secondary) px-4 py-3">
+            <RegPlate registration={r.reg} size="sm" />
+            <span className="flex-1 body-md-semibold">{`${r.make} ${r.model} · ${r.stock}`}</span>
+            <Button variant="tertiary" icon={<ChevronLeft className="size-4" />} accessibilityLabel="Previous car" />
+            <Button variant="tertiary" icon={<ChevronRight className="size-4" />} accessibilityLabel="Next car" />
+            <Button variant="tertiary" icon={<X className="size-4" />} accessibilityLabel="Close" />
+          </div>
+          {(["buying", "receiving", "value", "sales"] as const).map((s, i) => (
+            <details key={s} open={i !== 2} className="border-b border-(--border-secondary)">
+              <summary className={`flex cursor-pointer items-center gap-2 px-4 py-2 body-md-semibold ${SECTION_TONE[s]}`}>
+                {SECTION_LABEL[s]}
+                <span className="body-sm text-(--text-secondary)">{`${SECTIONS.find((x) => x.id === s)?.count} fields`}</span>
+              </summary>
+              {COLS.filter((c) => c.section === s).map((c) => {
+                const v = c.get(r);
+                const editable = !c.computed && (typeof v === "string" || typeof v === "number");
                 return (
-                  <li key={s.id} className={`flex gap-3 rounded-(--radius-200) p-2 ${i === current ? "bg-(--bg-surface-selected)" : ""}`}>
-                    <Icon className={`mt-0.5 size-4 shrink-0 ${i === current ? "text-(--icon)" : "text-(--icon-secondary)"}`} />
-                    <div className="min-w-0">
-                      <p className={i === current ? "body-md-semibold" : "body-md"}>{s.title}</p>
-                      <p className="body-sm text-(--text-secondary)">{s.blank ? `${s.hint} · ${s.blank} blank` : s.hint}</p>
-                    </div>
-                  </li>
+                  <div key={c.key} className="grid grid-cols-[1fr_1.2fr] items-center gap-3 border-t border-(--border-secondary) px-4 py-2 first:border-t-0">
+                    <span className="body-sm text-(--text-secondary)">{c.label} {c.computed && <ComputedMark />}</span>
+                    {editable ? <TextField label={c.label} labelHidden defaultValue={String(v)} /> : <span className="body-md">{v}</span>}
+                  </div>
                 );
               })}
-            </ol>
-          </Card>
-          <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
-            <Card title="Registration">
-              <RegLookup />
-              <DvlaFound />
-            </Card>
-            <Card title="Specs"><IdentityFields /></Card>
-          </div>
-          <div className="flex flex-col gap-4">
-            <ValuationCard />
-            <CostSummaryCard />
-          </div>
-        </div>
-      </Page>
-      <div className="sticky bottom-0 flex items-center justify-between border-t border-(--border) bg-(--bg-surface) px-6 py-3">
-        <Button disabled>Back</Button>
-        <div className="flex items-center gap-3">
-          <span className="body-sm text-(--text-secondary)">2 important fields blank — you can still continue</span>
-          <Button>Save as draft</Button>
-          <Button variant="primary">Continue to buying</Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── D — Section tabs with a live stock card (Etsy Shop Manager) ───── */
-function VariationD() {
-  const [tab, setTab] = React.useState(2);
-  return (
-    <Page title="Add vehicle" backAction={{ content: "Vehicles" }} primaryAction={{ content: "Save vehicle" }} secondaryActions={[{ content: "Save as draft" }]} fullWidth>
-      <Tabs
-        tabs={SECTIONS.map((s) => ({ id: s.id, content: s.title, badge: s.blank ? String(s.blank) : undefined }))}
-        selected={tab}
-        onSelect={setTab}
-      />
-      <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
-        <div className="flex flex-col gap-4">
-          {tab === 0 && <><Card title="Registration"><RegLookup compact /><DvlaFound /></Card><Card title="Specs"><IdentityFields /></Card></>}
-          {tab === 1 && <Card title="Buying"><BuyingFields /></Card>}
-          {tab === 2 && <Card title="Purchase costs" padding="0"><CostTable /></Card>}
-          {tab === 3 && <><Card title="Receiving"><ReceivingFields /></Card><Card title="Things to do"><TodoEditor /></Card><Card title="Pricing"><PricingFields /></Card></>}
-          {tab === 4 && <Banner tone="warning" title="3 important fields are blank">Seller name, received by and listing price. You can save now and fill them in later.</Banner>}
-        </div>
-        <div className="flex flex-col gap-4">
-          <Card padding="0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={PHOTO} alt="" className="aspect-[4/3] w-full object-cover" />
-            <div className="flex flex-col gap-2 p-4">
-              <div className="flex items-center gap-2"><RegPlate registration="GK66 6NX" size="sm" /><Badge>Received</Badge></div>
-              <p className="heading-sm">2016 BMW X1</p>
-              <p className="body-sm text-(--text-secondary)">47,000 mi · Diesel · Automatic · Silver</p>
-              <div className="grid grid-cols-2 gap-2 border-t border-(--border-secondary) pt-2">
-                <div><p className="body-sm text-(--text-secondary)">Total cost</p><p className="heading-sm">£10,781</p></div>
-                <div><p className="body-sm text-(--text-secondary)">Listing price</p><p className="heading-sm">£13,995</p></div>
-              </div>
-              <p className="body-sm text-(--text-success)">£3,214 margin</p>
-            </div>
-          </Card>
-          <ValuationCard />
-        </div>
+              {s === "value" && <p className="px-4 py-3 body-sm text-(--text-secondary)">Service, MOT, bodywork and the rest roll up from Things to do.</p>}
+            </details>
+          ))}
+        </Card>
       </div>
     </Page>
   );
 }
 
-/* ── E — Quick add, then complete the details (Salesforce) ─────────── */
-function VariationE() {
+/* ── D — Section views with a per-section summary (Shopify, Vanta) ─── */
+function VariationD() {
+  const [tab, setTab] = React.useState(1);
+  const section = (["all", "buying", "receiving", "value", "sales"] as const)[tab];
+  const cols = section === "all" ? COLS : COLS.filter((c) => c.section === section);
+  const kpis: Record<string, [string, string][]> = {
+    all: [["Cars", "40"], ["Available", "33"], ["Sold this month", "4"], ["Total S - P", "£9,344"]],
+    buying: [["Bought this month", "6"], ["Total spend", "£47,306"], ["Avg buying price", "£7,884"], ["Most used auction", "BCA Blackbushe"]],
+    receiving: [["Received this month", "5"], ["Log books missing", "3"], ["Single key", "2"], ["Full service history", "58%"]],
+    value: [["Value added", "£6,410"], ["Avg per car", "£160"], ["Most common", "Valet"], ["Cars with work", "28"]],
+    sales: [["Sold this month", "4"], ["Revenue", "£42,600"], ["Total S - P", "£9,344"], ["Top lead source", "AutoTrader"]],
+  };
   return (
-    <Page title="Add vehicle" backAction={{ content: "Vehicles" }}>
-      <div className="flex flex-col gap-4">
-        <Card title="Quick add">
-          <p className="body-sm text-(--text-secondary)">Get the car into stock now. Everything else can be filled in straight after, or later from the vehicle page.</p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2"><RegLookup compact /></div>
-            <TextField label={<Req>Mileage</Req>} type="number" suffix="mi" defaultValue="47000" />
-            <TextField label={<Req>Buying price</Req>} prefix="£" defaultValue="9,850" />
-            <Select label="Source type" options={["Auction", "Private seller", "Trade-in", "Dealer", "Other"]} />
-            <TextField label="Received date" defaultValue="26 Sep 2026" />
-          </div>
-          <DvlaFound />
-          <div className="flex justify-end gap-2"><Button>Save as draft</Button><Button variant="primary">Add to stock</Button></div>
-        </Card>
-        <Card title="Complete the details" actions={<Badge tone="attention">3 of 6 done</Badge>} padding="0">
-          <ul>
-            {[
-              { t: "Vehicle identity", d: "Filled from DVLA · 2 blank", done: true },
-              { t: "Buying", d: "Seller, owner, invoice · 4 blank", done: false },
-              { t: "Purchase costs", d: "£580 fees entered · 1 blank", done: true },
-              { t: "Receiving and paperwork", d: "6 blank", done: false },
-              { t: "Things to do", d: "2 items · £235", done: true },
-              { t: "Pricing", d: "Listing price blank", done: false },
-            ].map((r) => (
-              <li key={r.t} className="flex items-center gap-3 border-t border-(--border-secondary) px-4 py-3 first:border-t-0 hover:bg-(--bg-surface-hover)">
-                {r.done ? <CheckCircle2 className="size-5 text-(--icon-success)" /> : <Circle className="size-5 text-(--icon-secondary)" />}
-                <div className="min-w-0 flex-1"><p className="body-md-semibold">{r.t}</p><p className="body-sm text-(--text-secondary)">{r.d}</p></div>
-                <Button variant="plain">{r.done ? "Edit" : "Fill in"}</Button>
-              </li>
-            ))}
-          </ul>
-        </Card>
-        <Card title="Buying" actions={<Button variant="plain">Collapse</Button>}><BuyingFields /></Card>
+    <Page title="Master sheet" fullWidth primaryAction={{ content: "Export CSV" }} secondaryActions={[{ content: "Columns" }]} className="w-full">
+      <Tabs tabs={SECTIONS.map((s) => ({ id: s.id, content: s.label, badge: String(s.count) }))} selected={tab} onSelect={setTab} />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {kpis[section].map(([k, v]) => (
+          <Card key={k}><p className="body-sm text-(--text-secondary)">{k}</p><p className="heading-lg">{v}</p></Card>
+        ))}
       </div>
+      <Card padding="0">
+        <div className="flex flex-wrap items-center gap-2 border-b border-(--border-secondary) p-3">
+          <div className="w-72"><TextField label="Search" labelHidden prefix="SearchMinor" placeholder="Search reg, stock, make" /></div>
+          <Badge>Purchase month: Aug 2026</Badge>
+          <Button variant="plain">Add filter</Button>
+          <span className="ml-auto body-sm text-(--text-secondary)">{`${cols.length + 3} of 72 columns · Identity pinned`}</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table data-slot="table" className="whitespace-nowrap border-separate border-spacing-0">
+            <thead>
+              <tr>
+                <th className="sticky left-0 z-3 bg-(--bg-surface-secondary)">Car</th>
+                {cols.map((c) => <th key={c.key} className={c.num ? "text-right" : ""}>{c.label} {c.computed && <ComputedMark />}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {ROWS.map((r) => (
+                <tr key={r.stock}>
+                  <td className="sticky left-0 z-1 bg-(--bg-surface) shadow-[1px_0_0_var(--border)]"><div className="flex items-center gap-2"><Thumbnail source={r.photo} alt="" size="small" /><div><RegPlate registration={r.reg} size="sm" /><p className="body-sm text-(--text-secondary)">{`${r.stock} · ${r.make} ${r.model}`}</p></div></div></td>
+                  {cols.map((c) => <td key={c.key} className={c.num ? "text-right body-md-numeric" : ""}>{c.get(r)}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex items-center justify-between border-t border-(--border-secondary) px-3 py-2">
+          <span className="body-sm text-(--text-secondary)">Showing 1–25 of 1,862</span>
+          <Pagination hasNext label="Page 1 of 75" />
+        </div>
+      </Card>
+    </Page>
+  );
+}
+
+/* ── E — Grouped by month with subtotals (Causal, Airtable group) ──── */
+function VariationE() {
+  const groups = ["Sep 2026", "Aug 2026", "Jul 2026", "Jun 2026"].map((m) => ({ month: m, rows: ROWS.filter((r) => r.purchase === m) }));
+  const cols = COLS.filter((c) => ["make", "model", "auction", "buying", "logbook", "status", "selling", "sp"].includes(c.key));
+  return (
+    <Page title="Master sheet" fullWidth secondaryActions={[{ content: "Columns" }, { content: "Export CSV" }]} className="w-full">
+      <Card padding="0">
+        <div className="flex flex-wrap items-center gap-2 border-b border-(--border-secondary) p-3">
+          <Button icon={<Group className="size-4" />} disclosure>Group: Purchase month</Button>
+          <Button icon={<Filter className="size-4" />}>Filter</Button>
+          <div className="ml-auto w-64"><TextField label="Search" labelHidden prefix="SearchMinor" placeholder="Search reg, stock, make" /></div>
+        </div>
+        <div className="overflow-x-auto">
+          <table data-slot="table" className="whitespace-nowrap w-full border-separate border-spacing-0">
+            <thead><tr><th>Car</th>{cols.map((c) => <th key={c.key} className={c.num ? "text-right" : ""}>{c.label} {c.computed && <ComputedMark />}</th>)}</tr></thead>
+            {groups.map((g, gi) => {
+              const buy = g.rows.reduce((n, r) => n + r.buying, 0);
+              const profit = g.rows.reduce((n, r) => n + (sp(r) ?? 0), 0);
+              return (
+                <tbody key={g.month}>
+                  <tr>
+                    <td colSpan={cols.length + 1} className="bg-(--bg-surface-secondary)">
+                      <div className="flex items-center gap-2">
+                        {gi === 3 ? <ChevronRight className="size-4" /> : <ChevronDown className="size-4" />}
+                        <span className="body-md-semibold">{g.month}</span>
+                        <Badge>{`${g.rows.length} ${g.rows.length === 1 ? "car" : "cars"}`}</Badge>
+                        <span className="ml-auto body-sm text-(--text-secondary)">{`Bought ${gbp(buy)} · S - P ${gbp(profit)}`}</span>
+                      </div>
+                    </td>
+                  </tr>
+                  {gi !== 3 && g.rows.map((r) => (
+                    <tr key={r.stock}>
+                      <td><div className="flex items-center gap-2"><RegPlate registration={r.reg} size="sm" /><span className="body-sm text-(--text-secondary)">{r.stock}</span></div></td>
+                      {cols.map((c) => <td key={c.key} className={c.num ? "text-right body-md-numeric" : ""}>{c.get(r)}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              );
+            })}
+            <tfoot>
+              <tr>
+                <td className="body-md-semibold">All months · 40 cars</td>
+                {cols.map((c) => <td key={c.key} className="text-right body-md-semibold">{c.key === "buying" ? gbp(ROWS.reduce((n, r) => n + r.buying, 0)) : c.key === "sp" ? gbp(ROWS.reduce((n, r) => n + (sp(r) ?? 0), 0)) : ""}</td>)}
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </Card>
     </Page>
   );
 }
@@ -453,39 +435,42 @@ function VariationE() {
 /* ── States every variation needs ──────────────────────────────────── */
 function States() {
   return (
-    <div className="grid gap-4 p-6 lg:grid-cols-2">
-      <Card title="Looking up the registration">
-        <div className="flex items-center gap-2 body-sm text-(--text-secondary)"><Search className="size-4" />Checking DVLA and your stock book…</div>
-        <SkeletonBodyText lines={3} />
+    <div className="grid gap-4 p-6 lg:grid-cols-3">
+      <Card title="Loading 1,862 cars"><SkeletonBodyText lines={6} /></Card>
+      <Card padding="0">
+        <EmptyState icon={<Search className="fill-none" />} heading="No cars match" action={{ content: "Clear filters" }}>
+          Try a different search, or remove a filter.
+        </EmptyState>
       </Card>
       <div className="flex flex-col gap-3">
-        <DvlaFound />
-        <Banner tone="warning" title="Not found on DVLA">The number may be mistyped. Check it, or fill in the details yourself.</Banner>
-        <Banner tone="info" title="GK66 6NX is already in stock" action={{ content: "Open D-0004" }}>Adding it again creates a duplicate. Open the existing car instead?</Banner>
-        <Banner tone="info" title="Saving without a registration">This car will be saved as UNREGISTERED. You can add the reg later from the vehicle page.</Banner>
-        <Banner tone="critical" title="Fix 2 errors to save">Mileage must be a number. Listing price can't be lower than the minimum sale price.</Banner>
+        <Card>
+          <div className="flex items-center justify-between gap-2"><span className="body-sm text-(--text-secondary)">Selling price, PK68 DPL</span><Badge tone="info">Saving…</Badge></div>
+          <TextField label="Selling price" labelHidden prefix="£" defaultValue="11,800" />
+        </Card>
+        <Banner tone="critical" title="Couldn't save Mileage for WF69 TYU">Enter a whole number. The old value is back in the cell.</Banner>
+        <Banner tone="info" title="S - P is calculated">Selling price minus total buying price. Edit those to change it.</Banner>
       </div>
     </div>
   );
 }
 
 const VARIATIONS = [
-  { key: "A", name: "Lookup first, then one page", refs: "Shopify Add product", C: VariationA },
-  { key: "B", name: "One annotated page with section nav", refs: "Etsy listing details", C: VariationB },
-  { key: "C", name: "Refined wizard with step rail", refs: "Klook merchant onboarding", C: VariationC },
-  { key: "D", name: "Section tabs with a live stock card", refs: "Etsy Shop Manager", C: VariationD },
-  { key: "E", name: "Quick add, then complete the details", refs: "Salesforce quick create", C: VariationE },
+  { key: "A", name: "Airtable-style grid", refs: "Airtable, Retool, AirOps", C: VariationA },
+  { key: "B", name: "Excel-true sheet", refs: "Rows, Canva Sheets, Google Sheets", C: VariationB },
+  { key: "C", name: "Key columns + record panel", refs: "Braintrust, Shopify bulk editor", C: VariationC },
+  { key: "D", name: "Section views with a summary", refs: "Shopify index, Vanta", C: VariationD },
+  { key: "E", name: "Grouped by month with subtotals", refs: "Causal, Airtable group", C: VariationE },
 ];
 
 export default function PrototypePage() {
   return (
     <main className="flex flex-col gap-10 p-6">
       <header className="flex flex-col gap-1">
-        <h1 className="heading-lg">Prototype — Add vehicle</h1>
+        <h1 className="heading-lg">Prototype — Master sheet</h1>
         <p className="body-md text-(--text-secondary)">
-          Five directions for the same form: registration lookup, identity, buying, purchase costs with VAT, receiving,
-          things to do, pricing, valuation and cost summary. Nothing is mandatory; * marks important fields. Lookup and
-          error states are at the foot. Pick one (A–E).
+          Five directions for the 72-column sheet: pinned identity columns, the Buying / Receiving / Value addition /
+          Sales data sections, calculated columns (ƒ), inline editing, filters, search, column picking, export and
+          1,862 legacy rows. Loading, empty, saving and error states are at the foot. Pick one (A–E).
         </p>
       </header>
       {VARIATIONS.map(({ key, name, refs, C }) => (

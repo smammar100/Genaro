@@ -4,7 +4,14 @@ import {
   VehicleSheet,
   type ColDef,
   type FilterField,
+  type SheetSectionContext,
 } from "@/components/vehicles/vehicle-sheet";
+import { SectionTabs } from "@/components/master-sheet/section-tabs";
+import { SectionSummary } from "@/components/master-sheet/section-summary";
+import {
+  columnCountsBySection,
+  type MetricSection,
+} from "@/lib/master-sheet-metrics";
 import type { Vehicle } from "@/lib/types";
 import { VehicleImage } from "@/components/shared/vehicle-image";
 import { RegPlate } from "@/components/shared/reg-plate";
@@ -38,6 +45,11 @@ import {
 
 /**
  * The Master Sheet — Car Capital's own Excel sheet (A–BS), column for column.
+ *
+ * Layout: section tabs (badged with their column counts) and four summary
+ * figures for the selected tab over the grid; inside the grid's card, one
+ * toolbar row, coloured section bands, calculated (ƒ) columns and a totals
+ * row. Chosen from the /prototype variations D (header) and A (table).
  *
  * Headers are the sheet's own, minus its "(1)" / "(2)" entry markers; the
  * order is the sheet's order. Formula columns (`value`) are computed, never
@@ -80,12 +92,12 @@ const COLS: ColDef[] = [
     editable: true,
     toPatch: (value) => ({ legacySerialNumber: toInt(value) }),
   },
-  { key: "stockId", label: "STOCK ID", type: "stockId", width: 100, sticky: true, section: COMMON },
+  { key: "stockId", label: "STOCK ID", type: "stockId", width: 100, sticky: true, section: COMMON, gridHidden: true },
   {
     key: "registration",
     label: "REG. NUMBER",
     type: "text",
-    width: 170,
+    width: 200,
     sticky: true,
     section: COMMON,
     editable: true,
@@ -96,7 +108,10 @@ const COLS: ColDef[] = [
           variant="thumb"
           className="size-10 shrink-0 rounded-lg border border-(--border)"
         />
-        <RegPlate registration={v.registration} size="sm" />
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <RegPlate registration={v.registration} size="sm" />
+          <span className="body-sm text-(--text-secondary)">{v.stockId}</span>
+        </div>
       </div>
     ),
     toPatch: (value) => ({
@@ -180,6 +195,7 @@ const COLS: ColDef[] = [
   { key: "invoiceDate", label: "PURCHASE YEAR", type: "text", width: 110, section: BUY, value: purchaseYear },
   {
     ...money("buyingPrice", "BUYING PRICE", BUY),
+    sum: true,
     // NOT NULL — a cleared cell is £0, not "unknown".
     toPatch: (value) => ({ buyingPrice: typeof value === "number" ? value : 0 }),
   },
@@ -209,6 +225,7 @@ const COLS: ColDef[] = [
     width: 160,
     section: BUY,
     value: (v) => v.totalBuyingPrice,
+    sum: true,
   },
 
   // ── Receiving (sheet AJ–BA) ───────────────────────────────────────────
@@ -283,6 +300,7 @@ const COLS: ColDef[] = [
   // imported figure and stay editable (isValueAdditionLocked).
   {
     ...money("valueAddition", "TOTAL VALUE ADDITION", VA, 160),
+    sum: true,
     editableFor: isValueAdditionLocked,
     readOnlyHint: "Sum of this car's Things to Do costs. Edit the costs there.",
     toPatch: (value) => ({ valueAddition: typeof value === "number" ? value : 0 }),
@@ -300,7 +318,7 @@ const COLS: ColDef[] = [
     toPatch: (value) => ({ saleStatus: (value as Vehicle["saleStatus"]) ?? "available" }),
   },
   { key: "dateSold", label: "DATE SOLD", type: "date", width: 120, section: SALE, editable: true },
-  money("sellingPrice", "SELLING PRICE", SALE),
+  { ...money("sellingPrice", "SELLING PRICE", SALE), sum: true },
   {
     key: "financeCompanyDeal",
     label: "FINANCE COMPANY DEAL",
@@ -327,8 +345,8 @@ const COLS: ColDef[] = [
   money("insuranceCost", "INSURANCE", SALE, 110),
   money("otherJobsCost", "OTHER JOBS", SALE, 110),
   money("customerDeliveryCost", "CHARGES PAID BY CC FOR DELIVERY TO CUSTOMER", SALE, 220),
-  { key: "financeCompanyCharges", label: "EXPENSE AT POINT OF SALE", type: "currency", width: 170, section: SALE, value: expenseAtPointOfSale },
-  { key: "sellingPrice", label: "S - P", type: "currency", width: 120, section: SALE, value: sheetProfit },
+  { key: "financeCompanyCharges", label: "EXPENSE AT POINT OF SALE", type: "currency", width: 170, section: SALE, value: expenseAtPointOfSale, sum: true },
+  { key: "sellingPrice", label: "S - P", type: "currency", width: 120, section: SALE, value: sheetProfit, sum: true },
   { key: "dateSold", label: "SOLD IN MONTH OF", type: "text", width: 130, section: SALE, value: soldMonth },
   { key: "dateSold", label: "SOLD IN YEAR OF", type: "text", width: 120, section: SALE, value: soldYear },
   { key: "remarks", label: "REMARKS", type: "text", width: 200, section: SALE, editable: true },
@@ -363,6 +381,28 @@ const FILTER_FIELDS: FilterField[] = [
   { key: "sheetProfit", label: "S - P", kind: "num", get: sheetProfit },
 ];
 
+/** Columns per section, for the tab badges. */
+const COLUMN_COUNTS = columnCountsBySection(COLS.filter((c) => !c.gridHidden));
+
+/** Section tabs, then four summary figures for the selected tab. */
+function MasterSheetSectionHeader({
+  section,
+  onSectionChange,
+  rows,
+}: SheetSectionContext) {
+  return (
+    <>
+      <SectionTabs
+        sections={MASTER_SHEET_SECTIONS}
+        counts={COLUMN_COUNTS}
+        value={section}
+        onChange={onSectionChange}
+      />
+      <SectionSummary section={(section ?? "all") as MetricSection} rows={rows} />
+    </>
+  );
+}
+
 export default function MasterSheetPage() {
   return (
     <VehicleSheet
@@ -371,12 +411,13 @@ export default function MasterSheetPage() {
       filterFields={FILTER_FIELDS}
       sections={MASTER_SHEET_SECTIONS}
       csvName="master-sheet"
-      summary={(count, selected) =>
-        `Car Capital's master sheet, column for column: buying, receiving, value addition and sales. ${
-          count ?? "—"
-        } row${count === 1 ? "" : "s"}${
-          selected > 0 ? ` · ${selected} selected` : ""
-        }.`
+      layout="workbook"
+      showTotals
+      sectionHeader={MasterSheetSectionHeader}
+      summary={(_count, selected) =>
+        `Every car from purchase to sale. Edit cells in place; ƒ columns calculate themselves.${
+          selected > 0 ? ` ${selected} selected.` : ""
+        }`
       }
     />
   );

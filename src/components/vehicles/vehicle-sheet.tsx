@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ComponentType,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
@@ -17,6 +18,7 @@ import {
   ChevronsUpDown,
   Download,
   FileSpreadsheet,
+  FunctionSquare,
   Plus,
   Search,
   SlidersHorizontal,
@@ -47,6 +49,14 @@ import { VehicleImage } from "@/components/shared/vehicle-image";
 import { DataGridPagination } from "@/components/data-grid";
 import { LocationBadge } from "@/components/locations/location-badge";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import {
+  Card as PolarisCard,
+  Checkbox as PolarisCheckbox,
+  EmptyState as PolarisEmptyState,
+  Page,
+} from "@/components/polaris";
+import { SheetToolbar } from "@/components/master-sheet/sheet-toolbar";
+import { TotalsRow } from "@/components/master-sheet/totals-row";
 import { useIsNarrow } from "@/hooks/use-media-query";
 import { usePermissions } from "@/hooks/use-permissions";
 import { optionLabel } from "@/lib/master-sheet";
@@ -131,6 +141,14 @@ export interface ColDef {
    */
   mobileHide?: boolean;
   sticky?: boolean;
+  /**
+   * Kept out of the grid and the column picker but still exported to CSV —
+   * for a value another column already shows (Master sheet: Stock ID sits
+   * under the plate in the Reg column).
+   */
+  gridHidden?: boolean;
+  /** Summed in the totals row (`showTotals`) over the filtered rows. */
+  sum?: boolean;
 }
 
 /** Unique React key per column. ColDef.key is keyed by data field, so two
@@ -532,6 +550,29 @@ interface VehicleSheetProps {
    * `section: "common"` show in every group. Omit for no switcher.
    */
   sections?: { value: string; label: string }[];
+  /**
+   * "workbook" (Master sheet): a Polaris Page header with Export CSV, one
+   * toolbar row inside the grid's card (columns · filter · search), computed
+   * columns marked ƒ on a subdued fill, and the edited cell outlined.
+   * Defaults to "classic", the original layout.
+   */
+  layout?: "classic" | "workbook";
+  /**
+   * Replaces the section switcher beside "Add filter" with the caller's own
+   * header (e.g. section tabs + summary cards), rendered above the grid.
+   */
+  sectionHeader?: ComponentType<SheetSectionContext>;
+  /** A totals row pinned under the grid: row count, then `sum` columns. */
+  showTotals?: boolean;
+}
+
+/** What a `sectionHeader` needs to drive the sections. */
+export interface SheetSectionContext {
+  /** The selected section, or null for every column ("All"). */
+  section: string | null;
+  onSectionChange: (section: string | null) => void;
+  /** The grid's rows after search and filters; null while loading. */
+  rows: Vehicle[] | null;
 }
 
 /** localStorage key for the section a user last picked on a sheet. */
@@ -542,13 +583,22 @@ const sectionKey = (csvName: string): string =>
  * Header-band tint per section, echoing the colour coding of the client's
  * Excel sheet so a wide "All" view still reads as blocks.
  */
+// Important (`!`): polaris-bridge.css gives every `thead th` the secondary
+// surface outside any cascade layer, which beats a plain utility.
 const SECTION_TONE: Record<string, string> = {
-  common: "bg-muted text-muted-foreground",
-  buying: "bg-(--bg-surface-info) text-(--text-info)",
-  receiving: "bg-(--bg-surface-caution) text-(--text-caution)",
-  value_addition: "bg-(--bg-surface-emphasis) text-(--text-emphasis)",
-  sales: "bg-(--bg-surface-success) text-(--text-success)",
+  common: "bg-(--bg-surface-secondary)! text-(--text-secondary)!",
+  buying: "bg-(--bg-surface-info)! text-(--text-info)!",
+  receiving: "bg-(--bg-surface-success)! text-(--text-success)!",
+  value_addition: "bg-(--bg-surface-warning)! text-(--text-warning)!",
+  sales: "bg-(--bg-surface-magic)! text-(--text-magic)!",
 };
+
+/** A formula column: computed from others, never typed into. */
+const isComputedCol = (c: ColDef): boolean => Boolean(c.value);
+
+function pluralize(n: number, one: string, many: string): string {
+  return `${formatNumber(n)} ${n === 1 ? one : many}`;
+}
 
 export function VehicleSheet({
   title,
@@ -565,7 +615,11 @@ export function VehicleSheet({
   sections,
   emptyState,
   className,
+  layout = "classic",
+  sectionHeader: SectionHeader,
+  showTotals = false,
 }: VehicleSheetProps) {
+  const workbook = layout === "workbook";
   const { company, user } = useAuth();
   const { can, isSuperUser } = usePermissions();
   // Same gate as the Financials ledger: a cost edit re-derives the totals.
@@ -1007,8 +1061,11 @@ export function VehicleSheet({
    * colgroup keeps reserving its width, leaving the table just as wide with
    * blank gaps where the columns were.
    */
+  /** The columns the grid and picker offer (CSV export still uses allCols). */
+  const gridCols = useMemo(() => allCols.filter((c) => !c.gridHidden), [allCols]);
+
   const cols = useMemo(() => {
-    const chosen = allCols.filter(
+    const chosen = gridCols.filter(
       (c) =>
         visible.has(colKey(c)) &&
         // The section switcher narrows, never hides identifiers.
@@ -1016,7 +1073,7 @@ export function VehicleSheet({
     );
     if (userPickedColumns || !isNarrow) return chosen;
     return chosen.filter((c) => !c.mobileHide);
-  }, [allCols, visible, userPickedColumns, isNarrow, section]);
+  }, [gridCols, visible, userPickedColumns, isNarrow, section]);
 
   /**
    * Left offset of a sticky column: the row-counter (40px) plus every sticky
@@ -1053,12 +1110,12 @@ export function VehicleSheet({
           section: s,
           label:
             sections.find((x) => x.value === s)?.label ??
-            (s === "common" ? "Common" : ""),
+            (s === "common" ? (workbook ? "Identity" : "Common") : ""),
           span: 1,
         });
     }
     return out;
-  }, [cols, sections]);
+  }, [cols, sections, workbook]);
 
   /** Active column sort, or null for the grid's natural order (GEN-92). */
   const [sort, setSort] = useState<SortState | null>(null);
@@ -1140,6 +1197,29 @@ export function VehicleSheet({
     return sorted.slice(start, start + PAGE_SIZE);
   }, [sorted, safePage]);
 
+  /** Sums for the totals row, over every filtered row (not just this page). */
+  const totals = useMemo(() => {
+    if (!showTotals || !filtered) return null;
+    const out = new Map<string, number>();
+    for (const c of allCols) {
+      if (!c.sum) continue;
+      let total = 0;
+      for (const v of filtered) {
+        const raw = rawValue(c, v);
+        if (typeof raw === "number" && Number.isFinite(raw)) total += raw;
+      }
+      out.set(colKey(c), total);
+    }
+    return out;
+  }, [showTotals, filtered, allCols]);
+
+  /** The pinned columns at the start of the row, which the totals label spans. */
+  const leadingSticky = useMemo(() => {
+    let n = 0;
+    while (n < cols.length && cols[n].sticky) n += 1;
+    return n;
+  }, [cols]);
+
   function toggle(k: string) {
     // Once the user has curated their own column set, responsive hiding stops
     // applying — their choice outranks our breakpoint heuristic (GEN-93).
@@ -1208,6 +1288,730 @@ export function VehicleSheet({
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  /** The column picker (shared by the classic popover and the workbook toolbar). */
+  const columnsPanel = (
+    // Shorter in the workbook: its toolbar sits lower on the page, and the
+    // panel opens below it.
+    <ScrollArea className={cn("p-3", workbook ? "max-h-[45vh]" : "max-h-[60vh]")}>
+      {/* Says out loud what the responsive rule does, and that
+          choosing columns turns it off (GEN-93). */}
+      {!userPickedColumns && allCols.some((c) => c.mobileHide) && (
+        <p className="mb-3 text-2xs leading-relaxed text-muted-foreground">
+          On a narrow screen some columns are hidden to keep the
+          grid readable. Choose your own columns here and every one
+          you pick stays visible at any width.
+        </p>
+      )}
+      <div className="grid grid-cols-2 gap-2">
+        {gridCols.map((c) => {
+          const k = colKey(c);
+          // Workbook: the Polaris checkbox carries its own label. (A base-ui
+          // checkbox inside a <label> toggles twice when the box itself is
+          // clicked — the label re-fires the click.)
+          if (workbook) {
+            return (
+              <PolarisCheckbox
+                key={k}
+                label={c.label}
+                checked={visible.has(k)}
+                onChange={() => toggle(k)}
+              />
+            );
+          }
+          return (
+            <Label
+              key={k}
+              className="flex items-center gap-2 text-xs"
+            >
+              <Checkbox
+                checked={visible.has(k)}
+                onCheckedChange={() => toggle(k)}
+              />
+              {c.label}
+            </Label>
+          );
+        })}
+      </div>
+    </ScrollArea>
+  );
+
+  /** The scrolling grid: edge shadows, the table and its totals row. */
+  const renderGrid = (list: Vehicle[]) => (
+    <>
+      {/* Edge shadows: the only thing telling you the grid continues
+          sideways. Scrolling always worked here, but with 13 columns in
+          a ~700px window and macOS hiding its overlay scrollbar until
+          you move it, there was nothing on screen to say so — which
+          reads as "it can't scroll" (GEN-69). */}
+      <div
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute inset-y-0 left-0 z-40 w-6 bg-gradient-to-r from-(--bg-fill-transparent-secondary-active) to-transparent transition-opacity",
+          edges.left ? "opacity-100" : "opacity-0",
+        )}
+      />
+      <div
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute inset-y-0 right-0 z-40 w-6 bg-gradient-to-l from-(--bg-fill-transparent-secondary-active) to-transparent transition-opacity",
+          edges.right ? "opacity-100" : "opacity-0",
+        )}
+      />
+      <div
+        ref={attachGridScroll}
+        onScroll={(e) => updateEdges(e.currentTarget)}
+        className="relative min-h-0 flex-1 overflow-auto">
+        {/* table-fixed makes the colgroup widths authoritative so a
+            resize actually sticks — under auto layout a wide-content
+            column (e.g. Variant) ignored its <col> width and couldn't be
+            shrunk (GEN-20). The explicit width tracks the summed columns
+            so the container scrolls horizontally as before. */}
+        <table
+          className="table-fixed border-separate text-xs"
+          style={{
+            width: 80 + cols.reduce((sum, c) => sum + widthFor(c), 0),
+            borderSpacing: 0,
+          }}
+        >
+          <colgroup>
+            <col style={{ width: 40 }} />
+            {cols.map((c) => (
+              <col
+                key={colKey(c)}
+                style={{ width: widthFor(c) }}
+              />
+            ))}
+            <col style={{ width: 40 }} />
+          </colgroup>
+          {/* Surfaces are card-white (GEN-62). The sticky header/column
+              still need an OPAQUE fill so rows don't show through while
+              scrolling — bg-card is opaque, and the header keeps its
+              borders + font-medium to read as a band without a tint. */}
+          <thead className="sticky top-0 z-20 bg-card">
+            {bands.length > 0 && (
+              <tr aria-hidden>
+                <th className="sticky left-0 z-30 border-b bg-(--bg-surface-secondary)" />
+                {bands.map((b, i) => (
+                  <th
+                    key={`${b.section}-${i}`}
+                    colSpan={b.span}
+                    className={cn(
+                      "h-5 border-b px-2 text-left text-2xs font-semibold uppercase tracking-wide",
+                      SECTION_TONE[b.section] ?? SECTION_TONE.common,
+                      // Workbook: the identity band pins with the columns
+                      // under it, rather than scrolling off above them.
+                      workbook &&
+                        i === 0 &&
+                        b.section === "common" &&
+                        b.span === leadingSticky &&
+                        "sticky z-30 shadow-[1px_0_0_var(--border)]",
+                    )}
+                    style={
+                      workbook &&
+                      i === 0 &&
+                      b.section === "common" &&
+                      b.span === leadingSticky
+                        ? { left: 40 }
+                        : undefined
+                    }
+                  >
+                    {/* Sticks beside the pinned columns so the name of a
+                        wide section stays readable while scrolling it. */}
+                    <span
+                      className="sticky block w-max"
+                      // The pinned band sits under the pinned columns;
+                      // every other band sticks just to their right.
+                      style={{ left: b.section === "common" ? 48 : stickyEdge + 8 }}
+                    >
+                      {b.label}
+                    </span>
+                  </th>
+                ))}
+                <th className="border-b" />
+              </tr>
+            )}
+            <tr>
+              <th className="sticky left-0 z-30 border-b bg-(--bg-surface-secondary) shadow-[1px_0_0_var(--border)]">
+                <div className="flex h-8 items-center justify-center">
+                  <Checkbox
+                    checked={
+                      list.length > 0 &&
+                      selected.size === list.length
+                    }
+                    onCheckedChange={toggleAll}
+                    aria-label="Select all"
+                  />
+                </div>
+              </th>
+              {cols.map((c) => (
+                <th
+                  key={colKey(c)}
+                  className={cn(
+                    "relative border-b bg-(--bg-surface-secondary) px-2 text-left font-medium",
+                    c.sticky &&
+                      "sticky z-30 bg-(--bg-surface-secondary) shadow-[1px_0_0_var(--border)]",
+                  )}
+                  style={c.sticky ? { left: stickyLeft(c) } : undefined}
+                  aria-sort={
+                    sort?.column === colKey(c)
+                      ? sort.direction === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
+                >
+                  {/* Click to sort: asc → desc → unsorted (GEN-92). */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSort((prev) => cycleSort(prev, colKey(c)))
+                    }
+                    aria-label={
+                      workbook && isComputedCol(c)
+                        ? `Sort by ${c.label} (calculated)`
+                        : `Sort by ${c.label}`
+                    }
+                    title={
+                      workbook && isComputedCol(c)
+                        ? `${c.label} · calculated from other columns`
+                        : c.label
+                    }
+                    className={cn(
+                      "flex w-full min-w-0 cursor-pointer items-center gap-1 pr-1 text-left text-xs hover:text-foreground",
+                      // Sheets with sections carry the client's long Excel
+                      // headers ("BCA ESSENTIAL CHECK / BCA ASSURED
+                      // CHARGE"): let them wrap to two lines, not clip.
+                      sections ? "min-h-10 py-1" : "h-8",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "min-w-0 font-medium text-foreground",
+                        sections ? "line-clamp-2 leading-tight" : "truncate",
+                      )}
+                    >
+                      {c.label}
+                    </span>
+                    {workbook && isComputedCol(c) && (
+                      <FunctionSquare
+                        aria-hidden
+                        className="size-3.5 shrink-0 text-(--icon-secondary)"
+                      />
+                    )}
+                    {sort?.column === colKey(c) ? (
+                      sort.direction === "asc" ? (
+                        <ArrowUp className="size-3 shrink-0 text-primary" />
+                      ) : (
+                        <ArrowDown className="size-3 shrink-0 text-primary" />
+                      )
+                    ) : (
+                      <ChevronsUpDown className="size-3 shrink-0 text-muted-foreground/40" />
+                    )}
+                  </button>
+                  {/* Resize handle: a wide, easy-to-grab hit area (GEN-20)
+                      straddling the right border, with a thin accent line
+                      shown on hover. Drag to resize, double-click resets. */}
+                  <div
+                    role="separator"
+                    aria-orientation="vertical"
+                    aria-label={`Resize ${c.label} column`}
+                    onPointerDown={(e) => onResizeStart(e, c)}
+                    onPointerMove={onResizeMove}
+                    onPointerUp={onResizeEnd}
+                    onDoubleClick={() => resetWidth(c)}
+                    className="group/resize absolute -right-1.5 top-0 z-40 flex h-full w-3 cursor-col-resize touch-none select-none justify-center"
+                    title="Drag to resize · double-click to reset"
+                  >
+                    <span className="h-full w-0.5 bg-transparent transition-colors group-hover/resize:bg-primary/60 group-active/resize:bg-primary" />
+                  </div>
+                </th>
+              ))}
+              <th className="border-b">
+                <div className="flex h-8 items-center justify-center text-muted-foreground">
+                  <Plus className="h-3.5 w-3.5" />
+                </div>
+              </th>
+            </tr>
+          </thead>
+          {/* bg-card, not bg-background: this element paints the whole
+              body, so page-grey here hid the white Card behind the grid
+              and made every row read grey (GEN-62). */}
+          <tbody className="bg-card">
+            {(pagedRows ?? []).map((v, idxOnPage) => {
+              const isSelected = selected.has(v.id);
+              const idx = (safePage - 1) * PAGE_SIZE + idxOnPage;
+              return (
+                <tr
+                  key={v.id}
+                  onClick={() => openVehicle(v.id)}
+                  className={cn(
+                    "group/row cursor-pointer",
+                    isSelected && "bg-(--bg-surface-selected)",
+                  )}
+                >
+                  <td
+                    className={cn(
+                      // SOLID backgrounds on sticky cells — a
+                      // translucent sticky cell lets scrolled-out
+                      // content bleed through and corrupts cell
+                      // text (date columns sliding under stock IDs
+                      // produced "CC400072026"-style artifacts).
+                      // bg-card is opaque AND matches the white grid
+                      // surface (GEN-62). Drop shadow marks the
+                      // sticky boundary.
+                      "sticky left-0 z-10 border-b bg-card text-center",
+                      "shadow-[1px_0_0_var(--border)]",
+                      // Sticky cells can't use the row's translucent
+                      // tints (they'd bleed), so mix the SAME tints
+                      // into --card to get an opaque colour identical
+                      // to what the normal cells composite to.
+                      isSelected &&
+                        "bg-(--bg-surface-selected)",
+                      "group-hover/row:bg-(--bg-surface-hover)",
+                    )}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex h-11 items-center justify-center">
+                                                  <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleRow(v.id)}
+                        aria-label={`Select row ${idx + 1}`}
+                        
+                      />
+                    </div>
+                  </td>
+                  {cols.map((c) => {
+                    const columnEditable = isEditableCol(c, editableKeys);
+                    const editable =
+                      columnEditable && (c.editableFor?.(v) ?? true);
+                    const lockedHint =
+                      columnEditable && !editable
+                        ? c.readOnlyHint
+                        : undefined;
+                    const isEditingThis =
+                      editing?.id === v.id && editing?.key === colKey(c);
+                    const alignEnd =
+                      c.type === "currency" || c.type === "number";
+                    return (
+                      <td
+                        key={colKey(c)}
+                        className={cn(
+                          "border-b px-2",
+                          // Sticky data cells: SOLID bg + shadow.
+                          // Inner sticky cells' shadows are occluded
+                          // by the next sticky cell's solid bg via
+                          // paint order; only the rightmost shadow
+                          // is visually present.
+                          // Sticky cells mix the row's tints into
+                          // --card so they stay opaque while matching
+                          // the normal cells exactly (GEN-62).
+                          c.sticky &&
+                            "sticky z-10 bg-card shadow-[1px_0_0_var(--border)] group-hover/row:bg-(--bg-surface-hover)",
+                          isSelected &&
+                            c.sticky &&
+                            "bg-(--bg-surface-selected)",
+                          !c.sticky && "group-hover/row:bg-(--bg-surface-hover)",
+                          // Workbook: formula cells sit on a subdued fill,
+                          // and the cell being edited is outlined.
+                          workbook &&
+                            isComputedCol(c) &&
+                            !isSelected &&
+                            "bg-(--bg-surface-secondary)",
+                          workbook &&
+                            isEditingThis &&
+                            "outline-2 -outline-offset-2 outline-(--border-focus)",
+                        )}
+                        style={c.sticky ? { left: stickyLeft(c) } : undefined}
+                      >
+                        <div
+                          className={cn(
+                            // min-w-0 + overflow-hidden let truncating
+                            // cell text clip cleanly inside the now
+                            // fixed-width column (GEN-20).
+                            "flex h-11 min-w-0 items-center overflow-hidden [&_span]:min-w-0",
+                            alignEnd ? "justify-end" : "justify-start",
+                          )}
+                        >
+                          {isEditingThis && c.options ? (
+                            // Fixed choices edit with a dropdown in the
+                            // same flush style; picking commits at once.
+                            <select
+                              autoFocus
+                              value={draft}
+                              disabled={savingCell}
+                              aria-label={c.label}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) =>
+                                void commitEdit(v, c, e.target.value || null)
+                              }
+                              onBlur={cancelEdit}
+                              onKeyDown={(e) => {
+                                if (e.key === "Escape") {
+                                  e.preventDefault();
+                                  cancelEdit();
+                                }
+                              }}
+                              className="-mx-1 h-7 w-full min-w-0 rounded bg-primary/10 px-1 text-xs text-foreground outline-none disabled:opacity-60"
+                            >
+                              <option value="">—</option>
+                              {c.options.map((o) => (
+                                <option key={o.value} value={o.value}>
+                                  {o.label}
+                                </option>
+                              ))}
+                            </select>
+                          ) : isEditingThis ? (
+                            // Plain input, not the shadcn <Input>: that
+                            // renders a bordered wrapper whose font
+                            // (sm:text-sm) and baked-in padding can't be
+                            // matched to the read-only cell, so the value
+                            // jumped in size + position on edit (GEN-39).
+                            // Match the read-only button exactly — text-xs
+                            // and the same "-mx-1 px-1" flush inset — and
+                            // use a bg tint (not a border, which the cell's
+                            // overflow-hidden would clip) as the affordance.
+                            <input
+                              autoFocus
+                              type={
+                                c.type === "date"
+                                  ? "date"
+                                  : c.type === "number" ||
+                                      c.type === "currency"
+                                    ? "number"
+                                    : "text"
+                              }
+                              value={draft}
+                              disabled={savingCell}
+                              aria-label={c.label}
+                              list={
+                                c.suggestions
+                                  ? `${csvName}-${colKey(c)}-suggestions`
+                                  : undefined
+                              }
+                              step={c.type === "currency" ? "0.01" : undefined}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => setDraft(e.target.value)}
+                              onBlur={() => void commitEdit(v, c)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  void commitEdit(v, c);
+                                } else if (e.key === "Escape") {
+                                  e.preventDefault();
+                                  cancelEdit();
+                                }
+                              }}
+                              className={cn(
+                                "-mx-1 h-7 w-full min-w-0 rounded bg-primary/10 px-1 text-xs text-foreground caret-primary outline-none disabled:opacity-60",
+                                alignEnd && "text-right",
+                              )}
+                            />
+                          ) : editable ? (
+                            <button
+                              type="button"
+                              title="Click to edit"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (c.type === "boolean") {
+                                  void commitEdit(
+                                    v,
+                                    c,
+                                    !v[c.key as keyof Vehicle],
+                                  );
+                                } else {
+                                  startEdit(v, c);
+                                }
+                              }}
+                              className="-mx-1 flex w-full min-w-0 cursor-pointer items-center rounded px-1 text-left hover:bg-primary/5 focus-visible:outline-1"
+                              style={
+                                alignEnd
+                                  ? { justifyContent: "flex-end" }
+                                  : undefined
+                              }
+                            >
+                              <CellContent col={c} v={v} />
+                            </button>
+                          ) : lockedHint ? (
+                            <span
+                              title={lockedHint}
+                              className="flex w-full min-w-0 cursor-help items-center"
+                              style={
+                                alignEnd
+                                  ? { justifyContent: "flex-end" }
+                                  : undefined
+                              }
+                            >
+                              <CellContent col={c} v={v} />
+                            </span>
+                          ) : (
+                            <CellContent col={c} v={v} />
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })}
+                  <td className="border-b group-hover/row:bg-(--bg-surface-hover)" />
+                </tr>
+              );
+            })}
+            {/* Quick-add row — minimal create with auto stock ID */}
+            {enableQuickAdd && (
+              <tr className="bg-(--bg-surface-secondary)">
+                <td
+                  colSpan={cols.length + 2}
+                  className="border-b px-2 py-2"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                      <Plus className="h-3.5 w-3.5" /> Quick add
+                    </span>
+                    <Input
+                      value={quick.registration}
+                      onChange={(e) =>
+                        setQuick({
+                          ...quick,
+                          registration: e.target.value,
+                        })
+                      }
+                      placeholder="Reg *"
+                      className="h-8 w-28 text-xs uppercase"
+                    />
+                    <Input
+                      value={quick.make}
+                      onChange={(e) =>
+                        setQuick({ ...quick, make: e.target.value })
+                      }
+                      placeholder="Make *"
+                      className="h-8 w-28 text-xs"
+                    />
+                    <Input
+                      value={quick.model}
+                      onChange={(e) =>
+                        setQuick({ ...quick, model: e.target.value })
+                      }
+                      placeholder="Model"
+                      className="h-8 w-28 text-xs"
+                    />
+                    <Input
+                      value={quick.year}
+                      onChange={(e) =>
+                        setQuick({ ...quick, year: e.target.value })
+                      }
+                      placeholder="Year"
+                      type="number"
+                      className="h-8 w-20 text-xs"
+                    />
+                    <Input
+                      value={quick.colour}
+                      onChange={(e) =>
+                        setQuick({ ...quick, colour: e.target.value })
+                      }
+                      placeholder="Colour"
+                      className="h-8 w-24 text-xs"
+                    />
+                    <Input
+                      value={quick.mileage}
+                      onChange={(e) =>
+                        setQuick({ ...quick, mileage: e.target.value })
+                      }
+                      placeholder="Mileage"
+                      type="number"
+                      className="h-8 w-24 text-xs"
+                    />
+                    <select
+                      value={quick.supplierId}
+                      onChange={(e) =>
+                        setQuick({ ...quick, supplierId: e.target.value })
+                      }
+                      aria-label="Dealer partner"
+                      className="h-8 rounded-md border bg-background px-2 text-xs"
+                    >
+                      <option value="">No dealer partner</option>
+                      {partners.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      size="sm"
+                      className="h-8"
+                      onClick={() => void handleQuickAdd()}
+                      disabled={adding}
+                    >
+                      {adding ? "Adding…" : "Add vehicle"}
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+          {totals && (
+            <TotalsRow
+              label={`${pluralize(list.length, "car", "cars")} · ${pluralize(filters.length, "filter", "filters")}`}
+              labelSpan={1 + leadingSticky}
+              cells={[
+                ...cols.slice(leadingSticky).map((c) => ({
+                  key: colKey(c),
+                  content: c.sum
+                    ? `Sum ${formatCurrency(totals.get(colKey(c)) ?? 0)}`
+                    : null,
+                })),
+                { key: "__end", content: null },
+              ]}
+            />
+          )}
+        </table>
+      </div>
+    </>
+  );
+
+  /** Type-ahead lists for the free-text cells that have suggestions. */
+  const datalists = allCols
+    .filter((c) => c.suggestions)
+    .map((c) => (
+      <datalist key={colKey(c)} id={`${csvName}-${colKey(c)}-suggestions`}>
+        {c.suggestions!.map((s) => (
+          <option key={s} value={s} />
+        ))}
+      </datalist>
+    ));
+
+  const sectionContext: SheetSectionContext = {
+    section,
+    onSectionChange: (next) => {
+      pickSection(next);
+      setPage(1);
+    },
+    rows: filtered,
+  };
+
+  if (workbook) {
+    const summaryLine = summary(filtered?.length ?? null, selected.size);
+    const bOps = opsFor(kindOf(filterFields, bField));
+    return (
+      <>
+        {/* A Polaris Page bounded to the viewport under the top bar: the
+            header, section header and toolbar stay put while the grid's own
+            container scrolls (so its sticky header and totals row stick).
+            The header (first child) keeps its size; the content column
+            (last child) takes the rest. */}
+        <Page
+          title={title}
+          subtitle={typeof summaryLine === "string" ? summaryLine : undefined}
+          fullWidth
+          secondaryActions={
+            hideExport
+              ? undefined
+              : [
+                  {
+                    content: "Export CSV",
+                    icon: <Download className="size-4" />,
+                    onAction: exportCsv,
+                    disabled: !filtered,
+                  },
+                ]
+          }
+          className={cn(
+            "flex h-[calc(100dvh-3.5rem)] flex-col [&>:first-child]:shrink-0 [&>:last-child]:min-h-0 [&>:last-child]:flex-1",
+            className,
+          )}
+        >
+          {helper}
+          {SectionHeader && <SectionHeader {...sectionContext} />}
+          <PolarisCard padding="0" className="min-h-96 flex-1 gap-0">
+            <SheetToolbar
+              columnsLabel={`${cols.length} of ${gridCols.length} shown`}
+              columnsPanel={<div className="w-80">{columnsPanel}</div>}
+              filters={filters.map((f) => ({
+                id: f.id,
+                label: `${f.label} ${opLabel(f.op)} ${f.value}`,
+              }))}
+              onRemoveFilter={removeFilter}
+              filterOpen={builderOpen}
+              onFilterOpenChange={(open) => {
+                setBuilderOpen(open);
+                if (!open) setBValue("");
+              }}
+              builder={{
+                fields: filterFields.map((f) => ({
+                  value: String(f.key),
+                  label: f.label,
+                })),
+                field: String(bField),
+                onFieldChange: (key) => {
+                  setBField(key);
+                  setBOp(kindOf(filterFields, key) === "num" ? "gte" : "is");
+                },
+                ops: bOps.map((o) => ({ value: o.v, label: o.l })),
+                op: bOp,
+                onOpChange: setBOp,
+                value: bValue,
+                onValueChange: setBValue,
+                onAdd: addFilter,
+              }}
+              search={search}
+              onSearchChange={(value) => {
+                setSearch(value);
+                setPage(1);
+              }}
+              actions={headerActions}
+            />
+            {!filtered ? (
+              <div className="p-4">
+                <Skeleton className="h-72" />
+              </div>
+            ) : filtered.length === 0 ? (
+              // Straight on the card (no box inside the box), centred in the
+              // space the grid would fill. Filters or a search that match
+              // nothing get a way back; an empty stock book gets the plain note.
+              <div className="flex min-h-0 flex-1 items-center justify-center py-10">
+                {emptyState ??
+                  (filters.length > 0 || search.trim() !== "" ? (
+                    <PolarisEmptyState
+                      icon="SearchMinor"
+                      heading="No cars match these filters"
+                      action={{
+                        content: "Clear filters",
+                        onAction: () => {
+                          setFilters([]);
+                          setSearch("");
+                          setPage(1);
+                        },
+                      }}
+                    >
+                      Remove a filter or change the search to see more cars.
+                    </PolarisEmptyState>
+                  ) : (
+                    <PolarisEmptyState icon="ProductsMinor" heading="No vehicles yet">
+                      Cars appear here as soon as they are added.
+                    </PolarisEmptyState>
+                  ))}
+              </div>
+            ) : (
+              <div className="relative flex min-h-0 flex-1 flex-col">
+                {renderGrid(filtered)}
+              </div>
+            )}
+            {filtered && filtered.length > PAGE_SIZE && (
+              <div className="border-t border-(--border-secondary)">
+                <DataGridPagination
+                  page={safePage}
+                  pageSize={PAGE_SIZE}
+                  totalPages={totalPages}
+                  total={filtered.length}
+                  onPageChange={setPage}
+                />
+              </div>
+            )}
+          </PolarisCard>
+        </Page>
+        {datalists}
+        {children}
+      </>
+    );
+  }
+
   return (
     // No padding here — the dashboard shell (AdminShell) already pads a route
     // without a Polaris Page, and adding more doubled it (GEN-61).
@@ -1233,38 +2037,11 @@ export function VehicleSheet({
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm">
                   <SlidersHorizontal className="mr-1.5 h-4 w-4" />
-                  Columns ({cols.length}/{allCols.length})
+                  Columns ({cols.length}/{gridCols.length})
                 </Button>
               </PopoverTrigger>
               <PopoverContent align="end" className="w-80 p-0">
-                <ScrollArea className="max-h-[60vh] p-3">
-                  {/* Says out loud what the responsive rule does, and that
-                      choosing columns turns it off (GEN-93). */}
-                  {!userPickedColumns && allCols.some((c) => c.mobileHide) && (
-                    <p className="mb-3 text-2xs leading-relaxed text-muted-foreground">
-                      On a narrow screen some columns are hidden to keep the
-                      grid readable. Choose your own columns here and every one
-                      you pick stays visible at any width.
-                    </p>
-                  )}
-                  <div className="grid grid-cols-2 gap-2">
-                    {allCols.map((c) => {
-                      const k = colKey(c);
-                      return (
-                        <Label
-                          key={k}
-                          className="flex items-center gap-2 text-xs"
-                        >
-                          <Checkbox
-                            checked={visible.has(k)}
-                            onCheckedChange={() => toggle(k)}
-                          />
-                          {c.label}
-                        </Label>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
+                {columnsPanel}
               </PopoverContent>
             </Popover>
             {!hideExport && (
@@ -1330,7 +2107,7 @@ export function VehicleSheet({
               >
                 <Plus className="h-3.5 w-3.5" /> Add filter
               </button>
-              {sections && (
+              {sections && !SectionHeader && (
                 // Section switcher (client ask: one grid, a column-group picker
                 // beside Add filter instead of more tabs).
                 <div
@@ -1437,478 +2214,7 @@ export function VehicleSheet({
           />
         ) : (
           <Card className="relative flex min-h-0 flex-1 flex-col p-0">
-            {/* Edge shadows: the only thing telling you the grid continues
-                sideways. Scrolling always worked here, but with 13 columns in
-                a ~700px window and macOS hiding its overlay scrollbar until
-                you move it, there was nothing on screen to say so — which
-                reads as "it can't scroll" (GEN-69). */}
-            <div
-              aria-hidden
-              className={cn(
-                "pointer-events-none absolute inset-y-0 left-0 z-40 w-6 bg-gradient-to-r from-(--bg-fill-transparent-secondary-active) to-transparent transition-opacity",
-                edges.left ? "opacity-100" : "opacity-0",
-              )}
-            />
-            <div
-              aria-hidden
-              className={cn(
-                "pointer-events-none absolute inset-y-0 right-0 z-40 w-6 bg-gradient-to-l from-(--bg-fill-transparent-secondary-active) to-transparent transition-opacity",
-                edges.right ? "opacity-100" : "opacity-0",
-              )}
-            />
-            <div
-              ref={attachGridScroll}
-              onScroll={(e) => updateEdges(e.currentTarget)}
-              className="relative min-h-0 flex-1 overflow-auto">
-              {/* table-fixed makes the colgroup widths authoritative so a
-                  resize actually sticks — under auto layout a wide-content
-                  column (e.g. Variant) ignored its <col> width and couldn't be
-                  shrunk (GEN-20). The explicit width tracks the summed columns
-                  so the container scrolls horizontally as before. */}
-              <table
-                className="table-fixed border-separate text-xs"
-                style={{
-                  width: 80 + cols.reduce((sum, c) => sum + widthFor(c), 0),
-                  borderSpacing: 0,
-                }}
-              >
-                <colgroup>
-                  <col style={{ width: 40 }} />
-                  {cols.map((c) => (
-                    <col
-                      key={colKey(c)}
-                      style={{ width: widthFor(c) }}
-                    />
-                  ))}
-                  <col style={{ width: 40 }} />
-                </colgroup>
-                {/* Surfaces are card-white (GEN-62). The sticky header/column
-                    still need an OPAQUE fill so rows don't show through while
-                    scrolling — bg-card is opaque, and the header keeps its
-                    borders + font-medium to read as a band without a tint. */}
-                <thead className="sticky top-0 z-20 bg-card">
-                  {bands.length > 0 && (
-                    <tr aria-hidden>
-                      <th className="sticky left-0 z-30 border-b bg-(--bg-surface-secondary)" />
-                      {bands.map((b, i) => (
-                        <th
-                          key={`${b.section}-${i}`}
-                          colSpan={b.span}
-                          className={cn(
-                            "h-5 border-b px-2 text-left text-2xs font-semibold uppercase tracking-wide",
-                            SECTION_TONE[b.section] ?? SECTION_TONE.common,
-                          )}
-                        >
-                          {/* Sticks beside the pinned columns so the name of a
-                              wide section stays readable while scrolling it. */}
-                          <span
-                            className="sticky block w-max"
-                            // The pinned band sits under the pinned columns;
-                            // every other band sticks just to their right.
-                            style={{ left: b.section === "common" ? 48 : stickyEdge + 8 }}
-                          >
-                            {b.label}
-                          </span>
-                        </th>
-                      ))}
-                      <th className="border-b" />
-                    </tr>
-                  )}
-                  <tr>
-                    <th className="sticky left-0 z-30 border-b bg-(--bg-surface-secondary) shadow-[1px_0_0_var(--border)]">
-                      <div className="flex h-8 items-center justify-center">
-                        <Checkbox
-                          checked={
-                            filtered.length > 0 &&
-                            selected.size === filtered.length
-                          }
-                          onCheckedChange={toggleAll}
-                          aria-label="Select all"
-                        />
-                      </div>
-                    </th>
-                    {cols.map((c) => (
-                      <th
-                        key={colKey(c)}
-                        className={cn(
-                          "relative border-b bg-(--bg-surface-secondary) px-2 text-left font-medium",
-                          c.sticky &&
-                            "sticky z-30 bg-(--bg-surface-secondary) shadow-[1px_0_0_var(--border)]",
-                        )}
-                        style={c.sticky ? { left: stickyLeft(c) } : undefined}
-                        aria-sort={
-                          sort?.column === colKey(c)
-                            ? sort.direction === "asc"
-                              ? "ascending"
-                              : "descending"
-                            : "none"
-                        }
-                      >
-                        {/* Click to sort: asc → desc → unsorted (GEN-92). */}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setSort((prev) => cycleSort(prev, colKey(c)))
-                          }
-                          aria-label={`Sort by ${c.label}`}
-                          title={c.label}
-                          className={cn(
-                            "flex w-full min-w-0 cursor-pointer items-center gap-1 pr-1 text-left text-xs hover:text-foreground",
-                            // Sheets with sections carry the client's long Excel
-                            // headers ("BCA ESSENTIAL CHECK / BCA ASSURED
-                            // CHARGE"): let them wrap to two lines, not clip.
-                            sections ? "min-h-10 py-1" : "h-8",
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              "min-w-0 font-medium text-foreground",
-                              sections ? "line-clamp-2 leading-tight" : "truncate",
-                            )}
-                          >
-                            {c.label}
-                          </span>
-                          {sort?.column === colKey(c) ? (
-                            sort.direction === "asc" ? (
-                              <ArrowUp className="size-3 shrink-0 text-primary" />
-                            ) : (
-                              <ArrowDown className="size-3 shrink-0 text-primary" />
-                            )
-                          ) : (
-                            <ChevronsUpDown className="size-3 shrink-0 text-muted-foreground/40" />
-                          )}
-                        </button>
-                        {/* Resize handle: a wide, easy-to-grab hit area (GEN-20)
-                            straddling the right border, with a thin accent line
-                            shown on hover. Drag to resize, double-click resets. */}
-                        <div
-                          role="separator"
-                          aria-orientation="vertical"
-                          aria-label={`Resize ${c.label} column`}
-                          onPointerDown={(e) => onResizeStart(e, c)}
-                          onPointerMove={onResizeMove}
-                          onPointerUp={onResizeEnd}
-                          onDoubleClick={() => resetWidth(c)}
-                          className="group/resize absolute -right-1.5 top-0 z-40 flex h-full w-3 cursor-col-resize touch-none select-none justify-center"
-                          title="Drag to resize · double-click to reset"
-                        >
-                          <span className="h-full w-0.5 bg-transparent transition-colors group-hover/resize:bg-primary/60 group-active/resize:bg-primary" />
-                        </div>
-                      </th>
-                    ))}
-                    <th className="border-b">
-                      <div className="flex h-8 items-center justify-center text-muted-foreground">
-                        <Plus className="h-3.5 w-3.5" />
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-                {/* bg-card, not bg-background: this element paints the whole
-                    body, so page-grey here hid the white Card behind the grid
-                    and made every row read grey (GEN-62). */}
-                <tbody className="bg-card">
-                  {(pagedRows ?? []).map((v, idxOnPage) => {
-                    const isSelected = selected.has(v.id);
-                    const idx = (safePage - 1) * PAGE_SIZE + idxOnPage;
-                    return (
-                      <tr
-                        key={v.id}
-                        onClick={() => openVehicle(v.id)}
-                        className={cn(
-                          "group/row cursor-pointer",
-                          isSelected && "bg-(--bg-surface-selected)",
-                        )}
-                      >
-                        <td
-                          className={cn(
-                            // SOLID backgrounds on sticky cells — a
-                            // translucent sticky cell lets scrolled-out
-                            // content bleed through and corrupts cell
-                            // text (date columns sliding under stock IDs
-                            // produced "CC400072026"-style artifacts).
-                            // bg-card is opaque AND matches the white grid
-                            // surface (GEN-62). Drop shadow marks the
-                            // sticky boundary.
-                            "sticky left-0 z-10 border-b bg-card text-center",
-                            "shadow-[1px_0_0_var(--border)]",
-                            // Sticky cells can't use the row's translucent
-                            // tints (they'd bleed), so mix the SAME tints
-                            // into --card to get an opaque colour identical
-                            // to what the normal cells composite to.
-                            isSelected &&
-                              "bg-(--bg-surface-selected)",
-                            "group-hover/row:bg-(--bg-surface-hover)",
-                          )}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="flex h-11 items-center justify-center">
-                                                        <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => toggleRow(v.id)}
-                              aria-label={`Select row ${idx + 1}`}
-                              
-                            />
-                          </div>
-                        </td>
-                        {cols.map((c) => {
-                          const columnEditable = isEditableCol(c, editableKeys);
-                          const editable =
-                            columnEditable && (c.editableFor?.(v) ?? true);
-                          const lockedHint =
-                            columnEditable && !editable
-                              ? c.readOnlyHint
-                              : undefined;
-                          const isEditingThis =
-                            editing?.id === v.id && editing?.key === colKey(c);
-                          const alignEnd =
-                            c.type === "currency" || c.type === "number";
-                          return (
-                            <td
-                              key={colKey(c)}
-                              className={cn(
-                                "border-b px-2",
-                                // Sticky data cells: SOLID bg + shadow.
-                                // Inner sticky cells' shadows are occluded
-                                // by the next sticky cell's solid bg via
-                                // paint order; only the rightmost shadow
-                                // is visually present.
-                                // Sticky cells mix the row's tints into
-                                // --card so they stay opaque while matching
-                                // the normal cells exactly (GEN-62).
-                                c.sticky &&
-                                  "sticky z-10 bg-card shadow-[1px_0_0_var(--border)] group-hover/row:bg-(--bg-surface-hover)",
-                                isSelected &&
-                                  c.sticky &&
-                                  "bg-(--bg-surface-selected)",
-                                !c.sticky && "group-hover/row:bg-(--bg-surface-hover)",
-                              )}
-                              style={c.sticky ? { left: stickyLeft(c) } : undefined}
-                            >
-                              <div
-                                className={cn(
-                                  // min-w-0 + overflow-hidden let truncating
-                                  // cell text clip cleanly inside the now
-                                  // fixed-width column (GEN-20).
-                                  "flex h-11 min-w-0 items-center overflow-hidden [&_span]:min-w-0",
-                                  alignEnd ? "justify-end" : "justify-start",
-                                )}
-                              >
-                                {isEditingThis && c.options ? (
-                                  // Fixed choices edit with a dropdown in the
-                                  // same flush style; picking commits at once.
-                                  <select
-                                    autoFocus
-                                    value={draft}
-                                    disabled={savingCell}
-                                    aria-label={c.label}
-                                    onClick={(e) => e.stopPropagation()}
-                                    onChange={(e) =>
-                                      void commitEdit(v, c, e.target.value || null)
-                                    }
-                                    onBlur={cancelEdit}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Escape") {
-                                        e.preventDefault();
-                                        cancelEdit();
-                                      }
-                                    }}
-                                    className="-mx-1 h-7 w-full min-w-0 rounded bg-primary/10 px-1 text-xs text-foreground outline-none disabled:opacity-60"
-                                  >
-                                    <option value="">—</option>
-                                    {c.options.map((o) => (
-                                      <option key={o.value} value={o.value}>
-                                        {o.label}
-                                      </option>
-                                    ))}
-                                  </select>
-                                ) : isEditingThis ? (
-                                  // Plain input, not the shadcn <Input>: that
-                                  // renders a bordered wrapper whose font
-                                  // (sm:text-sm) and baked-in padding can't be
-                                  // matched to the read-only cell, so the value
-                                  // jumped in size + position on edit (GEN-39).
-                                  // Match the read-only button exactly — text-xs
-                                  // and the same "-mx-1 px-1" flush inset — and
-                                  // use a bg tint (not a border, which the cell's
-                                  // overflow-hidden would clip) as the affordance.
-                                  <input
-                                    autoFocus
-                                    type={
-                                      c.type === "date"
-                                        ? "date"
-                                        : c.type === "number" ||
-                                            c.type === "currency"
-                                          ? "number"
-                                          : "text"
-                                    }
-                                    value={draft}
-                                    disabled={savingCell}
-                                    aria-label={c.label}
-                                    list={
-                                      c.suggestions
-                                        ? `${csvName}-${colKey(c)}-suggestions`
-                                        : undefined
-                                    }
-                                    step={c.type === "currency" ? "0.01" : undefined}
-                                    onClick={(e) => e.stopPropagation()}
-                                    onChange={(e) => setDraft(e.target.value)}
-                                    onBlur={() => void commitEdit(v, c)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") {
-                                        e.preventDefault();
-                                        void commitEdit(v, c);
-                                      } else if (e.key === "Escape") {
-                                        e.preventDefault();
-                                        cancelEdit();
-                                      }
-                                    }}
-                                    className={cn(
-                                      "-mx-1 h-7 w-full min-w-0 rounded bg-primary/10 px-1 text-xs text-foreground caret-primary outline-none disabled:opacity-60",
-                                      alignEnd && "text-right",
-                                    )}
-                                  />
-                                ) : editable ? (
-                                  <button
-                                    type="button"
-                                    title="Click to edit"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (c.type === "boolean") {
-                                        void commitEdit(
-                                          v,
-                                          c,
-                                          !v[c.key as keyof Vehicle],
-                                        );
-                                      } else {
-                                        startEdit(v, c);
-                                      }
-                                    }}
-                                    className="-mx-1 flex w-full min-w-0 cursor-pointer items-center rounded px-1 text-left hover:bg-primary/5 focus-visible:outline-1"
-                                    style={
-                                      alignEnd
-                                        ? { justifyContent: "flex-end" }
-                                        : undefined
-                                    }
-                                  >
-                                    <CellContent col={c} v={v} />
-                                  </button>
-                                ) : lockedHint ? (
-                                  <span
-                                    title={lockedHint}
-                                    className="flex w-full min-w-0 cursor-help items-center"
-                                    style={
-                                      alignEnd
-                                        ? { justifyContent: "flex-end" }
-                                        : undefined
-                                    }
-                                  >
-                                    <CellContent col={c} v={v} />
-                                  </span>
-                                ) : (
-                                  <CellContent col={c} v={v} />
-                                )}
-                              </div>
-                            </td>
-                          );
-                        })}
-                        <td className="border-b group-hover/row:bg-(--bg-surface-hover)" />
-                      </tr>
-                    );
-                  })}
-                  {/* Quick-add row — minimal create with auto stock ID */}
-                  {enableQuickAdd && (
-                    <tr className="bg-(--bg-surface-secondary)">
-                      <td
-                        colSpan={cols.length + 2}
-                        className="border-b px-2 py-2"
-                      >
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                            <Plus className="h-3.5 w-3.5" /> Quick add
-                          </span>
-                          <Input
-                            value={quick.registration}
-                            onChange={(e) =>
-                              setQuick({
-                                ...quick,
-                                registration: e.target.value,
-                              })
-                            }
-                            placeholder="Reg *"
-                            className="h-8 w-28 text-xs uppercase"
-                          />
-                          <Input
-                            value={quick.make}
-                            onChange={(e) =>
-                              setQuick({ ...quick, make: e.target.value })
-                            }
-                            placeholder="Make *"
-                            className="h-8 w-28 text-xs"
-                          />
-                          <Input
-                            value={quick.model}
-                            onChange={(e) =>
-                              setQuick({ ...quick, model: e.target.value })
-                            }
-                            placeholder="Model"
-                            className="h-8 w-28 text-xs"
-                          />
-                          <Input
-                            value={quick.year}
-                            onChange={(e) =>
-                              setQuick({ ...quick, year: e.target.value })
-                            }
-                            placeholder="Year"
-                            type="number"
-                            className="h-8 w-20 text-xs"
-                          />
-                          <Input
-                            value={quick.colour}
-                            onChange={(e) =>
-                              setQuick({ ...quick, colour: e.target.value })
-                            }
-                            placeholder="Colour"
-                            className="h-8 w-24 text-xs"
-                          />
-                          <Input
-                            value={quick.mileage}
-                            onChange={(e) =>
-                              setQuick({ ...quick, mileage: e.target.value })
-                            }
-                            placeholder="Mileage"
-                            type="number"
-                            className="h-8 w-24 text-xs"
-                          />
-                          <select
-                            value={quick.supplierId}
-                            onChange={(e) =>
-                              setQuick({ ...quick, supplierId: e.target.value })
-                            }
-                            aria-label="Dealer partner"
-                            className="h-8 rounded-md border bg-background px-2 text-xs"
-                          >
-                            <option value="">No dealer partner</option>
-                            {partners.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.name}
-                              </option>
-                            ))}
-                          </select>
-                          <Button
-                            size="sm"
-                            className="h-8"
-                            onClick={() => void handleQuickAdd()}
-                            disabled={adding}
-                          >
-                            {adding ? "Adding…" : "Add vehicle"}
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            {renderGrid(filtered)}
           </Card>
         )}
 
@@ -1925,16 +2231,7 @@ export function VehicleSheet({
           </Card>
         )}
       </div>
-      {/* Type-ahead lists for the free-text cells that have suggestions. */}
-      {allCols
-        .filter((c) => c.suggestions)
-        .map((c) => (
-          <datalist key={colKey(c)} id={`${csvName}-${colKey(c)}-suggestions`}>
-            {c.suggestions!.map((s) => (
-              <option key={s} value={s} />
-            ))}
-          </datalist>
-        ))}
+      {datalists}
       {children}
     </>
   );
