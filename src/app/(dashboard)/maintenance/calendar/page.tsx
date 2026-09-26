@@ -9,7 +9,7 @@ export default function MaintenanceCalendarPage() {
   return (
     <Page
       title="Maintenance calendar"
-      subtitle="All maintenance and inspection jobs on one calendar, colour-coded by status. Click a slot to add or an event to open it."
+      subtitle="All maintenance and inspection jobs on one calendar, each marked with its status. Click a slot to add or an event to open it."
       fullWidth
     >
       <SharedCalendar kinds={["maint"]} ctaLabel="Add job" lockCreateKind />

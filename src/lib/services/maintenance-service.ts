@@ -146,6 +146,7 @@ export const maintenanceService = {
         | "actualCost"
         | "startDate"
         | "dueDate"
+        | "scheduledTime"
         | "notes"
         | "assignedTo"
         | "vendorId"
@@ -176,6 +177,7 @@ export const maintenanceService = {
       updates.actual_cost = patch.actualCost;
     if (patch.startDate !== undefined) updates.start_date = patch.startDate;
     if (patch.dueDate !== undefined) updates.due_date = patch.dueDate;
+    if (patch.scheduledTime !== undefined) updates.scheduled_time = patch.scheduledTime;
     if (patch.notes !== undefined) updates.notes = patch.notes;
     if (patch.assignedTo !== undefined) updates.assigned_to = patch.assignedTo;
     if (patch.vendorId !== undefined) updates.vendor_id = patch.vendorId;

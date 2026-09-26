@@ -1,611 +1,201 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
-import {
-  CalendarDays,
-  Car,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Filter,
-  Pencil,
-  Phone,
-  Plus,
-  StickyNote,
-  X,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { appointmentService } from "@/lib/services/appointment-service";
 import { workshopService } from "@/lib/services/workshop-service";
 import { maintenanceService } from "@/lib/services/maintenance-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
-import type {
-  Appointment,
-  Company,
-  MaintenanceJob,
-  UUID,
-  Vehicle,
-  WorkshopJob,
-} from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
-import { VehiclePicker } from "@/components/shared/vehicle-picker";
+import type { Appointment, MaintenanceJob, UUID, Vehicle, WorkshopJob } from "@/lib/types";
+import { Card, SkeletonBodyText, SkeletonDisplayText } from "@/components/polaris";
+import {
+  ALL_KINDS,
+  buildEvents,
+  daysInView,
+  decToHm,
+  hmToDec,
+  resolveHours,
+  stepAnchor,
+  toISO,
+  viewLabel,
+  weekOf,
+  type CalEvent,
+  type Kind,
+  type ViewKey,
+} from "@/lib/calendar-model";
 import { notify } from "@/lib/toast";
+import { CalendarFilters, CalendarToolbar } from "./calendar-toolbar";
+import { EventFormModal, EMPTY_FIELDS, fieldsForEvent, type FormFields } from "./event-form-modal";
+import { KIND_META } from "./event-meta";
+import { EventPopover } from "./event-popover";
+import { MonthGrid } from "./month-grid";
+import { TimeGrid } from "./time-grid";
 
 /**
- * SharedCalendar — the calendar surface behind both the Master Calendar
- * (all three sources) and scoped calendars like Maintenance (a single kind).
- * Overlays appointments (sky), workshop walk-ins (amber) and maintenance dues
- * (violet) across day / week / month views, with slot-click create and
- * in-place edit. Pass `kinds` to scope which sources show; pass `ctaLabel` /
- * `lockCreateKind` to tune the create action. Records are deleted from their
- * module pages — this surface creates, views and reschedules.
+ * SharedCalendar is the calendar behind the Master calendar (all three sources)
+ * and the scoped calendars (Maintenance, Sales appointments). It overlays
+ * appointments (blue), workshop walk-ins (amber) and maintenance (purple)
+ * across day, week and month views. Click a free slot to book, click an event
+ * for its details, then edit it or mark a job done. `kinds` scopes the
+ * sources; `ctaLabel` and `lockCreateKind` tune the create action. Records are
+ * deleted from their own module pages.
  */
 
-/* ------------------------------------------------------------------ types */
-
-type Kind = "appt" | "workshop" | "maint";
-type ViewKey = "day" | "week" | "month";
-
-interface CalEventBase {
-  key: string;
-  id: UUID;
-  title: string;
-  subtitle: string;
-  date: string;
-  start: number;
-  end: number;
-  allDay?: boolean;
-}
-
-type CalEvent =
-  | (CalEventBase & { kind: "appt"; raw: Appointment })
-  | (CalEventBase & { kind: "workshop"; raw: WorkshopJob })
-  | (CalEventBase & { kind: "maint"; raw: MaintenanceJob });
-
-const KIND_META: Record<
-  Kind,
-  {
-    label: string;
-    singular: string;
-    manageHint: string;
-    dot: string;
-    chip: string;
-    block: string;
-  }
-> = {
-  appt: {
-    label: "Appointments",
-    singular: "appointment",
-    manageHint: "Sales → Appointments",
-    dot: "bg-(--bg-fill-emphasis)",
-    chip: "border-(--border-info) bg-(--bg-surface-info) text-(--text-info)",
-    block: "border-(--border-emphasis) bg-(--bg-surface-info) text-(--text-info)",
-  },
-  workshop: {
-    label: "Workshop",
-    singular: "workshop job",
-    manageHint: "Maintenance → Workshop jobs",
-    dot: "bg-(--bg-fill-warning)",
-    chip: "border-(--border-warning) bg-(--bg-surface-warning) text-(--text-warning)",
-    block: "border-(--bg-fill-warning) bg-(--bg-surface-warning) text-(--text-warning)",
-  },
-  maint: {
-    label: "Maintenance",
-    singular: "maintenance due",
-    manageHint: "Maintenance → Job pipeline",
-    dot: "bg-(--bg-fill-magic)",
-    chip: "border-(--border-magic) bg-(--bg-surface-magic) text-(--text-magic)",
-    block: "border-(--border-magic-secondary) bg-(--bg-surface-magic) text-(--text-magic)",
-  },
-};
-
-const ALL_KINDS: Kind[] = ["appt", "workshop", "maint"];
-
-/* ------------------------------------------------------------ date helpers */
-
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-const DAY_NAMES = [
-  "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
-];
-const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-const pad2 = (n: number): string => String(n).padStart(2, "0");
-const toISO = (d: Date): string =>
-  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-const addDays = (d: Date, n: number): Date => {
-  const x = new Date(d);
-  x.setDate(x.getDate() + n);
-  return x;
-};
-const weekdayMon0 = (d: Date): number => (d.getDay() + 6) % 7;
-const startOfWeek = (d: Date): Date => addDays(d, -weekdayMon0(d));
-const addMonthsClamped = (d: Date, n: number): Date => {
-  const x = new Date(d.getFullYear(), d.getMonth() + n, 1);
-  const lastDay = new Date(x.getFullYear(), x.getMonth() + 1, 0).getDate();
-  x.setDate(Math.min(d.getDate(), lastDay));
-  return x;
-};
-
-const hmToDec = (hm: string): number => {
-  const [h, m] = hm.split(":").map(Number);
-  return (h || 0) + (m || 0) / 60;
-};
-const decToHm = (d: number): string =>
-  `${pad2(Math.floor(d))}:${pad2(Math.round((d - Math.floor(d)) * 60))}`;
-const fmtHour = (h: number): string => {
-  const hh = Math.floor(h);
-  return `${hh}:${pad2(Math.round((h - hh) * 60))}`;
-};
-
-const byStart = (a: CalEvent, b: CalEvent): number =>
-  Number(Boolean(b.allDay)) - Number(Boolean(a.allDay)) || a.start - b.start;
-
-function buildMonthGrid(anchor: Date): Date[][] {
-  const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
-  const gridStart = startOfWeek(first);
-  const daysInMonth = new Date(
-    anchor.getFullYear(),
-    anchor.getMonth() + 1,
-    0,
-  ).getDate();
-  const rows = Math.ceil((weekdayMon0(first) + daysInMonth) / 7);
-  return Array.from({ length: rows }, (_, r) =>
-    Array.from({ length: 7 }, (_, c) => addDays(gridStart, r * 7 + c)),
-  );
-}
-
-function weekLabel(days: Date[]): string {
-  const a = days[0];
-  const b = days[6];
-  if (a.getMonth() === b.getMonth()) {
-    return `${a.getDate()} – ${b.getDate()} ${MONTHS[a.getMonth()]} ${a.getFullYear()}`;
-  }
-  if (a.getFullYear() === b.getFullYear()) {
-    return `${a.getDate()} ${MONTHS[a.getMonth()]} – ${b.getDate()} ${MONTHS[b.getMonth()]} ${a.getFullYear()}`;
-  }
-  return `${a.getDate()} ${MONTHS[a.getMonth()]} ${a.getFullYear()} – ${b.getDate()} ${MONTHS[b.getMonth()]} ${b.getFullYear()}`;
-}
-
-const dayLabel = (d: Date): string =>
-  `${DAY_NAMES[weekdayMon0(d)]} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-
-function overlapDepths(timed: CalEvent[]): Map<string, number> {
-  const sorted = [...timed].sort((a, b) => a.start - b.start || a.end - b.end);
-  const depths = new Map<string, number>();
-  sorted.forEach((ev, i) => {
-    let depth = 0;
-    for (let j = 0; j < i; j++) {
-      if (sorted[j].end > ev.start) {
-        depth = Math.max(depth, (depths.get(sorted[j].key) ?? 0) + 1);
-      }
-    }
-    depths.set(ev.key, depth);
-  });
-  return depths;
-}
-
-/* ----------------------------------------------------------- time-grid cfg */
-
-// Working-day window for the day/week grids. Falls back to 9am-6pm when the
-// company hasn't configured working hours (GEN-83) — was previously hardcoded
-// regardless of any configured hours. Events entirely before the start are
-// not shown; ones that merely start earlier are clamped to the top of the grid.
-const DEFAULT_GRID_START = 9;
-const DEFAULT_GRID_END = 18;
-
-/** Resolve the day/week grid's business-hours window from company settings. */
-function resolveGridRange(company: Company | null): {
-  start: number;
-  end: number;
-} {
-  const start =
-    typeof company?.workingHoursStart === "string"
-      ? hmToDec(company.workingHoursStart)
-      : NaN;
-  const end =
-    typeof company?.workingHoursEnd === "string"
-      ? hmToDec(company.workingHoursEnd)
-      : NaN;
-  // Guard against unset/invalid config (e.g. end before start) rather than
-  // rendering a zero- or negative-height grid.
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end - start < 1) {
-    return { start: DEFAULT_GRID_START, end: DEFAULT_GRID_END };
-  }
-  return { start, end };
-}
-
-function buildHours(start: number, end: number): number[] {
-  return Array.from({ length: end - start }, (_, i) => start + i);
-}
-
+// Minimum hour-row heights. Rows grow to fill the card and scroll below these.
 const WEEK_HOUR_PX = 48;
-const DAY_HOUR_PX = 56;
-// Appointments / workshop jobs have no real stored duration. Render them as
-// short fixed-height point markers so overlapDepths() only treats genuinely
-// simultaneous events as collisions instead of fabricating overlaps from
-// hard-coded 1h/2h spans.
-const MARKER_DURATION = 0.5;
-// The dealership books customer appointments in 1-hour slots (UAT 2026-07-09),
-// so an appointment spans a full hour from its start. Workshop markers keep the
-// fine-grained 30-min MARKER_DURATION.
-const APPT_DURATION = 1;
+const DAY_HOUR_PX = 64;
 
-// Minimum pixel height for an event pill so its content is never clipped, even
-// for a short or late-in-day slot (GEN-33). Week pills show up to two lines
-// (time + name), Day pills three (time range + name + vehicle), so they need
-// more room.
-const WEEK_EVENT_MIN_PX = 40;
-const DAY_EVENT_MIN_PX = 58;
-
-// A pill's top, clamped so `top + minPx` never exceeds the grid bottom — a
-// late slot (e.g. 17:30) is pinned to the bottom edge instead of overflowing
-// the scroll container and getting cropped there (GEN-33).
-function clampTop(top: string, minPx: number): string {
-  return `min(${top}, calc(100% - ${minPx}px))`;
+interface Sources {
+  appts: Appointment[];
+  shop: WorkshopJob[];
+  maint: MaintenanceJob[];
+  vehicles: Vehicle[];
 }
 
-// Position an event as a percentage of the grid height instead of fixed pixels,
-// so the hour rows can flex-grow to fill the calendar card (GEN-32) while events
-// stay aligned to their times. Returns null when the event falls outside the
-// business-hours window. `top`/`height` are CSS percentage strings.
-function spanPct(
-  ev: CalEvent,
-  gridStart: number,
-  gridEnd: number,
-): { top: string; height: string } | null {
-  if (ev.end <= gridStart || ev.start >= gridEnd) return null;
-  const totalHours = gridEnd - gridStart;
-  const s = Math.max(ev.start, gridStart);
-  const e = Math.min(ev.end, gridEnd);
-  return {
-    top: `${((s - gridStart) / totalHours) * 100}%`,
-    height: `${((e - s) / totalHours) * 100}%`,
-  };
+async function fetchSources(companyId: UUID, kinds: Kind[]): Promise<Sources> {
+  const [appts, shop, maint, vehicles] = await Promise.all([
+    kinds.includes("appt") ? appointmentService.getAll(companyId) : Promise.resolve([]),
+    kinds.includes("workshop") ? workshopService.getAll(companyId) : Promise.resolve([]),
+    kinds.includes("maint") ? maintenanceService.getAll(companyId) : Promise.resolve([]),
+    vehicleService.getAll(companyId),
+  ]);
+  return { appts, shop, maint, vehicles };
 }
 
-function buildTimeOptions(start: number, end: number): string[] {
-  return Array.from({ length: (end - start) * 2 }, (_, i) =>
-    decToHm(start + i / 2),
-  );
-}
-// Appointment booking offers whole-hour start slots within business hours
-// (last slot one hour before the end). Workshop uses buildTimeOptions.
-function buildApptTimeOptions(start: number, end: number): string[] {
-  return Array.from({ length: end - start }, (_, i) => decToHm(start + i));
-}
-
-/* ------------------------------------------------------------- modal state */
-
-type ModalState =
-  | { mode: "create"; prefill: { date: string; time: string; kind: Kind } }
+type FormState =
+  | { mode: "create"; initial: FormFields }
   | { mode: "edit"; ev: CalEvent }
-  | { mode: "view"; ev: CalEvent }
   | null;
-
-interface FormFields {
-  kind: Kind;
-  customerName: string;
-  customerPhone: string;
-  customerEmail: string;
-  vehicleId: string;
-  vehicleReg: string;
-  vehicleDescription: string;
-  description: string;
-  date: string;
-  time: string;
-  notes: string;
-}
-
-const EMPTY_FIELDS: FormFields = {
-  kind: "appt",
-  customerName: "",
-  customerPhone: "",
-  customerEmail: "",
-  vehicleId: "",
-  vehicleReg: "",
-  vehicleDescription: "",
-  description: "",
-  date: "",
-  time: "10:00",
-  notes: "",
-};
-
-function fieldsForEvent(ev: CalEvent): FormFields {
-  switch (ev.kind) {
-    case "appt":
-      return {
-        ...EMPTY_FIELDS,
-        kind: "appt",
-        customerName: ev.raw.customerName,
-        customerPhone: ev.raw.customerPhone,
-        customerEmail: ev.raw.customerEmail,
-        vehicleId: ev.raw.vehicleId,
-        date: ev.raw.date,
-        time: ev.raw.time,
-        notes: ev.raw.specialRequirements ?? "",
-      };
-    case "workshop":
-      return {
-        ...EMPTY_FIELDS,
-        kind: "workshop",
-        customerName: ev.raw.customerName,
-        customerPhone: ev.raw.customerPhone,
-        vehicleReg: ev.raw.vehicleReg,
-        vehicleDescription: ev.raw.vehicleDescription,
-        description: ev.raw.description,
-        date: ev.raw.scheduledDate,
-        time: ev.raw.scheduledTime,
-        notes: ev.raw.notes ?? "",
-      };
-    case "maint":
-      return {
-        ...EMPTY_FIELDS,
-        kind: "maint",
-        vehicleId: ev.raw.vehicleId,
-        description: ev.raw.description,
-        date: ev.raw.dueDate ?? ev.date,
-        time: ev.raw.scheduledTime ?? EMPTY_FIELDS.time,
-        notes: ev.raw.notes ?? "",
-      };
-  }
-}
-
-function validateFields(f: FormFields): string | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date)) return "Pick a date.";
-  if (f.kind === "appt") {
-    if (!f.customerName.trim()) return "Customer name is required.";
-    if (!f.customerPhone.trim()) return "Customer phone is required.";
-    if (!f.vehicleId) return "Pick a vehicle.";
-    if (!f.time) return "Pick a time.";
-  }
-  if (f.kind === "workshop") {
-    if (!f.customerName.trim()) return "Customer name is required.";
-    if (!f.vehicleReg.trim()) return "Vehicle registration is required.";
-    if (!f.vehicleDescription.trim()) return "Vehicle description is required.";
-    if (!f.description.trim()) return "Describe the job.";
-    if (!f.time) return "Pick a time.";
-  }
-  if (f.kind === "maint") {
-    if (!f.description.trim()) return "Describe the maintenance job.";
-    if (!f.vehicleId) return "Pick a vehicle.";
-  }
-  return null;
-}
-
-/* ------------------------------------------------------------------- props */
 
 interface SharedCalendarProps {
   /** Which sources to load and show. Defaults to all three. */
   kinds?: Kind[];
   /** Label for the primary create button. */
   ctaLabel?: string;
-  /** Lock the kind selector in the create form (single-kind calendars). */
+  /** Lock the kind in the create form (single-source calendars). */
   lockCreateKind?: boolean;
 }
 
-/* ------------------------------------------------------------------- view */
-
 export function SharedCalendar({
-  kinds = ALL_KINDS,
+  kinds: kindsProp = ALL_KINDS,
   ctaLabel = "New event",
   lockCreateKind = false,
-}: SharedCalendarProps): React.ReactElement {
+}: SharedCalendarProps) {
   const { company, user } = useAuth();
-  const { start: gridStart, end: gridEnd } = useMemo(
-    () => resolveGridRange(company),
-    [company],
-  );
-  const hours = useMemo(
-    () => buildHours(gridStart, gridEnd),
-    [gridStart, gridEnd],
-  );
-  const timeOptions = useMemo(
-    () => buildTimeOptions(gridStart, gridEnd),
-    [gridStart, gridEnd],
-  );
-  const apptTimeOptions = useMemo(
-    () => buildApptTimeOptions(gridStart, gridEnd),
-    [gridStart, gridEnd],
-  );
-  const [appts, setAppts] = useState<Appointment[]>([]);
-  const [shop, setShop] = useState<WorkshopJob[]>([]);
-  const [maint, setMaint] = useState<MaintenanceJob[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Pages pass `kinds` inline; key on its contents so a re-render of the page
+  // doesn't refetch everything.
+  const kindsKey = kindsProp.join(",");
+  const kinds = useMemo(() => kindsKey.split(",") as Kind[], [kindsKey]);
+  const hours = useMemo(() => resolveHours(company), [company]);
 
+  const [sources, setSources] = useState<Sources | null>(null);
   const [view, setView] = useState<ViewKey>("week");
   const [anchor, setAnchor] = useState<Date>(() => new Date());
-  const [active, setActive] = useState<Set<Kind>>(() => new Set<Kind>(kinds));
-  const [modal, setModal] = useState<ModalState>(null);
+  const [active, setActive] = useState<Set<Kind>>(() => new Set(kinds));
+  const [opened, setOpened] = useState<{ ev: CalEvent; anchor: HTMLElement } | null>(null);
+  const [form, setForm] = useState<FormState>(null);
   const [saving, setSaving] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
 
-  const defaultKind: Kind = kinds[0] ?? "appt";
-  const showFilters = kinds.length > 1;
-
   const reloadAll = useCallback(
-    async (companyId: UUID): Promise<void> => {
-      const [a, s, m, v] = await Promise.all([
-        kinds.includes("appt")
-          ? appointmentService.getAll(companyId)
-          : Promise.resolve([]),
-        kinds.includes("workshop")
-          ? workshopService.getAll(companyId)
-          : Promise.resolve([]),
-        kinds.includes("maint")
-          ? maintenanceService.getAll(companyId)
-          : Promise.resolve([]),
-        vehicleService.getAll(companyId),
-      ]);
-      setAppts(a);
-      setShop(s);
-      setMaint(m);
-      setVehicles(v);
-    },
+    async (companyId: UUID): Promise<void> => setSources(await fetchSources(companyId, kinds)),
     [kinds],
   );
 
   useEffect(() => {
     if (!company) return;
-    const t = setTimeout(() => {
-      setLoading(true);
-      void reloadAll(company.id)
-        .catch((e: unknown) =>
-          notify.error(e instanceof Error ? e.message : "Could not load calendar"),
-        )
-        .finally(() => setLoading(false));
-    }, 0);
-    return () => clearTimeout(t);
-  }, [company, reloadAll]);
-
-  useEffect(() => {
-    const update = (): void => setNow(new Date());
-    const t0 = setTimeout(update, 0);
-    const t = setInterval(update, 60_000);
+    let live = true;
+    fetchSources(company.id, kinds)
+      .then((s) => {
+        if (live) setSources(s);
+      })
+      .catch((e: unknown) => {
+        if (!live) return;
+        notify.error(e instanceof Error ? e.message : "Couldn't load the calendar");
+        setSources({ appts: [], shop: [], maint: [], vehicles: [] });
+      });
     return () => {
-      clearTimeout(t0);
-      clearInterval(t);
+      live = false;
+    };
+  }, [company, kinds]);
+
+  // The clock starts after mount, so the server and first client render agree.
+  useEffect(() => {
+    const tick = () => setNow(new Date());
+    const first = setTimeout(tick, 0);
+    const every = setInterval(tick, 60_000);
+    return () => {
+      clearTimeout(first);
+      clearInterval(every);
     };
   }, []);
 
-  const vehicleLine = useCallback(
-    (vehicleId: UUID | null): string => {
-      const v = vehicles.find((x) => x.id === vehicleId);
-      return v ? `${v.registration} · ${v.make} ${v.model}` : "";
-    },
-    [vehicles],
-  );
-
-  const events: CalEvent[] = useMemo(() => {
-    const out: CalEvent[] = [];
-    for (const a of appts) {
-      const start = hmToDec(a.time);
-      out.push({
-        key: `appt-${a.id}`,
-        kind: "appt",
-        id: a.id,
-        title: a.customerName,
-        subtitle: vehicleLine(a.vehicleId),
-        date: a.date,
-        start,
-        end: start + APPT_DURATION,
-        raw: a,
-      });
-    }
-    for (const j of shop) {
-      const start = hmToDec(j.scheduledTime);
-      out.push({
-        key: `workshop-${j.id}`,
-        kind: "workshop",
-        id: j.id,
-        title: j.customerName,
-        subtitle: `${j.vehicleReg} · ${j.vehicleDescription}`,
-        date: j.scheduledDate,
-        start,
-        end: start + MARKER_DURATION,
-        raw: j,
-      });
-    }
-    for (const j of maint) {
-      if (!j.dueDate) continue;
-      // Jobs booked before GEN-110 have no time and still belong in the
-      // all-day row -- inventing one would show a slot nobody booked.
-      const start = j.scheduledTime ? hmToDec(j.scheduledTime) : 0;
-      out.push({
-        key: `maint-${j.id}`,
-        kind: "maint",
-        id: j.id,
-        title: j.description,
-        subtitle: vehicleLine(j.vehicleId),
-        date: j.dueDate,
-        start,
-        end: j.scheduledTime ? start + MARKER_DURATION : 0,
-        allDay: !j.scheduledTime,
-        raw: j,
-      });
-    }
+  const events = useMemo(() => (sources ? buildEvents(sources) : []), [sources]);
+  const shown = useMemo(() => events.filter((e) => active.has(e.kind)), [events, active]);
+  const counts = useMemo(() => {
+    const inView = new Set(daysInView(view, anchor).map(toISO));
+    const out: Record<Kind, number> = { appt: 0, workshop: 0, maint: 0 };
+    for (const e of events) if (inView.has(e.date)) out[e.kind] += 1;
     return out;
-  }, [appts, shop, maint, vehicleLine]);
+  }, [events, view, anchor]);
 
   const todayISO = now ? toISO(now) : "";
-  const weekDays = useMemo(
-    () => Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(anchor), i)),
-    [anchor],
-  );
+  const nowHour = now ? now.getHours() + now.getMinutes() / 60 : null;
+  const defaultKind: Kind = kinds[0] ?? "appt";
 
-  const label =
-    view === "month"
-      ? `${MONTHS[anchor.getMonth()]} ${anchor.getFullYear()}`
-      : view === "week"
-        ? weekLabel(weekDays)
-        : dayLabel(anchor);
-
-  const rangeISO = useMemo(() => {
-    if (view === "day") return new Set([toISO(anchor)]);
-    if (view === "week") return new Set(weekDays.map(toISO));
-    // Count the full rendered grid (including leading/trailing spill-over days
-    // from adjacent months) so the chip counts and "N events shown" match the
-    // events actually drawn on the 6-week grid.
-    const days = buildMonthGrid(anchor).flat();
-    return new Set(days.map(toISO));
-  }, [view, anchor, weekDays]);
-
-  const inRange = useMemo(
-    () => events.filter((e) => rangeISO.has(e.date)),
-    [events, rangeISO],
-  );
-  const visible = useMemo(
-    () => inRange.filter((e) => active.has(e.kind)),
-    [inRange, active],
-  );
-  const sourceFiltered = useMemo(
-    () => events.filter((e) => active.has(e.kind)),
-    [events, active],
-  );
-
-  const navigate = (dir: -1 | 1): void => {
-    setAnchor((a) =>
-      view === "day"
-        ? addDays(a, dir)
-        : view === "week"
-          ? addDays(a, dir * 7)
-          : addMonthsClamped(a, dir),
-    );
-  };
-
-  const toggleKind = (key: Kind): void => {
-    setActive((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
-
-  const openDay = (d: Date): void => {
+  const closePopover = useCallback(() => setOpened(null), []);
+  const openEvent = useCallback((ev: CalEvent, el: HTMLElement) => {
+    setOpened((cur) => (cur?.ev.key === ev.key ? null : { ev, anchor: el }));
+  }, []);
+  const openDay = (d: Date) => {
+    setOpened(null);
     setAnchor(d);
     setView("day");
   };
-  const openEvent = (ev: CalEvent): void => setModal({ mode: "view", ev });
-  const openCreate = (prefill: { date: string; time: string; kind: Kind }): void =>
-    setModal({ mode: "create", prefill });
+  const changeView = (v: ViewKey) => {
+    setOpened(null);
+    setView(v);
+  };
+  const step = (dir: -1 | 1) => {
+    setOpened(null);
+    setAnchor((a) => stepAnchor(view, a, dir));
+  };
+  const goToday = () => {
+    setOpened(null);
+    setAnchor(new Date());
+  };
+  const openCreate = (date: string, time: string) => {
+    setOpened(null);
+    setForm({ mode: "create", initial: { ...EMPTY_FIELDS, kind: defaultKind, date, time } });
+  };
+
+  /** Calendar shortcuts: T today, D / W / M views, arrows to move. */
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (e.metaKey || e.ctrlKey || e.altKey || form) return;
+    // Portalled popovers bubble here through React; only react to the grid.
+    if (!e.currentTarget.contains(target)) return;
+    if (target.closest("input, textarea, select, [contenteditable]")) return;
+    const key = e.key.toLowerCase();
+    if (key === "t") goToday();
+    else if (key === "d") changeView("day");
+    else if (key === "w") changeView("week");
+    else if (key === "m") changeView("month");
+    else if (e.key === "ArrowLeft") step(-1);
+    else if (e.key === "ArrowRight") step(1);
+    else return;
+    e.preventDefault();
+  };
 
   async function handleSubmit(fields: FormFields): Promise<void> {
-    if (!company || !user || saving) return;
+    if (!company || !user || saving || !form) return;
     setSaving(true);
-    // Hold the success message until the reload resolves — otherwise a failed
-    // reload would flash "created" then an error over stale data.
-    let successMessage = "";
+    // The success message waits for the reload, so a failed reload can't
+    // flash "saved" over stale data.
+    let message = "";
     try {
-      if (modal?.mode === "create") {
+      if (form.mode === "create") {
         if (fields.kind === "appt") {
           await appointmentService.create({
             companyId: company.id,
@@ -620,11 +210,7 @@ export function SharedCalendar({
             createdBy: user.id,
           });
         } else if (fields.kind === "workshop") {
-          // TODO(stock-link): link this walk-in to a stock vehicle when the
-          // typed reg matches a loaded `vehicles` row. Skipped for now because
-          // `WorkshopJob` (types.ts) and the `workshop_jobs` table have no
-          // `vehicleId` column — wiring it needs a migration + type/service
-          // change, all out of scope for this polish pass.
+          // Walk-ins aren't linked to stock: workshop_jobs has no vehicle_id.
           await workshopService.create(
             {
               companyId: company.id,
@@ -642,10 +228,9 @@ export function SharedCalendar({
             user.id,
           );
         } else {
-          // Calendar-created maintenance is a stub: vendor / assignee /
-          // costs / duration are left null to be filled in later from the
-          // Maintenance pipeline. We default startDate to the chosen dueDate
-          // so the job is at least schedulable rather than start-less.
+          // A calendar-made job is a stub: vendor, assignee, costs and duration
+          // are filled in later from the Maintenance pipeline. It starts on its
+          // due date so it's schedulable straight away.
           await maintenanceService.create(
             {
               companyId: company.id,
@@ -657,15 +242,15 @@ export function SharedCalendar({
               estimatedDurationHours: null,
               startDate: fields.date,
               dueDate: fields.date,
-              scheduledTime: fields.time,
+              scheduledTime: fields.time || null,
               notes: fields.notes.trim() || null,
             },
             user.id,
           );
         }
-        successMessage = `${KIND_META[fields.kind].label.replace(/s$/, "")} created`;
-      } else if (modal?.mode === "edit") {
-        const ev = modal.ev;
+        message = `${KIND_META[fields.kind].singular} added`;
+      } else {
+        const ev = form.ev;
         if (ev.kind === "appt") {
           await appointmentService.update(
             ev.id,
@@ -692,1249 +277,155 @@ export function SharedCalendar({
             notes: fields.notes.trim() || null,
           });
         } else {
+          // Stored times carry seconds; only send the time when it changed, so
+          // an untouched save doesn't log a "Job updated" note.
+          const timeChanged = (ev.raw.scheduledTime ?? "").slice(0, 5) !== fields.time;
           await maintenanceService.update(
             ev.id,
             {
               vehicleId: fields.vehicleId,
               description: fields.description.trim(),
               dueDate: fields.date,
+              ...(timeChanged ? { scheduledTime: fields.time || null } : {}),
               notes: fields.notes.trim() || null,
             },
             user.id,
           );
         }
-        successMessage = "Saved";
+        message = "Changes saved";
       }
       await reloadAll(company.id);
-      setModal(null);
-      if (successMessage) notify.success(successMessage);
+      setForm(null);
+      notify.success(message);
     } catch (e) {
-      notify.error(e instanceof Error ? e.message : "Could not save");
+      notify.error(e instanceof Error ? e.message : "Couldn't save");
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) return <Skeleton className="h-[600px]" />;
-
-  return (
-    <>
-      <div className="flex h-[calc(100dvh-230px)] min-h-[540px] w-full flex-col overflow-hidden rounded-(--radius-300) border border-(--border) bg-(--bg-surface) shadow-(--shadow-100)">
-        {/* Toolbar row 1 — navigation, view switch, CTA */}
-        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
-          <div className="flex min-w-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setAnchor(new Date())}
-              className="h-7 rounded-lg border border-(--border) px-3 text-[13px] font-medium hover:bg-(--bg-surface-hover)"
-            >
-              Today
-            </button>
-            <div className="flex items-center gap-0.5">
-              <button
-                type="button"
-                aria-label="Previous"
-                onClick={() => navigate(-1)}
-                className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-(--bg-fill-transparent-hover) hover:text-foreground"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                aria-label="Next"
-                onClick={() => navigate(1)}
-                className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-(--bg-fill-transparent-hover) hover:text-foreground"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-            <h2 className="truncate text-sm font-semibold">{label}</h2>
-            {view === "day" && toISO(anchor) === todayISO && (
-              <span className="shrink-0 rounded-lg bg-(--bg-fill-transparent-selected) px-2 py-0.5 text-xs font-medium text-foreground">
-                Today
-              </span>
-            )}
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <div className="flex items-center gap-0.5 rounded-lg p-0.5">
-              {(["day", "week", "month"] as const).map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setView(v)}
-                  aria-pressed={view === v}
-                  className={cn(
-                    "h-7 rounded-lg px-3 text-[13px] capitalize transition-colors",
-                    view === v
-                      ? "bg-(--bg-fill-transparent-selected) font-medium text-foreground"
-                      : "text-(--text-brand) hover:bg-(--bg-fill-transparent-hover)",
-                  )}
-                >
-                  {v}
-                </button>
-              ))}
-            </div>
-            <Button
-              size="sm"
-              type="button"
-              onClick={() =>
-                openCreate({
-                  date: toISO(anchor),
-                  time: decToHm(hours[0] ?? gridStart),
-                  kind: defaultKind,
-                })
-              }
-            >
-              <Plus className="h-4 w-4" />
-              {ctaLabel}
-            </Button>
-          </div>
-        </div>
-
-        {/* Toolbar row 2 — source filter chips + live summary */}
-        {showFilters ? (
-          <div className="flex items-center gap-2 border-b border-border bg-(--bg-surface-secondary) px-4 py-2">
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Filter className="h-3.5 w-3.5" />
-              Filter
-            </span>
-            {kinds.map((key) => {
-              const isOn = active.has(key);
-              const count = inRange.filter((e) => e.kind === key).length;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => toggleKind(key)}
-                  aria-pressed={isOn}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
-                    isOn
-                      ? KIND_META[key].chip
-                      : "border-border text-muted-foreground opacity-60 hover:opacity-100",
-                  )}
-                >
-                  <span className={cn("h-2 w-2 rounded-full", KIND_META[key].dot)} />
-                  {KIND_META[key].label}
-                  <span className="tabular-nums opacity-70">{count}</span>
-                </button>
-              );
-            })}
-            <span className="ml-auto truncate text-xs text-muted-foreground">
-              {visible.length} event{visible.length === 1 ? "" : "s"} shown
-            </span>
-          </div>
-        ) : null}
-
-        {view === "month" && (
-          <MonthView
-            anchor={anchor}
-            events={sourceFiltered}
-            todayISO={todayISO}
-            onOpenDay={openDay}
-            onOpenEvent={openEvent}
-          />
-        )}
-        {view === "week" && (
-          <WeekView
-            days={weekDays}
-            events={sourceFiltered}
-            todayISO={todayISO}
-            now={now}
-            defaultKind={defaultKind}
-            gridStart={gridStart}
-            gridEnd={gridEnd}
-            hours={hours}
-            onOpenDay={openDay}
-            onOpenEvent={openEvent}
-            onCreateAt={openCreate}
-          />
-        )}
-        {view === "day" && (
-          <DayView
-            anchor={anchor}
-            events={sourceFiltered}
-            todayISO={todayISO}
-            now={now}
-            kinds={kinds}
-            gridStart={gridStart}
-            gridEnd={gridEnd}
-            hours={hours}
-            onOpenEvent={openEvent}
-            onCreateAt={openCreate}
-          />
-        )}
-      </div>
-
-      {modal && (
-        <EventModal
-          state={modal}
-          kinds={kinds}
-          vehicles={vehicles}
-          saving={saving}
-          createHeading={ctaLabel}
-          lockCreateKind={lockCreateKind}
-          timeOptions={timeOptions}
-          apptTimeOptions={apptTimeOptions}
-          onClose={() => setModal(null)}
-          onSubmit={handleSubmit}
-          onEdit={(ev) => setModal({ mode: "edit", ev })}
-        />
-      )}
-    </>
-  );
-}
-
-/* ------------------------------------------------------------- month view */
-
-function MonthView({
-  anchor,
-  events,
-  todayISO,
-  onOpenDay,
-  onOpenEvent,
-}: {
-  anchor: Date;
-  events: CalEvent[];
-  todayISO: string;
-  onOpenDay: (d: Date) => void;
-  onOpenEvent: (ev: CalEvent) => void;
-}): React.ReactElement {
-  const weeks = buildMonthGrid(anchor);
-
-  return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="grid shrink-0 grid-cols-7 border-b border-border">
-        {DOW.map((d, i) => (
-          <div
-            key={d}
-            className={cn(
-              "py-1.5 text-center text-2xs font-medium uppercase tracking-wide text-muted-foreground",
-              i >= 5 && "bg-muted/30",
-            )}
-          >
-            {d}
-          </div>
-        ))}
-      </div>
-      <div
-        className="grid min-h-0 flex-1 grid-cols-7"
-        style={{ gridTemplateRows: `repeat(${weeks.length}, minmax(0, 1fr))` }}
-      >
-        {weeks.flat().map((d, idx) => {
-          const iso = toISO(d);
-          const inMonth = d.getMonth() === anchor.getMonth();
-          const isToday = iso === todayISO;
-          const isWeekend = idx % 7 >= 5;
-          const dayEvents = events.filter((e) => e.date === iso).sort(byStart);
-          const shown = dayEvents.slice(0, 3);
-          const extra = dayEvents.length - shown.length;
-          return (
-            <div
-              key={iso}
-              role="button"
-              tabIndex={0}
-              onClick={() => onOpenDay(d)}
-              onKeyDown={(e) => {
-                if (
-                  e.target === e.currentTarget &&
-                  (e.key === "Enter" || e.key === " ")
-                ) {
-                  onOpenDay(d);
-                }
-              }}
-              className={cn(
-                "flex min-h-0 cursor-pointer flex-col gap-0.5 overflow-hidden border-border p-1 transition-colors hover:bg-muted/40",
-                idx % 7 !== 6 && "border-r",
-                idx < (weeks.length - 1) * 7 && "border-b",
-                isWeekend && "bg-muted/30",
-              )}
-            >
-              <div className="flex shrink-0 items-center justify-end">
-                {isToday ? (
-                  <span className="grid h-5 w-5 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                    {d.getDate()}
-                  </span>
-                ) : (
-                  <span
-                    className={cn(
-                      "px-0.5 text-xs",
-                      inMonth ? "text-muted-foreground" : "text-muted-foreground/50",
-                    )}
-                  >
-                    {d.getDate()}
-                  </span>
-                )}
-              </div>
-              {shown.map((e) => (
-                <button
-                  key={e.key}
-                  type="button"
-                  title={`${e.title}${e.subtitle ? ` · ${e.subtitle}` : ""}`}
-                  onClick={(click) => {
-                    click.stopPropagation();
-                    onOpenEvent(e);
-                  }}
-                  className={cn(
-                    "flex w-full min-w-0 items-center gap-1 rounded px-1 py-px text-left text-2xs leading-4 transition hover:underline",
-                    e.allDay
-                      ? cn("border", KIND_META[e.kind].chip)
-                      : cn("border-l-2", KIND_META[e.kind].block),
-                  )}
-                >
-                  {!e.allDay && (
-                    <span className="shrink-0 font-medium tabular-nums">
-                      {fmtHour(e.start)}
-                    </span>
-                  )}
-                  <span className="min-w-0 truncate">{e.title}</span>
-                </button>
-              ))}
-              {extra > 0 && (
-                <span className="truncate px-1 text-2xs font-medium text-muted-foreground">
-                  +{extra} more
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------- week view */
-
-function WeekView({
-  days,
-  events,
-  todayISO,
-  now,
-  defaultKind,
-  gridStart,
-  gridEnd,
-  hours,
-  onOpenDay,
-  onOpenEvent,
-  onCreateAt,
-}: {
-  days: Date[];
-  events: CalEvent[];
-  todayISO: string;
-  now: Date | null;
-  defaultKind: Kind;
-  gridStart: number;
-  gridEnd: number;
-  hours: number[];
-  onOpenDay: (d: Date) => void;
-  onOpenEvent: (ev: CalEvent) => void;
-  onCreateAt: (p: { date: string; time: string; kind: Kind }) => void;
-}): React.ReactElement {
-  const totalHours = gridEnd - gridStart;
-  const nowDecimal = now ? now.getHours() + now.getMinutes() / 60 : null;
-
-  return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <div className="sticky top-0 z-20 flex h-12 shrink-0 border-b border-border bg-card">
-        <div className="w-12 shrink-0" />
-        {days.map((d, i) => {
-          const iso = toISO(d);
-          const isToday = iso === todayISO;
-          return (
-            <button
-              key={iso}
-              type="button"
-              onClick={() => onOpenDay(d)}
-              title={`Open ${dayLabel(d)}`}
-              className={cn(
-                "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 border-l border-border transition-colors hover:bg-muted/40",
-                i >= 5 && "bg-muted/30",
-              )}
-            >
-              <span
-                className={cn(
-                  "text-2xs font-medium uppercase",
-                  isToday ? "text-foreground" : "text-muted-foreground",
-                )}
-              >
-                {DOW[i]}
-              </span>
-              <span
-                className={cn(
-                  "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold tabular-nums",
-                  isToday && "bg-primary text-primary-foreground",
-                )}
-              >
-                {d.getDate()}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="sticky top-12 z-20 flex min-h-7 shrink-0 border-b border-border bg-card">
-        <div className="flex w-12 shrink-0 items-center justify-end pr-1.5">
-          <span className="text-2xs text-muted-foreground">All day</span>
-        </div>
-        {days.map((d, i) => {
-          const iso = toISO(d);
-          const dues = events.filter((e) => e.date === iso && e.allDay);
-          return (
-            <div
-              key={iso}
-              className={cn(
-                "flex min-w-0 flex-1 flex-col justify-center gap-0.5 border-l border-border px-1 py-1",
-                i >= 5 && "bg-muted/30",
-              )}
-            >
-              {dues.slice(0, 2).map((e) => (
-                <button
-                  key={e.key}
-                  type="button"
-                  title={`${e.title}${e.subtitle ? ` · ${e.subtitle}` : ""}`}
-                  onClick={() => onOpenEvent(e)}
-                  className={cn(
-                    "truncate rounded border px-1 py-px text-left text-2xs font-medium",
-                    KIND_META[e.kind].chip,
-                  )}
-                >
-                  {e.title}
-                </button>
-              ))}
-              {dues.length > 2 && (
-                <button
-                  type="button"
-                  onClick={() => onOpenDay(d)}
-                  className="truncate px-1 text-left text-2xs font-medium text-muted-foreground hover:underline"
-                >
-                  +{dues.length - 2} more
-                </button>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Hours body flex-grows to fill the card; a min-height keeps the rows
-          readable and makes the scroll appear only when hours genuinely don't
-          fit (GEN-32). Hour rows and events both size off the same grid, so
-          events stay aligned to their times. */}
-      <div
-        className="flex min-h-0 flex-1"
-        style={{ minHeight: totalHours * WEEK_HOUR_PX }}
-      >
-        <div className="flex w-12 shrink-0 flex-col">
-          {hours.map((h) => (
-            <div
-              key={h}
-              className="flex-1 border-b border-border/60 pr-1.5 pt-0.5 text-right text-2xs leading-none tabular-nums text-muted-foreground"
-            >
-              {fmtHour(h)}
-            </div>
-          ))}
-        </div>
-        {days.map((d, i) => {
-          const iso = toISO(d);
-          const timed = events.filter((e) => e.date === iso && !e.allDay);
-          const depths = overlapDepths(timed);
-          const showNow =
-            iso === todayISO &&
-            nowDecimal !== null &&
-            nowDecimal >= gridStart &&
-            nowDecimal <= gridEnd;
-          return (
-            <div
-              key={iso}
-              className={cn(
-                "relative flex min-w-0 flex-1 flex-col border-l border-border",
-                i >= 5 && "bg-muted/30",
-              )}
-            >
-              {hours.map((h) => (
-                <button
-                  key={h}
-                  type="button"
-                  aria-label={`Add event on ${dayLabel(d)} at ${fmtHour(h)}`}
-                  onClick={() =>
-                    onCreateAt({ date: iso, time: decToHm(h), kind: defaultKind })
-                  }
-                  className="block min-h-0 w-full flex-1 border-b border-border/60 transition-colors hover:bg-muted/40"
-                />
-              ))}
-              {timed.map((e) => {
-                const span = spanPct(e, gridStart, gridEnd);
-                if (!span) return null;
-                return (
-                  <button
-                    key={e.key}
-                    type="button"
-                    title={`${e.title}${e.subtitle ? ` · ${e.subtitle}` : ""}`}
-                    onClick={() => onOpenEvent(e)}
-                    style={{
-                      top: clampTop(span.top, WEEK_EVENT_MIN_PX),
-                      height: span.height,
-                      minHeight: WEEK_EVENT_MIN_PX,
-                      left: `calc(0.125rem + ${(depths.get(e.key) ?? 0) * 14}%)`,
-                      right: "0.125rem",
-                      zIndex: 1 + (depths.get(e.key) ?? 0),
-                    }}
-                    className={cn(
-                      "absolute overflow-hidden rounded-md border-l-2 px-1.5 py-1 text-left transition-shadow hover:shadow-(--shadow-300)",
-                      KIND_META[e.kind].block,
-                    )}
-                  >
-                    <p className="truncate text-2xs leading-3 tabular-nums opacity-80">
-                      {fmtHour(e.start)}
-                    </p>
-                    <p className="truncate text-xs font-medium leading-4">
-                      {e.title}
-                    </p>
-                    {e.end - e.start >= 1.5 && (
-                      <p className="truncate text-2xs leading-3 opacity-70">
-                        {e.subtitle}
-                      </p>
-                    )}
-                  </button>
-                );
-              })}
-              {showNow && nowDecimal !== null && (
-                <div
-                  className="pointer-events-none absolute inset-x-0 z-10"
-                  style={{
-                    top: `${((nowDecimal - gridStart) / totalHours) * 100}%`,
-                  }}
-                >
-                  <div className="relative h-px bg-(--bg-fill-critical)">
-                    <span className="absolute -left-0.5 -top-[2.5px] h-1.5 w-1.5 rounded-full bg-(--bg-fill-critical)" />
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/* --------------------------------------------------------------- day view */
-
-function DayView({
-  anchor,
-  events,
-  todayISO,
-  now,
-  kinds,
-  gridStart,
-  gridEnd,
-  hours,
-  onOpenEvent,
-  onCreateAt,
-}: {
-  anchor: Date;
-  events: CalEvent[];
-  todayISO: string;
-  now: Date | null;
-  kinds: Kind[];
-  gridStart: number;
-  gridEnd: number;
-  hours: number[];
-  onOpenEvent: (ev: CalEvent) => void;
-  onCreateAt: (p: { date: string; time: string; kind: Kind }) => void;
-}): React.ReactElement {
-  const totalHours = gridEnd - gridStart;
-  const iso = toISO(anchor);
-  const dayEvents = events.filter((e) => e.date === iso);
-  const allDay = dayEvents.filter((e) => e.allDay);
-  const nowDecimal = now ? now.getHours() + now.getMinutes() / 60 : null;
-  const showNow =
-    iso === todayISO &&
-    nowDecimal !== null &&
-    nowDecimal >= gridStart &&
-    nowDecimal <= gridEnd;
-  const laneCols = `3rem repeat(${kinds.length}, minmax(0, 1fr))`;
-
-  return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      {allDay.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 border-b border-border px-3 py-1.5">
-          <span className="shrink-0 text-xs text-muted-foreground">
-            all-day
-          </span>
-          {allDay.map((e) => (
-            <button
-              key={e.key}
-              type="button"
-              title={`${e.title}${e.subtitle ? ` · ${e.subtitle}` : ""}`}
-              onClick={() => onOpenEvent(e)}
-              className={cn(
-                "truncate rounded border px-1.5 py-0.5 text-2xs font-medium",
-                KIND_META[e.kind].chip,
-              )}
-            >
-              {e.title}
-              {e.subtitle ? ` · ${e.subtitle}` : ""}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div
-        className="grid shrink-0 border-b border-border"
-        style={{ gridTemplateColumns: laneCols }}
-      >
-        <div />
-        {kinds.map((kind) => {
-          const count = dayEvents.filter((e) => e.kind === kind).length;
-          return (
-            <div
-              key={kind}
-              className="flex min-w-0 items-center gap-2 border-l border-border px-3 py-2"
-            >
-              <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", KIND_META[kind].dot)} />
-              <span className="truncate text-sm font-medium">
-                {KIND_META[kind].label}
-              </span>
-              <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-2xs font-medium text-muted-foreground">
-                {count}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        {/* Lanes flex-grow to fill the card height; the min-height keeps the
-            rows readable and makes a scrollbar appear only when the hours don't
-            fit (GEN-32). flex-1 (not min-h-full) does the growing — an inline
-            min-height would otherwise override a min-h-full class. Events size
-            off the same grid via spanPct so they stay aligned to their times. */}
-        <div
-          className="relative flex min-h-0 flex-1"
-          style={{ minHeight: totalHours * DAY_HOUR_PX }}
-        >
-          <div className="relative flex w-12 shrink-0 flex-col">
-            {hours.map((h) => (
-              <div
-                key={h}
-                className="flex-1 pr-1.5 pt-0.5 text-right text-2xs leading-none tabular-nums text-muted-foreground"
-              >
-                {fmtHour(h)}
-              </div>
-            ))}
-            <span className="absolute bottom-0 right-1.5 text-2xs leading-none tabular-nums text-muted-foreground">
-              {fmtHour(gridEnd)}
-            </span>
-          </div>
-
-          {kinds.map((kind) => {
-            const laneAll = dayEvents.filter((e) => e.kind === kind);
-            const timed = laneAll.filter((e) => !e.allDay);
-            const depths = overlapDepths(timed);
-            return (
-              <div
-                key={kind}
-                className="relative flex min-w-0 flex-1 flex-col border-l border-border"
-              >
-                {hours.map((h) => (
-                  <button
-                    key={h}
-                    type="button"
-                    aria-label={`Add ${KIND_META[kind].singular} at ${fmtHour(h)}`}
-                    onClick={() =>
-                      onCreateAt({ date: iso, time: decToHm(h), kind })
-                    }
-                    className="block min-h-0 w-full flex-1 border-b border-border/50 transition-colors hover:bg-muted/40"
-                  />
-                ))}
-                {timed.map((e) => {
-                  const span = spanPct(e, gridStart, gridEnd);
-                  if (!span) return null;
-                  return (
-                    <button
-                      key={e.key}
-                      type="button"
-                      title={`${e.title}${e.subtitle ? ` · ${e.subtitle}` : ""}`}
-                      onClick={() => onOpenEvent(e)}
-                      style={{
-                        top: clampTop(span.top, DAY_EVENT_MIN_PX),
-                        height: span.height,
-                        minHeight: DAY_EVENT_MIN_PX,
-                        left: `calc(0.25rem + ${(depths.get(e.key) ?? 0) * 14}%)`,
-                        right: "0.25rem",
-                        zIndex: 1 + (depths.get(e.key) ?? 0),
-                      }}
-                      className={cn(
-                        "absolute overflow-hidden rounded-md border-l-2 p-2 text-left transition-shadow hover:shadow-(--shadow-200)",
-                        KIND_META[e.kind].block,
-                      )}
-                    >
-                      <p className="text-2xs leading-3 tabular-nums opacity-80">
-                        {fmtHour(e.start)} – {fmtHour(e.end)}
-                      </p>
-                      <p className="truncate text-xs font-medium leading-4">{e.title}</p>
-                      <p className="truncate text-2xs leading-3 opacity-80">
-                        {e.subtitle}
-                      </p>
-                    </button>
-                  );
-                })}
-                {laneAll.length === 0 && (
-                  <div className="pointer-events-none absolute inset-x-2 top-2 rounded-lg bg-(--bg-surface-secondary) py-2 text-center">
-                    <span className="text-2xs text-muted-foreground/60">
-                      No {KIND_META[kind].singular}s, click a slot to add
-                    </span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {showNow && nowDecimal !== null && (
-            <div
-              className="pointer-events-none absolute right-0 z-20"
-              style={{
-                top: `${((nowDecimal - gridStart) / totalHours) * 100}%`,
-                left: "3rem",
-              }}
-            >
-              <div className="relative h-px bg-(--bg-fill-critical)">
-                <span className="absolute -left-1 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-(--bg-fill-critical)" />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------ event modal */
-
-function EventModal({
-  state,
-  kinds,
-  vehicles,
-  saving,
-  createHeading,
-  lockCreateKind,
-  timeOptions,
-  apptTimeOptions,
-  onClose,
-  onSubmit,
-  onEdit,
-}: {
-  state: NonNullable<ModalState>;
-  kinds: Kind[];
-  vehicles: Vehicle[];
-  saving: boolean;
-  createHeading: string;
-  lockCreateKind: boolean;
-  timeOptions: string[];
-  apptTimeOptions: string[];
-  onClose: () => void;
-  onSubmit: (fields: FormFields) => void;
-  onEdit: (ev: CalEvent) => void;
-}): React.ReactElement {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  return (
-    <div
-      className="fixed inset-0 z-[900] flex items-center justify-center bg-(--backdrop-bg) p-4"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      role="presentation"
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={
-          state.mode === "create"
-            ? "New event"
-            : state.mode === "edit"
-              ? "Edit event"
-              : "Event details"
-        }
-        className="max-h-full w-full max-w-md overflow-y-auto rounded-(--radius-400) bg-(--bg-surface) shadow-(--shadow-600)"
-      >
-        {state.mode === "create" && (
-          <EventForm
-            heading={createHeading}
-            submitLabel="Add event"
-            kindLocked={lockCreateKind}
-            kinds={kinds}
-            vehicles={vehicles}
-            saving={saving}
-            timeOptions={timeOptions}
-            apptTimeOptions={apptTimeOptions}
-            initial={{
-              ...EMPTY_FIELDS,
-              kind: state.prefill.kind,
-              date: state.prefill.date,
-              time: state.prefill.time,
-            }}
-            onSubmit={onSubmit}
-            onClose={onClose}
-          />
-        )}
-        {state.mode === "edit" && (
-          <EventForm
-            heading={`Edit ${KIND_META[state.ev.kind].singular}`}
-            submitLabel="Save changes"
-            kindLocked
-            kinds={kinds}
-            vehicles={vehicles}
-            saving={saving}
-            timeOptions={timeOptions}
-            apptTimeOptions={apptTimeOptions}
-            initial={fieldsForEvent(state.ev)}
-            onSubmit={onSubmit}
-            onClose={onClose}
-          />
-        )}
-        {state.mode === "view" && (
-          <EventDetails
-            ev={state.ev}
-            onEdit={() => onEdit(state.ev)}
-            onClose={onClose}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function EventForm({
-  heading,
-  submitLabel,
-  kindLocked,
-  kinds,
-  vehicles,
-  saving,
-  timeOptions,
-  apptTimeOptions,
-  initial,
-  onSubmit,
-  onClose,
-}: {
-  heading: string;
-  submitLabel: string;
-  kindLocked: boolean;
-  kinds: Kind[];
-  vehicles: Vehicle[];
-  saving: boolean;
-  timeOptions: string[];
-  apptTimeOptions: string[];
-  initial: FormFields;
-  onSubmit: (fields: FormFields) => void;
-  onClose: () => void;
-}): React.ReactElement {
-  const [fields, setFields] = useState<FormFields>(initial);
-  const [error, setError] = useState<string | null>(null);
-
-  const set = <K extends keyof FormFields>(key: K, value: FormFields[K]): void =>
-    setFields((f) => ({ ...f, [key]: value }));
-
-  const submit = (): void => {
-    const problem = validateFields(fields);
-    if (problem) {
-      setError(problem);
-      return;
+  async function markDone(ev: CalEvent): Promise<void> {
+    if (!company || !user || busy || ev.kind === "appt") return;
+    setBusy(true);
+    try {
+      if (ev.kind === "workshop") await workshopService.updateStatus(ev.id, "completed");
+      else await maintenanceService.updateStatus(ev.id, "completed", user.id);
+      await reloadAll(company.id);
+      setOpened(null);
+      notify.success(`${KIND_META[ev.kind].singular} marked as done`);
+    } catch (e) {
+      notify.error(e instanceof Error ? e.message : "Couldn't update the job");
+    } finally {
+      setBusy(false);
     }
-    onSubmit(fields);
-  };
+  }
 
-  // Appointments book in whole-hour slots; workshop keeps 30-min granularity.
-  const baseTimeOptions = fields.kind === "appt" ? apptTimeOptions : timeOptions;
-  const selectableTimeOptions = baseTimeOptions.includes(fields.time)
-    ? baseTimeOptions
-    : [fields.time, ...baseTimeOptions];
-
-  // Stock runs past a hundred cars, so a plain dropdown is a scroll hunt for a
-  // plate the user already knows (GEN-79). Same searchable picker the invoice
-  // and lead forms use — type the reg, with or without its space.
-  const selectedVehicle =
-    vehicles.find((v) => v.id === fields.vehicleId) ?? null;
-
-  const vehicleSelect = (
-    <div className="flex flex-col gap-1">
-      <label
-        htmlFor="mc-vehicle"
-        className="text-xs font-medium text-foreground"
-      >
-        Vehicle
-      </label>
-      <VehiclePicker
-        id="mc-vehicle"
-        vehicles={vehicles}
-        value={selectedVehicle}
-        onChange={(v) => set("vehicleId", v?.id ?? "")}
-      />
-    </div>
-  );
-
-  // Date and Time share identical custom-control markup (label typography +
-  // h-9 box) so they top-align in the two-column grid — Time is a plain styled
-  // <select> mirroring the native date input (GEN-30).
-  const dateField = (labelText: string) => (
-    <div className="flex flex-col gap-1">
-      <label htmlFor="mc-date" className="text-xs font-medium text-foreground">
-        {labelText}
-      </label>
-      <input
-        id="mc-date"
-        type="date"
-        value={fields.date}
-        onChange={(e) => set("date", e.target.value)}
-        className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      />
-    </div>
-  );
-
-  const timeSelect = (
-    <div className="flex flex-col gap-1">
-      <label htmlFor="mc-time" className="text-xs font-medium text-foreground">
-        Time
-      </label>
-      <select
-        id="mc-time"
-        value={fields.time}
-        onChange={(e) => set("time", e.target.value)}
-        suppressHydrationWarning
-        className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        {selectableTimeOptions.map((t) => (
-          <option key={t} value={t}>
-            {fmtHour(hmToDec(t))}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-
-  return (
-    <>
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h3 className="text-sm font-semibold">{heading}</h3>
-        <button
-          type="button"
-          aria-label="Close"
-          onClick={onClose}
-          className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-(--bg-fill-transparent-hover) hover:text-foreground"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-
-      <div className="flex flex-col gap-3.5 p-4">
-        {kinds.length > 1 && (
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="mc-kind" className="text-xs">
-              Calendar
-            </Label>
-            <select
-              id="mc-kind"
-              value={fields.kind}
-              disabled={kindLocked}
-              onChange={(e) => set("kind", e.target.value as Kind)}
-              suppressHydrationWarning
-              className="h-9 w-full rounded-lg border border-border bg-card px-3 text-[13px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-64"
-            >
-              {kinds.map((k) => (
-                <option key={k} value={k}>
-                  {KIND_META[k].label}
-                </option>
-              ))}
-            </select>
+  if (!sources) {
+    return (
+      <Card padding="0" className="h-[calc(100dvh-230px)] min-h-[560px]">
+        <div className="flex items-center gap-3 border-b border-(--border-secondary) px-4 py-4">
+          <div className="w-48">
+            <SkeletonDisplayText size="small" />
           </div>
-        )}
+        </div>
+        <div className="p-4">
+          <SkeletonBodyText lines={12} />
+        </div>
+      </Card>
+    );
+  }
 
-        {fields.kind === "appt" && (
-          <>
-            <LabeledInput
-              label="Customer name"
-              type="text"
-              value={fields.customerName}
-              onChange={(v) => set("customerName", v)}
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <LabeledInput
-                label="Phone"
-                type="tel"
-                value={fields.customerPhone}
-                onChange={(v) => set("customerPhone", v)}
-              />
-              <LabeledInput
-                label="Email"
-                type="email"
-                value={fields.customerEmail}
-                onChange={(v) => set("customerEmail", v)}
-              />
-            </div>
-            {vehicleSelect}
-            <div className="grid grid-cols-2 gap-3">
-              {dateField("Date")}
-              {timeSelect}
-            </div>
-            <LabeledTextarea
-              label="Special requirements"
-              value={fields.notes}
-              onChange={(v) => set("notes", v)}
-            />
-          </>
-        )}
-
-        {fields.kind === "workshop" && (
-          <>
-            <LabeledInput
-              label="Customer name"
-              type="text"
-              value={fields.customerName}
-              onChange={(v) => set("customerName", v)}
-            />
-            <LabeledInput
-              label="Phone"
-              type="tel"
-              value={fields.customerPhone}
-              onChange={(v) => set("customerPhone", v)}
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <LabeledInput
-                label="Vehicle reg"
-                type="text"
-                placeholder="BD70 KLM"
-                value={fields.vehicleReg}
-                onChange={(v) => set("vehicleReg", v)}
-              />
-              <LabeledInput
-                label="Vehicle description"
-                type="text"
-                placeholder="BMW 3 Series"
-                value={fields.vehicleDescription}
-                onChange={(v) => set("vehicleDescription", v)}
-              />
-            </div>
-            <LabeledInput
-              label="Job description"
-              type="text"
-              placeholder="MOT prep, brake inspection…"
-              value={fields.description}
-              onChange={(v) => set("description", v)}
-            />
-            <div className="grid grid-cols-2 gap-3">
-              {dateField("Date")}
-              {timeSelect}
-            </div>
-            <LabeledTextarea
-              label="Notes"
-              value={fields.notes}
-              onChange={(v) => set("notes", v)}
-            />
-          </>
-        )}
-
-        {fields.kind === "maint" && (
-          <>
-            <LabeledInput
-              label="Description"
-              type="text"
-              placeholder="Cambelt change, MOT due…"
-              value={fields.description}
-              onChange={(v) => set("description", v)}
-            />
-            {vehicleSelect}
-            <div className="grid grid-cols-2 gap-3">
-              {dateField("Due date")}
-              {timeSelect}
-            </div>
-            <LabeledTextarea
-              label="Notes"
-              value={fields.notes}
-              onChange={(v) => set("notes", v)}
-            />
-          </>
-        )}
-
-        {error && (
-          <p className="text-xs font-medium text-destructive-foreground">{error}</p>
-        )}
-      </div>
-
-      <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
-        <Button variant="outline" size="sm" type="button" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button size="sm" type="button" disabled={saving} onClick={submit}>
-          {submitLabel === "Add event" ? (
-            <Plus className="h-4 w-4" />
-          ) : (
-            <Pencil className="h-3.5 w-3.5" />
-          )}
-          {saving ? "Saving…" : submitLabel}
-        </Button>
-      </div>
-    </>
-  );
-}
-
-/** Text field with a visible label above it (ids via useId). */
-function LabeledInput({
-  label,
-  type,
-  placeholder,
-  value,
-  onChange,
-}: {
-  label: string;
-  type: "text" | "tel" | "email";
-  placeholder?: string;
-  value: string;
-  onChange: (value: string) => void;
-}): React.ReactElement {
-  const id = useId();
-  return (
-    <div className="flex flex-col gap-1">
-      <Label htmlFor={id} className="text-xs">
-        {label}
-      </Label>
-      <Input
-        id={id}
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </div>
-  );
-}
-
-/** Multi-line field with a visible label above it (ids via useId). */
-function LabeledTextarea({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}): React.ReactElement {
-  const id = useId();
-  return (
-    <div className="flex flex-col gap-1">
-      <Label htmlFor={id} className="text-xs">
-        {label}
-      </Label>
-      <Textarea
-        id={id}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </div>
-  );
-}
-
-function EventDetails({
-  ev,
-  onEdit,
-  onClose,
-}: {
-  ev: CalEvent;
-  onEdit: () => void;
-  onClose: () => void;
-}): React.ReactElement {
-  const d = new Date(`${ev.date}T00:00:00`);
-  const phone =
-    ev.kind === "appt" || ev.kind === "workshop" ? ev.raw.customerPhone : null;
-  const notes =
-    ev.kind === "appt"
-      ? ev.raw.specialRequirements
-      : ev.kind === "workshop"
-        ? ev.raw.notes
-        : ev.raw.notes;
+  const draft =
+    form?.mode === "create" && form.initial.time
+      ? { date: form.initial.date, hour: hmToDec(form.initial.time) }
+      : null;
+  const selectedKey = opened?.ev.key ?? null;
 
   return (
     <>
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", KIND_META[ev.kind].dot)} />
-          <span
-            className={cn(
-              "shrink-0 rounded border px-1.5 py-0.5 text-2xs font-medium",
-              KIND_META[ev.kind].chip,
-            )}
-          >
-            {KIND_META[ev.kind].label}
-          </span>
-          <span className="truncate text-2xs uppercase tracking-wide text-muted-foreground">
-            {ev.raw.status}
-          </span>
+      <Card padding="0" className="h-[calc(100dvh-230px)] min-h-[560px]">
+        <div className="flex h-full min-h-0 flex-col outline-none" tabIndex={-1} onKeyDown={onKeyDown}>
+          <CalendarToolbar
+            label={viewLabel(view, anchor)}
+            view={view}
+            isToday={toISO(anchor) === todayISO}
+            ctaLabel={ctaLabel}
+            onToday={goToday}
+            onStep={step}
+            onView={changeView}
+            onCreate={() => openCreate(toISO(view === "month" ? new Date() : anchor), decToHm(Math.ceil(hours.open)))}
+          />
+          <CalendarFilters
+            kinds={kinds}
+            active={active}
+            counts={counts}
+            hours={hours}
+            onToggle={(k) =>
+              setActive((prev) => {
+                const next = new Set(prev);
+                if (next.has(k)) next.delete(k);
+                else next.add(k);
+                return next;
+              })
+            }
+          />
+          {view === "month" ? (
+            <MonthGrid
+              anchor={anchor}
+              events={shown}
+              todayISO={todayISO}
+              nowHour={nowHour}
+              selectedKey={selectedKey}
+              onOpenDay={openDay}
+              onOpenEvent={openEvent}
+            />
+          ) : (
+            <TimeGrid
+              days={view === "day" ? [anchor] : weekOf(anchor)}
+              events={shown}
+              hours={hours}
+              hourPx={view === "day" ? DAY_HOUR_PX : WEEK_HOUR_PX}
+              todayISO={todayISO}
+              nowHour={nowHour}
+              selectedKey={selectedKey}
+              draft={draft}
+              onOpenDay={openDay}
+              onOpenEvent={openEvent}
+              onCreateAt={(date, hour) => openCreate(date, decToHm(hour))}
+            />
+          )}
         </div>
-        <button
-          type="button"
-          aria-label="Close"
-          onClick={onClose}
-          className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-(--bg-fill-transparent-hover) hover:text-foreground"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+      </Card>
 
-      <div className="flex flex-col gap-2.5 p-4">
-        <h3 className="text-base font-semibold leading-tight">{ev.title}</h3>
-        {ev.kind === "workshop" && (
-          <p className="text-sm text-muted-foreground">{ev.raw.description}</p>
-        )}
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          <CalendarDays className="h-4 w-4 shrink-0" />
-          {dayLabel(d)}
-        </p>
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Clock className="h-4 w-4 shrink-0" />
-          {ev.allDay
-            ? "All day (due date)"
-            : `${fmtHour(ev.start)} – ${fmtHour(ev.end)}`}
-        </p>
-        {ev.subtitle && (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Car className="h-4 w-4 shrink-0" />
-            <span className="truncate">{ev.subtitle}</span>
-          </p>
-        )}
-        {phone && (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Phone className="h-4 w-4 shrink-0" />
-            {phone}
-          </p>
-        )}
-        {notes && (
-          <p className="flex items-start gap-2 text-sm text-muted-foreground">
-            <StickyNote className="mt-0.5 h-4 w-4 shrink-0" />
-            <span className="min-w-0 whitespace-pre-wrap">{notes}</span>
-          </p>
-        )}
-      </div>
+      {opened ? (
+        <EventPopover
+          ev={opened.ev}
+          anchor={opened.anchor}
+          busy={busy}
+          onClose={closePopover}
+          onEdit={(ev) => {
+            setOpened(null);
+            setForm({ mode: "edit", ev });
+          }}
+          onMarkDone={(ev) => void markDone(ev)}
+        />
+      ) : null}
 
-      <div className="flex items-center justify-between gap-2 border-t border-border px-4 py-3">
-        <span className="truncate text-2xs text-muted-foreground">
-          Delete via {KIND_META[ev.kind].manageHint}
-        </span>
-        <div className="flex shrink-0 gap-2">
-          <Button variant="outline" size="sm" type="button" onClick={onEdit}>
-            <Pencil className="h-3.5 w-3.5" />
-            Edit
-          </Button>
-          <Button variant="outline" size="sm" type="button" onClick={onClose}>
-            Close
-          </Button>
-        </div>
-      </div>
+      {form ? (
+        <EventFormModal
+          key={form.mode === "edit" ? form.ev.key : `new-${form.initial.date}-${form.initial.time}`}
+          heading={form.mode === "edit" ? `Edit ${KIND_META[form.ev.kind].singular.toLowerCase()}` : ctaLabel}
+          submitLabel={form.mode === "edit" ? "Save" : ctaLabel === "New event" ? "Add event" : ctaLabel}
+          initial={form.mode === "edit" ? fieldsForEvent(form.ev) : form.initial}
+          kinds={kinds}
+          showKindPicker={form.mode === "create" && !lockCreateKind && kinds.length > 1}
+          vehicles={sources.vehicles}
+          hours={hours}
+          saving={saving}
+          onClose={() => setForm(null)}
+          onSubmit={(fields) => void handleSubmit(fields)}
+        />
+      ) : null}
     </>
   );
 }
