@@ -14,14 +14,13 @@ interface Props {
   otherCharges?: number;
   listingPrice: number | null;
   className?: string;
-  /** Optional help line under the totals. */
-  children?: React.ReactNode;
 }
 
 /**
  * Live cost summary for the Add vehicle form's sidebar. Uses the same roll-up
  * as the saved record: total buying (the master sheet's AI: price + fees + VAT
- * paid), then the app-only lines on top for the base cost.
+ * paid), then the app-only lines on top for the base cost; profit is the
+ * listing price less the base cost.
  */
 export function CostSummaryReceipt({
   buyingPrice,
@@ -32,7 +31,6 @@ export function CostSummaryReceipt({
   otherCharges = 0,
   listingPrice,
   className,
-  children,
 }: Props) {
   // Total buying = the master sheet's AI (price + fees + VAT paid). Other
   // charges are not a sheet column, so they sit below it.
@@ -40,92 +38,104 @@ export function CostSummaryReceipt({
   const baseCost =
     totalBuying + otherCharges + stockingCharges + prepCosts + warranty;
   const profit = listingPrice !== null ? listingPrice - baseCost : null;
+  const margin =
+    profit !== null && listingPrice ? Math.round((profit / listingPrice) * 100) : null;
 
   return (
     <Card title="Cost summary" className={className}>
-      <dl className="flex flex-col gap-1">
-        <Row
-          label="Buying price"
-          hint="Negotiated purchase amount"
-          value={buyingPrice}
-        />
-        <Row
-          label="Fees and charges"
-          hint="BCA fees, collection, delivery and VAT paid"
-          value={feesAndCharges}
-        />
+      <Group title="Costs">
+        <Row label="Buying price" value={buyingPrice} />
+        <Row label="Fees and charges" value={feesAndCharges} />
         {otherCharges > 0 && <Row label="Other charges" value={otherCharges} />}
         <Row label="Stocking" value={stockingCharges} />
         <Row label="Prep costs" value={prepCosts} />
         <Row label="Warranty" value={warranty} />
-      </dl>
+      </Group>
+
       <Divider />
-      <dl className="flex flex-col gap-1">
-        <Row label="Total buying" value={totalBuying} bold />
-        <Row label="Base cost" value={baseCost} bold />
-      </dl>
+
+      <div className="flex flex-col">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="heading-sm">Base cost</span>
+          <span className="heading-md tabular-nums">{formatCurrency(baseCost)}</span>
+        </div>
+        {totalBuying !== baseCost && (
+          <div className="flex items-baseline justify-between gap-3 body-sm text-(--text-secondary)">
+            <span>Total buying</span>
+            <span className="tabular-nums">{formatCurrency(totalBuying)}</span>
+          </div>
+        )}
+      </div>
+
       <Divider />
-      <dl className="flex flex-col gap-1">
-        <Row
-          label="Listing price"
-          value={listingPrice}
-          tone={listingPrice !== null && listingPrice > 0 ? "neutral" : "muted"}
-        />
-        <Row
-          label="Estimated profit"
-          value={profit}
-          tone={
-            profit === null
-              ? "muted"
-              : profit > 0
-                ? "positive"
-                : profit < 0
-                  ? "negative"
-                  : "neutral"
-          }
-          bold
-        />
-      </dl>
-      {children}
+
+      <Group
+        title="Selling"
+        after={
+          profit === null ? (
+            <p className="body-sm text-(--text-secondary)">Add a listing price to see profit</p>
+          ) : null
+        }
+      >
+        <div className="flex items-baseline justify-between gap-3">
+          <dt className="body-md text-(--text-secondary)">Listing price</dt>
+          <dd
+            className={cn(
+              "text-right body-md tabular-nums",
+              listingPrice === null && "text-(--text-secondary)",
+            )}
+          >
+            {listingPrice === null ? "Not set" : formatCurrency(listingPrice)}
+          </dd>
+        </div>
+        {profit !== null && (
+          <div className="flex items-baseline justify-between gap-3">
+            <dt className="body-md-semibold">Estimated profit</dt>
+            <dd
+              className={cn(
+                "text-right body-md-semibold tabular-nums",
+                profit > 0 && "text-(--text-success)",
+                profit < 0 && "text-(--text-critical)",
+              )}
+            >
+              {formatCurrency(profit)}
+              {margin !== null ? ` · ${margin}%` : ""}
+            </dd>
+          </div>
+        )}
+      </Group>
     </Card>
   );
 }
 
-function Row({
-  label,
-  hint,
-  value,
-  bold,
-  tone,
+function Group({
+  title,
+  after,
+  children,
 }: {
-  label: string;
-  hint?: string;
-  value: number | null;
-  bold?: boolean;
-  tone?: "positive" | "negative" | "muted" | "neutral";
+  title: string;
+  /** Shown under the list, e.g. a hint in place of rows that can't be worked out yet. */
+  after?: React.ReactNode;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-2">
-      <dt
-        className={cn(
-          "text-sm text-(--text-secondary)",
-          bold && "font-semibold text-(--text)",
-        )}
-      >
-        {label}
-        {hint ? (
-          <span className="block text-xs font-normal text-(--text-secondary)">
-            {hint}
-          </span>
-        ) : null}
-      </dt>
+    <div className="flex flex-col gap-1">
+      <h3 className="body-sm-semibold text-(--text-secondary)">{title}</h3>
+      <dl className="flex flex-col gap-1">{children}</dl>
+      {after}
+    </div>
+  );
+}
+
+/** One cost line; a zero amount is muted so the lines that matter stand out. */
+function Row({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="body-md text-(--text-secondary)">{label}</dt>
       <dd
         className={cn(
-          "text-right text-sm tabular-nums text-(--text)",
-          bold && "font-semibold",
-          tone === "positive" && "text-(--text-success)",
-          tone === "negative" && "text-(--text-critical)",
-          tone === "muted" && "text-(--text-secondary)",
+          "text-right body-md tabular-nums",
+          value === 0 ? "text-(--text-secondary)" : "text-(--text)",
         )}
       >
         {formatCurrency(value)}

@@ -184,3 +184,10 @@ table tbody tr[aria-selected="true"] > td {
 .p-card--flush {
   gap: 0;
 }
+
+/* A flush card's title row would otherwise touch the card edge: give it the
+   card's usual inset, with a divider above the edge-to-edge content. */
+.p-card--flush > .p-card__header {
+  padding: var(--space-300) var(--space-400);
+  border-bottom: var(--border-width-025) solid var(--border-secondary);
+}

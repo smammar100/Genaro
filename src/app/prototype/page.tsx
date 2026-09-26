@@ -1,455 +1,450 @@
 "use client";
 
 /**
- * Prototype page (see .claude/skills/prototype). Current feature: Prep &
- * repair — five variations grounded in Mobbin references, built with the
- * Polaris kit. Presentational only; every case the real page handles is
- * represented in the sample data or the states strip at the foot.
+ * Prototype page (see .claude/skills/prototype). Current feature: Add vehicle
+ * — five variations grounded in Mobbin references, built with the Polaris
+ * kit. Presentational only. Every case the real form handles (the five
+ * sections and their fields, the DVLA lookup outcomes, "nothing mandatory",
+ * VAT per cost row, to-dos, pricing, valuation, cost summary, draft, review)
+ * appears in a variation or in the states strip at the foot.
  */
 import * as React from "react";
-import { AlertTriangle, CheckCircle2, CircleDashed, Clock, FileDown, Timer, Wrench } from "lucide-react";
+import { CheckCircle2, Circle, CircleDot, Search, Sparkles } from "lucide-react";
 import {
-  Avatar,
   Badge,
   Banner,
   Button,
   Card,
-  EmptyState,
-  IndexTable,
+  Checkbox,
+  ContextualSaveBar,
+  Layout,
   Page,
   ProgressBar,
+  RadioButton,
   Select,
   SkeletonBodyText,
   Tabs,
+  TextField,
   Thumbnail,
-  type BadgeTone,
 } from "@/components/polaris";
 import { RegPlate } from "@/components/shared/reg-plate";
 
-const img = (id: string) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=320&h=240&q=70`;
+const PHOTO = "https://images.unsplash.com/photo-1677517859847-0e750bfd13a9?auto=format&fit=crop&w=480&h=360&q=70";
 
-type Stage = "unassigned" | "in_progress" | "ready";
-type Todo = { title: string; status: "pending" | "in_progress" | "done" | "cancelled"; cost: number; vendor?: string };
-type Car = {
-  id: string;
-  reg: string;
-  stock: string;
-  name: string;
-  days: number;
-  stage: Stage;
-  assignee: string | null;
-  photo: string;
-  todos: Todo[];
-  exporting?: boolean;
-};
+/* ── Shared sample pieces ──────────────────────────────────────────── */
 
-const PEOPLE = ["Raza Jaffery", "Sam Ammar", "Tom Hughes"];
-
-const CARS: Car[] = [
-  { id: "1", reg: "LT67 VJD", stock: "D-0033", name: "Ford Fiesta", days: 107, stage: "unassigned", assignee: null, photo: img("photo-1551206820-1a2050e76dd7"),
-    todos: [{ title: "Full service", status: "pending", cost: 180, vendor: "Southall Motors" }, { title: "MOT", status: "pending", cost: 55 }, { title: "Replace front tyres", status: "pending", cost: 115 }] },
-  { id: "2", reg: "RK70 FJD", stock: "D-0031", name: "Mercedes-Benz C Class", days: 12, stage: "unassigned", assignee: null, photo: img("photo-1591230740238-e9a71182b67c"),
-    todos: [{ title: "Valet", status: "pending", cost: 40 }] },
-  { id: "3", reg: "PK70 RPL", stock: "D-0017", name: "Nissan Serena", days: 110, stage: "in_progress", assignee: "Raza Jaffery", photo: img("photo-1558101847-e017d5e414a4"), exporting: true,
-    todos: [{ title: "Bodywork: rear bumper", status: "in_progress", cost: 220, vendor: "Ace Bodyshop" }, { title: "Fuel", status: "done", cost: 30 }, { title: "Diagnostic check", status: "cancelled", cost: 0 }] },
-  { id: "4", reg: "WF66 NYU", stock: "D-0013", name: "Audi A3", days: 50, stage: "in_progress", assignee: "Sam Ammar", photo: img("photo-1717711081688-985a7a3e6a9f"),
-    todos: [{ title: "Valet", status: "pending", cost: 55 }, { title: "Alloy refurb", status: "in_progress", cost: 160 }] },
-  { id: "5", reg: "GK66 ERT", stock: "D-0004", name: "BMW X1", days: 111, stage: "ready", assignee: null, photo: img("photo-1677517859847-0e750bfd13a9"),
-    todos: [{ title: "Full service", status: "done", cost: 180 }, { title: "MOT", status: "done", cost: 55 }, { title: "Valet", status: "done", cost: 55 }] },
-  { id: "6", reg: "PK19 SYU", stock: "D-0018", name: "Nissan Leaf", days: 92, stage: "ready", assignee: "Tom Hughes", photo: img("photo-1557775209-f28ede453ae3"),
-    todos: [{ title: "Battery health check", status: "done", cost: 220 }] },
+const SECTIONS = [
+  { id: "identity", title: "Vehicle identity", hint: "Reg lookup and specs", blank: 2 },
+  { id: "buying", title: "Buying", hint: "Seller, owner, invoice", blank: 4 },
+  { id: "costs", title: "Purchase costs", hint: "Price, fees, VAT", blank: 1 },
+  { id: "receiving", title: "Receiving", hint: "Arrival, paperwork, to-dos", blank: 6 },
+  { id: "review", title: "Review and submit", hint: "Confirm and save", blank: 0 },
 ];
 
-const STAGES: { value: Stage; label: string; hint: string; Icon: typeof Clock }[] = [
-  { value: "unassigned", label: "Unassigned", hint: "Waiting for someone to pick it up", Icon: CircleDashed },
-  { value: "in_progress", label: "In progress", hint: "Prep work under way", Icon: Timer },
-  { value: "ready", label: "Ready for sales", hint: "All items done", Icon: CheckCircle2 },
-];
-
-const gbp = (n: number) => `£${n.toLocaleString("en-GB")}`;
-const stats = (c: Car) => {
-  const count = (s: Todo["status"]) => c.todos.filter((t) => t.status === s).length;
-  const active = c.todos.filter((t) => t.status !== "cancelled");
-  const done = count("done");
-  return {
-    pending: count("pending"),
-    inProgress: count("in_progress"),
-    done,
-    cancelled: count("cancelled"),
-    total: active.length,
-    cost: c.todos.reduce((s, t) => s + t.cost, 0),
-    pct: active.length ? Math.round((done / active.length) * 100) : 100,
-  };
-};
-const ageTone = (d: number): BadgeTone => (d > 90 ? "critical" : d > 45 ? "warning" : "neutral");
-const stageTone: Record<Stage, BadgeTone> = { unassigned: "attention", in_progress: "info", ready: "success" };
-const stageLabel = (s: Stage) => STAGES.find((x) => x.value === s)!.label;
-
-function AgeBadge({ days }: { days: number }) {
-  return <Badge tone={ageTone(days)} icon={days > 90 ? <AlertTriangle className="size-3" /> : undefined}>{`${days}d in stock`}</Badge>;
-}
-
-/** Done / in progress / pending as one segmented bar (cancelled excluded). */
-function SegmentBar({ car }: { car: Car }) {
-  const s = stats(car);
-  const seg = (n: number, cls: string) => (n > 0 ? <span className={cls} style={{ flexGrow: n }} /> : null);
+function Req({ children }: { children: string }) {
   return (
-    <div className="flex h-1.5 w-full gap-0.5 overflow-hidden rounded-full bg-(--bg-fill-tertiary)">
-      {seg(s.done, "bg-(--bg-fill-success)")}
-      {seg(s.inProgress, "bg-(--bg-fill-info)")}
-      {seg(s.pending, "bg-(--bg-fill-tertiary)")}
-    </div>
-  );
-}
-
-function JobSummary({ car }: { car: Car }) {
-  const s = stats(car);
-  return (
-    <span className="body-sm text-(--text-secondary)">
-      {`${s.done} of ${s.total} done`}
-      {s.inProgress ? ` · ${s.inProgress} in progress` : ""}
-      {s.cancelled ? ` · ${s.cancelled} cancelled` : ""}
+    <span>
+      {children} <span className="text-(--text-critical)" aria-hidden>*</span>
     </span>
   );
 }
 
-function AssigneePicker({ car }: { car: Car }) {
+function FromDvla() {
+  return <Badge tone="info" icon={<Sparkles className="size-3" />}>From DVLA</Badge>;
+}
+
+function RegLookup({ compact = false }: { compact?: boolean }) {
   return (
-    <Select
-      label={`Assignee for ${car.reg}`}
-      labelHidden
-      options={[{ label: "Unassigned", value: "" }, ...PEOPLE.map((p) => ({ label: p, value: p }))]}
-      value={car.assignee ?? ""}
-      onChange={() => {}}
-    />
+    <div className="flex flex-col gap-2">
+      <div className="flex items-end gap-2">
+        <div className="flex-1">
+          <TextField label={<Req>Registration</Req>} defaultValue="GK66 6NX" prefix="SearchMinor" />
+        </div>
+        <Button variant={compact ? "secondary" : "primary"}>Look up</Button>
+      </div>
+      {!compact && (
+        <p className="body-sm text-(--text-secondary)">We check your stock book and fill make, year, colour and fuel from DVLA.</p>
+      )}
+      <div><Button variant="plain">No registration yet? Save it as unregistered</Button></div>
+    </div>
   );
 }
 
-function JobCardButton({ car }: { car: Car }) {
+function IdentityFields() {
   return (
-    <Button icon={<FileDown className="size-4" />} accessibilityLabel={`Download job card for ${car.reg}`} loading={car.exporting} />
+    <div className="grid gap-4 sm:grid-cols-2">
+      <TextField label={<Req>Mileage</Req>} type="number" suffix="mi" defaultValue="47000" />
+      <TextField label={<span className="flex items-center gap-2"><Req>Make</Req><FromDvla /></span>} defaultValue="BMW" />
+      <TextField label={<span className="flex items-center gap-2"><Req>Model</Req><FromDvla /></span>} defaultValue="X1" />
+      <TextField label="Variant name" placeholder="e.g. xDrive20d M Sport" />
+      <TextField label="Variant code" placeholder="From the BCA invoice, e.g. 1.5 SE" />
+      <TextField label={<span className="flex items-center gap-2">Year <FromDvla /></span>} defaultValue="2016" />
+      <Select label="Vehicle type" options={["Car", "Van", "Motorcycle"]} />
+      <Select label="Body type" options={["SUV", "Hatchback", "Saloon", "Estate", "MPV", "Coupe"]} />
+      <Select label="Fuel type" options={["Diesel", "Petrol", "Hybrid", "Electric"]} />
+      <Select label="Transmission" options={["Automatic", "Manual"]} />
+      <TextField label="Colour" defaultValue="Silver" />
+      <TextField label="Engine size (cc)" defaultValue="1995" />
+      <TextField label="MOT expiry" defaultValue="14 Mar 2027" />
+      <TextField label="Legacy S/N" helpText="Only for cars from the old sheet." />
+    </div>
   );
 }
 
-const PAGE = {
-  title: "Prep & repair",
-  subtitle: "Cars between inspection and sale. They arrive when an inspection finds work, and move to sales once every item is done.",
-};
+function BuyingFields() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Select label="Source type" options={["Auction", "Private seller", "Trade-in", "Dealer", "Other"]} />
+      <TextField label="Auction house" defaultValue="BCA Blackbushe" />
+      <TextField label={<Req>Seller name</Req>} />
+      <TextField label="Seller phone" type="tel" />
+      <Select label="Dealer partner" options={["None", "Southall Car Sales", "West London Autos"]} />
+      <div className="flex flex-col gap-1">
+        <span className="body-md">Local or import</span>
+        <div className="flex gap-4"><RadioButton label="Local" name="loi" defaultChecked /><RadioButton label="Import" name="loi" /></div>
+      </div>
+      <TextField label="Owned by" defaultValue="Car Capital" />
+      <TextField label="Owner details" />
+      <TextField label="Invoice date" defaultValue="22 Sep 2026" />
+      <TextField label="Credit note date" />
+      <Select label="Stocking finance" options={["None", "NextGear", "Close Brothers"]} />
+    </div>
+  );
+}
 
-/* ── A — Refined board (Plane, Programa) ───────────────────────────── */
+const COSTS: [string, string, string][] = [
+  ["Buying price", "9,850.00", ""],
+  ["BCA buyer's fee", "395.00", "79.00"],
+  ["BCA essential check / Assured", "65.00", "13.00"],
+  ["BCA EV / hybrid Assured", "", ""],
+  ["Battery health report", "", ""],
+  ["Late payment / storage", "", ""],
+  ["Collection", "120.00", "24.00"],
+  ["Delivery / transport", "", ""],
+  ["Other charges", "", ""],
+];
+
+function CostTable() {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr><th className="text-left">Charge</th><th className="text-right">Amount</th><th className="text-right">VAT</th><th /></tr>
+        </thead>
+        <tbody>
+          {COSTS.map(([label, amount, vat], i) => (
+            <tr key={label}>
+              <td className="body-md">{label}</td>
+              <td className="w-36"><TextField label={`${label} amount`} labelHidden prefix="£" defaultValue={amount} /></td>
+              <td className="w-36">{i === 0 ? <span className="body-sm text-(--text-secondary)">No VAT</span> : <TextField label={`${label} VAT`} labelHidden prefix="£" defaultValue={vat} />}</td>
+              <td className="w-20">{i > 0 && <Button variant="plain">+20%</Button>}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ReceivingFields() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <TextField label="Received date" defaultValue="26 Sep 2026" />
+      <Select label="Received by" options={["Raza Jaffery", "Sam Ammar", "Tom Hughes"]} />
+      <Select label="Log book (V5)" options={["Available", "Not available", "Applied for"]} />
+      <TextField label="Number of keys" type="number" defaultValue="2" />
+      <Select label="Service history" options={["Full", "Partial", "None", "Unknown"]} />
+      <TextField label="Euro status" />
+      <TextField label="Number of seats" type="number" />
+      <TextField label="Former keepers" type="number" />
+      <TextField label="Chassis / frame no." />
+      <TextField label="Engine no." />
+      <div className="sm:col-span-2"><Checkbox label="Lock nut received" defaultChecked /></div>
+      <div className="sm:col-span-2"><TextField label="Other items received" multiline={2} /></div>
+    </div>
+  );
+}
+
+function TodoEditor() {
+  return (
+    <div className="flex flex-col gap-2">
+      {[["Full service", "180"], ["MOT", "55"]].map(([t, c]) => (
+        <div key={t} className="flex items-end gap-2">
+          <div className="flex-1"><TextField label="Description" labelHidden defaultValue={t} /></div>
+          <div className="w-28"><TextField label="Cost" labelHidden prefix="£" defaultValue={c} /></div>
+          <Button variant="tertiary" icon="DeleteMinor" accessibilityLabel={`Remove ${t}`} />
+        </div>
+      ))}
+      <div><Button icon="PlusMinor">Add item</Button></div>
+    </div>
+  );
+}
+
+function PricingFields() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-3">
+      <TextField label="Listing price" prefix="£" defaultValue="13,995" />
+      <TextField label="Minimum sale price" prefix="£" defaultValue="12,750" />
+      <TextField label="Warranty cost" prefix="£" defaultValue="150" />
+    </div>
+  );
+}
+
+function ValuationCard() {
+  return (
+    <Card title="AutoTrader valuation" actions={<Button variant="plain">Refresh</Button>}>
+      <dl className="grid grid-cols-3 gap-2">
+        {[["Retail", "£14,250"], ["Trade", "£11,900"], ["Part-ex", "£11,200"]].map(([k, v]) => (
+          <div key={k}><dt className="body-sm text-(--text-secondary)">{k}</dt><dd className="heading-sm">{v}</dd></div>
+        ))}
+      </dl>
+    </Card>
+  );
+}
+
+function CostSummaryCard() {
+  const rows: [string, string][] = [["Buying price", "£9,850.00"], ["Fees and charges", "£580.00"], ["VAT paid", "£116.00"], ["Things to do", "£235.00"]];
+  return (
+    <Card title="Cost summary">
+      <dl className="flex flex-col gap-2">
+        {rows.map(([k, v]) => (
+          <div key={k} className="flex justify-between gap-3"><dt className="body-md text-(--text-secondary)">{k}</dt><dd className="body-md-numeric">{v}</dd></div>
+        ))}
+        <div className="flex justify-between gap-3 border-t border-(--border-secondary) pt-2"><dt className="body-md-semibold">Total cost</dt><dd className="heading-sm">£10,781.00</dd></div>
+        <div className="flex justify-between gap-3"><dt className="body-sm text-(--text-secondary)">Margin at listing price</dt><dd className="body-md-numeric text-(--text-success)">£3,214.00</dd></div>
+      </dl>
+    </Card>
+  );
+}
+
+function DvlaFound() {
+  return <Banner tone="success" title="Found on DVLA">BMW X1, 2016, silver, diesel. We filled these in — check and adjust if needed.</Banner>;
+}
+
+/* ── A — Lookup first, then one page (Shopify Add product) ─────────── */
 function VariationA() {
   return (
-    <Page {...PAGE} fullWidth secondaryActions={[{ content: "Download all job cards" }]}>
-      <div className="grid items-start gap-3 lg:grid-cols-3">
-        {STAGES.map(({ value, label, hint, Icon }) => {
-          const list = CARS.filter((c) => c.stage === value);
-          return (
-            <div key={value} className="flex flex-col gap-2 rounded-(--radius-300) bg-(--bg-surface-secondary) p-2">
-              <div className="flex items-center gap-2 px-1.5 pt-1">
-                <Icon className="size-4 text-(--icon-secondary)" />
-                <h2 className="heading-sm">{label}</h2>
-                <Badge>{String(list.length)}</Badge>
+    <div className="flex flex-col">
+      <ContextualSaveBar message="Unsaved vehicle" saveAction={{ content: "Save vehicle" }} discardAction={{ content: "Discard" }} />
+      <Page title="Add vehicle" backAction={{ content: "Vehicles" }} secondaryActions={[{ content: "Save as draft" }]} className="w-full">
+        <Layout>
+          <Layout.Section>
+            <Card title="Start with the registration">
+              <RegLookup />
+            </Card>
+            <Card>
+              <div className="flex flex-wrap items-center gap-4">
+                <Thumbnail source={PHOTO} alt="" size="large" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2"><RegPlate registration="GK66 6NX" size="sm" /><Badge tone="success" progress="complete">Found on DVLA</Badge></div>
+                  <p className="heading-md mt-1">2016 BMW X1</p>
+                  <p className="body-sm text-(--text-secondary)">Silver · Diesel · 1,995cc · MOT until 14 Mar 2027</p>
+                </div>
+                <Button variant="plain">Edit details</Button>
               </div>
-              <p className="px-1.5 body-sm text-(--text-secondary)">{hint}</p>
-              {list.map((c) => {
-                const s = stats(c);
-                return (
-                  <Card key={c.id}>
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <RegPlate registration={c.reg} size="sm" />
-                        <AgeBadge days={c.days} />
-                      </div>
-                      <div>
-                        <p className="body-md-semibold">{c.name}</p>
-                        <p className="body-sm text-(--text-secondary)">{c.stock}</p>
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <SegmentBar car={c} />
-                        <div className="flex items-center justify-between">
-                          <JobSummary car={c} />
-                          <span className="body-md-numeric">{gbp(s.cost)}</span>
-                        </div>
-                      </div>
-                      {value === "ready" && (
-                        <Banner tone="success" title="Ready to move to sales" />
-                      )}
-                      <div className="flex items-center gap-2 border-t border-(--border-secondary) pt-3">
-                        <div className="flex-1"><AssigneePicker car={c} /></div>
-                        <JobCardButton car={c} />
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
-    </Page>
+            </Card>
+            <Card title="Vehicle identity"><IdentityFields /></Card>
+            <Card title="Buying"><BuyingFields /></Card>
+            <Card title="Purchase costs" padding="0"><div className="p-4 pb-0 body-sm text-(--text-secondary)">VAT is only what you enter; +20% fills the standard rate.</div><CostTable /></Card>
+            <Card title="Receiving"><ReceivingFields /></Card>
+            <Card title="Things to do"><TodoEditor /></Card>
+            <Card title="Pricing"><PricingFields /></Card>
+          </Layout.Section>
+          <Layout.Section variant="oneThird">
+            <Card title="Status">
+              <Select label="Stock status" labelHidden options={["Received", "Inspection pending"]} />
+              <p className="body-sm text-(--text-secondary)">New cars start as Received and go to inspection.</p>
+            </Card>
+            <ValuationCard />
+            <CostSummaryCard />
+            <Card title="Still blank">
+              <p className="body-sm text-(--text-secondary)">Nothing is required. These important fields are empty:</p>
+              <ul className="flex flex-col gap-1 body-md">
+                <li>Seller name</li><li>Received by</li><li>Listing price</li>
+              </ul>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    </div>
   );
 }
 
-/* ── B — Grouped by person (Asana, Wrike) ──────────────────────────── */
+/* ── B — One annotated page with section nav (Etsy listing) ────────── */
 function VariationB() {
-  const groups = ["Unassigned", ...PEOPLE].map((p) => ({
-    person: p,
-    cars: CARS.filter((c) => (c.assignee ?? "Unassigned") === p && c.stage !== "ready"),
-  }));
-  const ready = CARS.filter((c) => c.stage === "ready");
-  const Row = ({ c }: { c: Car }) => {
-    const s = stats(c);
-    return (
-      <li className="grid grid-cols-[auto_1fr_auto] items-center gap-4 border-t border-(--border-secondary) px-4 py-3 first:border-t-0 md:grid-cols-[auto_1.4fr_1fr_auto_auto_auto]">
-        <RegPlate registration={c.reg} size="sm" />
-        <div className="min-w-0">
-          <p className="truncate body-md-semibold">{c.name}</p>
-          <JobSummary car={c} />
-        </div>
-        <div className="hidden md:block"><ProgressBar progress={s.pct} size="small" tone={s.pct === 100 ? "success" : "highlight"} /></div>
-        <span className="hidden body-md-numeric md:block">{gbp(s.cost)}</span>
-        <span className="hidden md:block"><AgeBadge days={c.days} /></span>
-        <div className="flex items-center gap-2"><Button size="micro">Open list</Button><JobCardButton car={c} /></div>
-      </li>
-    );
-  };
-  return (
-    <Page {...PAGE} fullWidth>
-      <div className="flex flex-col gap-4">
-        {groups.map(({ person, cars }) => (
-          <Card key={person} padding="0">
-            <div className="flex items-center gap-3 border-b border-(--border-secondary) px-4 py-3">
-              {person === "Unassigned" ? <CircleDashed className="size-5 text-(--icon-secondary)" /> : <Avatar size="sm" name={person} />}
-              <h2 className="heading-sm">{person}</h2>
-              <Badge>{`${cars.length} ${cars.length === 1 ? "car" : "cars"}`}</Badge>
-              {person !== "Unassigned" && <span className="ml-auto body-sm text-(--text-secondary)">{(() => { const n = cars.reduce((m, c) => m + stats(c).pending + stats(c).inProgress, 0); return `${n} open ${n === 1 ? "item" : "items"}`; })()}</span>}
-            </div>
-            {cars.length ? <ul>{cars.map((c) => <Row key={c.id} c={c} />)}</ul> : <p className="px-4 py-6 text-center body-sm text-(--text-secondary)">No cars assigned</p>}
-          </Card>
-        ))}
-        <Card padding="0">
-          <div className="flex items-center gap-3 border-b border-(--border-secondary) px-4 py-3">
-            <CheckCircle2 className="size-5 text-(--icon-success)" />
-            <h2 className="heading-sm">Ready for sales</h2>
-            <Badge tone="success">{String(ready.length)}</Badge>
-          </div>
-          <ul>{ready.map((c) => <Row key={c.id} c={c} />)}</ul>
-        </Card>
-      </div>
-    </Page>
+  const Section = ({ title, description, children }: { title: string; description: string; children: React.ReactNode }) => (
+    <Layout.AnnotatedSection title={title} description={description}>
+      <Card>{children}</Card>
+    </Layout.AnnotatedSection>
   );
-}
-
-/* ── C — Queue + checklist split view (Slack Lists, ClickUp, Plain) ── */
-function VariationC() {
-  const [sel, setSel] = React.useState("3");
-  const car = CARS.find((c) => c.id === sel)!;
-  const s = stats(car);
-  const statusBadge: Record<Todo["status"], React.ReactNode> = {
-    pending: <Badge progress="incomplete">Pending</Badge>,
-    in_progress: <Badge tone="info" progress="partiallyComplete">In progress</Badge>,
-    done: <Badge tone="success" progress="complete">Done</Badge>,
-    cancelled: <Badge>Cancelled</Badge>,
-  };
   return (
-    <Page {...PAGE} fullWidth>
-      <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
-        <Card padding="0">
-          {STAGES.map(({ value, label }) => {
-            const list = CARS.filter((c) => c.stage === value);
-            return (
-              <div key={value}>
-                <div className="flex items-center gap-2 bg-(--bg-surface-secondary) px-4 py-2 body-sm text-(--text-secondary)">
-                  <span className="body-md-semibold text-(--text)">{label}</span>
-                  <Badge>{String(list.length)}</Badge>
-                </div>
-                {list.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => setSel(c.id)}
-                    aria-current={sel === c.id}
-                    className={`flex w-full items-center gap-3 border-t border-(--border-secondary) px-4 py-3 text-left hover:bg-(--bg-surface-hover) ${sel === c.id ? "bg-(--bg-surface-selected)" : ""}`}
-                  >
-                    <Thumbnail source={c.photo} alt="" size="small" />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2"><RegPlate registration={c.reg} size="sm" /><span className="truncate body-md-semibold">{c.name}</span></div>
-                      <div className="mt-1.5"><SegmentBar car={c} /></div>
-                    </div>
-                    <span className="body-sm text-(--text-secondary)">{`${c.days}d`}</span>
-                  </button>
-                ))}
-              </div>
-            );
-          })}
-        </Card>
-        <div className="flex flex-col gap-4">
-          <Card>
-            <div className="flex flex-wrap items-start gap-4">
-              <Thumbnail source={car.photo} alt="" size="large" />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <RegPlate registration={car.reg} size="sm" />
-                  <Badge tone={stageTone[car.stage]}>{stageLabel(car.stage)}</Badge>
-                  <AgeBadge days={car.days} />
-                </div>
-                <h2 className="heading-md mt-2">{car.name}</h2>
-                <p className="body-sm text-(--text-secondary)">{`${car.stock} · ${gbp(s.cost)} prep cost · ${s.pct}% done`}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-44"><AssigneePicker car={car} /></div>
-                <Button icon={<FileDown className="size-4" />} loading={car.exporting}>Job card</Button>
-              </div>
+    <Page title="Add vehicle" backAction={{ content: "Vehicles" }} fullWidth>
+      <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
+        <nav aria-label="Sections" className="hidden lg:block">
+          <div className="sticky top-4 flex flex-col gap-3">
+            <div>
+              <p className="body-sm text-(--text-secondary)">68% complete</p>
+              <ProgressBar progress={68} size="small" />
             </div>
-          </Card>
-          <Card title="Things to do" actions={<Button variant="plain">Add item</Button>} padding="0">
-            <ul>
-              {car.todos.map((t) => (
-                <li key={t.title} className="flex items-center gap-3 border-t border-(--border-secondary) px-4 py-3 first:border-t-0">
-                  <span className={`flex-1 body-md ${t.status === "cancelled" ? "text-(--text-secondary) line-through" : ""}`}>{t.title}</span>
-                  {t.vendor && <span className="body-sm text-(--text-secondary)">{t.vendor}</span>}
-                  <span className="w-16 text-right body-md-numeric">{gbp(t.cost)}</span>
-                  {statusBadge[t.status]}
+            <ul className="flex flex-col gap-0.5">
+              {SECTIONS.slice(0, 4).concat({ id: "pricing", title: "Pricing", hint: "", blank: 1 }).map((s, i) => (
+                <li key={s.id}>
+                  <a href="#" className={`flex items-center justify-between rounded-(--radius-200) px-2 py-1.5 body-md hover:bg-(--bg-surface-hover) ${i === 0 ? "bg-(--bg-surface-selected) body-md-semibold" : ""}`}>
+                    {s.title}
+                    {s.blank ? <Badge tone="attention">{`${s.blank} blank`}</Badge> : <CheckCircle2 className="size-4 text-(--icon-success)" />}
+                  </a>
                 </li>
               ))}
             </ul>
-          </Card>
-          <Button url="#" variant="plain">Open the full vehicle record</Button>
+          </div>
+        </nav>
+        <div className="flex flex-col gap-2">
+          <Layout>
+            <Section title="Registration" description="Look up the car to fill its details from DVLA. No reg yet? Save it as unregistered and add the reg later.">
+              <RegLookup compact />
+              <DvlaFound />
+            </Section>
+            <Section title="Vehicle identity" description="Fields marked * matter most, but nothing blocks saving."><IdentityFields /></Section>
+            <Section title="Buying" description="Where the car came from and who owns it."><BuyingFields /></Section>
+            <Section title="Purchase costs" description="VAT is only what you enter. Use +20% for the standard rate."><CostTable /></Section>
+            <Section title="Receiving" description="Arrival, paperwork and what came with the car."><ReceivingFields /></Section>
+            <Section title="Things to do" description="Work the car needs. Each item becomes a prep job."><TodoEditor /></Section>
+            <Section title="Pricing" description="What you plan to list it at."><PricingFields /></Section>
+          </Layout>
+          <div className="sticky bottom-0 -mx-6 flex items-center justify-between gap-3 border-t border-(--border) bg-(--bg-surface) px-6 py-3">
+            <span className="body-sm text-(--text-secondary)">Total cost £10,781 · margin £3,214 at listing price</span>
+            <div className="flex gap-2"><Button>Save as draft</Button><Button variant="primary">Save vehicle</Button></div>
+          </div>
         </div>
       </div>
     </Page>
   );
 }
 
-/* ── D — Index table with stage tabs (Airtable, Jira) ──────────────── */
-function VariationD() {
-  const [tab, setTab] = React.useState(0);
-  const views: (Stage | null)[] = [null, "unassigned", "in_progress", "ready"];
-  const rows = CARS.filter((c) => !views[tab] || c.stage === views[tab]);
+/* ── C — Refined wizard with step rail (Klook) ─────────────────────── */
+function VariationC() {
+  const current = 0;
   return (
-    <Page {...PAGE} fullWidth>
+    <div className="flex flex-col">
+      <Page title="Add vehicle" subtitle="Step 1 of 5 · Vehicle identity" backAction={{ content: "Vehicles" }} fullWidth className="w-full">
+        <div className="grid gap-6 lg:grid-cols-[240px_1fr_300px]">
+          <Card>
+            <ol className="flex flex-col gap-1">
+              {SECTIONS.map((s, i) => {
+                const Icon = i < current ? CheckCircle2 : i === current ? CircleDot : Circle;
+                return (
+                  <li key={s.id} className={`flex gap-3 rounded-(--radius-200) p-2 ${i === current ? "bg-(--bg-surface-selected)" : ""}`}>
+                    <Icon className={`mt-0.5 size-4 shrink-0 ${i === current ? "text-(--icon)" : "text-(--icon-secondary)"}`} />
+                    <div className="min-w-0">
+                      <p className={i === current ? "body-md-semibold" : "body-md"}>{s.title}</p>
+                      <p className="body-sm text-(--text-secondary)">{s.blank ? `${s.hint} · ${s.blank} blank` : s.hint}</p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </Card>
+          <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+            <Card title="Registration">
+              <RegLookup />
+              <DvlaFound />
+            </Card>
+            <Card title="Specs"><IdentityFields /></Card>
+          </div>
+          <div className="flex flex-col gap-4">
+            <ValuationCard />
+            <CostSummaryCard />
+          </div>
+        </div>
+      </Page>
+      <div className="sticky bottom-0 flex items-center justify-between border-t border-(--border) bg-(--bg-surface) px-6 py-3">
+        <Button disabled>Back</Button>
+        <div className="flex items-center gap-3">
+          <span className="body-sm text-(--text-secondary)">2 important fields blank — you can still continue</span>
+          <Button>Save as draft</Button>
+          <Button variant="primary">Continue to buying</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── D — Section tabs with a live stock card (Etsy Shop Manager) ───── */
+function VariationD() {
+  const [tab, setTab] = React.useState(2);
+  return (
+    <Page title="Add vehicle" backAction={{ content: "Vehicles" }} primaryAction={{ content: "Save vehicle" }} secondaryActions={[{ content: "Save as draft" }]} fullWidth>
       <Tabs
-        tabs={[
-          { id: "all", content: "All", badge: String(CARS.length) },
-          ...STAGES.map((st) => ({ id: st.value, content: st.label, badge: String(CARS.filter((c) => c.stage === st.value).length) })),
-        ]}
+        tabs={SECTIONS.map((s) => ({ id: s.id, content: s.title, badge: s.blank ? String(s.blank) : undefined }))}
         selected={tab}
         onSelect={setTab}
       />
-      <Card padding="0">
-        <IndexTable
-          promotedBulkActions={[{ content: "Assign to…" }, { content: "Download job cards" }]}
-          headings={[
-            { title: "Photo", media: true },
-            { title: "Vehicle" },
-            { title: "Stage" },
-            { title: "Assignee" },
-            { title: "Progress" },
-            { title: "Prep cost", alignment: "end" },
-            { title: "In stock", alignment: "end" },
-            { title: "Job card", alignment: "end" },
-          ]}
-          rows={rows.map((c) => {
-            const s = stats(c);
-            return {
-              id: c.id,
-              cells: [
-                <Thumbnail key="t" source={c.photo} alt="" size="small" />,
-                <div key="v" className="flex flex-col gap-1"><span>{c.name}</span><span className="flex items-center gap-2 body-sm text-(--text-secondary)"><RegPlate registration={c.reg} size="sm" />{c.stock}</span></div>,
-                <Badge key="s" tone={stageTone[c.stage]}>{stageLabel(c.stage)}</Badge>,
-                <div key="a" className="w-40"><AssigneePicker car={c} /></div>,
-                <div key="p" className="flex w-56 flex-col gap-1 whitespace-normal"><SegmentBar car={c} /><JobSummary car={c} /></div>,
-                <span key="c" className="body-md-numeric">{gbp(s.cost)}</span>,
-                <Badge key="d" tone={ageTone(c.days)}>{`${c.days}d`}</Badge>,
-                <JobCardButton key="j" car={c} />,
-              ],
-            };
-          })}
-        />
-      </Card>
+      <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
+        <div className="flex flex-col gap-4">
+          {tab === 0 && <><Card title="Registration"><RegLookup compact /><DvlaFound /></Card><Card title="Specs"><IdentityFields /></Card></>}
+          {tab === 1 && <Card title="Buying"><BuyingFields /></Card>}
+          {tab === 2 && <Card title="Purchase costs" padding="0"><CostTable /></Card>}
+          {tab === 3 && <><Card title="Receiving"><ReceivingFields /></Card><Card title="Things to do"><TodoEditor /></Card><Card title="Pricing"><PricingFields /></Card></>}
+          {tab === 4 && <Banner tone="warning" title="3 important fields are blank">Seller name, received by and listing price. You can save now and fill them in later.</Banner>}
+        </div>
+        <div className="flex flex-col gap-4">
+          <Card padding="0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={PHOTO} alt="" className="aspect-[4/3] w-full object-cover" />
+            <div className="flex flex-col gap-2 p-4">
+              <div className="flex items-center gap-2"><RegPlate registration="GK66 6NX" size="sm" /><Badge>Received</Badge></div>
+              <p className="heading-sm">2016 BMW X1</p>
+              <p className="body-sm text-(--text-secondary)">47,000 mi · Diesel · Automatic · Silver</p>
+              <div className="grid grid-cols-2 gap-2 border-t border-(--border-secondary) pt-2">
+                <div><p className="body-sm text-(--text-secondary)">Total cost</p><p className="heading-sm">£10,781</p></div>
+                <div><p className="body-sm text-(--text-secondary)">Listing price</p><p className="heading-sm">£13,995</p></div>
+              </div>
+              <p className="body-sm text-(--text-success)">£3,214 margin</p>
+            </div>
+          </Card>
+          <ValuationCard />
+        </div>
+      </div>
     </Page>
   );
 }
 
-/* ── E — Workshop overview + lanes (Todoist Insights, Bonsai) ──────── */
+/* ── E — Quick add, then complete the details (Salesforce) ─────────── */
 function VariationE() {
-  const open = CARS.filter((c) => c.stage !== "ready");
-  const atRisk = CARS.filter((c) => c.days > 90 && c.stage !== "ready");
-  const cost = CARS.reduce((n, c) => n + stats(c).cost, 0);
   return (
-    <Page {...PAGE} fullWidth primaryAction={{ content: "Assign unassigned cars" }}>
-      <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
-        <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {[
-              ["In prep", String(open.length)],
-              ["Ready for sales", String(CARS.length - open.length)],
-              ["Prep cost so far", gbp(cost)],
-              ["Over 90 days", String(atRisk.length)],
-            ].map(([k, v]) => (
-              <Card key={k}><p className="body-sm text-(--text-secondary)">{k}</p><p className="heading-lg">{v}</p></Card>
-            ))}
+    <Page title="Add vehicle" backAction={{ content: "Vehicles" }}>
+      <div className="flex flex-col gap-4">
+        <Card title="Quick add">
+          <p className="body-sm text-(--text-secondary)">Get the car into stock now. Everything else can be filled in straight after, or later from the vehicle page.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2"><RegLookup compact /></div>
+            <TextField label={<Req>Mileage</Req>} type="number" suffix="mi" defaultValue="47000" />
+            <TextField label={<Req>Buying price</Req>} prefix="£" defaultValue="9,850" />
+            <Select label="Source type" options={["Auction", "Private seller", "Trade-in", "Dealer", "Other"]} />
+            <TextField label="Received date" defaultValue="26 Sep 2026" />
           </div>
-          {atRisk.length > 0 && (
-            <Banner tone="warning" title={`${atRisk.length} cars have been in stock over 90 days and are still in prep`}>
-              {atRisk.map((c) => `${c.reg} ${c.name}`).join(", ")}
-            </Banner>
-          )}
-          {STAGES.map(({ value, label, Icon }) => {
-            const list = CARS.filter((c) => c.stage === value);
-            return (
-              <Card key={value} padding="0">
-                <div className="flex items-center gap-2 px-4 py-3">
-                  <Icon className="size-4 text-(--icon-secondary)" />
-                  <h2 className="heading-sm">{label}</h2>
-                  <Badge>{String(list.length)}</Badge>
-                </div>
-                {list.length === 0 ? (
-                  <p className="border-t border-(--border-secondary) px-4 py-6 text-center body-sm text-(--text-secondary)">Nothing here</p>
-                ) : (
-                  <div className="grid gap-3 border-t border-(--border-secondary) p-3 md:grid-cols-2">
-                    {list.map((c) => (
-                      <div key={c.id} className="flex gap-3 rounded-(--radius-200) border border-(--border-secondary) p-3">
-                        <Thumbnail source={c.photo} alt="" size="medium" />
-                        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                          <div className="flex items-center justify-between gap-2"><RegPlate registration={c.reg} size="sm" /><AgeBadge days={c.days} /></div>
-                          <span className="truncate body-md-semibold">{c.name}</span>
-                          <SegmentBar car={c} />
-                          <div className="flex items-center justify-between gap-2"><JobSummary car={c} /><span className="body-md-numeric">{gbp(stats(c).cost)}</span></div>
-                          <div className="flex items-center gap-2 pt-1"><div className="flex-1"><AssigneePicker car={c} /></div><JobCardButton car={c} /></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </Card>
-            );
-          })}
-        </div>
-        <div className="flex flex-col gap-4">
-          <Card title="Workload">
-            <ul className="flex flex-col gap-3">
-              {PEOPLE.map((p) => {
-                const cars = CARS.filter((c) => c.assignee === p && c.stage !== "ready");
-                const items = cars.reduce((n, c) => n + stats(c).pending + stats(c).inProgress, 0);
-                return (
-                  <li key={p} className="flex items-center gap-3">
-                    <Avatar size="sm" name={p} />
-                    <div className="flex-1"><p className="body-md">{p}</p><ProgressBar progress={Math.min(100, items * 25)} size="small" /></div>
-                    <span className="body-sm text-(--text-secondary)">{`${cars.length} cars · ${items} items`}</span>
-                  </li>
-                );
-              })}
-            </ul>
-          </Card>
-          <Card title="Oldest in prep">
-            <ul className="flex flex-col gap-2">
-              {[...open].sort((a, b) => b.days - a.days).slice(0, 3).map((c) => (
-                <li key={c.id} className="flex items-center justify-between gap-2"><RegPlate registration={c.reg} size="sm" /><span className="flex-1 truncate body-sm">{c.name}</span><Badge tone={ageTone(c.days)}>{`${c.days}d`}</Badge></li>
-              ))}
-            </ul>
-          </Card>
-        </div>
+          <DvlaFound />
+          <div className="flex justify-end gap-2"><Button>Save as draft</Button><Button variant="primary">Add to stock</Button></div>
+        </Card>
+        <Card title="Complete the details" actions={<Badge tone="attention">3 of 6 done</Badge>} padding="0">
+          <ul>
+            {[
+              { t: "Vehicle identity", d: "Filled from DVLA · 2 blank", done: true },
+              { t: "Buying", d: "Seller, owner, invoice · 4 blank", done: false },
+              { t: "Purchase costs", d: "£580 fees entered · 1 blank", done: true },
+              { t: "Receiving and paperwork", d: "6 blank", done: false },
+              { t: "Things to do", d: "2 items · £235", done: true },
+              { t: "Pricing", d: "Listing price blank", done: false },
+            ].map((r) => (
+              <li key={r.t} className="flex items-center gap-3 border-t border-(--border-secondary) px-4 py-3 first:border-t-0 hover:bg-(--bg-surface-hover)">
+                {r.done ? <CheckCircle2 className="size-5 text-(--icon-success)" /> : <Circle className="size-5 text-(--icon-secondary)" />}
+                <div className="min-w-0 flex-1"><p className="body-md-semibold">{r.t}</p><p className="body-sm text-(--text-secondary)">{r.d}</p></div>
+                <Button variant="plain">{r.done ? "Edit" : "Fill in"}</Button>
+              </li>
+            ))}
+          </ul>
+        </Card>
+        <Card title="Buying" actions={<Button variant="plain">Collapse</Button>}><BuyingFields /></Card>
       </div>
     </Page>
   );
@@ -458,38 +453,39 @@ function VariationE() {
 /* ── States every variation needs ──────────────────────────────────── */
 function States() {
   return (
-    <div className="grid gap-4 p-6 lg:grid-cols-3">
-      <Card title="Loading"><SkeletonBodyText lines={5} /></Card>
-      <Card padding="0">
-        <EmptyState icon={<Wrench className="fill-none" />} heading="Nothing in prep">
-          Cars appear here the moment an inspection is completed with outstanding items.
-        </EmptyState>
+    <div className="grid gap-4 p-6 lg:grid-cols-2">
+      <Card title="Looking up the registration">
+        <div className="flex items-center gap-2 body-sm text-(--text-secondary)"><Search className="size-4" />Checking DVLA and your stock book…</div>
+        <SkeletonBodyText lines={3} />
       </Card>
       <div className="flex flex-col gap-3">
-        <Banner tone="critical" title="Couldn't assign this car">Check your connection and try again.</Banner>
-        <Banner tone="success" title="Job card downloaded" />
-        <Card><div className="flex items-center gap-2 body-sm text-(--text-secondary)"><Clock className="size-4" />Exporting a job card shows a spinner on its button</div></Card>
+        <DvlaFound />
+        <Banner tone="warning" title="Not found on DVLA">The number may be mistyped. Check it, or fill in the details yourself.</Banner>
+        <Banner tone="info" title="GK66 6NX is already in stock" action={{ content: "Open D-0004" }}>Adding it again creates a duplicate. Open the existing car instead?</Banner>
+        <Banner tone="info" title="Saving without a registration">This car will be saved as UNREGISTERED. You can add the reg later from the vehicle page.</Banner>
+        <Banner tone="critical" title="Fix 2 errors to save">Mileage must be a number. Listing price can't be lower than the minimum sale price.</Banner>
       </div>
     </div>
   );
 }
 
 const VARIATIONS = [
-  { key: "A", name: "Refined board", refs: "Plane, Programa", C: VariationA },
-  { key: "B", name: "Grouped by person", refs: "Asana, Wrike", C: VariationB },
-  { key: "C", name: "Queue with checklist panel", refs: "Slack Lists, ClickUp, Plain", C: VariationC },
-  { key: "D", name: "Index table with stage tabs", refs: "Airtable, Jira, Shopify", C: VariationD },
-  { key: "E", name: "Workshop overview + lanes", refs: "Todoist Insights, Bonsai", C: VariationE },
+  { key: "A", name: "Lookup first, then one page", refs: "Shopify Add product", C: VariationA },
+  { key: "B", name: "One annotated page with section nav", refs: "Etsy listing details", C: VariationB },
+  { key: "C", name: "Refined wizard with step rail", refs: "Klook merchant onboarding", C: VariationC },
+  { key: "D", name: "Section tabs with a live stock card", refs: "Etsy Shop Manager", C: VariationD },
+  { key: "E", name: "Quick add, then complete the details", refs: "Salesforce quick create", C: VariationE },
 ];
 
 export default function PrototypePage() {
   return (
     <main className="flex flex-col gap-10 p-6">
       <header className="flex flex-col gap-1">
-        <h1 className="heading-lg">Prototype — Prep & repair</h1>
+        <h1 className="heading-lg">Prototype — Add vehicle</h1>
         <p className="body-md text-(--text-secondary)">
-          Five directions, same data. Each covers unassigned, in-progress and ready cars, an empty column, cancelled items, ageing,
-          assignment, job-card export and the Things to do list. Loading, empty and error states are at the foot. Pick one (A–E).
+          Five directions for the same form: registration lookup, identity, buying, purchase costs with VAT, receiving,
+          things to do, pricing, valuation and cost summary. Nothing is mandatory; * marks important fields. Lookup and
+          error states are at the foot. Pick one (A–E).
         </p>
       </header>
       {VARIATIONS.map(({ key, name, refs, C }) => (
@@ -498,7 +494,7 @@ export default function PrototypePage() {
             <h2 className="heading-md">{`Variation ${key} — ${name}`}</h2>
             <span className="body-sm text-(--text-secondary)">{`Reference: ${refs}`}</span>
           </div>
-          <div className="overflow-hidden rounded-(--radius-400) border border-(--border) bg-(--bg)">
+          <div className="relative overflow-hidden rounded-(--radius-400) border border-(--border) bg-(--bg)">
             <C />
           </div>
         </section>

@@ -170,7 +170,7 @@ export function ComplianceCard({
           <p>Verified by DVLA + DVSA at {verifiedAt.toLocaleTimeString()}.</p>
         ) : (
           <p className="italic">
-            Enter a registration above and click Fetch DVLA to populate.
+            Enter a registration above and click Look up to populate.
           </p>
         )}
         {sources ? (

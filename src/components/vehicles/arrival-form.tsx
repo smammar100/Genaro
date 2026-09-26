@@ -2,26 +2,14 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Check, Loader2, Search } from "lucide-react";
-import { RegPlate } from "@/components/shared/reg-plate";
 import {
   Banner,
-  Button,
-  Card,
-  Checkbox,
-  InlineError,
+  ContextualSaveBar,
   Layout,
-  Link as PolarisLink,
   Page,
-  PageActions,
-  Select,
-  TextField,
 } from "@/components/polaris";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useAuth } from "@/contexts/auth-context";
 import { vehicleService } from "@/lib/services/vehicle-service";
@@ -32,185 +20,56 @@ import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import { teamService } from "@/lib/services/team-service";
 import type { DealerPartner, User } from "@/lib/types";
 import {
-  Combobox,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-  ComboboxPopup,
-} from "@/components/ui/combobox";
-import {
-  AUCTION_HOUSES,
-  BODY_TYPES,
-  FINANCE_PROVIDERS,
-  FUEL_TYPES,
-  VAT_RATE,
-} from "@/lib/constants";
-import { CostSummaryReceipt } from "./cost-summary-receipt";
-import {
   computeCostTotals,
   type VehicleCostInputs,
 } from "@/lib/vehicle-costs";
-import {
-  AUCTION_HOUSE_SUGGESTIONS,
-  LOG_BOOK_SUGGESTIONS,
-  OWNED_BY_SUGGESTIONS,
-  VEHICLE_CATEGORY_OPTIONS,
-  logBookPatch,
-  vehicleCategory,
-  vehicleCategoryPatch,
-} from "@/lib/master-sheet";
+import { logBookPatch } from "@/lib/master-sheet";
 import {
   ComplianceCard,
   type ComplianceCardValue,
 } from "./compliance-card";
 import { toast } from "@/lib/toast";
-import { cn, formatCurrency, formatRegPlate } from "@/lib/utils";
+import { formatCurrency, formatRegPlate } from "@/lib/utils";
+import { BuyingCard } from "./add-vehicle/buying-card";
+import { CostSummaryCard } from "./add-vehicle/cost-summary-card";
+import { IdentityCard } from "./add-vehicle/identity-card";
+import { PricingCard } from "./add-vehicle/pricing-card";
+import { PurchaseCostsCard } from "./add-vehicle/purchase-costs-card";
+import { ReceivingCard } from "./add-vehicle/receiving-card";
+import {
+  RegistrationLookupCard,
+  type DvlaState,
+} from "./add-vehicle/registration-lookup";
+import {
+  UNREGISTERED,
+  fieldIds,
+  schema,
+  type FormInput,
+} from "./add-vehicle/schema";
+import { SectionStepper, type StepperSection } from "./add-vehicle/section-stepper";
+import { StickySidebar } from "./add-vehicle/sticky-sidebar";
+import { scrollToElement } from "./add-vehicle/scroll";
+import { TodosCard, type ArrivalTodo } from "./add-vehicle/todos-card";
+import { ValuationCard } from "./add-vehicle/valuation-card";
+import { VehicleConfirmationCard } from "./add-vehicle/vehicle-confirmation-card";
 
-// v4.1 spec §11.3 — Add Vehicle arrival form. A guided 5-step wizard
-// (Variation E) laid out as a Polaris product form: a Page with the step's
-// cards in the main column and a sidebar holding the step list, AutoTrader
-// valuation and a live cost summary. The form stays a single <form> with one
-// onSubmit; sections are grouped into steps and RHF keeps field values
-// across step changes.
+// v4.1 spec §11.3 — Add Vehicle arrival form, laid out as one Polaris product
+// form (Variation A, "lookup first, then one page"): the registration lookup
+// first, then every section's card in the main column, with the valuation
+// and a live cost summary in the sidebar. A
+// horizontal section stepper under the title jumps between sections. The
+// form is a single <form> with one onSubmit; this file owns the form state,
+// lookups and submit, and the cards live in ./add-vehicle/.
 
-const SOURCE_OPTIONS = [
-  { value: "auction", label: "Auction" },
-  { value: "private", label: "Private seller" },
-  { value: "trade_in", label: "Trade-in" },
-  { value: "dealer", label: "Dealer" },
-  { value: "other", label: "Other" },
-] as const;
-
-const SERVICE_HISTORY_OPTIONS = [
-  { value: "full", label: "Full" },
-  { value: "partial", label: "Partial" },
-  { value: "none", label: "None" },
-  { value: "unknown", label: "Unknown" },
-] as const;
-
-const TRANSMISSION_OPTIONS = [
-  { value: "manual", label: "Manual" },
-  { value: "automatic", label: "Automatic" },
-] as const;
-
-const STEPS: { id: string; title: string; hint: string }[] = [
-  { id: "identity", title: "Vehicle identity", hint: "Reg lookup and specs" },
-  { id: "source", title: "Buying", hint: "Seller, owner, invoice" },
+/** The form's sections, in page order — the stepper's steps. */
+type SectionId = "identity" | "buying" | "costs" | "receiving" | "pricing";
+const SECTIONS: { id: SectionId; title: string; hint: string }[] = [
+  { id: "identity", title: "Vehicle identity", hint: "Reg and specs" },
+  { id: "buying", title: "Buying", hint: "Seller and invoice" },
   { id: "costs", title: "Purchase costs", hint: "Price, fees, VAT" },
-  { id: "finish", title: "Receiving", hint: "Arrival, paperwork, to-dos" },
-  { id: "review", title: "Review and submit", hint: "Confirm and save" },
+  { id: "receiving", title: "Receiving", hint: "Arrival and to-dos" },
+  { id: "pricing", title: "Pricing", hint: "Optional" },
 ];
-
-/**
- * A blank number input arrives as "" — treat it as "not entered" rather than
- * letting z.coerce turn it into 0 or NaN.
- */
-const isBlank = (v: string | undefined) => v === undefined || v.trim() === "";
-const optionalNumber = z
-  .string()
-  .optional()
-  .refine((v) => isBlank(v) || Number(v) >= 0, "Enter an amount of 0 or more");
-const optionalInt = z
-  .string()
-  .optional()
-  .refine(
-    (v) => isBlank(v) || (Number.isInteger(Number(v)) && Number(v) >= 0),
-    "Enter a whole number",
-  );
-
-/**
- * The arrival questionnaire. NOTHING is mandatory (client, 18 Sep 2026): an
- * unregistered car has no reg and no DVLA data, and whoever is entering the
- * car may not have every answer to hand. Important fields carry a red
- * asterisk as a prompt only; everything can be completed later on the
- * vehicle page or the Master Sheet. The only checks left are ones that catch
- * a typo (a negative price, a year of 20019).
- *
- * Field order follows the master sheet's sections — docs/master-sheet-spec.md.
- */
-const schema = z.object({
-  // Step 1 — Vehicle identity (sheet B–K)
-  legacySerialNumber: optionalInt,
-  registration: z.string().optional(),
-  make: z.string().optional(),
-  model: z.string().optional(),
-  variantName: z.string().optional(),
-  variantCode: z.string().optional(),
-  year: z
-    .string()
-    .optional()
-    .refine(
-      (v) => isBlank(v) || (Number.isInteger(Number(v)) && Number(v) >= 1900 && Number(v) <= 2100),
-      "Check the year",
-    ),
-  colour: z.string().optional(),
-  mileage: optionalInt,
-  vehicleType: z.enum(["car", "van"]),
-  bodyType: z.enum(["hatchback", "saloon", "suv", "mpv", "estate", "convertible", "coupe"]),
-  fuelType: z.enum(["petrol", "diesel", "hybrid", "electric"]),
-  transmission: z.enum(["manual", "automatic"]),
-  engineSizeCC: optionalInt,
-
-  // Step 2 — Buying (sheet L–P + seller)
-  sellerName: z.string().optional(),
-  sellerPhone: z.string().optional(),
-  purchaseSource: z.enum(["auction", "private", "trade_in", "dealer", "other"]),
-  localOrImport: z.enum(["local", "import"]),
-  auctionHouse: z.string().optional(),
-  ownedBy: z.string().optional(),
-  ownerDetails: z.string().optional(),
-  managedBy: z.string().optional(),
-  invoiceDate: z.string().optional(),
-  creditNoteDate: z.string().optional(),
-  financeProvider: z.enum(["none", "next_gear", "close_brothers", "bca", "infinit"]),
-
-  // Step 3 — Purchase costs (sheet S–AH): each fee and the VAT paid on it
-  buyingPrice: optionalNumber,
-  vatOnBuyingPrice: optionalNumber,
-  buyersFee: optionalNumber,
-  vatOnBuyersFee: optionalNumber,
-  inspectionCharge: optionalNumber,
-  vatOnInspectionCharge: optionalNumber,
-  evAssuredCharge: optionalNumber,
-  vatOnEvAssuredCharge: optionalNumber,
-  batteryReportFee: optionalNumber,
-  vatOnBatteryReportFee: optionalNumber,
-  lateStorageFee: optionalNumber,
-  vatOnLateStorageFee: optionalNumber,
-  collectionFee: optionalNumber,
-  vatOnCollectionFee: optionalNumber,
-  deliveryFee: optionalNumber,
-  vatOnDeliveryFee: optionalNumber,
-  otherCharges: optionalNumber,
-
-  // Step 4 — Receiving (sheet AJ–BA)
-  receivedDate: z.string().optional(),
-  receivedBy: z.string().optional(),
-  logBook: z.string().optional(),
-  euroStatus: z.string().optional(),
-  engineSizeKw: optionalInt,
-  numSeats: optionalInt,
-  formerKeepers: optionalInt,
-  numKeys: optionalInt,
-  massInService: optionalInt,
-  vin: z.string().optional(),
-  engineNumber: z.string().optional(),
-  serviceHistory: z.enum(["full", "partial", "none", "unknown"]),
-  lockNut: z.boolean(),
-  otherItemsReceived: z.string().optional(),
-  motExpiry: z.string().optional(),
-
-  // Pricing (optional)
-  warrantyCost: optionalNumber,
-  minimumSalePrice: optionalNumber,
-  listingPrice: optionalNumber,
-});
-
-type FormInput = z.input<typeof schema>;
-
-/** Registration saved for a car that has none yet (client, 18 Sep 2026). */
-const UNREGISTERED = "UNREGISTERED";
 
 /** A form number that may be blank → the number, or null when not entered. */
 function opt(v: unknown): number | null {
@@ -237,62 +96,24 @@ function deriveAtPriceIndicator(
   return "high";
 }
 
+/** Scroll a field to the middle of the view and put the cursor in it. */
+function focusField(id: string) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  scrollToElement(el, "center");
+  el.focus({ preventScroll: true });
+}
+
 export function ArrivalForm() {
   const baseId = useId();
-  const registrationFieldId = `${baseId}-registration`;
-  const mileageFieldId = `${baseId}-mileage`;
-  const makeFieldId = `${baseId}-make`;
-  const modelFieldId = `${baseId}-model`;
-  const variantNameFieldId = `${baseId}-variant-name`;
-  const variantCodeFieldId = `${baseId}-variant-code`;
-  const yearFieldId = `${baseId}-year`;
-  const colourFieldId = `${baseId}-colour`;
-  const vehicleTypeFieldId = `${baseId}-vehicle-type`;
-  const bodyTypeFieldId = `${baseId}-body-type`;
-  const fuelTypeFieldId = `${baseId}-fuel-type`;
-  const transmissionFieldId = `${baseId}-transmission`;
-  const engineSizeFieldId = `${baseId}-engine-size`;
-  const motExpiryFieldId = `${baseId}-mot-expiry`;
-  const sellerNameFieldId = `${baseId}-seller-name`;
-  const sellerPhoneFieldId = `${baseId}-seller-phone`;
-  const sourceTypeFieldId = `${baseId}-source-type`;
-  const dealerPartnerFieldId = `${baseId}-dealer-partner`;
-  const localOrImportFieldId = `${baseId}-local-or-import`;
-  const auctionHouseFieldId = `${baseId}-auction-house`;
-  const ownedByFieldId = `${baseId}-owned-by`;
-  const invoiceDateFieldId = `${baseId}-invoice-date`;
-  const legacySerialFieldId = `${baseId}-legacy-serial`;
-  const ownerDetailsFieldId = `${baseId}-owner-details`;
-  const creditNoteDateFieldId = `${baseId}-credit-note-date`;
-  const logBookFieldId = `${baseId}-log-book`;
-  const euroStatusFieldId = `${baseId}-euro-status`;
-  const engineSizeKwFieldId = `${baseId}-engine-size-kw`;
-  const numSeatsFieldId = `${baseId}-num-seats`;
-  const formerKeepersFieldId = `${baseId}-former-keepers`;
-  const massFieldId = `${baseId}-mass-in-service`;
-  const vinFieldId = `${baseId}-vin`;
-  const engineNumberFieldId = `${baseId}-engine-number`;
-  const otherItemsFieldId = `${baseId}-other-items`;
-  const serviceHistoryFieldId = `${baseId}-service-history`;
-  const numKeysFieldId = `${baseId}-num-keys`;
-  const lockNutFieldId = `${baseId}-lock-nut`;
-  const financeProviderFieldId = `${baseId}-finance-provider`;
-  const receivedDateFieldId = `${baseId}-received-date`;
-  const receivedByFieldId = `${baseId}-received-by`;
-  const newTodoDescriptionFieldId = `${baseId}-new-todo-description`;
-  const newTodoCostFieldId = `${baseId}-new-todo-cost`;
-  const warrantyCostFieldId = `${baseId}-warranty-cost`;
-  const minimumSalePriceFieldId = `${baseId}-minimum-sale-price`;
-  const listingPriceFieldId = `${baseId}-listing-price`;
+  const ids = fieldIds(baseId);
+  const sectionId = (id: SectionId) => `${baseId}-section-${id}`;
+  const formEndId = `${baseId}-form-end`;
   const { user, company } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const { confirm, confirmDialog } = useConfirm();
   const [submitting, setSubmitting] = useState(false);
-  // Variation E — guided wizard. Sections are grouped into 5 steps; fields
-  // stay registered across step changes (RHF keeps values, shouldUnregister
-  // is false), so the single onSubmit still validates the whole form.
-  const [step, setStep] = useState(0);
   // dvlaState drives the inline status shown under the registration field.
   //  - idle         : nothing has been looked up yet
   //  - loading      : lookup in flight
@@ -300,17 +121,18 @@ export function ArrivalForm() {
   //  - not_found    : DVLA didn't recognise this reg, or the format was invalid
   //  - duplicate    : we already have this reg in our stock book (we don't
   //                   even call DVLA — we show the user where to find it)
-  const [dvlaState, setDvlaState] = useState<
-    "idle" | "loading" | "found" | "not_found" | "duplicate"
-  >("idle");
+  const [dvlaState, setDvlaState] = useState<DvlaState>("idle");
+  // Whether the latest lookup returned vehicle data (and filled the form) —
+  // drives the confirmation card. A duplicate can come back without it.
+  const [dvlaMatched, setDvlaMatched] = useState(false);
   // Populated only when dvlaState === "duplicate"
   const [duplicate, setDuplicate] = useState<{
     id: string;
     stockId: string;
     label: string;
   } | null>(null);
-  const [todos, setTodos] = useState<{ description: string; cost: number }[]>([]);
-  const [newTodo, setNewTodo] = useState({ description: "", cost: 0 });
+  const [todos, setTodos] = useState<ArrivalTodo[]>([]);
+  const [newTodo, setNewTodo] = useState<ArrivalTodo>({ description: "", cost: 0 });
 
   // Module-F compliance card state — driven by the DVLA + DVSA lookup.
   // Lives outside react-hook-form because these fields are read-only by
@@ -515,6 +337,7 @@ export function ArrivalForm() {
     const { signal } = controller;
 
     setDvlaState("loading");
+    setDvlaMatched(false);
     setDuplicate(null);
     setLoadingStartedAt(Date.now());
 
@@ -649,6 +472,7 @@ export function ArrivalForm() {
       setComplianceSources(dvla.sources);
       setMotSource(dvla.motSource ?? null);
       setVerifiedAt(new Date());
+      setDvlaMatched(true);
 
       // AutoTrader taxonomy + valuation. Fill the model from AutoTrader when
       // the user hasn't typed one (DVLA returns model=null). Derivative /
@@ -927,258 +751,122 @@ export function ArrivalForm() {
     }
   }
 
-  const watchedSource = form.watch("purchaseSource");
-  // The red-asterisk fields still blank — listed on Review, never blocking.
-  const missingImportant = (
-    [
-      ["Registration", watchAll.registration],
-      ["Make", watchAll.make],
-      ["Model", watchAll.model],
-      ["Colour", watchAll.colour],
-      ["Mileage", watchAll.mileage],
-      ["Seller", watchAll.sellerName],
-      ["Auction house", watchAll.auctionHouse],
-      ["Owned by", watchAll.ownedBy],
-      ["Invoice date", watchAll.invoiceDate],
-      ["Buying price", watchAll.buyingPrice],
-      ["Receiving date", watchAll.receivedDate],
-      ["Log book", watchAll.logBook],
-      ["No. of keys", watchAll.numKeys],
-    ] as [string, unknown][]
-  )
-    .filter(([, v]) => v === undefined || v === null || String(v).trim() === "")
-    .map(([label]) => label);
-  const regClean = (watchAll.registration ?? "").replace(/[^A-Za-z0-9]/g, "");
-  const isLast = step === STEPS.length - 1;
-  const go = (n: number) => setStep(Math.min(STEPS.length - 1, Math.max(0, n)));
+  // A step is complete once every red-asterisk field in its section is filled
+  // (a prompt only, never blocking). Pricing has none, so it never shows one.
+  const important: [label: string, value: unknown, section: SectionId][] = [
+    ["Registration", watchAll.registration, "identity"],
+    ["Make", watchAll.make, "identity"],
+    ["Model", watchAll.model, "identity"],
+    ["Colour", watchAll.colour, "identity"],
+    ["Mileage", watchAll.mileage, "identity"],
+    ["Seller", watchAll.sellerName, "buying"],
+    ["Auction house", watchAll.auctionHouse, "buying"],
+    ["Owned by", watchAll.ownedBy, "buying"],
+    ["Invoice date", watchAll.invoiceDate, "buying"],
+    ["Buying price", watchAll.buyingPrice, "costs"],
+    ["Receiving date", watchAll.receivedDate, "receiving"],
+    ["Log book", watchAll.logBook, "receiving"],
+    ["No. of keys", watchAll.numKeys, "receiving"],
+  ];
+  const isBlankValue = (v: unknown) =>
+    v === undefined || v === null || String(v).trim() === "";
+  const stepperSections: StepperSection[] = SECTIONS.map((s) => {
+    const fields = important.filter((f) => f[2] === s.id);
+    return {
+      anchorId: sectionId(s.id),
+      title: s.title,
+      hint: s.hint,
+      complete: fields.length > 0 && fields.every(([, v]) => !isBlankValue(v)),
+    };
+  });
+
+  // Unsaved = anything typed, picked or added since the page opened. While
+  // it is, the save bar carries Save; otherwise the Page's primary does, so
+  // there is only ever one primary action on screen.
+  const unsaved = form.formState.isDirty || todos.length > 0;
+  const save = () => void form.handleSubmit(onSubmit)();
+  const submitFailed =
+    form.formState.submitCount > 0 && Object.keys(errors).length > 0;
+  const lookupFound =
+    dvlaMatched && (dvlaState === "found" || dvlaState === "duplicate");
 
   return (
-    <Page
-      title="Add vehicle"
-      subtitle={`Step ${step + 1} of ${STEPS.length}: ${STEPS[step].title}`}
-      backAction={{ content: "Back to vehicles", url: "/vehicles" }}
-    >
-      {/* Shopify product-form pattern: step cards in the main column, the
-          step list, valuation and live cost summary in the sidebar. The form
-          stays a single <form> with one onSubmit; RHF keeps field values
-          across step changes. */}
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col gap-4"
+    <>
+      {/* Polaris' unsaved-changes bar. It sits over the top bar (the Frame is
+          its containing block), as in Shopify, so showing it never moves the
+          page under the cursor. */}
+      {unsaved && (
+        <div className="fixed inset-x-0 top-0 z-40">
+          <ContextualSaveBar
+            message="Unsaved vehicle"
+            saveAction={{ content: "Save vehicle", onAction: save, loading: submitting }}
+            discardAction={{
+              content: "Discard",
+              onAction: () => {
+                if (!submitting) router.push("/vehicles");
+              },
+            }}
+          />
+        </div>
+      )}
+
+      <Page
+        title="Add vehicle"
+        backAction={{ content: "Back to vehicles", url: "/vehicles" }}
+        // No draft storage behind "Save as draft" yet; kept as it was.
+        secondaryActions={[{ content: "Save as draft", disabled: submitting }]}
+        primaryAction={
+          unsaved
+            ? undefined
+            : { content: "Save vehicle", onAction: save, loading: submitting }
+        }
       >
-        <Layout>
-          <Layout.Section>
-            {/* Validation summary (surfaced on the review step) */}
-            {isLast && Object.keys(errors).length > 0 && (
-              <Banner tone="critical" title="Fix these errors">
-                <ul className="list-disc pl-5">
-                  {Object.entries(errors).map(([field, err]) => (
-                    <li key={field}>
-                      <span className="font-mono">{field}</span>:{" "}
-                      {(err as { message?: string })?.message ?? "invalid"}
-                    </li>
-                  ))}
-                </ul>
-              </Banner>
-            )}
+        <SectionStepper sections={stepperSections} endSentinelId={formEndId} />
 
-            {/* ───────────────────────────── STEP 1 — Identity ── */}
-            {step === 0 && (
-              <>
-                {/* Reg lookup */}
-                <Card title="Registration lookup">
-                  <p className="text-sm text-(--text-secondary)">
-                    Typing the registration auto-checks your stock book and
-                    pre-fills make, year, colour and fuel from DVLA.
-                  </p>
-                  <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
-                    <div className="flex min-w-0 flex-col gap-1">
-                      <Label htmlFor={registrationFieldId}>
-                        Registration <Important />
-                      </Label>
-                      <div className="flex items-center gap-2">
-                        <div className="relative w-52">
-                          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-(--icon-secondary)" />
-                          <Input
-                            id={registrationFieldId}
-                            {...form.register("registration")}
-                            onBlur={() => void handleDvlaLookup()}
-                            placeholder="GK66 6NX"
-                            className="pl-9 font-mono uppercase tracking-wider"
-                          />
-                        </div>
-                        <Button
-                          icon={dvlaState === "loading" ? undefined : "WandMinor"}
-                          onClick={() => void handleDvlaLookup()}
-                          loading={dvlaState === "loading"}
-                        >
-                          Fetch DVLA
-                        </Button>
-                      </div>
-                    </div>
-                    {regClean.length >= 4 && (
-                      <RegPlate
-                        registration={watchAll.registration ?? ""}
-                        size="lg"
-                        className="ml-auto"
-                      />
-                    )}
-                  </div>
-                  {dvlaState === "idle" && (
-                    <p className="text-xs text-(--text-secondary)">
-                      No registration yet? Leave it blank and the car is saved
-                      as {UNREGISTERED}. You can add the reg later.
-                    </p>
-                  )}
-                  {dvlaState === "loading" && (
-                    <p className="flex items-center gap-1 text-xs text-(--text-secondary)">
-                      <Loader2 className="size-3 animate-spin" />
-                      Checking DVLA and your stock book
-                      {loadingStartedAt !== null
-                        ? ` (${Math.max(0, Math.round((Date.now() - loadingStartedAt) / 1000))}s)`
-                        : ""}
-                      …
-                    </p>
-                  )}
-                  {dvlaState === "found" && (
-                    <Banner tone="success">
-                      Matched: make / model / derivative, tax, MOT and
-                      valuation auto-filled from DVLA + AutoTrader.
-                    </Banner>
-                  )}
-                  {dvlaState === "not_found" && (
-                    <Banner tone="warning">
-                      The number is incorrect. Try again, or fill in the form
-                      manually.
-                    </Banner>
-                  )}
-                  {dvlaState === "duplicate" && duplicate && (
-                    <Banner tone="info">
-                      This car is already in your stock book as{" "}
-                      <PolarisLink url={vehicleDetailHref(duplicate.id, pathname)}>
-                        {duplicate.stockId}
-                      </PolarisLink>
-                      {duplicate.label ? ` (${duplicate.label})` : ""}.
-                    </Banner>
-                  )}
-                </Card>
+        {/* Shopify product-form pattern: the section cards in the main
+            column; the valuation and the live cost summary in the
+            sidebar. One <form>, one onSubmit. */}
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-4"
+        >
+          <Layout>
+            <Layout.Section>
+              {submitFailed && (
+                <Banner tone="critical" title="Fix these errors">
+                  <ul className="list-disc pl-5">
+                    {Object.entries(errors).map(([field, err]) => (
+                      <li key={field}>
+                        <span className="font-mono">{field}</span>:{" "}
+                        {(err as { message?: string })?.message ?? "invalid"}
+                      </li>
+                    ))}
+                  </ul>
+                </Banner>
+              )}
 
-                {/* Identity fields */}
-                <Card title="Vehicle identity">
-                  <p className="text-sm text-(--text-secondary)">
-                    Auto-filled from DVLA + AutoTrader
-                  </p>
-                  <div className="mt-2 grid gap-4 sm:grid-cols-2">
-                    <Field
-                      label={<>Mileage <Important /></>}
-                      htmlFor={mileageFieldId}
-                      error={errors.mileage?.message}
-                    >
-                      <Input id={mileageFieldId} type="number" min={0} {...form.register("mileage")} />
-                    </Field>
-                    <Field label={<>Make <Important /></>} htmlFor={makeFieldId} auto={dvlaState === "found"}>
-                      <Input id={makeFieldId} {...form.register("make")} />
-                    </Field>
-                    <Field label={<>Model <Important /></>} htmlFor={modelFieldId} auto={dvlaState === "found"}>
-                      <Input id={modelFieldId} {...form.register("model")} />
-                    </Field>
-                    <Field label="Variant name" htmlFor={variantNameFieldId}>
-                      <Input id={variantNameFieldId} placeholder="e.g. LX 35H" {...form.register("variantName")} />
-                    </Field>
-                    <Field label="Variant code" htmlFor={variantCodeFieldId}>
-                      <Input id={variantCodeFieldId} placeholder="From the BCA invoice, e.g. 1.5 SE" {...form.register("variantCode")} />
-                    </Field>
-                    <Field
-                      label="Year"
-                      htmlFor={yearFieldId}
-                      auto={dvlaState === "found"}
-                      error={errors.year?.message}
-                    >
-                      <Input id={yearFieldId} type="number" {...form.register("year")} />
-                    </Field>
-                    <Field label={<>Colour <Important /></>} htmlFor={colourFieldId} auto={dvlaState === "found"}>
-                      <Input id={colourFieldId} {...form.register("colour")} />
-                    </Field>
-                    {/* Sheet col G: CAR / SUV / MPV / VAN — one choice that
-                        sets both the type and, for SUV/MPV, the body. */}
-                    <Select
-                      id={vehicleTypeFieldId}
-                      label="Vehicle type"
-                      options={VEHICLE_CATEGORY_OPTIONS}
-                      value={vehicleCategory({
-                        vehicleType: watchAll.vehicleType,
-                        bodyType: watchAll.bodyType,
-                      })}
-                      onChange={(cat) => {
-                        const next = vehicleCategoryPatch(cat, {
-                          bodyType: form.getValues("bodyType"),
-                        });
-                        form.setValue("vehicleType", next.vehicleType);
-                        form.setValue("bodyType", next.bodyType);
-                      }}
-                    />
-                    <Controller
-                      control={form.control}
-                      name="bodyType"
-                      render={({ field }) => (
-                        <Select
-                          id={bodyTypeFieldId}
-                          label="Body type"
-                          options={BODY_TYPES.map((b) => ({ value: b, label: optionLabel(b) }))}
-                          value={field.value}
-                          onChange={(v) => field.onChange(v)}
-                        />
-                      )}
-                    />
-                    <Controller
-                      control={form.control}
-                      name="fuelType"
-                      render={({ field }) => (
-                        <Select
-                          id={fuelTypeFieldId}
-                          label="Fuel type"
-                          options={FUEL_TYPES.map((f) => ({ value: f, label: optionLabel(f) }))}
-                          value={field.value}
-                          onChange={(v) => field.onChange(v)}
-                          helpText={dvlaState === "found" ? AUTO_FILLED : undefined}
-                        />
-                      )}
-                    />
-                    <Controller
-                      control={form.control}
-                      name="transmission"
-                      render={({ field }) => (
-                        <Select
-                          id={transmissionFieldId}
-                          label="Transmission"
-                          options={[...TRANSMISSION_OPTIONS]}
-                          value={field.value}
-                          onChange={(v) => field.onChange(v)}
-                        />
-                      )}
-                    />
-                    <Field label="Engine size (cc)" htmlFor={engineSizeFieldId}>
-                      <Input id={engineSizeFieldId} type="number" {...form.register("engineSizeCC")} />
-                    </Field>
-                    <Field label="MOT expiry" htmlFor={motExpiryFieldId}>
-                      <Input id={motExpiryFieldId} type="date" {...form.register("motExpiry")} />
-                    </Field>
-                    <Field
-                      label="Legacy S/N"
-                      htmlFor={legacySerialFieldId}
-                      error={errors.legacySerialNumber?.message}
-                    >
-                      <Input
-                        id={legacySerialFieldId}
-                        type="number"
-                        min={1}
-                        placeholder="Only for a car from the old Excel sheet"
-                        {...form.register("legacySerialNumber")}
-                      />
-                    </Field>
-                  </div>
-                </Card>
-
+              <div id={sectionId("identity")} className="flex flex-col gap-4">
+                <RegistrationLookupCard
+                  form={form}
+                  fieldId={ids.registration}
+                  dvlaState={dvlaState}
+                  duplicate={duplicate}
+                  duplicateHref={duplicate ? vehicleDetailHref(duplicate.id, pathname) : null}
+                  loadingSeconds={
+                    loadingStartedAt !== null
+                      ? Math.max(0, Math.round((Date.now() - loadingStartedAt) / 1000))
+                      : null
+                  }
+                  onLookup={() => void handleDvlaLookup()}
+                />
+                {lookupFound && (
+                  <VehicleConfirmationCard
+                    form={form}
+                    inStock={dvlaState === "duplicate"}
+                    onEdit={() => focusField(ids.make)}
+                  />
+                )}
+                <IdentityCard form={form} ids={ids} auto={dvlaState === "found"} />
                 {/* Compliance & Verification (DVLA + DVSA) */}
                 <ComplianceCard
                   value={compliance}
@@ -1192,464 +880,59 @@ export function ArrivalForm() {
                   sources={complianceSources}
                   motSource={motSource}
                 />
-              </>
-            )}
+              </div>
 
-            {/* ───────────────────────────── STEP 2 — Buying ── */}
-            {step === 1 && (
-              <Card title="Buying">
-                <p className="text-sm text-(--text-secondary)">
-                  Where the car came from and who owns it
-                </p>
-                <div className="mt-2 grid gap-4 sm:grid-cols-2">
-                  <Field label={<>Seller name <Important /></>} htmlFor={sellerNameFieldId}>
-                    <Input id={sellerNameFieldId} {...form.register("sellerName")} />
-                  </Field>
-                  <Field label="Seller phone" htmlFor={sellerPhoneFieldId}>
-                    <Input id={sellerPhoneFieldId} {...form.register("sellerPhone")} />
-                  </Field>
-                  <Controller
-                    control={form.control}
-                    name="purchaseSource"
-                    render={({ field }) => (
-                      <Select
-                        id={sourceTypeFieldId}
-                        label="Source type"
-                        options={[...SOURCE_OPTIONS]}
-                        value={field.value}
-                        onChange={(v) => field.onChange(v)}
-                      />
-                    )}
-                  />
-                  {watchedSource === "dealer" && (
-                    <Select
-                      id={dealerPartnerFieldId}
-                      label="Dealer partner"
-                      placeholder="Select dealer partner…"
-                      options={
-                        partners.length === 0
-                          ? [{ value: "__none", label: "No dealer partners", disabled: true }]
-                          : partners.map((p) => ({
-                              value: p.id,
-                              label: `${p.companyName ?? p.name}${p.companyName ? ` (${p.name})` : ""}`,
-                            }))
-                      }
-                      value={selectedPartnerId}
-                      onChange={setSelectedPartnerId}
-                    />
-                  )}
-                  <Controller
-                    control={form.control}
-                    name="localOrImport"
-                    render={({ field }) => (
-                      <Select
-                        id={localOrImportFieldId}
-                        label="Local or import"
-                        options={[
-                          { value: "local", label: "Local" },
-                          { value: "import", label: "Import" },
-                        ]}
-                        value={field.value}
-                        onChange={(v) => field.onChange(v)}
-                      />
-                    )}
-                  />
-                  {/* Free text with suggestions: the sheet holds places
-                      (BLACKBUSHE, CAMBERLEY) and terms (SOR, PARTEX) that a
-                      fixed list would reject. */}
-                  <Field label={<>Auction house <Important /></>} htmlFor={auctionHouseFieldId}>
-                    <Input
-                      id={auctionHouseFieldId}
-                      list={`${baseId}-auction-houses`}
-                      placeholder="e.g. BCA AUCTION, SOR, PARTEX"
-                      {...form.register("auctionHouse")}
-                    />
-                    <datalist id={`${baseId}-auction-houses`}>
-                      {[...new Set([...AUCTION_HOUSE_SUGGESTIONS, ...AUCTION_HOUSES.map((h) => h.toUpperCase())])].map((h) => (
-                        <option key={h} value={h} />
-                      ))}
-                    </datalist>
-                  </Field>
-                  <Field label={<>Owned by <Important /></>} htmlFor={ownedByFieldId}>
-                    <Input
-                      id={ownedByFieldId}
-                      list={`${baseId}-owned-by`}
-                      placeholder="BCA, CAR CAPITAL, INFINIT…"
-                      {...form.register("ownedBy")}
-                    />
-                    <datalist id={`${baseId}-owned-by`}>
-                      {OWNED_BY_SUGGESTIONS.map((o) => (
-                        <option key={o} value={o} />
-                      ))}
-                    </datalist>
-                  </Field>
-                  <Field label="Owner details" htmlFor={ownerDetailsFieldId}>
-                    <Input
-                      id={ownerDetailsFieldId}
-                      placeholder="Name of the owner"
-                      {...form.register("ownerDetails")}
-                    />
-                  </Field>
-                  <Field label={<>Invoice date <Important /></>} htmlFor={invoiceDateFieldId}>
-                    <Input id={invoiceDateFieldId} type="date" {...form.register("invoiceDate")} />
-                  </Field>
-                  <Field label="Credit note date" htmlFor={creditNoteDateFieldId}>
-                    <Input id={creditNoteDateFieldId} type="date" {...form.register("creditNoteDate")} />
-                  </Field>
-                  <Controller
-                    control={form.control}
-                    name="financeProvider"
-                    render={({ field }) => (
-                      <Select
-                        id={financeProviderFieldId}
-                        label="Stocking finance"
-                        options={FINANCE_PROVIDERS.map((p) => ({ value: p.value, label: p.label }))}
-                        value={field.value}
-                        onChange={(v) => field.onChange(v)}
-                      />
-                    )}
-                  />
-                </div>
-              </Card>
-            )}
-
-            {/* ───────────────────────────── STEP 3 — Costs ── */}
-            {step === 2 && (
-              <Card title="Purchase cost breakdown">
-                <p className="text-sm text-(--text-secondary)">
-                  Enter the VAT actually paid on each line. Leave it blank if
-                  none was paid.
-                </p>
-                <div className="mt-2 overflow-x-auto">
-                  <table className="w-full min-w-88 text-sm">
-                    <thead>
-                      <tr className="border-b border-(--border-secondary) text-left text-xs text-(--text-secondary)">
-                        <th className="py-1.5 pr-2 font-medium">Cost item</th>
-                        <th className="whitespace-nowrap py-1.5 pr-2 text-right font-medium">Amount £</th>
-                        <th className="whitespace-nowrap py-1.5 pr-2 text-right font-medium">VAT paid £</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <CostRow label={<>Buying price <Important /></>} name="buyingPrice" vatName="vatOnBuyingPrice" form={form} />
-                      <CostRow label="BCA buyer's fee" name="buyersFee" vatName="vatOnBuyersFee" form={form} />
-                      <CostRow label="BCA essential check / Assured" name="inspectionCharge" vatName="vatOnInspectionCharge" form={form} />
-                      <CostRow label="BCA EV / hybrid Assured" name="evAssuredCharge" vatName="vatOnEvAssuredCharge" form={form} />
-                      <CostRow label="Battery health report" name="batteryReportFee" vatName="vatOnBatteryReportFee" form={form} />
-                      <CostRow label="Late payment / storage" name="lateStorageFee" vatName="vatOnLateStorageFee" form={form} />
-                      <CostRow label="Collection" name="collectionFee" vatName="vatOnCollectionFee" form={form} />
-                      <CostRow label="Delivery / transport" name="deliveryFee" vatName="vatOnDeliveryFee" form={form} />
-                      <tr className="border-t border-(--border) bg-(--bg-surface-secondary)">
-                        <td className="py-2 pl-2 pr-2 font-semibold">Total buying price</td>
-                        <td colSpan={2} className="py-2 pr-2 text-right font-semibold tabular-nums">
-                          {formatCurrency(totalBuyingPrice)}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td colSpan={3} className="pt-4 text-xs text-(--text-secondary)">
-                          Not part of the total buying price on the master sheet:
-                        </td>
-                      </tr>
-                      <CostRow label="Other charges" name="otherCharges" form={form} />
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
-            )}
-
-            {/* ───────────────────────────── STEP 4 — Receiving ── */}
-            {step === 3 && (
-              <>
-                <Card title="Receiving">
-                  <p className="text-sm text-(--text-secondary)">
-                    When the car arrived, and what came with it
-                  </p>
-                  <div className="mt-2 grid gap-4 sm:grid-cols-2">
-                    <Field label={<>Vehicle receiving date <Important /></>} htmlFor={receivedDateFieldId}>
-                      <Input id={receivedDateFieldId} type="date" {...form.register("receivedDate")} />
-                    </Field>
-                    <Field label="Received by" htmlFor={receivedByFieldId}>
-                      <Controller
-                        control={form.control}
-                        name="receivedBy"
-                        render={({ field }) => (
-                          <EmployeeCombobox
-                            id={receivedByFieldId}
-                            users={users}
-                            value={users.find((u) => u.id === field.value) ?? null}
-                            onChange={(u) => field.onChange(u?.id ?? "")}
-                          />
-                        )}
-                      />
-                    </Field>
-                    <Field label={<>Log book <Important /></>} htmlFor={logBookFieldId}>
-                      <Input
-                        id={logBookFieldId}
-                        list={`${baseId}-log-book`}
-                        placeholder="AVAILABLE, NOT AVAILABLE…"
-                        {...form.register("logBook")}
-                      />
-                      <datalist id={`${baseId}-log-book`}>
-                        {LOG_BOOK_SUGGESTIONS.map((o) => (
-                          <option key={o} value={o} />
-                        ))}
-                      </datalist>
-                    </Field>
-                    <Field label="Euro status" htmlFor={euroStatusFieldId}>
-                      <Input id={euroStatusFieldId} placeholder="e.g. EURO 6" {...form.register("euroStatus")} />
-                    </Field>
-                    <Field label="Engine size (kW)" htmlFor={engineSizeKwFieldId} error={errors.engineSizeKw?.message}>
-                      <Input id={engineSizeKwFieldId} type="number" min={0} {...form.register("engineSizeKw")} />
-                    </Field>
-                    <Field label="Number of seats" htmlFor={numSeatsFieldId} error={errors.numSeats?.message}>
-                      <Input id={numSeatsFieldId} type="number" min={0} {...form.register("numSeats")} />
-                    </Field>
-                    <Field label="Former keepers" htmlFor={formerKeepersFieldId} error={errors.formerKeepers?.message}>
-                      <Input id={formerKeepersFieldId} type="number" min={0} {...form.register("formerKeepers")} />
-                    </Field>
-                    <Field label={<>No. of keys <Important /></>} htmlFor={numKeysFieldId} error={errors.numKeys?.message}>
-                      <Input id={numKeysFieldId} type="number" min={0} {...form.register("numKeys")} />
-                    </Field>
-                    <Field label="Mass in service (kg)" htmlFor={massFieldId} error={errors.massInService?.message}>
-                      <Input id={massFieldId} type="number" min={0} {...form.register("massInService")} />
-                    </Field>
-                    <Field label="Chassis / frame no." htmlFor={vinFieldId}>
-                      <Input id={vinFieldId} className="font-mono uppercase" {...form.register("vin")} />
-                    </Field>
-                    <Field label="Engine no." htmlFor={engineNumberFieldId}>
-                      <Input id={engineNumberFieldId} className="font-mono uppercase" {...form.register("engineNumber")} />
-                    </Field>
-                    <Controller
-                      control={form.control}
-                      name="serviceHistory"
-                      render={({ field }) => (
-                        <Select
-                          id={serviceHistoryFieldId}
-                          label="Service history"
-                          options={[...SERVICE_HISTORY_OPTIONS]}
-                          value={field.value}
-                          onChange={(v) => field.onChange(v)}
-                        />
-                      )}
-                    />
-                    <div className="flex items-center sm:pt-6">
-                      <Controller
-                        control={form.control}
-                        name="lockNut"
-                        render={({ field }) => (
-                          <Checkbox
-                            id={lockNutFieldId}
-                            label="Lock nut"
-                            checked={field.value}
-                            onChange={(checked) => field.onChange(checked)}
-                          />
-                        )}
-                      />
-                    </div>
-                    <Field label="Other items received" htmlFor={otherItemsFieldId} className="sm:col-span-2">
-                      <Input
-                        id={otherItemsFieldId}
-                        placeholder="SD card, nav disc, charging cables…"
-                        {...form.register("otherItemsReceived")}
-                      />
-                    </Field>
-                  </div>
-                </Card>
-
-                <Card title="Things to do">
-                  <p className="text-sm text-(--text-secondary)">
-                    Prep work and its cost. The costs add up to the car&apos;s
-                    Total Value Addition.
-                  </p>
-                  {todos.length > 0 && (
-                    <ul className="mt-2 flex flex-col gap-1">
-                      {todos.map((t, i) => (
-                        <li
-                          key={i}
-                          className="flex items-center justify-between gap-2 rounded-(--radius-200) border border-(--border) py-1 pl-2 pr-1 text-xs"
-                        >
-                          <span className="flex-1">{t.description}</span>
-                          <span className="tabular-nums">{formatCurrency(t.cost)}</span>
-                          <Button
-                            variant="tertiary"
-                            size="micro"
-                            icon="DeleteMinor"
-                            accessibilityLabel={`Remove ${t.description}`}
-                            onClick={() => removeTodo(i)}
-                          />
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <div className="mt-2 flex items-end gap-2">
-                    <div className="min-w-0 flex-1">
-                      <TextField
-                        id={newTodoDescriptionFieldId}
-                        label="Description"
-                        placeholder="e.g. Service, MOT, valet"
-                        value={newTodo.description}
-                        onChange={(v) => setNewTodo((p) => ({ ...p, description: v }))}
-                      />
-                    </div>
-                    <div className="w-28 shrink-0">
-                      <TextField
-                        id={newTodoCostFieldId}
-                        label="Cost £"
-                        type="number"
-                        step={0.01}
-                        value={String(newTodo.cost)}
-                        onChange={(v) => setNewTodo((p) => ({ ...p, cost: Math.max(0, Number(v) || 0) }))}
-                      />
-                    </div>
-                    <Button icon="PlusMinor" onClick={addTodo}>
-                      Add item
-                    </Button>
-                  </div>
-                </Card>
-
-                <Card title="Pricing">
-                  <p className="text-sm text-(--text-secondary)">Optional, can set later</p>
-                  <div className="mt-2 grid gap-4 sm:grid-cols-3">
-                    <Field label="Warranty cost £" htmlFor={warrantyCostFieldId} error={errors.warrantyCost?.message}>
-                      <Input id={warrantyCostFieldId} type="number" step="0.01" min={0} {...form.register("warrantyCost")} />
-                    </Field>
-                    <Field label="Minimum sale price £" htmlFor={minimumSalePriceFieldId} error={errors.minimumSalePrice?.message}>
-                      <Input id={minimumSalePriceFieldId} type="number" step="0.01" min={0} {...form.register("minimumSalePrice")} />
-                    </Field>
-                    <Field label="Listing price £" htmlFor={listingPriceFieldId} error={errors.listingPrice?.message}>
-                      <Input id={listingPriceFieldId} type="number" step="0.01" min={0} {...form.register("listingPrice")} />
-                    </Field>
-                  </div>
-                </Card>
-              </>
-            )}
-
-            {/* ───────────────────────────── STEP 5 — Review ── */}
-            {step === 4 && (
-              <>
-                {missingImportant.length > 0 ? (
-                  // Never blocks the save (client, 18 Sep 2026) — it only says
-                  // what is still blank so it can be filled in later.
-                  <Banner tone="warning">
-                    Not filled in yet: {missingImportant.join(", ")}. You can
-                    still submit and complete these later on the vehicle page
-                    or the Master Sheet.
-                  </Banner>
-                ) : (
-                  <Banner tone="success">
-                    Everything important is filled in. The cost summary
-                    reflects what will be saved.
-                  </Banner>
-                )}
-
-                <ReviewCard
-                  title="Vehicle"
-                  onEdit={() => go(0)}
-                  rows={[
-                    ["Registration", formatRegPlate(watchAll.registration ?? "") || UNREGISTERED],
-                    ["Make / model", `${watchAll.make || "—"} ${watchAll.model || ""}`.trim()],
-                    ["Vehicle type", vehicleCategory({ vehicleType: watchAll.vehicleType, bodyType: watchAll.bodyType })],
-                    ["Year", watchAll.year || "—"],
-                    ["Mileage", watchAll.mileage ? `${Number(watchAll.mileage).toLocaleString()} mi` : "—"],
-                    ["Colour", String(watchAll.colour || "—")],
-                  ]}
+              <div id={sectionId("buying")} className="flex flex-col gap-4">
+                <BuyingCard
+                  form={form}
+                  ids={ids}
+                  partners={partners}
+                  selectedPartnerId={selectedPartnerId}
+                  onPartnerChange={setSelectedPartnerId}
                 />
-                <ReviewCard
-                  title="Buying"
-                  onEdit={() => go(1)}
-                  rows={[
-                    ["Seller", String(watchAll.sellerName || "—")],
-                    ["Auction house", String(watchAll.auctionHouse || "—")],
-                    ["Owned by", String(watchAll.ownedBy || "—")],
-                    ["Owner details", String(watchAll.ownerDetails || "—")],
-                    ["Local / import", String(watchAll.localOrImport ?? "—").toUpperCase()],
-                    ["Invoice date", watchAll.invoiceDate || "—"],
-                  ]}
-                />
-                <ReviewCard
-                  title="Receiving"
-                  onEdit={() => go(3)}
-                  rows={[
-                    ["Received", watchAll.receivedDate || "—"],
-                    ["Log book", String(watchAll.logBook || "—")],
-                    ["Service history", SERVICE_HISTORY_OPTIONS.find((o) => o.value === watchAll.serviceHistory)?.label ?? "—"],
-                    ["Keys", String(watchAll.numKeys || "—")],
-                  ]}
-                />
-                <ReviewCard
-                  title="Costs and pricing"
-                  onEdit={() => go(2)}
-                  rows={[
-                    ["Buying price", formatCurrency(buyingPrice)],
-                    ["Fees, VAT and charges", formatCurrency(fees)],
-                    ["Total buying", formatCurrency(totalBuyingPrice)],
-                    ["Value addition (to-dos)", formatCurrency(prepCosts)],
-                    ["Base cost", formatCurrency(baseCost)],
-                    ["Listing price", formatCurrency(opt(watchAll.listingPrice))],
-                  ]}
-                />
-              </>
-            )}
-          </Layout.Section>
+              </div>
 
-          <Layout.Section variant="oneThird">
-            {/* Step list — jump to any step; fields keep their values. */}
-            <Card title="Steps">
-              <nav aria-label="Add vehicle steps">
-                <ol className="flex flex-col gap-1">
-                  {STEPS.map((s, i) => {
-                    const on = i === step;
-                    const done = i < step;
-                    return (
-                      <li key={s.id}>
-                        <button
-                          type="button"
-                          onClick={() => go(i)}
-                          aria-current={on ? "step" : undefined}
-                          className={cn(
-                            "flex w-full items-start gap-3 rounded-(--radius-200) px-2 py-1.5 text-left transition-colors",
-                            on ? "bg-(--bg-surface-selected)" : "hover:bg-(--bg-surface-hover)",
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              "mt-0.5 grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold",
-                              on
-                                ? "bg-(--bg-fill-brand) text-(--text-brand-on-bg-fill)"
-                                : done
-                                  ? "bg-(--bg-surface-success) text-(--text-success)"
-                                  : "bg-(--bg-fill-secondary) text-(--text-secondary)",
-                            )}
-                          >
-                            {done ? <Check className="size-3.5" /> : i + 1}
-                          </span>
-                          <span className="min-w-0">
-                            <span className={cn("block text-sm", on ? "font-semibold" : "font-medium")}>
-                              {s.title}
-                            </span>
-                            <span className="block text-xs text-(--text-secondary)">{s.hint}</span>
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ol>
-              </nav>
-            </Card>
+              <div id={sectionId("costs")} className="flex flex-col gap-4">
+                <PurchaseCostsCard form={form} totalBuyingPrice={totalBuyingPrice} />
+              </div>
 
-            {/* AutoTrader valuation */}
-            {atData.retailValuation != null && (
-              <Card title="AutoTrader valuation">
-                <p className="text-xs text-(--text-secondary)">
-                  Based on {Number(form.getValues("mileage")).toLocaleString()} mi
-                </p>
-                <dl className="flex flex-col gap-1">
-                  <ValuationRow label="Retail" value={atData.retailValuation} highlight />
-                  <ValuationRow label="Trade" value={atData.tradeValuation} />
-                  <ValuationRow label="Part-ex" value={atData.partExchangeValuation} />
-                </dl>
-                <Button
-                  fullWidth
-                  onClick={() => {
+              <div id={sectionId("receiving")} className="flex flex-col gap-4">
+                <ReceivingCard form={form} ids={ids} users={users} />
+                <TodosCard
+                  todos={todos}
+                  newTodo={newTodo}
+                  onNewTodoChange={setNewTodo}
+                  onAdd={addTodo}
+                  onRemove={removeTodo}
+                  descriptionId={ids.newTodoDescription}
+                  costId={ids.newTodoCost}
+                />
+              </div>
+
+              <div id={sectionId("pricing")} className="flex flex-col gap-4">
+                <PricingCard form={form} ids={ids} />
+              </div>
+            </Layout.Section>
+
+            <StickySidebar
+              pinned={
+                <CostSummaryCard
+                  buyingPrice={buyingPrice}
+                  feesAndCharges={fees}
+                  prepCosts={prepCosts}
+                  warranty={warrantyCost}
+                  otherCharges={costInputs.otherCharges ?? 0}
+                  listingPrice={Number(watchAll.listingPrice) || null}
+                />
+              }
+            >
+              {atData.retailValuation != null && (
+                <ValuationCard
+                  mileage={Number(form.getValues("mileage"))}
+                  retailValuation={atData.retailValuation}
+                  tradeValuation={atData.tradeValuation}
+                  partExchangeValuation={atData.partExchangeValuation}
+                  onUseAsListingPrice={() => {
                     if (atData.retailValuation != null) {
                       form.setValue("listingPrice", String(atData.retailValuation));
                       toast.success(
@@ -1657,295 +940,16 @@ export function ArrivalForm() {
                       );
                     }
                   }}
-                >
-                  Use as listing price
-                </Button>
-              </Card>
-            )}
+                />
+              )}
+            </StickySidebar>
+          </Layout>
+          {/* Foot of the form: once in view, the stepper marks the last section. */}
+          <div id={formEndId} aria-hidden />
+        </form>
 
-            {/* Live cost summary */}
-            <CostSummaryReceipt
-              buyingPrice={buyingPrice}
-              feesAndCharges={fees}
-              stockingCharges={0}
-              prepCosts={prepCosts}
-              warranty={warrantyCost}
-              otherCharges={costInputs.otherCharges ?? 0}
-              listingPrice={Number(watchAll.listingPrice) || null}
-            >
-              <p className="text-xs text-(--text-secondary)">
-                Updates live as you enter costs. VAT is only what you enter as
-                paid on each line; use +20% to fill the standard rate.
-              </p>
-            </CostSummaryReceipt>
-          </Layout.Section>
-        </Layout>
-
-        {/* Sticky action bar */}
-        <div className="sticky bottom-0 z-10 bg-(--bg)">
-          <PageActions
-            secondaryActions={[
-              { content: "Back", onAction: () => go(step - 1), disabled: step === 0 },
-              // No draft storage behind this yet; kept as it was.
-              { content: "Save as draft", disabled: submitting },
-            ]}
-            primaryAction={
-              isLast
-                ? {
-                    content: "Submit vehicle",
-                    // Runs the same RHF submit as the <form>'s onSubmit. A
-                    // click handler (not type="submit") so the Continue →
-                    // Submit swap on the last step can never submit early.
-                    onAction: () => void form.handleSubmit(onSubmit)(),
-                    loading: submitting,
-                  }
-                : { content: "Continue", onAction: () => go(step + 1) }
-            }
-          />
-        </div>
-      </form>
-
-      {confirmDialog}
-    </Page>
-  );
-}
-
-/**
- * Type-ahead employee search for "Received By" (GEN-81) — the team asked
- * for type-and-select rather than a long static dropdown. Only a selected
- * employee commits a value; typing without picking a result never sets one,
- * so the field can't silently hold free text as if it were a real employee.
- */
-function EmployeeCombobox({
-  users,
-  value,
-  onChange,
-  id,
-}: {
-  users: User[];
-  value: User | null;
-  onChange: (user: User | null) => void;
-  id?: string;
-}) {
-  return (
-    <Combobox
-      items={users}
-      value={value}
-      onValueChange={onChange}
-      itemToStringLabel={(u: User) => u.name}
-      autoHighlight
-    >
-      <ComboboxInput
-        id={id}
-        placeholder="Search employees…"
-        startAddon={<Search />}
-        showClear={value !== null}
-        className="w-full"
-      />
-      <ComboboxPopup>
-        <ComboboxEmpty>No employee matches.</ComboboxEmpty>
-        <ComboboxList>
-          {(u: User) => <ComboboxItem key={u.id} value={u}>{u.name}</ComboboxItem>}
-        </ComboboxList>
-      </ComboboxPopup>
-    </Combobox>
-  );
-}
-
-/** Help line under a field that DVLA / AutoTrader filled in. */
-const AUTO_FILLED = "Filled from DVLA";
-
-/** Option label for a lower-case enum value ("hatchback" → "Hatchback"). */
-function optionLabel(v: string) {
-  if (v === "suv" || v === "mpv") return v.toUpperCase();
-  return v.charAt(0).toUpperCase() + v.slice(1);
-}
-
-/**
- * Red asterisk on an important field. A prompt, not a rule: nothing on this
- * form blocks Continue or Submit (client, 18 Sep 2026).
- */
-function Important() {
-  return (
-    <span className="text-(--text-critical)" title="Important — fill in when you can">
-      *
-    </span>
-  );
-}
-
-/**
- * Label + registered input + the (typo-only) validation message. Inputs stay
- * the app's RHF-registered `Input` (refs, onBlur-driven validation, datalists,
- * date pickers); the label/help/error spacing mirrors Polaris' Labelled so
- * they line up with the Polaris Selects in the same grid.
- */
-function Field({
-  label,
-  htmlFor,
-  auto,
-  error,
-  className,
-  children,
-}: {
-  label: React.ReactNode;
-  htmlFor?: string;
-  /** Shows a "Filled from DVLA" help line once the lookup matched. */
-  auto?: boolean;
-  error?: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={cn("flex flex-col gap-1", className)}>
-      <Label htmlFor={htmlFor}>{label}</Label>
-      {children}
-      {error ? <InlineError message={error} /> : null}
-      {auto ? <p className="text-xs text-(--text-secondary)">{AUTO_FILLED}</p> : null}
-    </div>
-  );
-}
-
-function ReviewCard({
-  title,
-  onEdit,
-  rows,
-}: {
-  title: string;
-  onEdit: () => void;
-  rows: [string, string][];
-}) {
-  return (
-    <Card
-      title={title}
-      actions={
-        <Button
-          variant="plain"
-          onClick={onEdit}
-          accessibilityLabel={`Edit ${title.toLowerCase()}`}
-        >
-          Edit
-        </Button>
-      }
-    >
-      <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
-        {rows.map(([k, v]) => (
-          <div key={k} className="flex justify-between gap-2">
-            <dt className="text-(--text-secondary)">{k}</dt>
-            <dd className="truncate text-right">{v}</dd>
-          </div>
-        ))}
-      </dl>
-    </Card>
-  );
-}
-
-function ValuationRow({
-  label,
-  value,
-  highlight,
-}: {
-  label: string;
-  value: number | null;
-  highlight?: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "flex items-baseline justify-between gap-2 rounded-(--radius-200) px-2 py-1",
-        highlight && "bg-(--bg-surface-secondary)",
-      )}
-    >
-      <dt className="text-sm text-(--text-secondary)">{label}</dt>
-      <dd
-        className={cn(
-          "text-sm tabular-nums",
-          highlight ? "font-semibold" : "font-medium",
-        )}
-      >
-        {value != null ? formatCurrency(value) : "—"}
-      </dd>
-    </div>
-  );
-}
-
-type MoneyField = Exclude<
-  {
-    [K in keyof FormInput]-?: FormInput[K] extends string | undefined ? K : never;
-  }[keyof FormInput],
-  undefined
->;
-
-/**
- * One cost line: the amount, and — for the master sheet's S–AH lines — the
- * VAT actually paid on it. VAT is entered, not assumed: roughly half the
- * client's purchases carry none. "+20%" fills the standard rate in one click.
- */
-function CostRow({
-  label,
-  name,
-  vatName,
-  form,
-}: {
-  label: React.ReactNode;
-  name: MoneyField;
-  vatName?: MoneyField;
-  form: ReturnType<typeof useForm<FormInput>>;
-}) {
-  const fieldId = `cost-row-${name}`;
-  const vatId = vatName ? `cost-row-${vatName}` : undefined;
-  const amount = Number(form.watch(name)) || 0;
-  const error = form.formState.errors[name]?.message;
-  const vatError = vatName ? form.formState.errors[vatName]?.message : undefined;
-  return (
-    <tr className="border-b border-(--border-secondary) align-top last:border-b-0">
-      <td className="py-1.5 pr-2">
-        <Label className="text-xs font-normal" htmlFor={fieldId}>
-          {label}
-        </Label>
-        {error ?? vatError ? <InlineError message={error ?? vatError} /> : null}
-      </td>
-      <td className="py-1.5 pr-2 text-right">
-        <Input
-          id={fieldId}
-          type="number"
-          step="0.01"
-          min={0}
-          {...form.register(name)}
-          className="ml-auto h-8 w-24 text-right tabular-nums"
-        />
-      </td>
-      <td className="py-1.5 text-right">
-        {vatName ? (
-          <div className="flex items-center justify-end gap-1">
-            <Input
-              id={vatId}
-              type="number"
-              step="0.01"
-              min={0}
-              aria-label={`VAT paid on ${typeof label === "string" ? label : name}`}
-              {...form.register(vatName)}
-              className="h-8 w-20 text-right tabular-nums"
-            />
-            <Button
-              variant="tertiary"
-              size="micro"
-              disabled={amount <= 0}
-              accessibilityLabel="Fill in 20% VAT"
-              onClick={() =>
-                form.setValue(
-                  vatName,
-                  String(Math.round(amount * VAT_RATE * 100) / 100),
-                  { shouldDirty: true },
-                )
-              }
-            >
-              +20%
-            </Button>
-          </div>
-        ) : (
-          <span className="text-xs text-(--text-secondary)">—</span>
-        )}
-      </td>
-    </tr>
+        {confirmDialog}
+      </Page>
+    </>
   );
 }
