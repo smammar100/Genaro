@@ -45,7 +45,11 @@ function LoginInner() {
   const router = useRouter();
   const search = useSearchParams();
   const { user, loading: authLoading, signIn, signOut } = useAuth();
-  const explicitNext = search.get("next");
+  // Only a path inside the app: a crafted ?next=https://… or //host would
+  // otherwise send someone off-site the moment they signed in.
+  const requestedNext = search.get("next");
+  const explicitNext =
+    requestedNext && /^\/(?![/\\])/.test(requestedNext) ? requestedNext : null;
   // Set when hydrate() signs out an inactive profile, so the bounce back here
   // carries an explanation instead of looking like a failed password.
   const signedOutReason = search.get("reason");

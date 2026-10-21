@@ -5,7 +5,7 @@
 
 ## Authentication
 
-The app uses **Supabase Auth** with email + password. Sessions are JWT cookies refreshed on every request by the root proxy (`proxy.ts`, the Next 16 name for middleware).
+The app uses **Supabase Auth** with email + password. Sessions are JWT cookies refreshed on every request by the proxy (`src/proxy.ts`, the Next 16 name for middleware).
 
 ### Files in the chain
 
@@ -14,7 +14,7 @@ The app uses **Supabase Auth** with email + password. Sessions are JWT cookies r
 | `src/app/(auth)/login/page.tsx` | Email + password form. Calls `supabase.auth.signInWithPassword()`. |
 | `src/app/(auth)/forgot-password/page.tsx` | Triggers `supabase.auth.resetPasswordForEmail()` |
 | `src/app/(auth)/reset-password/page.tsx` | Accepts the password-reset token from email and sets a new password |
-| `proxy.ts` (repo root) | Calls `updateSession()` on every request — refreshes the cookie, redirects unauthenticated traffic to `/login?next=<path>` |
+| `src/proxy.ts` | Calls `updateSession()` on every request — refreshes the cookie, redirects unauthenticated traffic to `/login?next=<path>`. It must stay in `src/`: Next ignores a root-level one in a `src/` app |
 | `src/lib/supabase/middleware.ts` | The `updateSession()` implementation — public-path allow-list + redirect logic |
 | `src/lib/supabase/client.ts` | Browser Supabase client (singleton, validates env vars at init) |
 | `src/lib/supabase/server.ts` | Server-side Supabase client (uses Next.js cookies for SSR) |
@@ -32,7 +32,7 @@ sequenceDiagram
   participant SA as Supabase Auth
   participant Ctx as auth-context
   participant DB as Supabase Postgres
-  participant MW as proxy.ts
+  participant MW as src/proxy.ts
   participant D as /dashboard
 
   U->>L: enter email + password

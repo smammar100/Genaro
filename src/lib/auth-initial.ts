@@ -56,15 +56,12 @@ export const getInitialAuth = cache(async (): Promise<{
     // Fast bail-out: if there's no Supabase auth cookie the user is definitely
     // not signed in — skip the Supabase round-trip entirely. This saves
     // ~300–400 ms on every unauthenticated page view (login, public routes).
+    // A long session is split into `sb-<ref>-auth-token.0`, `.1`…, which the
+    // old exact-name check missed, so those users lost the server prefetch.
     const cookieStore = await cookies();
     const hasAuthCookie = cookieStore
       .getAll()
-      .some(
-        (c) =>
-          c.name.startsWith("sb-") &&
-          c.name.endsWith("-auth-token") &&
-          c.value.length > 0,
-      );
+      .some((c) => /^sb-.+-auth-token(\.\d+)?$/.test(c.name) && c.value.length > 0);
     if (!hasAuthCookie) return { user: null, company: null };
 
     const supabase = await createClient();
