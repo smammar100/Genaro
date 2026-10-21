@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Capability } from "@/lib/capabilities";
-import { navItems, navGroupForHref, settingsNavItem, visibleNavGroups } from "./nav";
+import { navRows, navGroupForHref, settingsNavRow, visibleNavGroups } from "./nav";
 import { MVP_HIDDEN_HREFS, navTourId } from "./sidebar-config";
 
 const everything = () => true;
@@ -21,57 +21,68 @@ describe("visibleNavGroups", () => {
   });
 });
 
-describe("navItems", () => {
+describe("navRows", () => {
   const groups = visibleNavGroups(everything, true);
-  const find = (items: ReturnType<typeof navItems>, label: string) =>
-    items.find((i) => i.label === label)!;
+  const find = (rows: ReturnType<typeof navRows>, label: string) =>
+    rows.find((r) => r.label === label)!;
 
   it("opens the current route's group and selects exactly that page", () => {
-    const items = navItems(groups, { pathname: "/maintenance/calendar", tourGroup: null });
-    const maintenance = find(items, "Maintenance");
+    const rows = navRows(groups, { pathname: "/maintenance/calendar", tourGroup: null });
+    const maintenance = find(rows, "Maintenance");
     expect(maintenance.selected).toBe(true);
-    expect(maintenance.subNavigationItems?.filter((s) => s.selected).map((s) => s.url)).toEqual([
+    expect(maintenance.pages?.filter((p) => p.selected).map((p) => p.href)).toEqual([
       "/maintenance/calendar",
     ]);
-    expect(find(items, "Sales").selected).toBe(false);
-    expect(find(items, "Dashboard").selected).toBe(false);
+    expect(find(rows, "Sales").selected).toBe(false);
+    expect(find(rows, "Dashboard").selected).toBe(false);
   });
 
   it("opens the tour's group instead while the tour runs", () => {
-    const items = navItems(groups, { pathname: "/vehicles", tourGroup: "Sales" });
-    expect(find(items, "Sales").selected).toBe(true);
-    expect(find(items, "Inventory").selected).toBe(false);
+    const rows = navRows(groups, { pathname: "/vehicles", tourGroup: "Sales" });
+    expect(find(rows, "Sales").selected).toBe(true);
+    expect(find(rows, "Inventory").selected).toBe(false);
+  });
+
+  it("opens the section the user clicked, without changing the current page", () => {
+    const rows = navRows(groups, { pathname: "/dashboard", tourGroup: null, openGroup: "Sales" });
+    expect(find(rows, "Sales").selected).toBe(true);
+    expect(find(rows, "Sales").pages?.some((p) => p.selected)).toBe(false);
+  });
+
+  it("closes the route's section when the user closes it", () => {
+    const rows = navRows(groups, { pathname: "/maintenance/calendar", tourGroup: null, openGroup: null });
+    expect(rows.filter((r) => r.pages && r.selected)).toEqual([]);
   });
 
   it("anchors every page for the tour", () => {
-    const items = navItems(groups, { pathname: "/dashboard", tourGroup: null });
-    expect(find(items, "Dashboard").id).toBe(navTourId("/dashboard"));
-    const ids = find(items, "Warranties").subNavigationItems?.map((s) => s.id);
+    const rows = navRows(groups, { pathname: "/dashboard", tourGroup: null });
+    expect(find(rows, "Dashboard").id).toBe(navTourId("/dashboard"));
+    const ids = find(rows, "Warranties").pages?.map((p) => p.id);
     expect(ids).toContain("tour-nav-warranties-claims");
   });
 
   it("makes a single-page section the page's own link and anchor", () => {
-    const items = navItems(visibleNavGroups(only("sales:create_lead"), false), {
+    const rows = navRows(visibleNavGroups(only("sales:create_lead"), false), {
       pathname: "/sales/leads",
       tourGroup: null,
     });
-    const sales = find(items, "Sales");
-    expect(sales).toMatchObject({ url: "/sales/leads", id: navTourId("/sales/leads"), selected: true });
-    expect(sales.subNavigationItems).toBeUndefined();
+    const sales = find(rows, "Sales");
+    expect(sales).toMatchObject({ href: "/sales/leads", id: navTourId("/sales/leads"), selected: true });
+    expect(sales.pages).toBeUndefined();
   });
 
   it("puts counts on the pages that have them", () => {
-    const items = navItems(groups, {
+    const rows = navRows(groups, {
       pathname: "/warranties/claims",
       tourGroup: null,
       badges: { "/warranties/claims": "3" },
     });
-    const claims = find(items, "Warranties").subNavigationItems?.find((s) => s.url === "/warranties/claims");
+    const claims = find(rows, "Warranties").pages?.find((p) => p.href === "/warranties/claims");
     expect(claims?.badge).toBe("3");
   });
 });
 
-describe("navGroupForHref / settingsNavItem", () => {
+describe("navGroupForHref / settingsNavRow", () => {
   it("finds the group a route lives in", () => {
     expect(navGroupForHref("/admin/locations")).toBe("Inventory");
     expect(navGroupForHref("/dashboard")).toBeNull();
@@ -79,8 +90,8 @@ describe("navGroupForHref / settingsNavItem", () => {
   });
 
   it("selects Settings on its sub-routes", () => {
-    expect(settingsNavItem("/admin/settings").selected).toBe(true);
-    expect(settingsNavItem("/admin/settings/profile").selected).toBe(true);
-    expect(settingsNavItem("/admin/users-and-permissions").selected).toBe(false);
+    expect(settingsNavRow("/admin/settings").selected).toBe(true);
+    expect(settingsNavRow("/admin/settings/profile").selected).toBe(true);
+    expect(settingsNavRow("/admin/users-and-permissions").selected).toBe(false);
   });
 });

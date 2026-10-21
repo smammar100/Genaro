@@ -5,8 +5,13 @@ import { useAuth } from "@/contexts/auth-context";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
 import { Button, Card, SkeletonBodyText } from "@/components/polaris";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
 
-/** Active stock broken into four pipeline buckets, drawn in Polaris fill tokens. */
+/**
+ * Active stock broken into pipeline buckets, drawn in Polaris fill tokens.
+ * With photos off (Phase 1, see phase-one) there is no Photography stage; a
+ * car still in a photo status counts as in preparation.
+ */
 const BUCKETS: { label: string; token: string; statuses: VehicleStatus[] }[] = [
   {
     label: "Ready to sell",
@@ -16,18 +21,22 @@ const BUCKETS: { label: string; token: string; statuses: VehicleStatus[] }[] = [
   {
     label: "In preparation",
     token: "var(--bg-fill-caution)",
-    statuses: ["being_prepared"],
+    statuses: PHOTOS_ENABLED ? ["being_prepared"] : ["being_prepared", "photos_pending", "photos_ready"],
   },
   {
     label: "Awaiting inspection",
     token: "var(--bg-fill-info)",
     statuses: ["received", "inspection_pending"],
   },
-  {
-    label: "Photography",
-    token: "var(--bg-fill-tertiary-active)",
-    statuses: ["photos_pending", "photos_ready"],
-  },
+  ...(PHOTOS_ENABLED
+    ? [
+        {
+          label: "Photography",
+          token: "var(--bg-fill-tertiary-active)",
+          statuses: ["photos_pending", "photos_ready"] as VehicleStatus[],
+        },
+      ]
+    : []),
 ];
 
 /* --------------------------------------------------------------- widget */
@@ -71,8 +80,8 @@ export function DashboardStockOverview() {
         // put it there.
         <p className="body-md px-2 py-6 text-center text-(--text-secondary)">
           No cars are in the pipeline. Vehicles appear here from the moment they
-          are booked in, and move between stages as prep and photography
-          complete.
+          are booked in, and move between stages as{" "}
+          {PHOTOS_ENABLED ? "prep and photography complete" : "prep completes"}.
         </p>
       ) : (
         // Shopify-style: one horizontal stacked bar + a plain legend list.

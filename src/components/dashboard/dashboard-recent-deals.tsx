@@ -16,6 +16,7 @@ import {
   type BadgeTone,
 } from "@/components/polaris";
 import { VehicleImage } from "@/components/shared/vehicle-image";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { formatCurrency, titleCase } from "@/lib/utils";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";
 
@@ -136,7 +137,7 @@ export function DashboardRecentDeals() {
             const stage = STAGE[r.stage];
             return [
               <div className="flex min-w-0 items-center gap-2.5" key="vehicle">
-                {r.vehicle ? (
+                {!PHOTOS_ENABLED ? null : r.vehicle ? (
                   <VehicleImage
                     className="h-8 w-11 shrink-0 rounded-(--radius-100)"
                     variant="thumb"

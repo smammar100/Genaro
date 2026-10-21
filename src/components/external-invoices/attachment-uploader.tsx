@@ -46,8 +46,8 @@ function prettyBytes(n: number | null): string {
  * Allowed: JPG, PNG, PDF up to 10 MB. Uploads to the
  * `external-invoices` Supabase Storage bucket; stores the object path.
  *
- * Empty state (no vehicle picked yet) shows a disabled placeholder
- * because the storage path is keyed by vehicleId.
+ * With no vehicle picked yet an upload is refused with a prompt, because
+ * the storage path is keyed by vehicleId.
  */
 export function AttachmentUploader({
   companyId,

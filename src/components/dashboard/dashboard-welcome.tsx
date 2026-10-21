@@ -54,7 +54,7 @@ export function DashboardWelcome() {
   return (
     // Polaris empty-state anatomy: a centred card, heading-sm title, body-md
     // secondary copy, one primary action.
-    <Page>
+    <Page fullWidth>
       <div className="mx-auto flex w-full max-w-[784px] flex-col gap-4">
         <div className="flex items-center gap-2">
           {company?.logoMarkUrl ? (

@@ -71,7 +71,7 @@ export function DashboardUpcomingAppointments() {
         </div>
       ) : (
         // No dividers between rows: spacing separates them (rule 1).
-        <ul className="flex flex-1 list-none flex-col justify-between gap-1">
+        <ul className="flex list-none flex-col gap-1">
           {upcoming.map((a) => {
             const v = vehicles.find((x) => x.id === a.vehicleId);
             const { wd, dd } = chipParts(a.date);

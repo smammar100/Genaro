@@ -146,6 +146,13 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
   // `currentLocation / locationSince / outForTestDrive` after every
   // move or mark-returned without waiting on a parent re-render.
   const [vehicle, setVehicle] = useState<Vehicle>(vehicleProp);
+  // Re-sync when the parent passes a new vehicle. Adjusted during render
+  // rather than in an effect, so the stale vehicle never commits.
+  const [prevVehicleProp, setPrevVehicleProp] = useState(vehicleProp);
+  if (prevVehicleProp !== vehicleProp) {
+    setPrevVehicleProp(vehicleProp);
+    setVehicle(vehicleProp);
+  }
   const [movements, setMovements] = useState<LocationMovement[] | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -191,11 +198,6 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
       toast.error("Could not delete that movement.");
     }
   }
-
-  // Re-sync if the parent ever passes a new vehicle id.
-  useEffect(() => {
-    setVehicle(vehicleProp);
-  }, [vehicleProp]);
 
   // Stamped when the movements land, so "overdue" is judged against the
   // same instant as the data rather than a fresh clock read on every render.
@@ -481,8 +483,6 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
         )}
       </Card>
 
-
-      {/* Move dialog */}
       <MoveDialog
         open={moveOpen}
         onOpenChange={setMoveOpen}

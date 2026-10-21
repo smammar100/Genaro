@@ -207,14 +207,31 @@
   box-shadow:inset 0 0 0 var(--border-width-input) var(--input-border); box-sizing:border-box; }
 .p-select:hover { background:var(--input-bg-surface-hover); box-shadow:inset 0 0 0 var(--border-width-input) var(--input-border-hover); }
 .p-select:focus-within { outline:var(--border-width-050) solid var(--border-focus); outline-offset:var(--border-width-025); }
-.p-select__native { position:absolute; inset:0; width:100%; opacity:0; cursor:pointer; font:inherit; z-index:1; }
-.p-select__content { display:flex; align-items:center; gap:var(--space-100); min-height:32px; padding:var(--space-150) var(--space-200) var(--space-150) var(--space-300); box-sizing:border-box; }
-.p-select__value { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.p-select__inline-label { color:var(--text-secondary); }
-.p-select__content .p-icon { color:var(--icon-secondary); }
+.p-select--open, .p-select--open:hover { background:var(--input-bg-surface-active); box-shadow:inset 0 0 0 var(--border-width-025) var(--input-border-active); }
+.p-select-popover { display:block; }
+.p-select__trigger { display:flex; align-items:center; gap:var(--space-100); width:100%; min-height:32px; margin:0; padding:var(--space-150) var(--space-200) var(--space-150) var(--space-300);
+  border:0; border-radius:inherit; background:transparent; font:inherit; color:inherit; text-align:left; cursor:pointer; box-sizing:border-box; }
+.p-select__trigger:focus-visible { outline:0; }
+.p-select__value { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.p-select__value--placeholder { color:var(--text-secondary); }
+.p-select__inline-label { flex:none; color:var(--text-secondary); }
+.p-select__trigger .p-icon { flex:none; color:var(--icon-secondary); }
 .p-select--error, .p-select--error:hover { background:var(--bg-surface-critical); box-shadow:inset 0 0 0 var(--border-width-input) var(--border-critical-secondary); }
 .p-select--disabled, .p-select--disabled:hover { background:var(--bg-surface-disabled); box-shadow:none; color:var(--text-disabled); }
-.p-select--disabled .p-select__native { cursor:default; }
+.p-select--disabled .p-select__trigger { cursor:default; }
+.p-select__list .p-optionlist__item { user-select:none; }
+.p-select__option { display:flex; align-items:center; gap:var(--space-200); min-width:0; }
+.p-select__media { display:inline-flex; flex:none; align-items:center; }
+.p-select__trigger .p-select__media { margin-right:var(--space-100); }
+.p-optionlist__item--active { background:var(--bg-surface-secondary-hover); }
+.p-optionlist__item--selected.p-optionlist__item--active { background:var(--bg-surface-secondary-active); }
+.p-optionlist__item--disabled, .p-optionlist__item--disabled:hover { color:var(--text-disabled); background:transparent; cursor:default; }
+@media (pointer: coarse) { .p-optionlist__item, .p-select__trigger { min-height:44px; } }
+/* Search fields: no browser-drawn clear button (Polaris TextField has clearButton). */
+input[type=search]::-webkit-search-cancel-button, input[type=search]::-webkit-search-decoration { -webkit-appearance:none; appearance:none; }
+/* Number fields use the Polaris stepper (or none), never the browser's spin buttons. */
+input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
 
 /* Checkbox + RadioButton */
 .p-choice { display:flex; flex-direction:column; font-family:var(--font-sans); font-size:13px; line-height:20px; font-weight:500; color:var(--text); }

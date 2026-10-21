@@ -22,6 +22,8 @@ export interface ModalProps {
 }
 
 const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+/** Popovers that own Escape while open: Polaris's, and base-ui lists and menus. */
+const OPEN_POPUPS = '.p-popover__panel, [data-open][data-slot="select-popup"], [data-open][data-slot="menu-popup"], [data-open][data-slot="combobox-popup"], [data-open][data-slot="popover-popup"]';
 
 /**
  * Dialog for focused tasks and confirmations (radius-500, shadow-600). Portals to <body>, moves focus into the
@@ -44,7 +46,9 @@ export function Modal({ open, onClose, title, children, primaryAction, secondary
     node?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        closeRef.current?.();
+        // A popover open inside the modal (a Select list, a calendar, a menu)
+        // takes this Escape; the modal closes on the next one.
+        if (!document.querySelector(OPEN_POPUPS)) closeRef.current?.();
         return;
       }
       if (e.key !== 'Tab' || !node) return;

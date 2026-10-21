@@ -24,11 +24,9 @@ import { vehicleDetailHref } from "@/lib/vehicle-nav";
 /**
  * Icon, category label and tint for one activity row.
  *
- * The tint used to vary by category — green for warranty, amber for workshop,
- * blue for sales. Genaro's rule 4 reserves red, amber and green for status, and
- * a category is not a status: a workshop entry is not a warning. The category
- * is carried by the icon and the tag text, which say it unambiguously, so the
- * tint is now one neutral brand tone throughout.
+ * The tint is neutral for every category. Genaro's rule 4 reserves red, amber
+ * and green for status, and a category is not a status: a workshop entry is not
+ * a warning. The icon and the tag text carry the category unambiguously.
  */
 function categorize(type: ActivityActionType): {
   Icon: LucideIcon;

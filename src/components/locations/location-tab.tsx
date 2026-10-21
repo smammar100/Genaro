@@ -124,9 +124,16 @@ export function LocationTab({
     [users],
   );
 
+  // Back to the skeleton whenever the rows are re-read.
+  const loadKey = `${companyId}:${location}:${refreshToken}`;
+  const [prevLoadKey, setPrevLoadKey] = useState(loadKey);
+  if (loadKey !== prevLoadKey) {
+    setPrevLoadKey(loadKey);
+    setRows(null);
+  }
+
   useEffect(() => {
     let cancelled = false;
-    setRows(null);
     locationService
       .getByLocation(companyId, location)
       .then((data) => {
@@ -230,7 +237,6 @@ export function LocationTab({
 
   return (
     <>
-      {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-full sm:w-64">
           <TextField

@@ -42,10 +42,9 @@ interface Props {
 /**
  * Payments received against one invoice, with the running balance (GEN-73).
  *
- * The invoice only ever held a single deposit figure, so a second payment had
- * nowhere to go and the balance stayed at the full amount. Every payment is
- * now its own line; the deposit and finance terms still show, netted off
- * alongside them.
+ * The invoice row holds a single deposit figure, so every further payment is
+ * its own receipt line; the deposit and finance terms show alongside them,
+ * netted off the balance.
  */
 export function InvoicePaymentsPanel({ invoice, onChanged }: Props) {
   const { user } = useAuth();

@@ -38,7 +38,11 @@ export function EnquiryTypeDropdown({
   id,
 }: EnquiryTypeDropdownProps) {
   return (
-    <Select value={value} onValueChange={(v) => onChange(v as EnquiryType)}>
+    <Select
+      value={value}
+      onValueChange={(v) => onChange(v as EnquiryType)}
+      items={[...ENQUIRY_TYPES_ACTIVE, ...ENQUIRY_TYPES_LOST]}
+    >
       <SelectTrigger
         id={id}
         aria-invalid={invalid}

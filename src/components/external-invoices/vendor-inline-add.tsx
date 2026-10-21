@@ -101,7 +101,6 @@ export function VendorInlineAdd({
       });
       toast.success(`Added ${v.name}`);
       onCreated(v);
-      // Reset + close
       setName("");
       setPhone("");
       setSpeciality("general");

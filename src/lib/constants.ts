@@ -6,6 +6,7 @@ import type {
   FuelType,
   FinanceProvider,
 } from "./types";
+import { PHOTOS_ENABLED } from "./phase-one";
 
 export const VEHICLE_STATUSES: {
   value: VehicleStatus;
@@ -23,6 +24,17 @@ export const VEHICLE_STATUSES: {
   { value: "sold", label: "Sold", color: "gray" },
   { value: "returned", label: "Returned", color: "red" },
 ];
+
+const PHOTO_STATUSES: readonly VehicleStatus[] = ["photos_pending", "photos_ready"];
+
+/**
+ * The statuses a user can set or filter by. VEHICLE_STATUSES stays complete
+ * so a car already in a photo status still shows its label; with photos off
+ * (Phase 1, see phase-one) the photo steps are not offered.
+ */
+export const VEHICLE_STATUS_CHOICES = VEHICLE_STATUSES.filter(
+  (s) => PHOTOS_ENABLED || !PHOTO_STATUSES.includes(s.value),
+);
 
 export const MAINTENANCE_STATUSES: {
   value: MaintenanceStatus;

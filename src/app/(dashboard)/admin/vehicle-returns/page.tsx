@@ -66,6 +66,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { VehicleImage } from "@/components/shared/vehicle-image";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { toast } from "@/lib/toast";
 
 interface ReturnRow extends VehicleReturn {
@@ -328,9 +329,10 @@ export default function ReturnsPage() {
 
   const rows = useMemo<ReturnRow[] | null>(() => {
     if (!returns) return null;
+    const vehicleById = new Map(vehicles.map((v) => [v.id, v]));
     return returns.map((r) => ({
       ...r,
-      vehicle: vehicles.find((v) => v.id === r.vehicleId) ?? null,
+      vehicle: vehicleById.get(r.vehicleId) ?? null,
     }));
   }, [returns, vehicles]);
 
@@ -385,8 +387,12 @@ export default function ReturnsPage() {
       },
       user.id,
     );
-    setReturns(await returnService.getAll(company.id));
-    setVehicles(await vehicleService.getAll(company.id));
+    const [nextReturns, nextVehicles] = await Promise.all([
+      returnService.getAll(company.id),
+      vehicleService.getAll(company.id),
+    ]);
+    setReturns(nextReturns);
+    setVehicles(nextVehicles);
     toast.success("Return processed, vehicle status flipped to returned");
     setOpen(false);
     resetDialog();
@@ -488,8 +494,12 @@ export default function ReturnsPage() {
         );
       }
 
-      setReturns(await returnService.getAll(company.id));
-      setVehicles(await vehicleService.getAll(company.id));
+      const [nextReturns, nextVehicles] = await Promise.all([
+        returnService.getAll(company.id),
+        vehicleService.getAll(company.id),
+      ]);
+      setReturns(nextReturns);
+      setVehicles(nextVehicles);
       setResolving(null);
 
       if (createdRefund) {
@@ -880,7 +890,7 @@ export default function ReturnsPage() {
                 <div className="flex flex-col gap-5 p-6">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      {selected.vehicle ? (
+                      {!PHOTOS_ENABLED ? null : selected.vehicle ? (
                         <VehicleImage
                           vehicle={selected.vehicle}
                           variant="thumb"

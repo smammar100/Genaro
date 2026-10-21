@@ -7,6 +7,7 @@ import { Card, Layout, SkeletonBodyText, Tabs } from "@/components/polaris";
 import { todoService } from "@/lib/services/todo-service";
 import { enquiryService } from "@/lib/services/enquiry-service";
 import { vehiclePhotoService } from "@/lib/services/vehicle-photo-service";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { OverviewTab } from "./overview-tab";
 
 // Only the active panel is mounted, and Overview is what the page opens on, so
@@ -72,7 +73,7 @@ interface VehicleDetailShellProps {
 }
 
 /** The detail tabs, in order. Ids are the values the page and panels use. */
-const TAB_IDS = [
+const ALL_TAB_IDS = [
   "overview",
   "details",
   "location",
@@ -84,6 +85,9 @@ const TAB_IDS = [
   "appointments",
   "activity",
 ] as const;
+
+/** The tabs on show: Photos only while photos are enabled (see phase-one). */
+const TAB_IDS = ALL_TAB_IDS.filter((id) => PHOTOS_ENABLED || id !== "photos");
 
 /**
  * Vehicle-detail shell — Polaris Tabs (pill tabs with count badges) on their
@@ -109,7 +113,9 @@ export function VehicleDetailShell({
   const [photoCount, setPhotoCount] = useState<number | null>(null);
   // Uncontrolled fallback when the page doesn't drive the active tab.
   const [internalTab, setInternalTab] = useState("overview");
-  const activeTab = value ?? internalTab;
+  const requestedTab = value ?? internalTab;
+  // A tab that is not on show (Photos, in Phase 1) opens Overview instead.
+  const activeTab = (TAB_IDS as readonly string[]).includes(requestedTab) ? requestedTab : "overview";
   const setActiveTab = onValueChange ?? setInternalTab;
 
   useEffect(() => {
@@ -129,6 +135,7 @@ export function VehicleDetailShell({
      * 50+ against zero or one real photo (GEN-106). The Advert page already
      * papers over this with `Math.max(vehicle.imagesCount, photos.count)`.
      */
+    if (!PHOTOS_ENABLED) return;
     void vehiclePhotoService
       .list(vehicle.id)
       .then((rows) => setPhotoCount(rows.length))
@@ -137,7 +144,7 @@ export function VehicleDetailShell({
 
   const count = (n: number | null) => (n != null && n > 0 ? n : undefined);
   const selected = Math.max(0, TAB_IDS.indexOf(activeTab as (typeof TAB_IDS)[number]));
-  const tabs = [
+  const allTabs = [
     { id: "overview", content: "Overview" },
     { id: "details", content: "Details" },
     { id: "location", content: "Location" },
@@ -153,6 +160,8 @@ export function VehicleDetailShell({
     },
     { id: "activity", content: "Activity" },
   ];
+  // In step with TAB_IDS: Tabs selects by index.
+  const tabs = allTabs.filter((t) => (TAB_IDS as readonly string[]).includes(t.id));
 
   return (
     <>
@@ -211,7 +220,7 @@ export function VehicleDetailShell({
               />
             )}
             {activeTab === "inspection" && <InspectionTab vehicle={vehicle} />}
-            {activeTab === "photos" && (
+            {PHOTOS_ENABLED && activeTab === "photos" && (
               <PhotosTab vehicle={vehicle} onVehicleRefetch={onVehicleRefetch} />
             )}
             {activeTab === "listing" && <ListingTab vehicle={vehicle} />}

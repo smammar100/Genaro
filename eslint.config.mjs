@@ -41,6 +41,18 @@ const eslintConfig = defineConfig([
     files: ["scripts/**"],
     rules: { "no-console": "off" },
   },
+  {
+    // Fluid Functionalism's sidebar, vendored as published
+    // (github.com/mickadesign/fluid-functionalism). Its patterns predate the
+    // React Compiler rules; keep it close to upstream rather than rewrite it.
+    files: ["src/components/fluid/**"],
+    rules: {
+      "react-hooks/refs": "off",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/static-components": "off",
+      "react-hooks/immutability": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

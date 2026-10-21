@@ -14,20 +14,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { ColumnDef } from "./types";
 
 /**
- * Column-visibility toggle, extracted from the Master Sheet so every
- * list page can let users hide columns they don't care about.
- *
- * Consumer manages a `Set<string>` of hidden column keys. We don't
- * persist — that's a follow-up (saved views per user). For now the
- * toggle resets on page reload, which is fine for the day-to-day "show
- * me only the columns I'm working with right now" use case.
- *
- * Always-visible columns (e.g. the vehicle thumbnail column, the
- * checkbox column when bulk-select is on) can be marked via the
- * optional `lockedKeys` prop; they appear in the popover with a
- * disabled checkbox.
- */
-/**
  * Column-visibility state hook. Owns the hidden-key set and derives the
  * visible column list so a page wires show/hide in two lines:
  *
@@ -51,6 +37,19 @@ export function useColumnVisibility<T>(
   return { hiddenKeys, setHiddenKeys, visibleCols };
 }
 
+/**
+ * Column-visibility toggle, so every list page can let users hide columns
+ * they don't care about.
+ *
+ * Consumer manages a `Set<string>` of hidden column keys. Not persisted:
+ * the toggle resets on page reload, which is fine for the day-to-day "show
+ * me only the columns I'm working with right now" use case.
+ *
+ * Always-visible columns (e.g. the vehicle thumbnail column, the
+ * checkbox column when bulk-select is on) can be marked via the
+ * optional `lockedKeys` prop; they appear in the popover with a
+ * disabled checkbox.
+ */
 export function DataGridColumnsButton<T>({
   columns,
   hiddenKeys,

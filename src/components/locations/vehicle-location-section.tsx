@@ -27,6 +27,11 @@ export function VehicleLocationSection({ vehicle: vehicleProp }: Props) {
   // after each move / mark-returned so the card stays in sync without
   // waiting on a parent re-render.
   const [vehicle, setVehicle] = useState<Vehicle>(vehicleProp);
+  const [prevVehicleProp, setPrevVehicleProp] = useState(vehicleProp);
+  if (vehicleProp !== prevVehicleProp) {
+    setPrevVehicleProp(vehicleProp);
+    setVehicle(vehicleProp);
+  }
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [recent, setRecent] = useState<LocationMovement[] | undefined>(
@@ -35,10 +40,6 @@ export function VehicleLocationSection({ vehicle: vehicleProp }: Props) {
   const [moveOpen, setMoveOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
-
-  useEffect(() => {
-    setVehicle(vehicleProp);
-  }, [vehicleProp]);
 
   useEffect(() => {
     if (!company?.id) return;

@@ -179,7 +179,7 @@ export default function VehicleDetailPage({
 
   if (vehicle === undefined) {
     return (
-      <Page>
+      <Page fullWidth>
         <SkeletonDisplayText size="small" />
         <Card>
           <div className="flex gap-4">
@@ -206,7 +206,7 @@ export default function VehicleDetailPage({
   }
   if (vehicle === null) {
     return (
-      <Page>
+      <Page fullWidth>
         <EmptyState
           icon="ProductsMinor"
           heading="Vehicle not found"
@@ -224,6 +224,7 @@ export default function VehicleDetailPage({
 
   return (
     <Page
+      fullWidth
       title={vehicleTitle(vehicle)}
       backAction={{ content: `Back to ${back.label}`, url: back.href }}
       titleMetadata={

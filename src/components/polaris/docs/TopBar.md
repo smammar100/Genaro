@@ -83,6 +83,7 @@ const [dirty, setDirty] = React.useState(false);
 | `unreadNotifications` | `boolean` | — | Red dot on the notifications button. |
 | `onNotificationsClick` | `() => void` | — | Called by the notifications button. |
 | `onUserMenuClick` | `() => void` | — | Called by the store name and avatar button. Open your account menu here. |
+| `actions` | `ReactNode` | — | Extra icon buttons before notifications, each a `<button className="p-topbar__iconbtn">` with an `aria-label` — e.g. a theme switch. |
 | `contextualSaveBar` | `ContextualSaveBarProps` | — | Replaces the search with the unsaved-changes bar. Frame's own prop overrides it. |
 | `className` | `string` | — | Extra classes on the root. |
 

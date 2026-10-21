@@ -1,6 +1,7 @@
 import type { Listing, Vehicle } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { hasReadableVariant, variantLabel } from "@/lib/vehicle-variant";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
 
 /**
  * Advert-readiness checklist shared by the Overview "Advert Completeness" card
@@ -48,15 +49,20 @@ export function computeAdvertChecks(
       )}`,
       state: hasReadableVariant(vehicle) ? "done" : "warn",
     },
-    {
-      key: "photos",
-      name: "Photos",
-      meta:
-        photoCount > 0
-          ? `${photoCount} image${photoCount === 1 ? "" : "s"}`
-          : "No photos uploaded",
-      state: photoCount >= 8 ? "done" : photoCount > 0 ? "warn" : "miss",
-    },
+    // Not a check while photos are off (Phase 1): nothing could clear it.
+    ...(PHOTOS_ENABLED
+      ? [
+          {
+            key: "photos",
+            name: "Photos",
+            meta:
+              photoCount > 0
+                ? `${photoCount} image${photoCount === 1 ? "" : "s"}`
+                : "No photos uploaded",
+            state: (photoCount >= 8 ? "done" : photoCount > 0 ? "warn" : "miss") as AdvertCheckState,
+          },
+        ]
+      : []),
     {
       key: "description",
       name: "Vehicle Description",

@@ -70,10 +70,10 @@ function penceToPounds(p: number | null | undefined): string {
  * Spec v3.0 · Module D.3 / 4 — external invoice form (covers both
  * auction-purchase and external-job kinds).
  *
- * Vendor + Vehicle pickers are searchable selects. Total + VAT are
- * currency inputs in pounds; Pre-VAT computes live (read-only). Cannot
- * submit if VAT > Total. Attachment slot uploads to Supabase Storage
- * via `externalInvoiceService.uploadAttachment` and stores the path.
+ * The vehicle picker is searchable. Total + VAT are currency inputs in
+ * pounds; Pre-VAT computes live (read-only). Cannot submit if VAT > Total.
+ * Attachment slot uploads to Supabase Storage via
+ * `externalInvoiceService.uploadAttachment` and stores the path.
  */
 export function ExternalInvoiceForm({
   open,
@@ -129,7 +129,6 @@ export function ExternalInvoiceForm({
   const persistedBaselineRef = useRef<string | null>(null);
   const draftPathsRef = useRef<Set<string>>(new Set());
 
-  // Load lookups once when the dialog opens.
   useEffect(() => {
     if (!open || !company?.id) return;
     let cancelled = false;
@@ -146,9 +145,9 @@ export function ExternalInvoiceForm({
     };
   }, [open, company?.id]);
 
-  // Populate form from `editing` when re-opening for an existing row.
-  // setState-in-effect is the documented React pattern for "sync to external
-  // prop on open" — the rule is silenced for this block intentionally.
+  // Populate form from `editing` (or reset it) each time the dialog opens.
+  // It stays an effect because it also resets the draft-path refs, which
+  // can't be written during render.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!open) return;
@@ -343,7 +342,6 @@ export function ExternalInvoiceForm({
             }}
           />
 
-          {/* Vendor + inline add */}
           <div className="flex items-end gap-2">
             <div className="min-w-0 flex-1">
               <Select
@@ -423,7 +421,6 @@ export function ExternalInvoiceForm({
             )}
           </Labelled>
 
-          {/* Invoice number + date */}
           <div className="grid gap-3 sm:grid-cols-2">
             <TextField
               id={invoiceNumberFieldId}
@@ -446,7 +443,6 @@ export function ExternalInvoiceForm({
             </Labelled>
           </div>
 
-          {/* Money trio */}
           <div className="grid gap-3 sm:grid-cols-3">
             <TextField
               id={totalFieldId}
@@ -495,7 +491,6 @@ export function ExternalInvoiceForm({
             onChange={setNotes}
           />
 
-          {/* Attachment */}
           <div className="grid gap-1">
             <p className="text-sm font-medium text-(--text)">
               Attachment (optional)

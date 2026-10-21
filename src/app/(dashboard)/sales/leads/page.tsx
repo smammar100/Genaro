@@ -62,6 +62,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { VehicleImage } from "@/components/shared/vehicle-image";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { VehiclePicker } from "@/components/shared/vehicle-picker";
 import {
   LEAD_STATUS_LABEL,
@@ -70,7 +71,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 
-// Pipeline order for the list + group separators.
+// Pipeline order: sorts the lead list and orders the status filter.
 const STATUS_ORDER: LeadStatus[] = [
   "new",
   "contacted",
@@ -196,10 +197,10 @@ export default function LeadsPage() {
   const [sourceFilter, setSourceFilter] = useState<LeadSource | "all">("all");
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
-  // Master-detail selection (replaces the old drill modal).
+  // Master-detail selection.
   const [selectedId, setSelectedId] = useState<UUID | null>(null);
   const [creatingDeal, setCreatingDeal] = useState(false);
-  // Stable "now" captured at load — keeps the age memo pure.
+  // Stable "now" captured at load, so rendering lead ages stays pure.
   const [nowTs, setNowTs] = useState<number | null>(null);
 
   // The role-based "New Lead" CTA navigates here with ?new=1 — auto-open the
@@ -341,6 +342,7 @@ export default function LeadsPage() {
   // Filter (status + source + search) then order by pipeline status + recency.
   const filtered = useMemo<LeadRow[] | null>(() => {
     if (!leads) return null;
+    const userName = new Map(users.map((u) => [u.id, u.name]));
     const q = search.trim().toLowerCase();
     let out = leads.filter((l) => {
       if (statusFilter !== "all" && l.status !== statusFilter) return false;
@@ -360,21 +362,21 @@ export default function LeadsPage() {
     });
     return out.map((l) => ({
       ...l,
-      assigneeName: users.find((u) => u.id === l.assignedTo)?.name ?? "—",
+      assigneeName: userName.get(l.assignedTo) ?? "—",
     }));
   }, [leads, statusFilter, sourceFilter, search, users]);
 
-  // Keep selection valid as filters/data change.
-  useEffect(() => {
-    if (!filtered) return;
-    if (filtered.length === 0) {
-      if (selectedId !== null) setSelectedId(null);
-      return;
-    }
-    if (!selectedId || !filtered.some((l) => l.id === selectedId)) {
-      setSelectedId(filtered[0].id);
-    }
-  }, [filtered, selectedId]);
+  // Keep selection valid as filters/data change. Adjusted while rendering, so
+  // a stale selection never commits (no effect round trip).
+  if (filtered) {
+    const validId =
+      filtered.length === 0
+        ? null
+        : selectedId && filtered.some((l) => l.id === selectedId)
+          ? selectedId
+          : filtered[0].id;
+    if (validId !== selectedId) setSelectedId(validId);
+  }
 
   const selected = useMemo<LeadRow | null>(
     () => filtered?.find((l) => l.id === selectedId) ?? null,
@@ -386,12 +388,10 @@ export default function LeadsPage() {
     [channels],
   );
 
-  // Vehicles that can still be advertised — the pickable set for the status
-  // dialog. `items` lets the Select render the friendly label for a *preset*
-  // value (base-ui can't resolve it from an unopened list otherwise).
-  // A buyer can enquire about a car long before it has finished inspection —
-  // blocking the lead just loses the enquiry (GEN-72). Everything still in the
-  // business is offerable; only cars that have left it are not.
+  // The pickable set for both dialogs. A buyer can enquire about a car long
+  // before it has finished inspection — blocking the lead just loses the
+  // enquiry (GEN-72). Everything still in the business is offerable; only
+  // cars that have left it are not.
   const eligibleVehicles = useMemo(
     () =>
       vehicles.filter(
@@ -411,19 +411,9 @@ export default function LeadsPage() {
   async function onCreate(values: CreateOutput) {
     if (!user || !company) return;
     const channel = channels.find((c) => c.id === values.leadChannelId);
-    const LEGACY_SOURCES: readonly LeadSource[] = [
-      "website",
-      "phone",
-      "walk_in",
-      "autotrader",
-      "ebay",
-      "facebook",
-      "referral",
-      "other",
-    ];
     const slugAsSource = channel?.slug as LeadSource | undefined;
     const source: LeadSource =
-      slugAsSource && LEGACY_SOURCES.includes(slugAsSource)
+      slugAsSource && SOURCES.includes(slugAsSource)
         ? slugAsSource
         : "other";
 
@@ -499,7 +489,6 @@ export default function LeadsPage() {
       }
       setStBusy(true);
       try {
-        // Link the vehicle to the lead first if it wasn't already.
         if (!selected.vehicleId) {
           await leadService.update(selected.id, { vehicleId });
         }
@@ -756,11 +745,13 @@ export default function LeadsPage() {
                 placeholder="Search name, phone or vehicle…"
               />
               <div className="grid grid-cols-2 gap-2">
+                {/* Label inside the control ("Status All"), the sales-crm
+                    filter shape: the bar reads as what it filters by. */}
                 <PolarisSelect
                   label="Status"
-                  labelHidden
+                  labelInline
                   options={[
-                    { label: "All statuses", value: "all" },
+                    { label: "All", value: "all" },
                     ...STATUS_ORDER.map((st) => ({
                       label: LEAD_STATUS_LABEL[st],
                       value: st,
@@ -771,9 +762,9 @@ export default function LeadsPage() {
                 />
                 <PolarisSelect
                   label="Source"
-                  labelHidden
+                  labelInline
                   options={[
-                    { label: "All sources", value: "all" },
+                    { label: "All", value: "all" },
                     ...SOURCES.map((src) => ({
                       label: sourceLabel(src),
                       value: src,
@@ -790,10 +781,16 @@ export default function LeadsPage() {
                 Adjust your filters, or capture a new enquiry.
               </EmptyState>
             ) : (
+              <>
+              <p className="body-sm px-1 text-(--text-secondary)" aria-live="polite">
+                <span className="body-sm-semibold tabular-nums text-(--text)">{filtered.length}</span>
+                {filtered.length === 1 ? " lead in view" : " leads in view"}
+              </p>
+              {/* Padded so the rows' halo and the selected ring aren't clipped by the scroll. */}
               <div
                 role="listbox"
                 aria-label="Leads"
-                className="flex max-h-[calc(100dvh-15rem)] flex-col gap-1.5 overflow-y-auto pr-1"
+                className="-m-1 flex max-h-[calc(100dvh-16rem)] flex-col gap-2 overflow-y-auto p-1"
               >
                 {filtered.map((l) => {
                   const isActive = l.id === selectedId;
@@ -802,7 +799,9 @@ export default function LeadsPage() {
                     : null;
                   return (
                     // A rich, selectable list row (avatar, two lines, channel
-                    // chip) — more than a Polaris Button can hold.
+                    // chip) — more than a Polaris Button can hold. It sits on
+                    // the Kanban card surface; the selected one is lifted with
+                    // the focus-tinted ring rather than greyed.
                     <button
                       key={l.id}
                       type="button"
@@ -810,10 +809,10 @@ export default function LeadsPage() {
                       aria-selected={isActive}
                       onClick={() => setSelectedId(l.id)}
                       className={cn(
-                        "flex w-full shrink-0 items-center gap-2.5 rounded-(--radius-300) p-2.5 text-left shadow-(--shadow-100) transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--border-focus)",
+                        "flex w-full shrink-0 items-center gap-3 rounded-(--radius-300) bg-(--bg-surface) p-3 text-left transition-shadow duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--border-focus)",
                         isActive
-                          ? "bg-(--bg-surface-selected)"
-                          : "bg-(--bg-surface) hover:bg-(--bg-surface-hover)",
+                          ? "shadow-(--kanban-card-shadow-lift)"
+                          : "shadow-(--kanban-card-shadow) hover:shadow-(--kanban-card-shadow-hover)",
                       )}
                     >
                       <Avatar name={l.customerName} size="md" />
@@ -850,6 +849,7 @@ export default function LeadsPage() {
                   );
                 })}
               </div>
+              </>
             )}
           </div>
 
@@ -862,7 +862,6 @@ export default function LeadsPage() {
             ) : (
               <Card>
                 <div className="flex flex-col gap-4">
-                  {/* Header */}
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <Avatar name={selected.customerName} size="xl" />
@@ -886,7 +885,7 @@ export default function LeadsPage() {
                     <LeadStatusBadge status={selected.status} />
                   </div>
 
-                  {selectedVehicle ? (
+                  {selectedVehicle && PHOTOS_ENABLED ? (
                     <VehicleImage
                       vehicle={selectedVehicle}
                       variant="card"
@@ -922,22 +921,16 @@ export default function LeadsPage() {
                             : "Inspection not started"
                         }
                       >
-                        <details>
-                          <summary className="cursor-pointer">
-                            {p.outstanding.length} outstanding
-                          </summary>
-                          <ul className="mt-2 grid list-disc gap-0.5 pl-5 sm:grid-cols-2">
-                            {p.outstanding.map((item) => (
-                              <li key={item}>{item}</li>
-                            ))}
-                          </ul>
-                        </details>
+                        <OutstandingChecks items={p.outstanding} />
                       </Banner>
                     );
                   })()}
 
-                  {/* Fields */}
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  {/* Flat, divided sections with a quiet heading (sales-crm's
+                      detail panel) rather than a grid of grey tiles. */}
+                  <section className="flex flex-col gap-4 border-t border-(--border-secondary) pt-4">
+                  <h3 className="body-sm text-(--text-secondary)">Lead details</h3>
+                  <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
                     <Field icon={Car} label="Vehicle of interest">
                       {selected.vehicleInterest}
                     </Field>
@@ -968,8 +961,8 @@ export default function LeadsPage() {
                       </Field>
                     </div>
                   </div>
+                  </section>
 
-                  {/* Actions */}
                   <div className="flex flex-col gap-3 border-t border-(--border-secondary) pt-4">
                     <div className="flex flex-wrap items-center gap-2">
                       {/* Conversion action — turns the lead into a pipeline
@@ -1026,7 +1019,6 @@ export default function LeadsPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogPanel className="grid gap-4">
-            {/* Target status picker */}
             <ChoiceList
               title="New status"
               titleHidden
@@ -1154,12 +1146,38 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-(--radius-200) bg-(--bg-surface-secondary) p-3">
-      <div className="body-sm mb-1 inline-flex items-center gap-1.5 text-(--text-secondary)">
-        <Icon className="size-3.5" />
+    <div className="flex min-w-0 flex-col gap-1">
+      <div className="body-sm inline-flex items-center gap-1.5 text-(--text-secondary)">
+        <Icon className="size-3.5 text-(--icon-secondary)" />
         {label}
       </div>
-      <div className="body-md">{children}</div>
+      <div className="body-md-semibold [overflow-wrap:anywhere]">{children}</div>
+    </div>
+  );
+}
+
+/** The checks still to sign off, behind a Polaris disclosure button. */
+function OutstandingChecks({ items }: { items: string[] }) {
+  const [open, setOpen] = useState(false);
+  const listId = useId();
+  return (
+    <div>
+      <Button
+        variant="plain"
+        disclosure={open ? "up" : "down"}
+        ariaExpanded={open}
+        ariaControls={listId}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {`${items.length} outstanding`}
+      </Button>
+      {open ? (
+        <ul id={listId} className="mt-2 grid list-disc gap-0.5 pl-5 sm:grid-cols-2">
+          {items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }

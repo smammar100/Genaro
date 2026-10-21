@@ -121,22 +121,23 @@ function AreaChart({ data, h = 180 }: { data: number[]; h?: number }) {
 
 export default function PerformancePage() {
   const { company } = useAuth();
+  const companyId = company?.id;
   const [listings, setListings] = useState<Listing[] | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [stats, setStats] = useState<PerformanceStats | null>(null);
 
   useEffect(() => {
-    if (!company) return;
+    if (!companyId) return;
     void Promise.all([
-      listingService.getAll(company.id),
-      vehicleService.getAll(company.id),
-      performanceService.getStats(company.id),
+      listingService.getAll(companyId),
+      vehicleService.getAll(companyId),
+      performanceService.getStats(companyId),
     ]).then(([l, v, s]) => {
       setListings(l);
       setVehicles(v);
       setStats(s);
     });
-  }, [company]);
+  }, [companyId]);
 
   // Live adverts, each annotated with its vehicle + live enquiry count (leads).
   const live = useMemo<LiveRow[] | null>(() => {

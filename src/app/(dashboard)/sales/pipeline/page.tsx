@@ -1,9 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { TrendingUp, Clock, Check, Car } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  Banknote,
+  CalendarDays,
+  CircleCheck,
+  CircleX,
+  Clock,
+  Ellipsis,
+  Phone,
+  TrendingUp,
+  TriangleAlert,
+} from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { salesService } from "@/lib/services/sales-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
@@ -13,52 +22,60 @@ import type {
   PipelineStage,
   SalesDeal,
   SalesStage,
+  StageBehaviour,
   User,
   Vehicle,
 } from "@/lib/types";
 import {
   Avatar,
-  Badge,
   Button,
-  Card,
   EmptyState,
   Link as PolarisLink,
   Page,
   Select,
-  SkeletonBodyText,
+  type SelectOption,
 } from "@/components/polaris";
-import { RegPlate } from "@/components/shared/reg-plate";
 import { VehicleImage } from "@/components/shared/vehicle-image";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { DealDetailSheet } from "@/components/sales/deal-detail-sheet";
-import { cn, formatCurrency, formatRelativeTime } from "@/lib/utils";
+import { RowActionButton } from "@/components/ui/resource-list";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { KanbanBoard, KanbanSkeleton } from "@/components/kanban/kanban-board";
+import {
+  KanbanCard,
+  KanbanPlate,
+  type KanbanFact,
+} from "@/components/kanban/kanban-card";
+import {
+  dayDate,
+  daysUntil,
+  shortDate,
+} from "@/components/kanban/card-dates";
+import type { KanbanColumn, KanbanTone } from "@/components/kanban/stage-icon";
+import { formatCurrency, formatRelativeTime } from "@/lib/utils";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import { toast } from "@/lib/toast";
-import { DragHandle } from "@/components/shared/drag-handle";
 
-// Per-stage accent dot (no coloured column top-bars). Semantic icon tokens,
-// so the dots follow the theme. The shipped stages keep a fixed colour; user-
-// added stages cycle through the rest by position, so a new column never
-// renders unstyled (GEN-65).
-const STAGE_DOT: Record<string, string> = {
-  new_lead: "bg-(--icon-secondary)",
-  contacted: "bg-(--icon-info)",
-  test_drive: "bg-(--icon-magic)",
-  offer_made: "bg-(--icon-caution)",
-  deposit_taken: "bg-(--icon-warning)",
-  collection_delivery: "bg-(--icon-emphasis)",
-  completed_sale: "bg-(--icon-success)",
-  lost: "bg-(--icon-critical)",
+// Per-stage tone for the column's status glyph (no coloured column top-bars).
+// The shipped stages keep a fixed tone; user-added stages cycle through the
+// rest by position, so a new column never renders unstyled (GEN-65).
+const STAGE_TONE: Record<string, KanbanTone> = {
+  new_lead: "neutral",
+  contacted: "info",
+  test_drive: "magic",
+  offer_made: "caution",
+  deposit_taken: "warning",
+  collection_delivery: "emphasis",
+  completed_sale: "success",
+  lost: "critical",
 };
 
-const FALLBACK_DOT: string[] = [
-  "bg-(--icon-info)",
-  "bg-(--icon-magic)",
-  "bg-(--icon-success)",
-  "bg-(--icon-caution)",
-];
-
-const dotFor = (slug: string, index: number) =>
-  STAGE_DOT[slug] ?? FALLBACK_DOT[index % FALLBACK_DOT.length];
+const FALLBACK_TONE: KanbanTone[] = ["info", "magic", "success", "caution"];
 
 /**
  * A completed sale drops off the live board a fortnight after it closes —
@@ -73,13 +90,52 @@ const dealValue = (d: SalesDeal): number | null =>
 const fmtTotal = (n: number): string =>
   `£${n.toLocaleString("en-GB", { maximumFractionDigits: 0 })}`;
 
-function ageTone(days: number): string {
-  if (days <= 14) return "text-(--text-secondary)";
-  if (days <= 30) return "text-(--text-caution)";
-  return "text-(--text-critical)";
+/** Days since the deal last moved: fine for a fortnight, then caution, then critical past a month. */
+function ageTone(days: number): "muted" | "caution" | "critical" {
+  if (days <= 14) return "muted";
+  if (days <= 30) return "caution";
+  return "critical";
 }
 
+/**
+ * The deal's date line: when it completed or was lost, or else the collection
+ * date, in words and tone once it's today or past. Open deals without one get
+ * no line; their time in stage says how fresh they are.
+ */
+function dateFact(d: SalesDeal, behaviour: StageBehaviour | undefined): KanbanFact | null {
+  if (behaviour === "won") {
+    return {
+      icon: CircleCheck,
+      tone: "success",
+      text: d.completionDate ? `Completed ${shortDate(d.completionDate)}` : "Completed",
+    };
+  }
+  if (behaviour === "lost") {
+    return { icon: CircleX, tone: "muted", text: `Lost ${shortDate(d.updatedAt)}` };
+  }
+  if (!d.collectionDate) return null;
+  const days = daysUntil(d.collectionDate);
+  const date = dayDate(d.collectionDate);
+  if (days < 0) {
+    return { icon: TriangleAlert, tone: "critical", text: "Collection overdue", detail: date };
+  }
+  if (days === 0) return { icon: Clock, tone: "caution", text: "Collection today" };
+  return { icon: CalendarDays, text: `Collection ${days === 1 ? "tomorrow" : date}` };
+}
+
+/** Newest activity first, the service's own order; it also places the drop slot. */
+const compareDeals = (a: SalesDeal, b: SalesDeal): number =>
+  b.updatedAt.localeCompare(a.updatedAt);
+
+/** A deal as it will be once moved: the stage changes and it counts as just updated. */
+const movedDeal = (d: SalesDeal, stage: string): SalesDeal => ({
+  ...d,
+  stage,
+  updatedAt: new Date().toISOString(),
+});
+
 export default function SalesPipelinePage() {
+  const router = useRouter();
   const pathname = usePathname();
   const { user, company } = useAuth();
   const [deals, setDeals] = useState<SalesDeal[] | null>(null);
@@ -106,15 +162,8 @@ export default function SalesPipelinePage() {
     });
   }, [company]);
 
-  const filteredDeals = useMemo(() => {
-    if (!deals) return null;
-    return agentFilter === "all"
-      ? deals
-      : deals.filter((d) => d.sellingAgent === agentFilter);
-  }, [deals, agentFilter]);
-
-  const grouped = useMemo(() => {
-    if (!filteredDeals || stages.length === 0) return null;
+  const boardDeals = useMemo(() => {
+    if (!deals || stages.length === 0) return null;
     // `nowTs` is stamped once after the data loads (it also drives the card age
     // counters) — reading the clock during render is neither pure nor stable.
     const cutoff = new Date(
@@ -125,24 +174,38 @@ export default function SalesPipelinePage() {
     const wonSlugs = new Set(
       stages.filter((s) => s.behaviour === "won").map((s) => s.slug),
     );
-    const map: Record<string, SalesDeal[]> = Object.fromEntries(
-      stages.map((s) => [s.slug, [] as SalesDeal[]]),
+    return deals.filter(
+      (d) =>
+        (agentFilter === "all" || d.sellingAgent === agentFilter) &&
+        // A closed sale ages off the board after a fortnight.
+        !(wonSlugs.has(d.stage) && d.completionDate && d.completionDate < cutoff),
     );
-    for (const d of filteredDeals) {
-      // A closed sale ages off the board after a fortnight.
-      if (
-        wonSlugs.has(d.stage) &&
-        d.completionDate &&
-        d.completionDate < cutoff
-      ) {
-        continue;
-      }
-      // A deal whose stage was deleted or disabled has no column. Rather than
-      // vanish, it falls into the first stage so it stays workable.
-      (map[d.stage] ?? map[stages[0].slug]).push(d);
+  }, [deals, stages, agentFilter, nowTs]);
+
+  const vehicleById = useMemo(() => new Map(vehicles.map((v) => [v.id, v])), [vehicles]);
+  const userById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
+
+  // A deal whose stage was deleted or disabled has no column. Rather than
+  // vanish, it falls into the first stage so it stays workable.
+  const stageSlugs = useMemo(() => new Set(stages.map((s) => s.slug)), [stages]);
+  const columnOf = (d: SalesDeal) =>
+    stageSlugs.has(d.stage) ? d.stage : (stages[0]?.slug ?? d.stage);
+
+  const columns = useMemo<KanbanColumn[]>(() => {
+    const totals = new Map<string, number>();
+    for (const d of boardDeals ?? []) {
+      const slug = stageSlugs.has(d.stage) ? d.stage : stages[0]?.slug;
+      if (slug) totals.set(slug, (totals.get(slug) ?? 0) + (dealValue(d) ?? 0));
     }
-    return map;
-  }, [filteredDeals, stages, nowTs]);
+    return stages.map((s, i) => ({
+      id: s.slug,
+      label: s.label,
+      tone: STAGE_TONE[s.slug] ?? FALLBACK_TONE[i % FALLBACK_TONE.length],
+      kind: s.behaviour === "won" ? "done" : s.behaviour === "lost" ? "exception" : "open",
+      glyph: s.behaviour === "lost" ? "cross" : undefined,
+      summary: totals.get(s.slug) ? fmtTotal(totals.get(s.slug) ?? 0) : undefined,
+    }));
+  }, [stages, stageSlugs, boardDeals]);
 
   async function handleMove(id: string, stage: SalesStage) {
     if (!user || !company || !deals) return;
@@ -153,7 +216,7 @@ export default function SalesPipelinePage() {
     // dropped, not after updateStage's write chain + a full refetch resolve
     // — that round trip previously left the board looking unresponsive
     // ("clicks not registering") for a second or more (GEN-70).
-    setDeals(deals.map((d) => (d.id === id ? { ...d, stage } : d)));
+    setDeals(deals.map((d) => (d.id === id ? movedDeal(d, stage) : d)));
     const label = stages.find((s) => s.slug === stage)?.label ?? stage;
     try {
       await salesService.updateStage(id, stage, user.id);
@@ -165,13 +228,23 @@ export default function SalesPipelinePage() {
     }
   }
 
-  const agentOptions = [
-    { label: "All agents", value: "all" },
+  // Each agent with their avatar; "All agents" clears the filter. Deactivated
+  // accounts only appear while they still have deals on the board (and say
+  // so), so a name never shows up twice for no reason.
+  const agentsWithDeals = new Set((deals ?? []).map((d) => d.sellingAgent));
+  const agentOptions: SelectOption[] = [
+    { label: "All agents", value: "all", media: <Avatar size="xs" /> },
     ...users
       .filter(
-        (u) => u.role === "sales" || u.role === "owner" || u.role === "admin",
+        (u) =>
+          (u.role === "sales" || u.role === "owner" || u.role === "admin") &&
+          (u.active || agentsWithDeals.has(u.id)),
       )
-      .map((u) => ({ label: u.name, value: u.id })),
+      .map((u) => ({
+        label: u.active ? u.name : `${u.name} (deactivated)`,
+        value: u.id,
+        media: <Avatar size="xs" name={u.name} source={u.avatarUrl ?? undefined} />,
+      })),
   ];
 
   return (
@@ -179,243 +252,185 @@ export default function SalesPipelinePage() {
       title="Sales pipeline"
       subtitle="Track every deal from new lead to completed sale. Rename, reorder, add or remove stages in Settings."
       fullWidth
+      // The agent filter scopes the whole board, so it sits in the header's
+      // top-right corner rather than in a row of its own above the columns.
+      controls={
+        deals && deals.length > 0 ? (
+          <div className="w-56">
+            {/* Unfiltered, the field just asks "Select agent"; a chosen
+                agent shows as their avatar and name. */}
+            <Select
+              label="Agent"
+              labelHidden
+              placeholder="Select agent"
+              options={agentOptions}
+              value={agentFilter === "all" ? "" : agentFilter}
+              onChange={(v) => setAgentFilter(v)}
+            />
+          </div>
+        ) : undefined
+      }
     >
-      <div className="flex justify-end">
-        <div className="w-48">
-          <Select
-            label="Agent"
-            labelInline
-            options={agentOptions}
-            value={agentFilter}
-            onChange={(v) => setAgentFilter(v)}
-          />
-        </div>
-      </div>
-
       {/* An empty board shows its empty state even before any stages
           exist, rather than a skeleton that never resolves. */}
       {deals && deals.length === 0 ? (
         <EmptyState heading="No deals yet" icon={<TrendingUp />}>
           Convert a lead into an appointment, then a deal will appear.
         </EmptyState>
-      ) : !grouped ? (
-        <Card>
-          <SkeletonBodyText lines={8} />
-        </Card>
+      ) : !boardDeals ? (
+        <KanbanSkeleton columns={5} />
       ) : (
-        <div className="grid auto-cols-[260px] grid-flow-col gap-3 overflow-x-auto pb-2">
-          {stages.map((stage, stageIndex) => {
-            const list = grouped[stage.slug] ?? [];
-            const total = list.reduce((s, d) => s + (dealValue(d) ?? 0), 0);
+        <KanbanBoard
+          id="sales-pipeline"
+          columns={columns}
+          items={boardDeals}
+          getId={(d) => d.id}
+          getColumnId={columnOf}
+          compare={compareDeals}
+          moved={movedDeal}
+          onMove={(id, stage) => void handleMove(id, stage)}
+          noun={{ one: "deal", many: "deals" }}
+          defaultHidden={stages.filter((s) => s.behaviour === "lost").map((s) => s.slug)}
+          renderCard={(d, { column }) => {
+            const v = vehicleById.get(d.vehicleId);
+            const agent = userById.get(d.sellingAgent);
+            const value = dealValue(d);
+            const days = nowTs
+              ? Math.max(
+                  0,
+                  Math.round((nowTs - new Date(d.updatedAt).getTime()) / 86_400_000),
+                )
+              : 0;
+            // Invoicing opens once money is committed — any stage that
+            // reserves the car or completes the sale, whatever it has been
+            // renamed to (GEN-65).
+            const behaviour = stages.find((s) => s.slug === column.id)?.behaviour;
+            const showInvoiceCta = behaviour === "reserved" || behaviour === "won";
+            const invoiceUrl = v
+              ? `/sales/invoice-generation?vehicleId=${v.id}`
+              : "/sales/invoice-generation";
             return (
-              <div
-                key={stage.slug}
-                className="flex flex-col gap-2 rounded-(--radius-300) bg-(--bg-surface-secondary) p-2 transition-shadow"
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.currentTarget.classList.add("ring-2", "ring-(--border-focus)");
-                }}
-                onDragLeave={(e) => {
-                  e.currentTarget.classList.remove("ring-2", "ring-(--border-focus)");
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.currentTarget.classList.remove("ring-2", "ring-(--border-focus)");
-                  const dealId = e.dataTransfer.getData("text/deal-id");
-                  if (dealId) void handleMove(dealId, stage.slug);
-                }}
-              >
-                <div className="flex flex-col gap-0.5 px-1.5 pt-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <h2 className="heading-sm inline-flex items-center gap-1.5">
-                      <span
-                        aria-hidden
-                        className={cn(
-                          "size-2 rounded-full",
-                          dotFor(stage.slug, stageIndex),
-                        )}
-                      />
-                      {stage.label}
-                    </h2>
-                    <Badge>{String(list.length)}</Badge>
-                  </div>
-                  {total > 0 ? (
-                    <span className="body-sm tabular-nums text-(--text-secondary)">
-                      {fmtTotal(total)}
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className="flex min-h-12 flex-col gap-2">
-                  {list.length === 0 ? (
-                    <div className="body-sm rounded-(--radius-200) border border-dashed border-(--border) p-3 text-center text-(--text-secondary)">
-                      No deals
-                    </div>
+              <KanbanCard
+                onOpen={() => setViewDeal(d)}
+                thumbnail={
+                  v && PHOTOS_ENABLED ? (
+                    <VehicleImage
+                      vehicle={v}
+                      variant="thumb"
+                      sizes="48px"
+                      className="w-12 rounded-(--radius-200)"
+                    />
+                  ) : undefined
+                }
+                identity={
+                  v ? (
+                    <KanbanPlate
+                      registration={v.registration}
+                      href={vehicleDetailHref(v.id, pathname)}
+                      title="Open vehicle"
+                    />
                   ) : (
-                    list.map((d) => {
-                      const v = vehicles.find((x) => x.id === d.vehicleId);
-                      const agent = users.find((u) => u.id === d.sellingAgent);
-                      const days = nowTs
-                        ? Math.max(
-                            0,
-                            Math.round(
-                              (nowTs - new Date(d.updatedAt).getTime()) /
-                                86_400_000,
-                            ),
-                          )
-                        : 0;
-                      // Invoicing opens once money is committed — any stage
-                      // that reserves the car or completes the sale, whatever
-                      // it has been renamed to (GEN-65).
-                      const showInvoiceCta =
-                        stage.behaviour === "reserved" ||
-                        stage.behaviour === "won";
-                      return (
-                        <div
-                          key={d.id}
-                          className="group/card relative cursor-grab overflow-hidden rounded-(--radius-300) bg-(--bg-surface) shadow-(--shadow-100) transition-shadow hover:shadow-(--shadow-200) active:cursor-grabbing"
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData("text/deal-id", d.id);
-                            e.dataTransfer.effectAllowed = "move";
-                          }}
+                    <span className="body-sm text-(--text-secondary)">No vehicle</span>
+                  )
+                }
+                reference={v?.stockId}
+                vehicle={v ? `${v.make} ${v.model}` : undefined}
+                title={
+                  <PolarisLink
+                    monochrome
+                    removeUnderline
+                    className="text-left hover:underline"
+                    onClick={() => setViewDeal(d)}
+                  >
+                    {d.customerName}
+                  </PolarisLink>
+                }
+                titleText={d.customerName}
+                facts={[
+                  dateFact(d, behaviour),
+                  d.customerPhone
+                    ? {
+                        icon: Phone,
+                        text: (
+                          <a
+                            href={`tel:${d.customerPhone.replace(/\s+/g, "")}`}
+                            draggable={false}
+                            className="hover:underline"
+                          >
+                            {d.customerPhone}
+                          </a>
+                        ),
+                      }
+                    : null,
+                  d.depositAmount
+                    ? {
+                        icon: Banknote,
+                        text: `${formatCurrency(d.depositAmount)} deposit`,
+                        detail: d.depositDate ? `paid ${shortDate(d.depositDate)}` : "paid",
+                      }
+                    : null,
+                  {
+                    icon: Clock,
+                    tone: ageTone(days),
+                    text: `${days}d in stage`,
+                    title: `Updated ${formatRelativeTime(d.updatedAt)}`,
+                  },
+                ]}
+                note={
+                  behaviour === "lost" && d.notes?.trim()
+                    ? { icon: CircleX, tone: "critical", text: `Lost: ${d.notes.trim()}` }
+                    : undefined
+                }
+                person={{ name: agent?.name, empty: "No agent" }}
+                money={
+                  value != null
+                    ? {
+                        value: formatCurrency(value),
+                        kind: d.agreedPrice != null ? "agreed" : "offer",
+                      }
+                    : undefined
+                }
+                menu={
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <RowActionButton aria-label="Deal actions" className="size-6">
+                        <Ellipsis />
+                      </RowActionButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setViewDeal(d)}>View deal</DropdownMenuItem>
+                      {v ? (
+                        <DropdownMenuItem
+                          onClick={() => router.push(vehicleDetailHref(v.id, pathname))}
                         >
-                          {/* The grip sits above the image rather than in
-                              it, on a surface chip so it reads over a photo. */}
-                          <DragHandle className="absolute left-1.5 top-1.5 z-10 rounded-(--radius-100) bg-(--bg-surface) p-0.5 text-(--icon-secondary) shadow-(--shadow-100)" />
-                          {/* Image header — plate + price over the photo */}
-                          <div className="relative">
-                            {/* A vehicle with no hero image gets a clean
-                                surface + car-icon placeholder (GEN-52). */}
-                            {v && v.heroImageUrl ? (
-                              <Link
-                                href={vehicleDetailHref(v.id, pathname)}
-                                title="Open vehicle details"
-                                className="block"
-                              >
-                                <VehicleImage
-                                  vehicle={v}
-                                  variant="card"
-                                  className="rounded-none"
-                                />
-                              </Link>
-                            ) : v ? (
-                              <Link
-                                href={vehicleDetailHref(v.id, pathname)}
-                                title="Open vehicle details"
-                                aria-label="Open vehicle details"
-                                className="grid aspect-[16/10] w-full place-items-center bg-(--bg-surface-secondary) text-(--icon-secondary)"
-                              >
-                                <Car className="size-8" strokeWidth={1.4} />
-                              </Link>
-                            ) : (
-                              <div className="grid aspect-[16/10] w-full place-items-center bg-(--bg-surface-secondary) text-(--icon-secondary)">
-                                <Car className="size-6" />
-                              </div>
-                            )}
-                            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-2.5">
-                              {v ? (
-                                <Link
-                                  href={vehicleDetailHref(v.id, pathname)}
-                                  title="Open vehicle details"
-                                  className="pointer-events-auto transition-opacity hover:opacity-80"
-                                >
-                                  <RegPlate registration={v.registration} size="sm" />
-                                </Link>
-                              ) : (
-                                <span />
-                              )}
-                              {dealValue(d) != null ? (
-                                <span className="body-sm-semibold rounded-(--radius-100) bg-(--bg-surface) px-1.5 py-0.5 tabular-nums text-(--text) shadow-(--shadow-100)">
-                                  {formatCurrency(dealValue(d))}
-                                </span>
-                              ) : null}
-                            </div>
-                          </div>
-                          <div className="flex flex-col gap-1.5 p-2.5">
-                            <div className="flex items-center justify-between gap-2">
-                              <PolarisLink
-                                monochrome
-                                removeUnderline
-                                className="heading-sm truncate text-left"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setViewDeal(d);
-                                }}
-                              >
-                                {d.customerName}
-                              </PolarisLink>
-                              <span
-                                className={cn(
-                                  "body-sm inline-flex shrink-0 items-center gap-1",
-                                  ageTone(days),
-                                )}
-                              >
-                                <Clock className="size-3" />
-                                {days}d
-                              </span>
-                            </div>
-                            <p className="body-sm line-clamp-1 text-(--text-secondary)">
-                              {v ? `${v.make} ${v.model}` : "—"}
-                            </p>
-                            <div className="flex items-center justify-between gap-2">
-                              {agent ? (
-                                <Avatar
-                                  name={agent.name}
-                                  size="xs"
-                                  label={
-                                    <span className="body-sm truncate text-(--text-secondary)">
-                                      {agent.name}
-                                    </span>
-                                  }
-                                  className="min-w-0"
-                                />
-                              ) : (
-                                <span />
-                              )}
-                              <span className="body-xs inline-flex shrink-0 items-center gap-1 text-(--text-secondary)">
-                                <Check className="size-3 text-(--icon-success)" />
-                                {formatRelativeTime(d.updatedAt)}
-                              </span>
-                            </div>
-                            {showInvoiceCta && (
-                              <Button
-                                fullWidth
-                                icon="OrdersMinor"
-                                className="mt-1"
-                                url={
-                                  v
-                                    ? `/sales/invoice-generation?vehicleId=${v.id}`
-                                    : "/sales/invoice-generation"
-                                }
-                              >
-                                Generate invoice
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
+                          View vehicle
+                        </DropdownMenuItem>
+                      ) : null}
+                      {showInvoiceCta ? (
+                        <DropdownMenuItem onClick={() => router.push(invoiceUrl)}>
+                          Generate invoice
+                        </DropdownMenuItem>
+                      ) : null}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                }
+                action={
+                  showInvoiceCta ? (
+                    <Button fullWidth icon="OrdersMinor" url={invoiceUrl}>
+                      Generate invoice
+                    </Button>
+                  ) : undefined
+                }
+              />
             );
-          })}
-        </div>
+          }}
+        />
       )}
 
       <DealDetailSheet
         deal={viewDeal}
-        vehicle={
-          viewDeal
-            ? (vehicles.find((v) => v.id === viewDeal.vehicleId) ?? null)
-            : null
-        }
-        agent={
-          viewDeal
-            ? (users.find((u) => u.id === viewDeal.sellingAgent) ?? null)
-            : null
-        }
+        vehicle={viewDeal ? (vehicleById.get(viewDeal.vehicleId) ?? null) : null}
+        agent={viewDeal ? (userById.get(viewDeal.sellingAgent) ?? null) : null}
         users={users}
         open={viewDeal !== null}
         onOpenChange={(o) => {

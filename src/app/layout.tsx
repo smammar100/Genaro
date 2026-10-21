@@ -13,14 +13,21 @@ import { Toaster } from "@/components/ui/toaster";
 import { VercelInsights } from "@/components/vercel-insights";
 import { getInitialAuth } from "@/lib/auth-initial";
 import { AuthBoundary } from "@/components/layout/auth-boundary";
+import { MotionProvider } from "@/components/fluid/motion-provider";
+import { SidebarPreference } from "@/components/layout/sidebar-preference";
+import { TitleTooltips } from "@/components/layout/title-tooltips";
+import { cookies } from "next/headers";
 
 // UI font is Inter — the Shopify admin's typeface (self-hosted by next/font,
 // exposed as --font-inter; the Polaris tokens make it --font-sans).
 // Geist Mono (--font-geist-mono) covers stock IDs, regs and other codes.
+// The optical-size axis lets Fluid Functionalism's weight changes (hovered
+// and selected labels) widen and pull back without moving their neighbours.
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
+  axes: ["opsz"],
 });
 
 export const metadata: Metadata = {
@@ -55,6 +62,10 @@ export default async function RootLayout({
   // while Supabase resolves in the background. AuthBoundary awaits the promise
   // inside a Suspense boundary so fonts/CSS reach the browser ~400 ms sooner.
   const authPromise = getInitialAuth();
+  // The sidebar writes `sidebar_state` whenever it is collapsed or shown
+  // (SIDEBAR_COOKIE_NAME in fluid/sidebar-core, a client module, so the
+  // literal is repeated here rather than imported into a server file).
+  const sidebarOpen = (await cookies()).get("sidebar_state")?.value !== "false";
 
   return (
     <html
@@ -85,19 +96,12 @@ export default async function RootLayout({
         )}
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        {/* forcedTheme, not just a changed default: Genaro is a single light
-            system, and anyone who picked dark before the migration still has
-            `theme=dark` in localStorage. Without forcing, next-themes would
-            restore that class — re-activating the `dark:` utilities still
-            present in component files against a token layer that no longer has
-            dark values. Forcing pins <html> to `light` and ignores the stored
-            preference. */}
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          disableTransitionOnChange
-          forcedTheme="light"
-        >
+        {/* Light or dark, both Polaris's own token sets (tokens.css declares
+            dark under `.dark`); the top bar's switch sets it and next-themes
+            remembers it. */}
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
+          <MotionProvider>
+          <SidebarPreference defaultOpen={sidebarOpen}>
           <PolarisLinkProvider>
           <Suspense
             fallback={
@@ -111,7 +115,10 @@ export default async function RootLayout({
             <AuthBoundary authPromise={authPromise}>{children}</AuthBoundary>
           </Suspense>
           </PolarisLinkProvider>
+          </SidebarPreference>
+          </MotionProvider>
           <Toaster />
+          <TitleTooltips />
         </ThemeProvider>
         {/* Vercel sets VERCEL=1 on its builds and runtime; elsewhere (local,
             self-hosted `next start`) analytics has no endpoint to report to. */}

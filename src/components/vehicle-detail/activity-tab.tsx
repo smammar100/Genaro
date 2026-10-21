@@ -39,9 +39,8 @@ import { activityService } from "@/lib/services/activity-service";
 import { teamService } from "@/lib/services/team-service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge, Button, EmptyState, type BadgeTone } from "@/components/polaris";
-import { formatDateTime } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import { Panel } from "./primitives";
-import { cn } from "@/lib/utils";
 
 interface ActivityTabProps {
   vehicleId: string;

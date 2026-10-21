@@ -55,15 +55,10 @@ export function ReceivingCard({
         <Field label={<>Log book <Important /></>} htmlFor={ids.logBook}>
           <Input
             id={ids.logBook}
-            list={ids.logBookList}
+            suggestions={LOG_BOOK_SUGGESTIONS}
             placeholder="AVAILABLE, NOT AVAILABLE…"
             {...form.register("logBook")}
           />
-          <datalist id={ids.logBookList}>
-            {LOG_BOOK_SUGGESTIONS.map((o) => (
-              <option key={o} value={o} />
-            ))}
-          </datalist>
         </Field>
         <Field label="Euro status" htmlFor={ids.euroStatus}>
           <Input id={ids.euroStatus} placeholder="e.g. EURO 6" {...form.register("euroStatus")} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import {
   Labelled,
   Modal,
@@ -54,16 +54,22 @@ export function EditJobDialog({
   const [saving, setSaving] = useState(false);
 
   // Seed the form whenever a job opens.
-  useEffect(() => {
-    if (!open || !job) return;
-    setStatus(job.status);
-    setAssignedTo(job.assignedTo ?? "none");
-    setVendorId(job.vendorId ?? "none");
-    setDueDate(job.dueDate ?? "");
-    setEstimatedCost(job.estimatedCost != null ? String(job.estimatedCost) : "");
-    setActualCost(job.actualCost != null ? String(job.actualCost) : "");
-    setDescription(job.description ?? "");
-  }, [open, job]);
+  const [seeded, setSeeded] = useState<{ open: boolean; job: MaintenanceJob | null }>({
+    open: false,
+    job: null,
+  });
+  if (seeded.open !== open || seeded.job !== job) {
+    setSeeded({ open, job });
+    if (open && job) {
+      setStatus(job.status);
+      setAssignedTo(job.assignedTo ?? "none");
+      setVendorId(job.vendorId ?? "none");
+      setDueDate(job.dueDate ?? "");
+      setEstimatedCost(job.estimatedCost != null ? String(job.estimatedCost) : "");
+      setActualCost(job.actualCost != null ? String(job.actualCost) : "");
+      setDescription(job.description ?? "");
+    }
+  }
 
   if (!job) return null;
 

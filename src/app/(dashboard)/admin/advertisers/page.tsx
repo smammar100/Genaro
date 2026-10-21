@@ -141,14 +141,14 @@ export default function AdvertisersPage() {
 
   if (permsLoading) {
     return (
-      <Page title="Advertisers">
+      <Page fullWidth title="Advertisers">
         <p className="body-md text-(--text-secondary)">Loading session…</p>
       </Page>
     );
   }
   if (!canRead) {
     return (
-      <Page title="Advertisers">
+      <Page fullWidth title="Advertisers">
         <Banner tone="warning">
           You don&apos;t have access to AutoTrader advertisers.
         </Banner>

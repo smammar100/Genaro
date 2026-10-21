@@ -1,5 +1,4 @@
-import { cn } from "@/lib/utils";
-import { getDaysInStockColor } from "@/lib/utils";
+import { cn, getDaysInStockColor } from "@/lib/utils";
 
 interface Props {
   days: number;

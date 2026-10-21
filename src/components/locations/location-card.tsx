@@ -78,28 +78,25 @@ export function LocationCard({
   onMove,
   onViewHistory,
 }: LocationCardProps) {
-  const [movements, setMovements] = useState<LocationMovement[] | null>(
-    recentMovements ?? null,
-  );
+  const [fetched, setFetched] = useState<LocationMovement[] | null>(null);
 
   useEffect(() => {
-    if (recentMovements) {
-      setMovements(recentMovements);
-      return;
-    }
+    if (recentMovements) return;
     let cancelled = false;
     locationService
       .getRecentMovements(vehicle.id, 3)
       .then((rows) => {
-        if (!cancelled) setMovements(rows);
+        if (!cancelled) setFetched(rows);
       })
       .catch(() => {
-        if (!cancelled) setMovements([]);
+        if (!cancelled) setFetched([]);
       });
     return () => {
       cancelled = true;
     };
   }, [vehicle.id, recentMovements]);
+
+  const movements = recentMovements ?? fetched;
 
   const days = daysSince(vehicle.locationSince);
   return (

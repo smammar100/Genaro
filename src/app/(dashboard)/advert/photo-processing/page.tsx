@@ -40,9 +40,27 @@ const BACKGROUNDS = [
   { id: "black", label: "Plain black", swatch: "bg-black", hint: "infinite black void with rim lighting" }, // audit-ignore: content swatch
 ];
 
+async function fetchAngle(
+  vehicleId: string,
+  angle: "processed" | "composed",
+  extra?: { backdropKey: string; backdropHint: string },
+): Promise<string> {
+  const res = await fetch("/api/photo/vehicle", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ vehicleId, angle, ...extra }),
+  });
+  const json = (await res.json()) as { url?: string; error?: string };
+  if (!res.ok || !json.url) {
+    throw new Error(json.error ?? `HTTP ${res.status}`);
+  }
+  return json.url;
+}
+
 export default function PhotoProcessingPage() {
   const pathname = usePathname();
   const { user, company } = useAuth();
+  const companyId = company?.id;
   const [vehicles, setVehicles] = useState<Vehicle[] | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [bgRemoved, setBgRemoved] = useState(false);
@@ -51,15 +69,15 @@ export default function PhotoProcessingPage() {
   const bgProcessingId = useId();
 
   useEffect(() => {
-    if (!company) return;
-    void vehicleService.getAll(company.id).then((v) => {
+    if (!companyId) return;
+    void vehicleService.getAll(companyId).then((v) => {
       setVehicles(v);
       const withImages = v.filter((x) => x.imagesCount > 0);
       if (withImages.length > 0 && !selected) setSelected(withImages[0].id);
       else if (v.length > 0 && !selected) setSelected(v[0].id);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [company]);
+  }, [companyId]);
 
   const vehicle = vehicles?.find((v) => v.id === selected) ?? null;
   // Stock runs past a hundred cars, so scrolling the sidebar to find a plate
@@ -76,26 +94,11 @@ export default function PhotoProcessingPage() {
   const [composedLoading, setComposedLoading] = useState(false);
 
   // Reset tiles when the selected vehicle changes
-  useEffect(() => {
+  const [tilesFor, setTilesFor] = useState(selected);
+  if (tilesFor !== selected) {
+    setTilesFor(selected);
     setProcessedUrl(null);
     setComposedUrl(null);
-  }, [selected]);
-
-  async function fetchAngle(
-    vehicleId: string,
-    angle: "processed" | "composed",
-    extra?: { backdropKey: string; backdropHint: string },
-  ): Promise<string> {
-    const res = await fetch("/api/photo/vehicle", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vehicleId, angle, ...extra }),
-    });
-    const json = (await res.json()) as { url?: string; error?: string };
-    if (!res.ok || !json.url) {
-      throw new Error(json.error ?? `HTTP ${res.status}`);
-    }
-    return json.url;
   }
 
   async function handleProcess() {
@@ -113,13 +116,23 @@ export default function PhotoProcessingPage() {
     }
   }
 
-  // Auto-generate composed when the backdrop changes (cached per vehicle+key)
+  // Auto-generate composed when the vehicle or backdrop changes (cached per
+  // vehicle+key): the tile clears to loading here, the effect fetches it.
+  const vehicleId = vehicle?.id ?? null;
+  const composeKey = vehicleId ? `${vehicleId}:${swatch.id}` : null;
+  const [composingFor, setComposingFor] = useState<string | null>(null);
+  if (composingFor !== composeKey) {
+    setComposingFor(composeKey);
+    if (composeKey) {
+      setComposedLoading(true);
+      setComposedUrl(null);
+    }
+  }
+
   useEffect(() => {
-    if (!vehicle) return;
+    if (!vehicleId) return;
     let cancelled = false;
-    setComposedLoading(true);
-    setComposedUrl(null);
-    fetchAngle(vehicle.id, "composed", {
+    fetchAngle(vehicleId, "composed", {
       backdropKey: swatch.id,
       backdropHint: swatch.hint,
     })
@@ -139,8 +152,7 @@ export default function PhotoProcessingPage() {
     return () => {
       cancelled = true;
     };
-  }, [vehicle, swatch.id, swatch.hint]);
-
+  }, [vehicleId, swatch.id, swatch.hint]);
 
   return (
     <Page

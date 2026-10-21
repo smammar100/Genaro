@@ -57,7 +57,12 @@ export function SalespersonDropdown({
   }, [company?.id]);
 
   return (
-    <Select value={value} onValueChange={onChange}>
+    <Select
+      value={value}
+      onValueChange={onChange}
+      // Names for the closed field, which would otherwise show the id.
+      items={users.map((u) => ({ value: u.id, label: u.name }))}
+    >
       <SelectTrigger
         id={id}
         aria-invalid={invalid}

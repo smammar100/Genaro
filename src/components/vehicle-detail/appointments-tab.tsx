@@ -21,9 +21,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AddEnquiryDialog } from "@/components/enquiries/add-enquiry-dialog";
-import { formatDate, formatRelativeTime } from "@/lib/utils";
+import { cn, formatDate, formatRelativeTime } from "@/lib/utils";
 import { Panel, Pill, SectionDivider } from "./primitives";
-import { cn } from "@/lib/utils";
 
 interface AppointmentsTabProps {
   vehicle: Vehicle;
@@ -39,7 +38,7 @@ const STATUS_TONE: Record<Enquiry["status"], React.ComponentProps<typeof Pill>["
  * Appointments tab (Variation E — focused view). The actionable enquiries lead,
  * with a one-line workflow legend instead of a banner; the cross-vehicle
  * lost-reason analytics + recommended actions sit below in a clearly-labelled,
- * compact block. All the original content is preserved, just decluttered.
+ * compact block.
  */
 export function AppointmentsTab({ vehicle }: AppointmentsTabProps) {
   const { company, user } = useAuth();

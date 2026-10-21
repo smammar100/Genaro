@@ -12,6 +12,7 @@ import { Page } from '@/components/polaris';
 - On detail pages, set `backAction={{ content: 'Orders', url: '/orders' }}`. Its `content` becomes the back button's accessible label.
 - Use one `primaryAction`. `secondaryActions` render as `bg-fill-tertiary` pills, not bevelled buttons. `destructive` gives them the critical tone. An icon-only action needs `icon` plus `accessibilityLabel`. Every action (including `backAction`) takes an optional `id`, rendered on its button or link, for anchors such as an onboarding-tour step.
 - `titleMetadata` holds status badges, `subtitle` holds the date or source, and `titlePicker` is a heading-sized dropdown button such as "All locations". `pagination` moves to the previous or next record; give it `previousURL` / `nextURL` so it works from a Server Component.
+- `controls` puts a control that isn't a button in the header's top-right corner, before the actions: a board-wide filter such as the sales pipeline's inline "Agent" `Select`. It wraps under the title with the actions on a narrow page.
 - Children stack 16px apart (`space-400`). Page supplies the side margins (24px, or 16px when the page is narrower than 768px), so don't pad its content yourself.
 - When the Page is narrower than 768px, the header stacks (title first, then actions), and flush cards or an IndexTable placed directly inside run edge to edge.
 - The header only renders when `title` or `backAction` is set. Actions and pagination on a Page without either are not shown.
@@ -107,6 +108,7 @@ const [saving, setSaving] = React.useState(false);
 | `backAction` | `Action` | — | Tertiary `ArrowLeftMinor` button. `content` is its label (default "Back"). |
 | `primaryAction` | `Action & { disabled?: boolean; loading?: boolean }` | — | The one primary button. |
 | `secondaryActions` | `PageSecondaryAction[]` | — | `{ content?, icon?, destructive?, disabled?, accessibilityLabel?, url?, onAction?, testId?, id? }`. |
+| `controls` | `ReactNode` | — | A control that isn't a button, such as a filter `Select` (`labelInline`, in a fixed-width wrapper), at the start of the header's action area. Polaris React takes a node in `secondaryActions` for this. |
 | `pagination` | `PaginationProps` | — | Previous and next record, after the actions. Use `previousURL` / `nextURL`, or `onPrevious` / `onNext`. |
 | `fullWidth` | `boolean` | — | No maximum width. |
 | `narrowWidth` | `boolean` | — | Maximum width 662px. |

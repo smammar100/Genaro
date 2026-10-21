@@ -13,6 +13,7 @@ import {
 import { toast } from "@/lib/toast";
 import { Badge, Button } from "@/components/polaris";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import { externalInvoiceService } from "@/lib/services/external-invoice-service";
@@ -40,6 +41,7 @@ interface Props {
  */
 export function ExternalInvoicesSection({ vehicleId }: Props) {
   const { company, user } = useAuth();
+  const { confirm, confirmDialog } = useConfirm();
   const { can, isSuperUser } = usePermissions();
   const canCreate = isSuperUser || can("external_invoice:create");
   const canEditAny = isSuperUser || can("external_invoice:edit_any");
@@ -101,9 +103,13 @@ export function ExternalInvoicesSection({ vehicleId }: Props) {
 
   async function handleDelete(inv: ExternalInvoice) {
     if (!user?.id || !company?.id) return;
-    if (!confirm(`Delete this invoice (${formatCurrency(inv.totalPence / 100)})?`)) {
-      return;
-    }
+    const ok = await confirm({
+      title: `Delete this ${formatCurrency(inv.totalPence / 100)} invoice?`,
+      description: "This can't be undone.",
+      confirmText: "Delete invoice",
+      destructive: true,
+    });
+    if (!ok) return;
     try {
       await externalInvoiceService.delete(inv.id, user.id, company.id);
       setRows((curr) => (curr ?? []).filter((r) => r.id !== inv.id));
@@ -282,6 +288,7 @@ export function ExternalInvoicesSection({ vehicleId }: Props) {
           setRefreshTick((t) => t + 1);
         }}
       />
+      {confirmDialog}
     </Panel>
   );
 }

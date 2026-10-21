@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import type { Vehicle } from "@/lib/types";
-import { VEHICLE_STATUSES } from "@/lib/constants";
+import { VEHICLE_STATUSES, VEHICLE_STATUS_CHOICES } from "@/lib/constants";
 import {
   ALL,
   bestMarginModels,
@@ -337,7 +337,6 @@ export default function ReportsPage() {
     [sold, gran],
   );
 
-  // Purchase-source breakdown over the sold vehicles.
   // Where the stock came from. Counts every vehicle in the selection, not just
   // the ones that have sold — you bought a car whether or not it's moved yet,
   // so a forecourt full of auction stock must not read "no data". Revenue and
@@ -424,7 +423,7 @@ export default function ReportsPage() {
 
   if (!allowed) {
     return (
-      <Page title="Reports & analytics">
+      <Page fullWidth title="Reports & analytics">
         <EmptyState icon={<BarChart3 />} heading="Access restricted">
           You don&rsquo;t have permission to view reports.
         </EmptyState>
@@ -478,7 +477,7 @@ export default function ReportsPage() {
             value={status}
             onChange={setStatus}
             allLabel="Any status"
-            options={VEHICLE_STATUSES.map((s) => ({
+            options={VEHICLE_STATUS_CHOICES.map((s) => ({
               value: s.value,
               label: s.label,
             }))}
@@ -718,7 +717,6 @@ function Kpi({
   );
 }
 
-/** One labelled dropdown in the filter bar, with an "everything" option. */
 interface FilterOption {
   value: string;
   label: string;

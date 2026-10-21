@@ -34,6 +34,12 @@ export interface PageProps {
   /** The page's one primary action. */
   primaryAction?: Action & { disabled?: boolean; loading?: boolean };
   secondaryActions?: PageSecondaryAction[];
+  /**
+   * A control that isn't a button, such as a filter `Select`, at the start of
+   * the header's action area (Polaris React allows a node in
+   * `secondaryActions` for the same job).
+   */
+  controls?: React.ReactNode;
   /** Previous / next record (detail pages). */
   pagination?: PaginationProps;
   /** Index pages: use the full width. */
@@ -46,7 +52,7 @@ export interface PageProps {
 
 /** Page header (title, actions, back, pagination) plus the width-constrained content column. */
 export function Page({
-  title, subtitle, titleMetadata, titlePicker, backAction, primaryAction, secondaryActions, pagination, fullWidth, narrowWidth, children, className,
+  title, subtitle, titleMetadata, titlePicker, backAction, primaryAction, secondaryActions, controls, pagination, fullWidth, narrowWidth, children, className,
 }: PageProps) {
   return (
     <div className={cx('p-page', fullWidth && 'p-page--full', narrowWidth && 'p-page--narrow', className)}>
@@ -71,6 +77,7 @@ export function Page({
             </div>
           </div>
           <div className="p-page__actions">
+            {controls}
             {(secondaryActions || []).map((a, i) => {
               const iconOnly = !!a.icon && !a.content;
               const cls = cx('p-page__secondary', a.destructive && 'p-page__secondary--critical', iconOnly && 'p-page__secondary--icon');

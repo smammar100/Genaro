@@ -4,11 +4,12 @@ import * as React from "react";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/polaris";
 import { cn } from "@/lib/utils";
 
 /*
  * Shared, schema-driven filter bar (GEN-22). Used by Completed Deals, Invoices
- * (GEN-23) and Reports & Analytics (GEN-24). It owns no data — the consumer
+ * (GEN-23) and the Activity log. It owns no data — the consumer
  * declares which controls to show (search, a date range with quick presets,
  * and any number of select filters), holds the resulting `FilterState`, and
  * applies it to its own rows via `matchesFilterState`.
@@ -45,20 +46,15 @@ const EMPTY_FILTER_STATE: FilterState = {
   selects: {},
 };
 
-/** Hook owning filter state, with a stable reset. */
+/** Hook owning filter state. */
 export function useFilterState(
   initial: FilterState = EMPTY_FILTER_STATE,
 ): {
   state: FilterState;
   setState: React.Dispatch<React.SetStateAction<FilterState>>;
-  reset: () => void;
 } {
   const [state, setState] = React.useState<FilterState>(initial);
-  const reset = React.useCallback(
-    () => setState({ search: "", date: { from: null, to: null }, selects: {} }),
-    [],
-  );
-  return { state, setState, reset };
+  return { state, setState };
 }
 
 /* --------------------------------------------------------------- presets */
@@ -116,9 +112,6 @@ function buildPresets(now: Date, yearCount: number): Preset[] {
 }
 
 /* ------------------------------------------------------------- component */
-
-const selectClass =
-  "h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export function FilterBar({
   state,
@@ -193,28 +186,27 @@ export function FilterBar({
         />
       </div>
 
-      {/* date filter — every option is prefixed with what it filters (e.g.
-          "Completed: This year"), so the control is self-explanatory in any
-          state. The raw From/To inputs only appear for a custom range. */}
+      {/* date filter — the label sits inside the control ("Completed This
+          year"), so it reads clearly in any state. The From/To fields only
+          appear for a custom range. */}
       {dateLabel && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <select
-            aria-label={`${dateLabel} date filter`}
-            className={selectClass}
-            value={dateValue}
-            onChange={(e) => onPickPreset(e.target.value)}
-          >
-            {presets.map((p) => (
-              <option key={p.value} value={p.value}>
-                {dateLabel}: {p.label}
-              </option>
-            ))}
-            <option value="custom">{dateLabel}: Custom range…</option>
-          </select>
+          <div className="w-52">
+            <Select
+              label={dateLabel}
+              labelInline
+              options={[
+                ...presets.map((p) => ({ value: p.value, label: p.label })),
+                { value: "custom", label: "Custom range" },
+              ]}
+              value={dateValue}
+              onChange={onPickPreset}
+            />
+          </div>
           {showCustom && (
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-muted-foreground">from</span>
-              <input
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-(--text-secondary)">from</span>
+              <Input
                 type="date"
                 aria-label={`${dateLabel} from`}
                 value={state.date.from ?? ""}
@@ -224,10 +216,10 @@ export function FilterBar({
                     date: { ...state.date, from: e.target.value || null },
                   })
                 }
-                className={selectClass}
+                className="w-40"
               />
-              <span className="text-xs text-muted-foreground">to</span>
-              <input
+              <span className="text-xs text-(--text-secondary)">to</span>
+              <Input
                 type="date"
                 aria-label={`${dateLabel} to`}
                 value={state.date.to ?? ""}
@@ -237,34 +229,33 @@ export function FilterBar({
                     date: { ...state.date, to: e.target.value || null },
                   })
                 }
-                className={selectClass}
+                className="w-40"
               />
             </div>
           )}
         </div>
       )}
 
-      {/* select filters — the "all" option names the field, so no outer label */}
+      {/* select filters — the "all" option names the field, so the label is
+          for screen readers only */}
       {selects.map((f) => (
-        <select
-          key={f.key}
-          aria-label={f.label}
-          className={selectClass}
-          value={state.selects[f.key] ?? ""}
-          onChange={(e) =>
-            onChange({
-              ...state,
-              selects: { ...state.selects, [f.key]: e.target.value },
-            })
-          }
-        >
-          <option value="">{f.allLabel ?? `All ${f.label.toLowerCase()}`}</option>
-          {f.options.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+        <div key={f.key} className="w-44">
+          <Select
+            label={f.label}
+            labelHidden
+            options={[
+              { value: "", label: f.allLabel ?? `All ${f.label.toLowerCase()}` },
+              ...f.options,
+            ]}
+            value={state.selects[f.key] ?? ""}
+            onChange={(v) =>
+              onChange({
+                ...state,
+                selects: { ...state.selects, [f.key]: v },
+              })
+            }
+          />
+        </div>
       ))}
 
       {hasActive && (

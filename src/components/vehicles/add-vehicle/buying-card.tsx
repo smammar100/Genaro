@@ -88,28 +88,18 @@ export function BuyingCard({
         <Field label={<>Auction house <Important /></>} htmlFor={ids.auctionHouse}>
           <Input
             id={ids.auctionHouse}
-            list={ids.auctionHouseList}
+            suggestions={[...AUCTION_HOUSE_SUGGESTIONS, ...AUCTION_HOUSES.map((h) => h.toUpperCase())]}
             placeholder="e.g. BCA AUCTION, SOR, PARTEX"
             {...form.register("auctionHouse")}
           />
-          <datalist id={ids.auctionHouseList}>
-            {[...new Set([...AUCTION_HOUSE_SUGGESTIONS, ...AUCTION_HOUSES.map((h) => h.toUpperCase())])].map((h) => (
-              <option key={h} value={h} />
-            ))}
-          </datalist>
         </Field>
         <Field label={<>Owned by <Important /></>} htmlFor={ids.ownedBy}>
           <Input
             id={ids.ownedBy}
-            list={ids.ownedByList}
+            suggestions={OWNED_BY_SUGGESTIONS}
             placeholder="BCA, CAR CAPITAL, INFINIT…"
             {...form.register("ownedBy")}
           />
-          <datalist id={ids.ownedByList}>
-            {OWNED_BY_SUGGESTIONS.map((o) => (
-              <option key={o} value={o} />
-            ))}
-          </datalist>
         </Field>
         <Field label="Owner details" htmlFor={ids.ownerDetails}>
           <Input

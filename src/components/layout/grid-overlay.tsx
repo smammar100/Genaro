@@ -15,8 +15,6 @@ import { useSearchParams } from "next/navigation";
  * Fixed over the viewport, aligned to a centred 1152px content cap
  * with 24px gutters — the page padding the shell and Polaris <Page>
  * use.
- *
- * See plan §G4 (path: `.claude/plans/`) for the spec.
  */
 export function GridOverlay() {
   const params = useSearchParams();

@@ -346,7 +346,29 @@ function InvoiceGenerationForm() {
   const [customNote, setCustomNote] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
+  const draftKey = company
+    ? `cc-invoice-draft:${company.id}:${invoiceIdParam ?? vehicleIdParam ?? "new"}`
+    : null;
   const restoredRef = useRef(false);
+
+  function restoreDraft(key: string) {
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+    try {
+      const d = JSON.parse(raw) as Record<string, unknown>;
+      if (d.buyerName) setBuyerName(d.buyerName as string);
+      if (d.buyerAddress) setBuyerAddress(d.buyerAddress as string);
+      if (d.buyerPostcode) setBuyerPostcode(d.buyerPostcode as string);
+      if (d.buyerPhone) setBuyerPhone(d.buyerPhone as string);
+      if (d.buyerEmail) setBuyerEmail(d.buyerEmail as string);
+      if (Array.isArray(d.lines)) setLines(d.lines as DraftLine[]);
+      if (d.vatScheme) setVatScheme(d.vatScheme as VatScheme);
+      if (d.customNote) setCustomNote(d.customNote as string);
+      toast("Draft restored: a saved draft for this invoice was loaded");
+    } catch {
+      /* ignore corrupt draft */
+    }
+  }
 
   function applyVehicle(v: Vehicle | null, d: SalesDeal | null) {
     setVehicle(v);
@@ -370,12 +392,22 @@ function InvoiceGenerationForm() {
 
   useEffect(() => {
     if (!company) return;
-    void vehicleService.getAll(company.id).then(async (vs) => {
+    void Promise.all([
+      vehicleService.getAll(company.id),
+      invoiceIdParam ? invoiceService.getById(invoiceIdParam) : null,
+      !invoiceIdParam && vehicleIdParam ? salesService.getAll(company.id) : null,
+    ]).then(([vs, inv, deals]) => {
       setVehicles(vs);
+
+      // Restore an autosaved draft once per visit. It goes first so the
+      // invoice / deal prefill below wins wherever both set a field.
+      if (draftKey && !restoredRef.current) {
+        restoredRef.current = true;
+        restoreDraft(draftKey);
+      }
 
       if (invoiceIdParam) {
         // ---- EDIT MODE: prefill from the existing invoice ----
-        const inv = await invoiceService.getById(invoiceIdParam);
         if (!inv) {
           toast.error("Invoice not found");
           router.replace("/admin/invoicing");
@@ -423,7 +455,6 @@ function InvoiceGenerationForm() {
         setIdNote(inv.includeIdRequirementNote);
         setShNote(inv.includeServiceHistoryNote);
         setCustomNote(inv.customNote ?? "");
-        restoredRef.current = true; // skip the draft-restore prompt in edit mode
         setLoading(false);
         return;
       }
@@ -431,8 +462,7 @@ function InvoiceGenerationForm() {
       if (vehicleIdParam) {
         const v = vs.find((x) => x.id === vehicleIdParam) ?? null;
         setVehicleId(vehicleIdParam);
-        const deals = await salesService.getAll(company.id);
-        const d = deals.find((x) => x.vehicleId === vehicleIdParam) ?? null;
+        const d = deals?.find((x) => x.vehicleId === vehicleIdParam) ?? null;
         setDeal(d);
         if (d) {
           setBuyerName(d.customerName);
@@ -448,34 +478,12 @@ function InvoiceGenerationForm() {
   }, [company, vehicleIdParam, invoiceIdParam]);
 
   // ---- localStorage draft autosave (every 10s) ----
-  const draftKey = company
-    ? `cc-invoice-draft:${company.id}:${invoiceIdParam ?? vehicleIdParam ?? "new"}`
-    : null;
-
-  useEffect(() => {
-    if (!draftKey || restoredRef.current) return;
-    restoredRef.current = true;
-    const raw = localStorage.getItem(draftKey);
-    if (!raw) return;
-    try {
-      const d = JSON.parse(raw) as Record<string, unknown>;
-      if (d.buyerName) setBuyerName(d.buyerName as string);
-      if (d.buyerAddress) setBuyerAddress(d.buyerAddress as string);
-      if (d.buyerPostcode) setBuyerPostcode(d.buyerPostcode as string);
-      if (d.buyerPhone) setBuyerPhone(d.buyerPhone as string);
-      if (d.buyerEmail) setBuyerEmail(d.buyerEmail as string);
-      if (Array.isArray(d.lines)) setLines(d.lines as DraftLine[]);
-      if (d.vatScheme) setVatScheme(d.vatScheme as VatScheme);
-      if (d.customNote) setCustomNote(d.customNote as string);
-      toast("Draft restored: a saved draft for this invoice was loaded");
-    } catch {
-      /* ignore corrupt draft */
-    }
-  }, [draftKey]);
-
   useEffect(() => {
     if (!draftKey) return;
     const t = setInterval(() => {
+      // Until the load above has restored the saved draft, the form still
+      // holds its blank defaults — writing those would clobber the draft.
+      if (!restoredRef.current) return;
       localStorage.setItem(
         draftKey,
         JSON.stringify({
@@ -737,6 +745,7 @@ function InvoiceGenerationForm() {
 
   return (
     <Page
+      fullWidth
       title={editing ? "Edit invoice" : "Generate invoice"}
       subtitle="Create a legal, two-page sales invoice for a deal. Your draft saves automatically as you go."
       backAction={{ content: "Invoicing", url: "/admin/invoicing" }}
@@ -747,9 +756,6 @@ function InvoiceGenerationForm() {
             <Label htmlFor={vehicleFieldId}>
               Vehicle <span className="text-destructive">*</span>
             </Label>
-            {/* One control, not two. This was a search box that filtered a
-                separate dropdown — you typed in one field and picked in
-                another. VehiclePicker does both (GEN-79). */}
             <VehiclePicker
               id={vehicleFieldId}
               vehicles={filteredVehicles}
@@ -905,6 +911,7 @@ function InvoiceGenerationForm() {
                       </Label>
                       <Select
                         value={l.addonCategory ?? "custom"}
+                        items={ADDON_CATEGORY_OPTIONS}
                         onValueChange={(v) => {
                           const opt = ADDON_CATEGORY_OPTIONS.find(
                             (o) => o.value === v,
@@ -1490,7 +1497,6 @@ function InvoiceGenerationForm() {
           </div>
         </Layout.Section>
 
-        {/* Sticky cost summary */}
         <Layout.Section variant="oneThird" className="lg:sticky lg:top-4 lg:self-start">
           <Card title="Cost summary">
             <div className="flex flex-col gap-1.5 text-sm">

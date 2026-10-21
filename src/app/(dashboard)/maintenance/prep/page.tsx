@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { useAuth } from "@/contexts/auth-context";
 import { prepService, type PrepCar } from "@/lib/services/prep-service";
 import { authService } from "@/lib/services/auth-service";
@@ -9,8 +10,14 @@ import { downloadBlob, pdfService } from "@/lib/services/pdf-service";
 import type { User } from "@/lib/types";
 import { Page } from "@/components/polaris";
 import { PrepBoard } from "@/components/prep/prep-board";
-import { PrepTodoSheet } from "@/components/prep/prep-todo-sheet";
 import { toast } from "@/lib/toast";
+
+// The Things to do sheet only opens from a card, so it loads in its own chunk
+// after the board rather than with it.
+const PrepTodoSheet = dynamic(
+  () => import("@/components/prep/prep-todo-sheet").then((m) => m.PrepTodoSheet),
+  { ssr: false },
+);
 
 /**
  * Prep & repair — the stage between "inspection complete" and the sales
@@ -23,6 +30,7 @@ import { toast } from "@/lib/toast";
  */
 export default function PrepAndRepairPage() {
   const { company, user } = useAuth();
+  const companyId = company?.id;
   const [cars, setCars] = useState<PrepCar[] | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [openCarId, setOpenCarId] = useState<string | null>(null);
@@ -35,15 +43,15 @@ export default function PrepAndRepairPage() {
   }, [company]);
 
   useEffect(() => {
-    if (!company) return;
+    if (!companyId) return;
     void Promise.all([
-      prepService.getQueue(company.id),
-      authService.getUsersForCompany(company.id),
+      prepService.getQueue(companyId),
+      authService.getUsersForCompany(companyId),
     ]).then(([queue, team]) => {
       setCars(queue);
       setUsers(team);
     });
-  }, [company]);
+  }, [companyId]);
 
   async function handleAssign(vehicleId: string, userId: string | null) {
     if (!user) return;

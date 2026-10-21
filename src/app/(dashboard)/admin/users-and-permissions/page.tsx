@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ShieldX } from "lucide-react";
 import { Card, EmptyState, Page } from "@/components/polaris";
@@ -24,10 +24,15 @@ export default function TeamAndSecurityPage() {
 
   // The role-based "Invite Member" CTA (IAM Admin / Owner) navigates here with
   // ?invite=1 — auto-open the invite dialog so the CTA lands in the flow.
+  // Opens when the request becomes true (including once permissions load),
+  // not on every render, so closing the dialog keeps it closed.
   const searchParams = useSearchParams();
-  useEffect(() => {
-    if (searchParams.get("invite") === "1" && canManage) setAddStaffOpen(true);
-  }, [searchParams, canManage]);
+  const inviteRequested = searchParams.get("invite") === "1" && canManage;
+  const [prevInviteRequested, setPrevInviteRequested] = useState(false);
+  if (inviteRequested !== prevInviteRequested) {
+    setPrevInviteRequested(inviteRequested);
+    if (inviteRequested) setAddStaffOpen(true);
+  }
 
   return (
     <Page

@@ -9,8 +9,8 @@ interface PendingPurchaseBannerProps {
   warranties: Warranty[];
 }
 
-// Plain helper (not a hook) so the time read stays out of render — mirrors the
-// date helpers in warranty-table.tsx.
+// Plain helper (not a hook) so the time read stays out of the component body —
+// mirrors the date helpers in warranty-table.tsx.
 function summarisePending(warranties: Warranty[]): {
   count: number;
   totalOwed: number;

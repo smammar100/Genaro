@@ -56,13 +56,14 @@ export default function ClaimsPage() {
   const [sheetWarranty, setSheetWarranty] = useState<Warranty | null>(null);
   const refetch = () => setRefreshKey((k) => k + 1);
 
+  const companyId = company?.id;
   useEffect(() => {
-    if (!company) return;
+    if (!companyId) return;
     let cancel = false;
     void Promise.all([
-      claimService.getAll(company.id),
-      vehicleService.getAll(company.id),
-      warrantyService.getAll(company.id),
+      claimService.getAll(companyId),
+      vehicleService.getAll(companyId),
+      warrantyService.getAll(companyId),
     ]).then(([c, v, w]) => {
       if (cancel) return;
       setClaims(c);
@@ -72,7 +73,7 @@ export default function ClaimsPage() {
     return () => {
       cancel = true;
     };
-  }, [company, refreshKey]);
+  }, [companyId, refreshKey]);
 
   useRealtimeTable({
     table: "warranty_claims",
@@ -150,8 +151,6 @@ export default function ClaimsPage() {
         onAction: () => setNewClaimOpen(true),
       }}
     >
-      {/* View tabs: their own row under the header, outside the list card. */}
-
       <KpiStrip refreshKey={refreshKey} />
 
       <FilterChips

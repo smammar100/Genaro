@@ -17,7 +17,6 @@ import {
   EmptyCell,
   InvoiceStatusCell,
   LeadStatusCell,
-  MaintenanceStatusCell,
   NumberCell,
   PhoneCell,
   ReturnResolutionCell,
@@ -338,13 +337,13 @@ export function DataGridRow<T>({
       {selection && rowId ? (
         <td
           className={cn(
-            // Sticky cells use SOLID backgrounds. Earlier translucent
-            // versions (`bg-muted/40`, `bg-primary/5`) let scrolled-out
-            // content bleed through and visually corrupt the cell text
-            // (e.g. a date column's "04/07/2026" sliding under the
-            // sticky stock-ID column produced "CC400072026"-style
-            // artifacts). The drop shadow marks the boundary between
-            // pinned and scrollable content.
+            // Sticky cells use SOLID backgrounds. Translucent ones
+            // (`bg-muted/40`, `bg-primary/5`) let scrolled-out content
+            // bleed through and visually corrupt the cell text (e.g. a
+            // date column's "04/07/2026" sliding under the sticky
+            // stock-ID column produces "CC400072026"-style artifacts).
+            // The drop shadow marks the boundary between pinned and
+            // scrollable content.
             // bg-card keeps it opaque AND white (GEN-62); the row's tints
             // are mixed into --card so sticky cells match the normal ones.
             "sticky left-0 z-10 border-b bg-card text-center",
@@ -358,11 +357,11 @@ export function DataGridRow<T>({
             className="flex items-center justify-center"
             style={{ height: ROW_H }}
           >
-                        <Checkbox
+            <Checkbox
               checked={isSelected}
               onCheckedChange={() => selection.toggle(rowId)}
               aria-label={`Select row ${index + 1}`}
-                            onClick={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
             />
           </div>
         </td>
@@ -466,7 +465,3 @@ function DataGridCell<T>({ col, row, index }: CellProps<T>) {
       return <TextCell value={value} />;
   }
 }
-
-// Dummy import so TS doesn't grumble about unused MaintenanceStatusCell —
-// it's part of the public API even if no consumer uses it via dispatch.
-void MaintenanceStatusCell;

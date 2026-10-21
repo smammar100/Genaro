@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  * DonutChart for a categorical breakdown with a full-width data legend.
  * Colours come from the app's brand --chart-1..5 tokens in a fixed order
  * (never cycled); marks are thin with rounded data-ends and recessive axes;
- * each mark carries a <title> for a native hover tooltip.
+ * each mark carries a data-tooltip, shown as a Polaris tooltip (TitleTooltips).
  */
 
 /*
@@ -131,8 +131,7 @@ export function BarChart({
         const cx = padL + band * i + band / 2;
         const bh = plotH * (d.value / max);
         return (
-          <g key={d.label}>
-            <title>{`${d.label}: ${format(d.value)}`}</title>
+          <g key={d.label} data-tooltip={`${d.label}: ${format(d.value)}`}>
             <rect
               x={cx - barW / 2}
               y={padT + plotH - bh}
@@ -245,9 +244,8 @@ export function DonutChart({
               strokeDasharray={`${Math.max(dash - 3, 0)} ${c}`}
               strokeDashoffset={-starts[i]}
               transform={`rotate(-90 ${cx} ${cx})`}
-            >
-              <title>{`${d.label}: ${format(d.value)} (${Math.round((d.value / total) * 100)}%)`}</title>
-            </circle>
+              data-tooltip={`${d.label}: ${format(d.value)} (${Math.round((d.value / total) * 100)}%)`}
+            />
           );
         })}
         <text

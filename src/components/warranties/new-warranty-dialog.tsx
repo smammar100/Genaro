@@ -210,7 +210,6 @@ export function NewWarrantyDialog({
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-col gap-4 px-6"
         >
-          {/* Vehicle & customer */}
           <Card title="Vehicle and customer">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
@@ -272,7 +271,6 @@ export function NewWarrantyDialog({
             </div>
           </Card>
 
-          {/* 3. Provider (external only) */}
           {type === "external" && (
             <Card title="Provider">
               <div className="grid gap-3 sm:grid-cols-2">
@@ -309,7 +307,6 @@ export function NewWarrantyDialog({
             </Card>
           )}
 
-          {/* 4. Coverage */}
           <Card title="Coverage">
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="flex flex-col gap-1.5">
@@ -353,7 +350,6 @@ export function NewWarrantyDialog({
             </Field>
           </Card>
 
-          {/* 5. Pricing */}
           <Card title="Pricing">
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Cost to customer (£)">

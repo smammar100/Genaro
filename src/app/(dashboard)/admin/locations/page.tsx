@@ -114,7 +114,7 @@ export default function LocationsPage() {
 
   if (!companyId || !actorId) {
     return (
-      <Page title="Locations">
+      <Page fullWidth title="Locations">
         <p className="body-md text-(--text-secondary)">Loading session…</p>
       </Page>
     );

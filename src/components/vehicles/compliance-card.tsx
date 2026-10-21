@@ -9,9 +9,8 @@ import { Label } from "@/components/ui/label";
 import { formatDate } from "@/lib/utils";
 
 /**
- * ComplianceCard — read-only summary of the DVLA + DVSA fields the
- * /api/vehicle/lookup route returns. Lives between sections 3 (Documentation)
- * and 4 (Purchase Cost) on the Add Vehicle form.
+ * ComplianceCard — summary of the DVLA + DVSA fields the /api/vehicle/lookup
+ * route returns, in the identity section of the Add Vehicle form.
  *
  * Each datum is an always-on input so Ali can override DVLA-incorrect data
  * (e.g. taxStatus stale by a few days). On blur the override propagates back
@@ -112,7 +111,7 @@ export function ComplianceCard({
       </div>
 
       {/* 6 detail fields — 2 per row to match the vehicle-identity + seller
-          sections above and below (was 3-col on lg, which looked inconsistent). */}
+          sections above and below. */}
       <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
         <EditableField
           label="Registration date"
@@ -263,13 +262,12 @@ function EditableField({
   // or sibling override updates the field. Date inputs commit on change
   // (single interaction); text/number commit on blur so typing isn't cut off.
   const [draft, setDraft] = useState(value ?? "");
-  const id = React.useId();
-
-  /* eslint-disable react-hooks/set-state-in-effect */
-  React.useEffect(() => {
+  const [prevValue, setPrevValue] = useState(value);
+  if (prevValue !== value) {
+    setPrevValue(value);
     setDraft(value ?? "");
-  }, [value]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+  }
+  const id = React.useId();
 
   function commit(next: string) {
     onCommit(next.trim() === "" ? null : next);

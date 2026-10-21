@@ -168,15 +168,12 @@ export function fieldIds(baseId: string) {
     dealerPartner: `${baseId}-dealer-partner`,
     localOrImport: `${baseId}-local-or-import`,
     auctionHouse: `${baseId}-auction-house`,
-    auctionHouseList: `${baseId}-auction-houses`,
     ownedBy: `${baseId}-owned-by`,
-    ownedByList: `${baseId}-owned-by-list`,
     invoiceDate: `${baseId}-invoice-date`,
     legacySerial: `${baseId}-legacy-serial`,
     ownerDetails: `${baseId}-owner-details`,
     creditNoteDate: `${baseId}-credit-note-date`,
     logBook: `${baseId}-log-book`,
-    logBookList: `${baseId}-log-book-list`,
     euroStatus: `${baseId}-euro-status`,
     engineSizeKw: `${baseId}-engine-size-kw`,
     numSeats: `${baseId}-num-seats`,
@@ -201,5 +198,5 @@ export function fieldIds(baseId: string) {
 
 export type FieldIds = ReturnType<typeof fieldIds>;
 
-/** Id of a cost-table amount input (kept from the original CostRow). */
+/** Id of a cost-table amount input. */
 export const costRowId = (name: MoneyField) => `cost-row-${name}`;

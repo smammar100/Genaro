@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "@/lib/toast";
 import {
   ChoiceList,
@@ -82,7 +82,9 @@ export function MoveDialog({
   const [submitting, setSubmitting] = useState(false);
 
   // Reset when re-opened.
-  useEffect(() => {
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) {
       setDestination(null);
       setVendorId("");
@@ -91,7 +93,7 @@ export function MoveDialog({
       setNotes("");
       setSubmitting(false);
     }
-  }, [open]);
+  }
 
   const activeVendors = useMemo(() => vendors.filter((v) => v.active), [vendors]);
   const activeUsers = useMemo(() => users.filter((u) => u.active), [users]);
@@ -173,7 +175,6 @@ export function MoveDialog({
           (since {shortDate(vehicle.locationSince)})
         </p>
 
-        {/* Destination — the current location is disabled. */}
         <ChoiceList
           title="Move to"
           choices={VEHICLE_LOCATIONS.map((loc) => ({
@@ -186,7 +187,6 @@ export function MoveDialog({
           onChange={(sel) => setDestination((sel[0] as VehicleLocation) ?? null)}
         />
 
-        {/* Garage branch — vendor */}
         {destination === "garage" ? (
           <Select
             id="move-vendor"
@@ -202,7 +202,6 @@ export function MoveDialog({
           />
         ) : null}
 
-        {/* Staff branch — user */}
         {destination === "staff" ? (
           <Select
             id="move-staff"
@@ -215,7 +214,6 @@ export function MoveDialog({
           />
         ) : null}
 
-        {/* Expected return — only for garage/staff */}
         {needsBranch ? (
           <Labelled id="move-expected" label="Expected back" requiredIndicator>
             <Input
@@ -227,7 +225,6 @@ export function MoveDialog({
           </Labelled>
         ) : null}
 
-        {/* Notes — always optional */}
         <TextField
           id="move-notes"
           label="Notes"

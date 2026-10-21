@@ -111,15 +111,16 @@ export default function DealerPartnerDetailPage({
   // inline "added" callback to hook. Refetch stock when the tab regains
   // visibility (e.g. the user finishes adding and returns) so a vehicle just
   // sourced from this partner shows up without a manual reload.
+  const hasPartner = partner !== null;
   useEffect(() => {
-    if (!company) return;
+    if (!company || !hasPartner) return;
     const cid = company.id;
     const onVisible = () => {
-      if (document.visibilityState === "visible" && partner) loadStock(cid);
+      if (document.visibilityState === "visible") loadStock(cid);
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [company, partner, loadStock]);
+  }, [company, hasPartner, loadStock]);
 
   const stockCols = useMemo<ColumnDef<Vehicle>[]>(
     () => [
@@ -202,7 +203,7 @@ export default function DealerPartnerDetailPage({
 
   if (loaded && !partner) {
     return (
-      <Page title="Dealer partner" backAction={BACK_ACTION}>
+      <Page fullWidth title="Dealer partner" backAction={BACK_ACTION}>
         <EmptyState heading="Partner not found">
           This dealer partner doesn&apos;t exist or the table isn&apos;t
           migrated.
@@ -213,7 +214,7 @@ export default function DealerPartnerDetailPage({
 
   if (!partner) {
     return (
-      <Page title="Dealer partner" backAction={BACK_ACTION}>
+      <Page fullWidth title="Dealer partner" backAction={BACK_ACTION}>
         <Card>
           <SkeletonBodyText lines={4} />
         </Card>
@@ -223,6 +224,7 @@ export default function DealerPartnerDetailPage({
 
   return (
     <Page
+      fullWidth
       title={partner.companyName ?? partner.name}
       subtitle={partner.companyName ? partner.name : undefined}
       backAction={BACK_ACTION}

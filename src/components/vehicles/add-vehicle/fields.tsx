@@ -25,7 +25,7 @@ export function Important() {
 }
 
 /** Marks a field that the DVLA / AutoTrader lookup filled in. */
-export function FromDvla() {
+function FromDvla() {
   return (
     <Badge tone="info" icon={<Sparkles className="size-3" />}>
       From DVLA
@@ -35,8 +35,8 @@ export function FromDvla() {
 
 /**
  * Label + registered input + the (typo-only) validation message. Inputs stay
- * the app's RHF-registered `Input` (refs, onBlur-driven validation, datalists,
- * date pickers); the label/help/error spacing mirrors Polaris' Labelled so
+ * the app's RHF-registered `Input` (refs, onBlur-driven validation, suggestion
+ * lists, date pickers); the label/help/error spacing mirrors Polaris' Labelled so
  * they line up with the Polaris Selects in the same grid. The "From DVLA"
  * badge sits beside the <label>, not in it, so the field's accessible name is
  * unchanged.

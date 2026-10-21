@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
@@ -56,13 +57,14 @@ export default function ExternalWarrantiesPage() {
   const [markPurchasedFor, setMarkPurchasedFor] = useState<Warranty | null>(null);
   const refetch = () => setRefreshKey((k) => k + 1);
 
+  const companyId = company?.id;
   useEffect(() => {
-    if (!company) return;
+    if (!companyId) return;
     let cancel = false;
     void Promise.all([
-      warrantyService.getByType("external", company.id),
-      vehicleService.getAll(company.id),
-      claimService.getAll(company.id),
+      warrantyService.getByType("external", companyId),
+      vehicleService.getAll(companyId),
+      claimService.getAll(companyId),
     ]).then(([w, v, c]) => {
       if (cancel) return;
       setWarranties(w);
@@ -72,7 +74,7 @@ export default function ExternalWarrantiesPage() {
     return () => {
       cancel = true;
     };
-  }, [company, refreshKey]);
+  }, [companyId, refreshKey]);
 
   useRealtimeTable({
     table: "warranties",
@@ -146,8 +148,6 @@ export default function ExternalWarrantiesPage() {
         onAction: () => setNewWarrantyOpen(true),
       }}
     >
-      {/* View tabs: their own row under the header, outside the list card. */}
-
       <KpiStrip refreshKey={refreshKey} />
 
       {warranties && <PendingPurchaseBanner warranties={warranties} />}

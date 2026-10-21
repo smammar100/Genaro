@@ -41,9 +41,8 @@ export function vehicleMatches(v: Vehicle, query: string): boolean {
  * What the input shows once a vehicle is picked.
  *
  * Display only — matching is done by `vehicleMatches` via the `filter={null}`
- * below, so this no longer has to carry every searchable form of the reg. It
- * used to append the space-stripped plate ("L400 JCM L400JCM · …") to keep the
- * built-in matcher happy, which read as a typo in the selected field.
+ * below, so the label need not carry every searchable form of the reg (a
+ * space-stripped plate appended here would read as a typo in the field).
  */
 function displayLabel(v: Vehicle): string {
   return `${v.registration} · ${v.make} ${v.model} (${v.stockId})`;

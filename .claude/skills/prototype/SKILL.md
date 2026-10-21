@@ -49,3 +49,14 @@ list, a detail page…) follow this loop, **one feature at a time**.
 - Reuse the foundation already in place: the Nord token bridge (`src/app/globals.css`),
   `NordRegister`, the `@/components/nord/form/*` adapters, and the toast bridge.
 - Light + dark must both look right (the `.dark` token bridge flips everything).
+
+## Kanban boards
+- Any board (pipeline, jobs, prep or a new one) is built from `src/components/kanban`. Read
+  `src/components/kanban/README.md` first. Variations change what's on the card (`KanbanCard`
+  props: facts, note, chips, action) or the columns. They don't hand-build lanes or card surfaces.
+- The look comes from the reference board (github.com/kargulstudio/kanban): lanes on one
+  hairline-divided surface, a filled status badge with the name and count, soft white
+  `rounded-(--radius-400)` cards (`--kanban-card-shadow`), a footer of pill chips with no outline,
+  a tilted card with a focus ring while dragging, dashed drop slots, and a hidden-columns rail.
+- Show every variation with no photo (`PHOTOS_ENABLED` is off for Phase 1), in light and dark,
+  and at 375px, where it shows one lane at a time with the next one peeking in.

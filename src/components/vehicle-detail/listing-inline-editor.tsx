@@ -19,10 +19,9 @@ import { cn } from "@/lib/utils";
 /**
  * Inline description + highlights editing on the Listing tab (GEN-103).
  *
- * The tab was read-only: every change bounced the user out to the full Advert
- * editor, which is right for composing an advert and heavy-handed for fixing
- * one typo in a bullet. This adds the quick path; the "Edit Advert" deep link
- * stays for real composition.
+ * The full Advert editor is right for composing an advert and heavy-handed for
+ * fixing one typo in a bullet, so this is the quick path; the "Edit advert"
+ * deep link stays for real composition.
  *
  * Validation comes from the same `advert-limits` module the Advert editor
  * uses, so the two cannot disagree about what fits.

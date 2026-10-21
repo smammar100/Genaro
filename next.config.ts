@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
+  // Development only: the "N" badge defaults to bottom-left, where it covers
+  // the sidebar's Settings row and its collapse/show buttons.
+  devIndicators: { position: "bottom-right" },
   reactStrictMode: true,
   images: {
     formats: ["image/avif", "image/webp"],

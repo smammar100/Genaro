@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, Mail, Pencil, Printer, Receipt } from "lucide-react";
 import {
@@ -8,6 +9,7 @@ import {
   Badge,
   Banner,
   Card,
+  DropZone,
   EmptyState,
   IndexTable,
   Labelled,
@@ -30,7 +32,6 @@ import {
   pdfService,
 } from "@/lib/services/pdf-service";
 import type { Invoice, InvoiceType, Vehicle } from "@/lib/types";
-import { ExternalInvoiceList } from "@/components/external-invoices";
 import { InvoiceDetailDialog } from "@/components/invoicing/invoice-detail-dialog";
 import { RegPlate } from "@/components/shared/reg-plate";
 import {
@@ -45,6 +46,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { toast } from "@/lib/toast";
+
+// The vendor-bill tabs (list, create form, attachment upload) are fetched when
+// one is first opened, so the default ledger tab doesn't download them.
+const ExternalInvoiceList = dynamic(
+  () =>
+    import("@/components/external-invoices").then((m) => m.ExternalInvoiceList),
+  {
+    loading: () => (
+      <Card>
+        <SkeletonBodyText lines={6} />
+      </Card>
+    ),
+  },
+);
 
 type Filter = InvoiceType | "all";
 type TopTab = "sales" | "purchase" | "external_job";
@@ -82,7 +97,6 @@ export default function InvoicingPage() {
   const partyNameId = `${baseId}-party-name`;
   const invoiceDateId = `${baseId}-invoice-date`;
   const totalId = `${baseId}-total`;
-  const attachmentId = `${baseId}-attachment`;
   const emailToId = `${baseId}-email-to`;
   const emailSubjectId = `${baseId}-email-subject`;
   const emailMessageId = `${baseId}-email-message`;
@@ -671,14 +685,15 @@ export default function InvoicingPage() {
               onChange={(v) => setUploadFields((f) => ({ ...f, total: v }))}
             />
           </div>
-          <Labelled id={attachmentId} label="Attachment">
-            <Input
-              id={attachmentId}
-              type="file"
-              accept="application/pdf,image/*"
-              onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
-            />
-          </Labelled>
+          <DropZone
+            label="Attachment"
+            accept="application/pdf,image/*"
+            allowMultiple={false}
+            size="small"
+            actionTitle={uploadFile ? "Replace file" : "Add file"}
+            actionHint={uploadFile ? uploadFile.name : "Accepts PDF and images"}
+            onDrop={([file]) => setUploadFile(file ?? null)}
+          />
         </div>
       </Modal>
 

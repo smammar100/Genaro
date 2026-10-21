@@ -5,10 +5,14 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { innermostFirst } from "./layers";
 import { XIcon } from "lucide-react";
 import type React from "react";
 
-export const Sheet: typeof SheetPrimitive.Root = SheetPrimitive.Root;
+/** Stays open while a Polaris popover inside it takes Escape or a click (see layers.ts). */
+export function Sheet({ onOpenChange, ...props }: SheetPrimitive.Root.Props) {
+  return <SheetPrimitive.Root {...props} onOpenChange={innermostFirst(onOpenChange)} />;
+}
 
 const SheetPortal: typeof SheetPrimitive.Portal = SheetPrimitive.Portal;
 

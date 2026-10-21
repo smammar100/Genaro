@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import { Banner, Labelled, Modal, Select, TextField } from "@/components/polaris";
 import { VehiclePicker } from "@/components/shared/vehicle-picker";
+import { Input } from "@/components/ui/input";
 import {
   fmtHour,
   halfHourOptions,
@@ -87,7 +88,7 @@ export function fieldsForEvent(ev: CalEvent): FormFields {
   }
 }
 
-export function validateFields(f: FormFields): string | null {
+function validateFields(f: FormFields): string | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date)) return "Pick a date.";
   if (f.kind === "appt") {
     if (!f.customerName.trim()) return "Add the customer's name.";
@@ -176,15 +177,7 @@ export function EventFormModal({
   const when = (
     <div className="grid grid-cols-2 gap-3">
       <Labelled id={dateId} label={fields.kind === "maint" ? "Due date" : "Date"}>
-        <div className="p-field">
-          <input
-            id={dateId}
-            type="date"
-            className="p-field__input"
-            value={fields.date}
-            onChange={(e) => set("date", e.target.value)}
-          />
-        </div>
+        <Input id={dateId} type="date" value={fields.date} onChange={(e) => set("date", e.target.value)} />
       </Labelled>
       <Select label="Time" options={timeOptions} value={fields.time} onChange={(v) => set("time", v)} />
     </div>

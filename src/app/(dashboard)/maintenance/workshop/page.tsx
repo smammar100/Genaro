@@ -102,6 +102,7 @@ export default function WorkshopPage() {
   const pathname = usePathname();
   const { confirm, confirmDialog } = useConfirm();
   const { user, company } = useAuth();
+  const companyId = company?.id;
   const [jobs, setJobs] = useState<WorkshopJob[] | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [open, setOpen] = useState(false);
@@ -127,15 +128,15 @@ export default function WorkshopPage() {
   });
 
   useEffect(() => {
-    if (!company) return;
+    if (!companyId) return;
     void Promise.all([
-      workshopService.getAll(company.id),
-      authService.getUsersForCompany(company.id),
+      workshopService.getAll(companyId),
+      authService.getUsersForCompany(companyId),
     ]).then(([j, u]) => {
       setJobs(j);
       setUsers(u);
     });
-  }, [company]);
+  }, [companyId]);
 
   function openAdd() {
     setEditingId(null);
@@ -197,7 +198,7 @@ export default function WorkshopPage() {
    * against stock on demand. Navigates when a match exists; otherwise says so.
    */
   async function openVehicleFromReg(reg: string) {
-    if (!reg?.trim()) return;
+    if (!reg.trim()) return;
     try {
       const vehicle = await vehicleService.getByRegistration(
         reg,

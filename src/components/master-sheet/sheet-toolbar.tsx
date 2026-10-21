@@ -12,7 +12,7 @@ import {
 
 type Option = { value: string; label: string };
 
-export interface SheetFilterBuilder {
+interface SheetFilterBuilder {
   fields: Option[];
   field: string;
   onFieldChange: (field: string) => void;
@@ -25,7 +25,7 @@ export interface SheetFilterBuilder {
   onAdd: () => void;
 }
 
-export interface SheetToolbarProps {
+interface SheetToolbarProps {
   /** "21 of 72 shown". */
   columnsLabel: string;
   /** The column picker, shown in a popover from the columns button. */

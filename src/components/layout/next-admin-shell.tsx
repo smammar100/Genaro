@@ -35,16 +35,32 @@ export function NextAdminShell({
   const guidedSteps = useGuidedSteps();
   const tourGroup = tourRunning ? navGroupForHref(guidedSteps[currentStep]?.awaitRoute) : null;
 
-  const open = expandedNavGroup(groups, { pathname, tourGroup });
+  // The section the user clicked open, remembered with the route it was
+  // clicked on: navigating anywhere drops it, so the new route's section opens.
+  const [picked, setPicked] = React.useState<{ pathname: string; group: string | null } | null>(null);
+  const openGroup = picked?.pathname === pathname ? picked.group : undefined;
+
+  const open = expandedNavGroup(groups, { pathname, tourGroup, openGroup });
   const badges = useNavBadgeCounts(
     navigation && Boolean(open?.items.some((item) => NAV_BADGE_HREFS.has(item.href))),
   );
+
+  // Clicking the open section closes it; clicking another opens that one.
+  const toggleGroup = (group: string) =>
+    setPicked({ pathname, group: open?.label === group ? null : group });
 
   return (
     <AdminShell
       navigation={
         navigation ? (
-          <AdminNavigation groups={groups} pathname={pathname} tourGroup={tourGroup} badges={badges} />
+          <AdminNavigation
+            groups={groups}
+            pathname={pathname}
+            tourGroup={tourGroup}
+            openGroup={openGroup}
+            onToggleGroup={toggleGroup}
+            badges={badges}
+          />
         ) : undefined
       }
     >

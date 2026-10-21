@@ -153,6 +153,7 @@ export default function SettingsPage() {
 
   return (
     <Page
+      fullWidth
       title="Settings"
       subtitle={`Your profile${canManage ? ", plus your company details, inspection checklist, sales pipeline, lead channels and backups" : ""}.`}
     >

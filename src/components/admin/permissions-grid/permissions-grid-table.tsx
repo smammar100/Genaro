@@ -5,7 +5,6 @@ import {
   CAPABILITY_GROUPS,
   CAPABILITY_LABELS,
   type Capability,
-  type CapabilityGroup,
 } from "@/lib/capabilities";
 import { capabilitiesForRoles } from "@/lib/roles";
 import { Trash2, SlidersHorizontal, KeyRound } from "lucide-react";
@@ -19,8 +18,6 @@ import type { PermissionsMap } from "./types";
 
 interface Props {
   users: User[];
-  /** Visible capability groups (drives the grouped two-row header). */
-  groups?: CapabilityGroup[];
   localState: PermissionsMap;
   serverState: PermissionsMap;
   currentUserId?: UUID;
@@ -29,6 +26,9 @@ interface Props {
   onEditRoles?: (user: User) => void;
   onResetPassword?: (user: User) => void;
 }
+
+// Columns flattened in group order (keeps related capabilities adjacent).
+const CAPS = CAPABILITY_GROUPS.flatMap((g) => g.capabilities);
 
 const MEMBER_COL_W = 248;
 const CAP_COL_W = 92;
@@ -44,7 +44,6 @@ const ROW_ACTION =
 
 export function PermissionsGridTable({
   users,
-  groups = CAPABILITY_GROUPS,
   localState,
   serverState,
   currentUserId,
@@ -53,9 +52,6 @@ export function PermissionsGridTable({
   onEditRoles,
   onResetPassword,
 }: Props) {
-  // Columns flattened in group order (keeps related capabilities adjacent).
-  const caps = groups.flatMap((g) => g.capabilities);
-
   return (
     <div className="relative max-h-[calc(100dvh-17rem)] min-h-80 overflow-auto">
       <table
@@ -64,7 +60,7 @@ export function PermissionsGridTable({
       >
         <colgroup>
           <col style={{ width: MEMBER_COL_W }} />
-          {caps.map((cap) => (
+          {CAPS.map((cap) => (
             <col key={cap} style={{ width: CAP_COL_W }} />
           ))}
         </colgroup>
@@ -83,7 +79,7 @@ export function PermissionsGridTable({
                 {users.length} member{users.length === 1 ? "" : "s"}
               </span>
             </th>
-            {caps.map((cap) => (
+            {CAPS.map((cap) => (
               <th
                 key={cap}
                 className="border-b border-l border-(--border) bg-(--bg-surface-secondary) px-1.5 py-1.5 text-center align-middle"
@@ -198,7 +194,7 @@ export function PermissionsGridTable({
                     </div>
                   </div>
                 </td>
-                {caps.map((cap) => {
+                {CAPS.map((cap) => {
                   const checked = local.has(cap);
                   const roleGranted = roleCaps.has(cap);
                   const changed =

@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import {
   ActionList,
   Avatar,
@@ -18,19 +19,29 @@ import { accountHandle } from "@/lib/auth/username";
 import { toast } from "@/lib/toast";
 import { openCommandPalette } from "./command-palette";
 import { HealthIndicator } from "./health-indicator";
+import { ThemeToggle } from "./theme-toggle";
 
 type Menu = "account" | "notifications";
 
 /**
  * The Polaris TopBar with the app's controls: the company as the logo (and the
  * tour's #tour-brand), the connection dot, a search field that opens the ⌘K
- * command palette (#tour-search), and the notifications and account menus.
+ * command palette (#tour-search), the light/dark switch, and the
+ * notifications and account menus.
  *
  * Both menus are one Popover whose activator is the whole bar: the panel hangs
  * from the bar's right edge, and clicks on the bar's own buttons count as
  * inside it, so a button can toggle its menu or swap to the other one.
  */
-export function AdminTopBar() {
+export function AdminTopBar({
+  onNavigationToggle,
+  navigationOpen = true,
+}: {
+  /** Opens and closes the sidebar (the drawer on a narrow window). */
+  onNavigationToggle?: () => void;
+  /** Whether the docked sidebar is showing; names the desktop toggle. */
+  navigationOpen?: boolean;
+} = {}) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, company, signOut } = useAuth();
@@ -94,8 +105,29 @@ export function AdminTopBar() {
       : []),
   ];
 
+  const sidebarLabel = navigationOpen ? "Hide sidebar" : "Show sidebar";
   const logo = (
     <span className="flex min-w-0 items-center gap-2">
+      {onNavigationToggle ? (
+        // Polaris's hamburger only shows below 1040px; this is the same
+        // control on a wide window, where the sidebar docks and can be
+        // collapsed out of sight (the client could not find the way back).
+        <span className="flex @max-[1039px]/p-topbar:hidden">
+          <button
+            type="button"
+            className="p-topbar__iconbtn"
+            aria-label={sidebarLabel}
+            title={`${sidebarLabel} ([)`}
+            onClick={onNavigationToggle}
+          >
+            {navigationOpen ? (
+              <PanelLeftClose aria-hidden className="size-5 text-(--icon-inverse)" />
+            ) : (
+              <PanelLeftOpen aria-hidden className="size-5 text-(--icon-inverse)" />
+            )}
+          </button>
+        </span>
+      ) : null}
       <Link
         id="tour-brand"
         href="/dashboard"
@@ -137,6 +169,8 @@ export function AdminTopBar() {
               openCommandPalette();
             }}
             showSidekick={false}
+            actions={<ThemeToggle />}
+            onNavigationToggle={onNavigationToggle}
             unreadNotifications={unreadCount > 0}
             onNotificationsClick={() => toggle("notifications")}
             onUserMenuClick={() => toggle("account")}

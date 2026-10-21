@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  forwardRef,
-  useImperativeHandle,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Card, EmptyState, TextField } from "@/components/polaris";
@@ -23,15 +17,8 @@ export interface PermissionsGridHandle {
   reload: () => Promise<void>;
 }
 
-interface PermissionsGridProps {
-  /** Rendered on the right of the toolbar row, inline with the search field. */
-  toolbarAction?: ReactNode;
-}
-
-export const PermissionsGrid = forwardRef<
-  PermissionsGridHandle,
-  PermissionsGridProps
->(function PermissionsGrid({ toolbarAction }, ref) {
+export const PermissionsGrid = forwardRef<PermissionsGridHandle>(
+  function PermissionsGrid(_props, ref) {
     const { user: currentUser } = useAuth();
     const {
       users,
@@ -81,7 +68,6 @@ export const PermissionsGrid = forwardRef<
                 onClearButtonClick={() => setFilter("")}
               />
             </div>
-            {toolbarAction}
           </div>
 
           {loading || !filtered ? (

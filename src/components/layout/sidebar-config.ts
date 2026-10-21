@@ -65,9 +65,9 @@ export interface SidebarGroup {
  * a calendar — comes after them. Maintenance is the case that matters, where
  * only the first two entries are stages a car passes through.
  *
- * Administrative used to sit second, directly under Dashboard, which pushed
- * every stage of the actual workflow below a group nobody touches hourly.
- * It now sits last: it reports on the lifecycle rather than being part of it.
+ * Administrative sits last: it reports on the lifecycle rather than being part
+ * of it, and a group nobody touches hourly shouldn't push every stage of the
+ * actual workflow down the rail.
  *
  * Items inside each group follow the same rule — Maintenance opens with the
  * Inspection Queue because that is what a car hits first, not the Pipeline
@@ -107,7 +107,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         icon: MapPin,
         requiredAnyOf: ["locations:move"],
       },
-      // "Add Vehicle" lives in the brand-row CTA above the nav, not here.
+      // "Add vehicle" is the dashboard's primary action (and in ⌘K), not a nav row.
     ],
   },
   {
@@ -119,9 +119,6 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     // two entries are the real sequence and nothing may be inserted between
     // them. Pipeline and Calendar are lenses on that same work, not further
     // stages, so they sit below it rather than interrupting it.
-    //
-    // Workshop Jobs used to sit third, between the two steps; it is now last
-    // (see the note on it below).
     items: [
       {
         label: "Inspection queue",
@@ -160,9 +157,9 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
       // Last, and deliberately below the two views: walk-in servicing for the
       // public — other people's vehicles, booked by phone, that you never
       // owned and will never sell. It is the odd one out in this group, but a
-      // whole heading for a single row costs more than it explains. What
-      // mattered was getting it out from between Inspection and Prep, where it
-      // put a stranger's car in the middle of preparing your own stock.
+      // whole heading for a single row costs more than it explains. It must not
+      // sit between Inspection and Prep, where it would put a stranger's car in
+      // the middle of preparing your own stock.
       {
         label: "Workshop jobs",
         href: "/maintenance/workshop",
@@ -244,11 +241,11 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
   },
   {
     // Everything that happens to a car after money changes hands. Returns
-    // moved here from Administrative: a return is the last step of a sale,
-    // not a back-office function.
+    // belong here rather than under Administrative: a return is the last step
+    // of a sale, not a back-office function.
     // Named for what is in it rather than when it happens. Three of the four
-    // rows are warranties and live under /warranties, so the heading now
-    // matches both the contents and the routes.
+    // rows are warranties and live under /warranties, so the heading matches
+    // both the contents and the routes.
     label: "Warranties",
     icon: Shield,
     items: [
@@ -447,14 +444,13 @@ export function requiredCapsForPath(pathname: string): Capability[] | null {
  *   Reports  — a backward-looking surface with no history to read now that the
  *              demo data has been cleared; it populates as trading begins.
  *
- * Activity Log is deliberately NOT here any more: the client called it "very
+ * Activity Log is deliberately NOT here: the client called it "very
  * important" (18 Sep 2026) — it is how an owner sees who changed what, and it
  * already filters by user, category and date.
  *
- * Master Calendar is deliberately NOT here. It was hidden with the other two
- * as a "reporting extra", which misread it: it shows what is booked next
- * rather than what already happened, so an empty database makes it a blank
- * diary to fill in, not a broken report.
+ * Master Calendar is deliberately NOT here either. It is not a "reporting
+ * extra": it shows what is booked next rather than what already happened, so
+ * an empty database makes it a blank diary to fill in, not a broken report.
  */
 export const MVP_HIDDEN_HREFS: ReadonlySet<string> = new Set([
   "/advert/work-list",

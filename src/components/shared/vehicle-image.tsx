@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { Car, RefreshCw } from "lucide-react";
 import type { Vehicle } from "@/lib/types";
@@ -52,9 +52,6 @@ interface Props {
   alt?: string;
   /** Overrides the variant's `sizes` when the slot is known to be smaller. */
   sizes?: string;
-  /** When true, ignores any cached URL and re-requests generation. */
-  forceRegenerate?: boolean;
-  onRegenerated?: (url: string) => void;
 }
 
 const VARIANT_CLASSES: Record<Variant, string> = {
@@ -92,8 +89,7 @@ async function fetchOrGenerate(
   })();
   inFlight.set(key, p);
   try {
-    const url = await p;
-    return url;
+    return await p;
   } finally {
     inFlight.delete(key);
   }
@@ -106,65 +102,31 @@ export function VehicleImage({
   className,
   alt,
   sizes,
-  forceRegenerate,
-  onRegenerated,
 }: Props) {
-  // "No image" mode: vehicle has no pre-rendered hero image and we haven't been
-  // asked to regenerate. Render the placeholder directly without hitting the
-  // image-gen API — used by mock/demo vehicles imported from the CSV stock list.
-  const placeholderOnly =
-    !forceRegenerate && angle === "hero" && !vehicle.heroImageUrl;
+  // "No image" mode: vehicle has no pre-rendered hero image. Render the
+  // placeholder directly without hitting the image-gen API — used by mock/demo
+  // vehicles imported from the CSV stock list.
+  const placeholderOnly = angle === "hero" && !vehicle.heroImageUrl;
 
   const initialUrl =
-    !forceRegenerate && angle === "hero" && vehicle.heroImageUrl
+    angle === "hero" && vehicle.heroImageUrl
       ? vehicle.heroImageUrl
       : urlFor(vehicle.id, angle);
   const [url, setUrl] = useState<string>(initialUrl);
   const [pending, setPending] = useState(false);
   const [errored, setErrored] = useState(placeholderOnly);
 
-  // If the parent triggers a regenerate, kick off a fresh fetch.
-  useEffect(() => {
-    if (!forceRegenerate) return;
-    let cancelled = false;
-    setErrored(false);
-    setPending(true);
-    fetchOrGenerate(vehicle.id, angle)
-      .then((u) => {
-        if (cancelled) return;
-        // Bust browser cache for the same path
-        const bust = `${u}?t=${Date.now()}`;
-        setUrl(bust);
-        onRegenerated?.(u);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setErrored(true);
-      })
-      .finally(() => {
-        if (!cancelled) setPending(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [forceRegenerate, vehicle.id, angle]);
-
-  // Reset when the vehicle changes
-  useEffect(() => {
+  // Start over when the vehicle changes (adjust-state-on-prop-change, in render).
+  const resetKey = `${vehicle.id}:${angle}:${placeholderOnly}`;
+  const [shownKey, setShownKey] = useState(resetKey);
+  if (resetKey !== shownKey) {
+    setShownKey(resetKey);
     setUrl(initialUrl);
     setPending(false);
     setErrored(placeholderOnly);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vehicle.id, angle, placeholderOnly]);
+  }
 
   function handleImgError() {
-    // For placeholder-only vehicles (no heroImageUrl), don't burn API calls
-    // generating real images — just show the fallback.
-    if (placeholderOnly) {
-      setErrored(true);
-      return;
-    }
     // 404 on the static file → trigger generation (unless we've already failed)
     const key = `${vehicle.id}:${angle}`;
     if (failed.has(key)) {
@@ -173,10 +135,7 @@ export function VehicleImage({
     }
     setPending(true);
     fetchOrGenerate(vehicle.id, angle)
-      .then((u) => {
-        setUrl(u);
-        onRegenerated?.(u);
-      })
+      .then(setUrl)
       .catch(() => {
         failed.add(key);
         setErrored(true);

@@ -14,6 +14,7 @@ import {
 } from "@/lib/master-sheet-metrics";
 import type { Vehicle } from "@/lib/types";
 import { VehicleImage } from "@/components/shared/vehicle-image";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { RegPlate } from "@/components/shared/reg-plate";
 import {
   AUCTION_HOUSE_SUGGESTIONS,
@@ -103,11 +104,13 @@ const COLS: ColDef[] = [
     editable: true,
     render: (v) => (
       <div className="flex items-center gap-2">
-        <VehicleImage
-          vehicle={v}
-          variant="thumb"
-          className="size-10 shrink-0 rounded-lg border border-(--border)"
-        />
+        {PHOTOS_ENABLED ? (
+          <VehicleImage
+            vehicle={v}
+            variant="thumb"
+            className="size-10 shrink-0 rounded-lg border border-(--border)"
+          />
+        ) : null}
         <div className="flex min-w-0 flex-col gap-0.5">
           <RegPlate registration={v.registration} size="sm" />
           <span className="body-sm text-(--text-secondary)">{v.stockId}</span>

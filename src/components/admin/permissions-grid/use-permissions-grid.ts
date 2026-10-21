@@ -17,6 +17,21 @@ function cloneMap(src: PermissionsMap): PermissionsMap {
   return out;
 }
 
+interface GridData {
+  list: User[];
+  server: PermissionsMap;
+}
+
+async function fetchGrid(companyId: UUID): Promise<GridData> {
+  // Bust the team:/auth: caches first so a member who accepted an invite
+  // since this grid last loaded shows up without a hard refresh (the
+  // accept-join insert happens server-side, outside this client's cache).
+  invalidate("team:");
+  const list = await teamService.getAll(companyId);
+  const server = await permissionService.effectiveCapabilitiesForUsers(list);
+  return { list, server };
+}
+
 interface UsePermissionsGrid {
   users: User[] | null;
   localState: PermissionsMap;
@@ -43,24 +58,31 @@ export function usePermissionsGrid(): UsePermissionsGrid {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const reload = useCallback(async () => {
-    if (!company) return;
-    setLoading(true);
-    // Bust the team:/auth: caches first so a member who accepted an invite
-    // since this grid last loaded shows up without a hard refresh (the
-    // accept-join insert happens server-side, outside this client's cache).
-    invalidate("team:");
-    const list = await teamService.getAll(company.id);
-    const server = await permissionService.effectiveCapabilitiesForUsers(list);
+  const applyGrid = useCallback(({ list, server }: GridData) => {
     setUsers(list);
     setServerState(server);
     setLocalState(cloneMap(server));
     setLoading(false);
-  }, [company]);
+  }, []);
+
+  const reload = useCallback(async () => {
+    if (!company) return;
+    setLoading(true);
+    applyGrid(await fetchGrid(company.id));
+  }, [company, applyGrid]);
+
+  // `loading` starts true for the first fetch; a new company shows the
+  // skeleton again while the effect below refetches for it.
+  const [fetchedCompany, setFetchedCompany] = useState(company);
+  if (company !== fetchedCompany) {
+    setFetchedCompany(company);
+    if (company) setLoading(true);
+  }
 
   useEffect(() => {
-    void reload();
-  }, [reload]);
+    if (!company) return;
+    void fetchGrid(company.id).then(applyGrid);
+  }, [company, applyGrid]);
 
   const toggleCapability = useCallback(
     (userId: UUID, cap: Capability) => {

@@ -16,8 +16,8 @@ const PAGE_SIZE_OPTIONS = [25, 50, 100];
  * Pagination controls. Shows row range ("Showing 26-50 of 114"), a rows-
  * per-page select, and prev/next buttons.
  *
- * Designed to sit at the bottom of a table card. Consumer passes the same
- * values the `usePagination` hook returns.
+ * Designed to sit at the bottom of a table card. The consumer owns the page
+ * and page-size state.
  */
 export function DataGridPagination({
   page,

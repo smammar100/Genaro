@@ -14,9 +14,8 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 
 /**
  * In-app invoice detail modal (line items + totals + Download PDF / Print).
- * Extracted from the Invoicing page so it can open in place wherever an invoice
- * is surfaced — e.g. Closed Deals — instead of navigating away (GEN-42).
- * Open when `invoice` is non-null.
+ * Opens in place wherever an invoice is surfaced — e.g. Closed Deals — instead
+ * of navigating away (GEN-42). Open when `invoice` is non-null.
  */
 export function InvoiceDetailDialog({
   invoice,

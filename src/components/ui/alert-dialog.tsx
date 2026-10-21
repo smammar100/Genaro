@@ -2,10 +2,13 @@
 
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
 import { cn } from "@/lib/utils";
+import { innermostFirst } from "./layers";
 import type React from "react";
 
-export const AlertDialog: typeof AlertDialogPrimitive.Root =
-  AlertDialogPrimitive.Root;
+/** Stays open while a Polaris popover inside it takes Escape or a click (see layers.ts). */
+export function AlertDialog({ onOpenChange, ...props }: AlertDialogPrimitive.Root.Props) {
+  return <AlertDialogPrimitive.Root {...props} onOpenChange={innermostFirst(onOpenChange)} />;
+}
 
 const AlertDialogPortal: typeof AlertDialogPrimitive.Portal =
   AlertDialogPrimitive.Portal;

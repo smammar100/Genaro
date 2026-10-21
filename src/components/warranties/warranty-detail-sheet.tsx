@@ -126,7 +126,6 @@ export function WarrantyDetailSheet({
           showCloseButton={false}
           className="flex w-full flex-col gap-0 bg-(--bg-surface-secondary) p-0 sm:max-w-[480px]"
         >
-          {/* Header */}
           <div className="flex items-center justify-between gap-3 border-b border-(--border) bg-(--bg-surface) px-4 py-3">
             <div className="flex min-w-0 flex-col">
               <SheetTitle className="heading-md">
@@ -147,7 +146,6 @@ export function WarrantyDetailSheet({
             </div>
           </div>
 
-          {/* Body */}
           <div className="flex-1 overflow-y-auto p-4">
             <div className="flex flex-col gap-4">
               <Card title="Vehicle">
@@ -254,7 +252,6 @@ export function WarrantyDetailSheet({
                 </dl>
               </Card>
 
-              {/* Purchase status — external only */}
               {warranty.type === "external" &&
                 (warranty.purchaseStatus === "pending" ? (
                   <Banner
@@ -322,7 +319,6 @@ export function WarrantyDetailSheet({
             </div>
           </div>
 
-          {/* Footer actions */}
           <div className="flex items-center justify-between gap-2 border-t border-(--border) bg-(--bg-surface) px-4 py-3">
             <MaybeTooltip reason={claimBlockedReason}>
               <Button
@@ -361,7 +357,6 @@ export function WarrantyDetailSheet({
         }}
       />
 
-      {/* Mark purchased dialog */}
       <MarkPurchasedDialog
         open={markPurchasedOpen}
         onOpenChange={setMarkPurchasedOpen}
@@ -372,7 +367,6 @@ export function WarrantyDetailSheet({
         }}
       />
 
-      {/* File claim dialog with warranty prefilled */}
       <NewClaimDialog
         open={fileClaimOpen}
         onOpenChange={setFileClaimOpen}

@@ -97,10 +97,18 @@ export function LocationHistoryDrawer({
   const [movements, setMovements] = useState<LocationMovement[] | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
+  // Back to the skeleton whenever a load starts: on open, for another
+  // vehicle, or after a mark-returned.
+  const loadKey = open ? `${vehicle.id}:${refreshToken}` : null;
+  const [prevLoadKey, setPrevLoadKey] = useState(loadKey);
+  if (loadKey !== prevLoadKey) {
+    setPrevLoadKey(loadKey);
+    if (loadKey !== null) setMovements(null);
+  }
+
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    setMovements(null);
     locationService
       .getMovementsForVehicle(vehicle.id)
       .then((rows) => {

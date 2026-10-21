@@ -28,6 +28,8 @@ export interface TopBarProps {
   onNotificationsClick?: () => void;
   /** Called by the store/avatar button (open your account menu). */
   onUserMenuClick?: () => void;
+  /** Extra icon buttons before notifications (use the `p-topbar__iconbtn` class), e.g. a theme switch. */
+  actions?: React.ReactNode;
   /** Replaces search with the unsaved-changes bar (Frame sets this from its own prop). */
   contextualSaveBar?: ContextualSaveBarProps;
   className?: string;
@@ -36,7 +38,7 @@ export interface TopBarProps {
 /** 56px admin top bar on bg-inverse: logo, search (⌘K), Sidekick, notifications, store menu. */
 export function TopBar({
   logo, storeName, searchPlaceholder, searchValue, onSearchChange, onSearchFocus, searchId, onNavigationToggle, showSidekick, onSidekickClick, unreadNotifications,
-  onNotificationsClick, onUserMenuClick, contextualSaveBar, className,
+  onNotificationsClick, onUserMenuClick, actions, contextualSaveBar, className,
 }: TopBarProps) {
   const frame = React.useContext(FrameContext);
   const toggle = onNavigationToggle || (frame && frame.hasNavigation ? frame.toggleNavigation : undefined);
@@ -76,6 +78,7 @@ export function TopBar({
                   <Icon source="SidekickMajor" />
                 </button>
               ) : null}
+              {actions}
               <button
                 type="button"
                 className={cx('p-topbar__iconbtn', unreadNotifications && 'p-topbar__iconbtn--unread')}

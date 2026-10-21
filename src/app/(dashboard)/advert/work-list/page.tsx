@@ -36,6 +36,7 @@ import { Switch } from "@/components/ui/switch";
 import { DaysInStockChip } from "@/components/shared/days-in-stock-chip";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { VehicleImage } from "@/components/shared/vehicle-image";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { AtIndicatorCell } from "@/components/data-grid";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -189,18 +190,19 @@ export default function ListingsPage() {
     },
   });
 
+  const companyId = company?.id;
   useEffect(() => {
-    if (!company) return;
+    if (!companyId) return;
     void Promise.all([
-      listingService.getAll(company.id),
-      vehicleService.getAll(company.id),
-      performanceService.getStats(company.id),
+      listingService.getAll(companyId),
+      vehicleService.getAll(companyId),
+      performanceService.getStats(companyId),
     ]).then(([l, v, stats]) => {
       setListings(l);
       setVehicles(v);
       setEnquiriesByVehicle(stats.byVehicle);
     });
-  }, [company]);
+  }, [companyId]);
 
   const readyVehicles = useMemo(
     () =>
@@ -217,6 +219,11 @@ export default function ListingsPage() {
     [vehicles, listings],
   );
 
+  const vehicleById = useMemo(
+    () => new Map(vehicles.map((v) => [v.id, v])),
+    [vehicles],
+  );
+
   const filtered = useMemo<ListingRow[] | null>(() => {
     if (!listings) return null;
     let out = [...listings];
@@ -226,7 +233,7 @@ export default function ListingsPage() {
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       out = out.filter((l) => {
-        const v = vehicles.find((x) => x.id === l.vehicleId);
+        const v = vehicleById.get(l.vehicleId);
         return (
           l.title.toLowerCase().includes(q) ||
           (v &&
@@ -238,14 +245,14 @@ export default function ListingsPage() {
     // v4.1 Gap 1 / TC-P6-003: hide listings whose vehicle has been removed
     // from website. Sold vehicles still show until that step is taken.
     out = out.filter((l) => {
-      const v = vehicles.find((x) => x.id === l.vehicleId);
+      const v = vehicleById.get(l.vehicleId);
       return !v || v.removedFromWebsiteAt === null;
     });
     return out.map((l) => ({
       ...l,
-      vehicle: vehicles.find((v) => v.id === l.vehicleId) ?? null,
+      vehicle: vehicleById.get(l.vehicleId) ?? null,
     }));
-  }, [listings, statusFilter, channelFilter, search, vehicles]);
+  }, [listings, statusFilter, channelFilter, search, vehicleById]);
 
   // Keep the selection valid as filters/data change: fall back to the first
   // row when the selected listing drops out of the filtered set.
@@ -620,7 +627,7 @@ export default function ListingsPage() {
                         : "hover:bg-(--bg-surface-hover)",
                     )}
                   >
-                    {l.vehicle ? (
+                    {!PHOTOS_ENABLED ? null : l.vehicle ? (
                       <VehicleImage
                         vehicle={l.vehicle}
                         variant="thumb"
@@ -639,7 +646,6 @@ export default function ListingsPage() {
                         </span>
                         <ListingStatusBadge status={l.status} />
                       </div>
-                      {/* Title */}
                       <span className="body-md-semibold mt-0.5 truncate">
                         {l.title}
                       </span>

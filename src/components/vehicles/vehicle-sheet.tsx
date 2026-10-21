@@ -6,7 +6,10 @@ import {
   useMemo,
   useRef,
   useState,
+  type ChangeEvent,
   type ComponentType,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
@@ -46,6 +49,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmptyState } from "@/components/shared/empty-state";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { VehicleImage } from "@/components/shared/vehicle-image";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { DataGridPagination } from "@/components/data-grid";
 import { LocationBadge } from "@/components/locations/location-badge";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
@@ -54,7 +58,9 @@ import {
   Checkbox as PolarisCheckbox,
   EmptyState as PolarisEmptyState,
   Page,
+  Select,
 } from "@/components/polaris";
+import { SuggestInput } from "@/components/ui/suggest-input";
 import { SheetToolbar } from "@/components/master-sheet/sheet-toolbar";
 import { TotalsRow } from "@/components/master-sheet/totals-row";
 import { useIsNarrow } from "@/hooks/use-media-query";
@@ -159,11 +165,72 @@ function colKey(c: ColDef): string {
   return `${String(c.key)}__${c.label}`;
 }
 
-const PAGE_SIZE = 25;
+/**
+ * The in-place editor for a text, number or date cell, flush with the cell
+ * (text-xs, the same inset, a tint rather than a border the cell's
+ * overflow-hidden would clip) so the value doesn't jump when editing starts
+ * (GEN-39). Dates get the Polaris date field; free-text cells with suggestions
+ * offer them in a Polaris list. Enter or leaving the cell saves, Escape cancels.
+ */
+function CellInput({
+  column: c,
+  value,
+  disabled,
+  alignEnd,
+  onChange,
+  onCommit,
+  onCancel,
+}: {
+  column: ColDef;
+  value: string;
+  disabled: boolean;
+  alignEnd: boolean;
+  onChange: (value: string) => void;
+  /** Called with the input's value at that moment, not a render-old draft. */
+  onCommit: (value: string) => void;
+  onCancel: () => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  const commit = () => onCommit(ref.current?.value ?? value);
+  const common = {
+    ref,
+    autoFocus: true,
+    value,
+    disabled,
+    "aria-label": c.label,
+    onChange: (e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value),
+    onBlur: commit,
+    onKeyDown: (e: ReactKeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        commit();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        onCancel();
+      }
+    },
+  };
+  const type = c.type === "number" || c.type === "currency" ? "number" : "text";
+  const flush = cn(
+    "h-7 w-full min-w-0 rounded bg-primary/10 px-1 text-xs text-foreground caret-primary outline-none disabled:opacity-60",
+    alignEnd && "text-right",
+  );
+  return (
+    // Clicks in the field or its portalled list must not reach the row,
+    // which opens the vehicle.
+    <div className="-mx-1 w-full min-w-0" onClick={(e: ReactMouseEvent) => e.stopPropagation()}>
+      {c.type === "date" ? (
+        <Input {...common} type="date" size="sm" className="h-7" />
+      ) : c.suggestions ? (
+        <SuggestInput {...common} type={type} suggestions={c.suggestions} className={flush} />
+      ) : (
+        <input {...common} type={type} step={c.type === "currency" ? "0.01" : undefined} className={flush} />
+      )}
+    </div>
+  );
+}
 
-/** Compact Shopify-style field for the filter builder row. */
-const FIELD_CLASS =
-  "h-8 rounded-lg border border-border bg-card px-2.5 text-sm text-foreground outline-none focus-visible:border-foreground focus-visible:ring-1 focus-visible:ring-foreground";
+const PAGE_SIZE = 25;
 
 // Column-resize bounds (GEN-20). Columns never shrink below MIN so a header
 // stays clickable, nor grow past MAX so one column can't run off the screen.
@@ -298,12 +365,6 @@ function rawValue(col: ColDef, v: Vehicle): unknown {
 }
 
 /**
- * Comparable value for a column (GEN-92). Reuses `rawValue` so sorting sees
- * exactly what export and inline-edit see, then coerces by column type —
- * money and mileage numerically, dates chronologically, everything else as
- * text. Without the per-type coercion, "£9,000" would sort above "£10,000".
- */
-/**
  * What the cell reads as: the option label for a fixed-choice column ("AUTO",
  * not `automatic`), the raw value otherwise. Export, sort and search all use
  * this so they agree with the screen.
@@ -313,6 +374,12 @@ function displayValue(col: ColDef, v: Vehicle): unknown {
   return col.options ? optionLabel(col.options, raw) : raw;
 }
 
+/**
+ * Comparable value for a column (GEN-92). Reuses `displayValue` so sorting
+ * sees exactly what export and the screen see, then coerces by column type —
+ * money and mileage numerically, dates chronologically, everything else as
+ * text. Without the per-type coercion, "£9,000" would sort above "£10,000".
+ */
 function sortValueFor(col: ColDef, v: Vehicle): string | number | null {
   const raw = displayValue(col, v);
   switch (col.type) {
@@ -393,7 +460,6 @@ function coerceCellValue(c: ColDef, draft: string): unknown {
     const n = Number(t);
     return Number.isNaN(n) ? null : n;
   }
-  if (c.type === "date") return t === "" ? null : t;
   return t === "" ? null : t;
 }
 
@@ -420,11 +486,13 @@ function CellContent({ col, v }: { col: ColDef; v: Vehicle }) {
     case "vehicle":
       return (
         <div className="flex items-center gap-2">
-          <VehicleImage
-            vehicle={v}
-            variant="thumb"
-            className="size-10 shrink-0 rounded-lg border border-(--border)"
-          />
+          {PHOTOS_ENABLED ? (
+            <VehicleImage
+              vehicle={v}
+              variant="thumb"
+              className="size-10 shrink-0 rounded-lg border border-(--border)"
+            />
+          ) : null}
           <RegPlate registration={v.registration} size="sm" />
         </div>
       );
@@ -517,7 +585,7 @@ interface VehicleSheetProps {
   /** Page title shown in the header. Omit when the route renders its own
    *  Polaris `Page` header (title + actions) around the sheet. */
   title?: string;
-  /** Optional clarifier line (PageHelper) rendered under the title. */
+  /** Optional clarifier line rendered under the title. */
   helper?: ReactNode;
   /** Row-count summary line; receives the filtered count + selected count. */
   summary: (count: number | null, selected: number) => ReactNode;
@@ -715,9 +783,6 @@ export function VehicleSheet({
   const [bValue, setBValue] = useState("");
   const filterId = useRef(1);
 
-  // Per-column width overrides (GEN-20), keyed by colKey → px. Missing keys fall
-  // back to the ColDef's default width. Persisted per sheet so a user's resize
-  // survives reloads; hydrated post-mount to avoid an SSR hydration mismatch.
   // Which edges of the grid have more content beyond them. Drives the scroll
   // shadows (GEN-69) — recomputed on scroll and whenever the container or its
   // content resizes (column show/hide, window resize, sidebar collapse).
@@ -749,6 +814,9 @@ export function VehicleSheet({
     return () => ro.disconnect();
   }, []);
 
+  // Per-column width overrides (GEN-20), keyed by colKey → px. Missing keys fall
+  // back to the ColDef's default width. Persisted per sheet so a user's resize
+  // survives reloads; hydrated post-mount to avoid an SSR hydration mismatch.
   const [colWidths, setColWidths] = useState<Record<string, number>>({});
   const resizeRef = useRef<{
     key: string;
@@ -854,12 +922,12 @@ export function VehicleSheet({
   }
 
   useEffect(() => {
-    if (!company) return;
+    if (!company?.id) return;
     void vehicleService.getAll(company.id).then(setVehicles);
     if (enableQuickAdd) {
       void dealerPartnerService.getAll(company.id).then(setPartners);
     }
-  }, [company, enableQuickAdd]);
+  }, [company?.id, enableQuickAdd]);
 
   function startEdit(v: Vehicle, c: ColDef) {
     const raw = rawValue(c, v);
@@ -1047,6 +1115,9 @@ export function VehicleSheet({
     }
   }
 
+  /** The columns the grid and picker offer (CSV export still uses allCols). */
+  const gridCols = useMemo(() => allCols.filter((c) => !c.gridHidden), [allCols]);
+
   /**
    * Columns actually rendered (GEN-93).
    *
@@ -1054,16 +1125,13 @@ export function VehicleSheet({
    * horizontal drag on a phone — but only while the user has left the picker
    * alone. Once they have curated their own set, that is an explicit
    * statement of what they want to see and the breakpoint stops overruling
-   * it; the grid scrolls instead, exactly as before.
+   * it; the grid scrolls instead.
    *
    * This filters the array rather than applying `display: none`, because
    * hiding a cell does not collapse its column: the matching `<col>` in the
    * colgroup keeps reserving its width, leaving the table just as wide with
    * blank gaps where the columns were.
    */
-  /** The columns the grid and picker offer (CSV export still uses allCols). */
-  const gridCols = useMemo(() => allCols.filter((c) => !c.gridHidden), [allCols]);
-
   const cols = useMemo(() => {
     const chosen = gridCols.filter(
       (c) =>
@@ -1149,17 +1217,18 @@ export function VehicleSheet({
 
   // Keep the selection confined to currently-visible rows. Without this,
   // "select all" + a later filter/search change would keep counting (and
-  // acting on) rows that are no longer on screen.
-  useEffect(() => {
-    if (!filtered) return;
-    setSelected((prev) => {
-      if (prev.size === 0) return prev;
+  // acting on) rows that are no longer on screen. Pruned while rendering
+  // whenever the filtered rows change, rather than in an effect.
+  const [prunedFor, setPrunedFor] = useState(filtered);
+  if (prunedFor !== filtered) {
+    setPrunedFor(filtered);
+    if (filtered && selected.size > 0) {
       const visibleIds = new Set(filtered.map((v) => v.id));
       const next = new Set<string>();
-      for (const id of prev) if (visibleIds.has(id)) next.add(id);
-      return next.size === prev.size ? prev : next;
-    });
-  }, [filtered]);
+      for (const id of selected) if (visibleIds.has(id)) next.add(id);
+      if (next.size !== selected.size) setSelected(next);
+    }
+  }
 
   function addFilter() {
     const fld = filterFields.find((f) => f.key === bField);
@@ -1561,10 +1630,6 @@ export function VehicleSheet({
                       // sticky boundary.
                       "sticky left-0 z-10 border-b bg-card text-center",
                       "shadow-[1px_0_0_var(--border)]",
-                      // Sticky cells can't use the row's translucent
-                      // tints (they'd bleed), so mix the SAME tints
-                      // into --card to get an opaque colour identical
-                      // to what the normal cells composite to.
                       isSelected &&
                         "bg-(--bg-surface-selected)",
                       "group-hover/row:bg-(--bg-surface-hover)",
@@ -1602,9 +1667,6 @@ export function VehicleSheet({
                           // by the next sticky cell's solid bg via
                           // paint order; only the rightmost shadow
                           // is visually present.
-                          // Sticky cells mix the row's tints into
-                          // --card so they stay opaque while matching
-                          // the normal cells exactly (GEN-62).
                           c.sticky &&
                             "sticky z-10 bg-card shadow-[1px_0_0_var(--border)] group-hover/row:bg-(--bg-surface-hover)",
                           isSelected &&
@@ -1635,76 +1697,37 @@ export function VehicleSheet({
                           {isEditingThis && c.options ? (
                             // Fixed choices edit with a dropdown in the
                             // same flush style; picking commits at once.
-                            <select
-                              autoFocus
-                              value={draft}
-                              disabled={savingCell}
-                              aria-label={c.label}
+                            <div
+                              className="w-full min-w-0"
                               onClick={(e) => e.stopPropagation()}
-                              onChange={(e) =>
-                                void commitEdit(v, c, e.target.value || null)
-                              }
-                              onBlur={cancelEdit}
-                              onKeyDown={(e) => {
-                                if (e.key === "Escape") {
-                                  e.preventDefault();
-                                  cancelEdit();
-                                }
-                              }}
-                              className="-mx-1 h-7 w-full min-w-0 rounded bg-primary/10 px-1 text-xs text-foreground outline-none disabled:opacity-60"
                             >
-                              <option value="">—</option>
-                              {c.options.map((o) => (
-                                <option key={o.value} value={o.value}>
-                                  {o.label}
-                                </option>
-                              ))}
-                            </select>
+                              <Select
+                                label={c.label}
+                                labelHidden
+                                autoFocus
+                                defaultOpen
+                                disabled={savingCell}
+                                options={[{ value: "", label: "—" }, ...c.options]}
+                                value={draft}
+                                onChange={(next) => void commitEdit(v, c, next || null)}
+                                onBlur={cancelEdit}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Escape") {
+                                    e.preventDefault();
+                                    cancelEdit();
+                                  }
+                                }}
+                              />
+                            </div>
                           ) : isEditingThis ? (
-                            // Plain input, not the shadcn <Input>: that
-                            // renders a bordered wrapper whose font
-                            // (sm:text-sm) and baked-in padding can't be
-                            // matched to the read-only cell, so the value
-                            // jumped in size + position on edit (GEN-39).
-                            // Match the read-only button exactly — text-xs
-                            // and the same "-mx-1 px-1" flush inset — and
-                            // use a bg tint (not a border, which the cell's
-                            // overflow-hidden would clip) as the affordance.
-                            <input
-                              autoFocus
-                              type={
-                                c.type === "date"
-                                  ? "date"
-                                  : c.type === "number" ||
-                                      c.type === "currency"
-                                    ? "number"
-                                    : "text"
-                              }
+                            <CellInput
+                              column={c}
                               value={draft}
                               disabled={savingCell}
-                              aria-label={c.label}
-                              list={
-                                c.suggestions
-                                  ? `${csvName}-${colKey(c)}-suggestions`
-                                  : undefined
-                              }
-                              step={c.type === "currency" ? "0.01" : undefined}
-                              onClick={(e) => e.stopPropagation()}
-                              onChange={(e) => setDraft(e.target.value)}
-                              onBlur={() => void commitEdit(v, c)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
-                                  void commitEdit(v, c);
-                                } else if (e.key === "Escape") {
-                                  e.preventDefault();
-                                  cancelEdit();
-                                }
-                              }}
-                              className={cn(
-                                "-mx-1 h-7 w-full min-w-0 rounded bg-primary/10 px-1 text-xs text-foreground caret-primary outline-none disabled:opacity-60",
-                                alignEnd && "text-right",
-                              )}
+                              alignEnd={alignEnd}
+                              onChange={setDraft}
+                              onCommit={(typed) => void commitEdit(v, c, coerceCellValue(c, typed))}
+                              onCancel={cancelEdit}
                             />
                           ) : editable ? (
                             <button
@@ -1818,21 +1841,18 @@ export function VehicleSheet({
                       type="number"
                       className="h-8 w-24 text-xs"
                     />
-                    <select
-                      value={quick.supplierId}
-                      onChange={(e) =>
-                        setQuick({ ...quick, supplierId: e.target.value })
-                      }
-                      aria-label="Dealer partner"
-                      className="h-8 rounded-md border bg-background px-2 text-xs"
-                    >
-                      <option value="">No dealer partner</option>
-                      {partners.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="w-44">
+                      <Select
+                        label="Dealer partner"
+                        labelHidden
+                        options={[
+                          { value: "", label: "No dealer partner" },
+                          ...partners.map((p) => ({ value: p.id, label: p.name })),
+                        ]}
+                        value={quick.supplierId}
+                        onChange={(supplierId) => setQuick({ ...quick, supplierId })}
+                      />
+                    </div>
                     <Button
                       size="sm"
                       className="h-8"
@@ -1866,16 +1886,6 @@ export function VehicleSheet({
     </>
   );
 
-  /** Type-ahead lists for the free-text cells that have suggestions. */
-  const datalists = allCols
-    .filter((c) => c.suggestions)
-    .map((c) => (
-      <datalist key={colKey(c)} id={`${csvName}-${colKey(c)}-suggestions`}>
-        {c.suggestions!.map((s) => (
-          <option key={s} value={s} />
-        ))}
-      </datalist>
-    ));
 
   const sectionContext: SheetSectionContext = {
     section,
@@ -2006,7 +2016,6 @@ export function VehicleSheet({
             )}
           </PolarisCard>
         </Page>
-        {datalists}
         {children}
       </>
     );
@@ -2147,35 +2156,29 @@ export function VehicleSheet({
               <span className="text-sm font-medium text-(--text-secondary)">
                 Add condition
               </span>
-              <select
-                aria-label="Field"
-                value={String(bField)}
-                onChange={(e) => {
-                  const key = e.target.value as FilterField["key"];
-                  setBField(key);
-                  setBOp(kindOf(filterFields, key) === "num" ? "gte" : "is");
-                }}
-                className={cn(FIELD_CLASS, "w-44")}
-              >
-                {filterFields.map((f) => (
-                  <option key={String(f.key)} value={String(f.key)}>
-                    {f.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label="Operator"
-                value={bOp}
-                onChange={(e) => setBOp(e.target.value)}
-                className={cn(FIELD_CLASS, "w-28")}
-              >
-                {opsFor(kindOf(filterFields, bField)).map((o) => (
-                  <option key={o.v} value={o.v}>
-                    {o.l}
-                  </option>
-                ))}
-              </select>
-              <input
+              <div className="w-44">
+                <Select
+                  label="Field"
+                  labelHidden
+                  options={filterFields.map((f) => ({ value: String(f.key), label: f.label }))}
+                  value={String(bField)}
+                  onChange={(next) => {
+                    const key = next as FilterField["key"];
+                    setBField(key);
+                    setBOp(kindOf(filterFields, key) === "num" ? "gte" : "is");
+                  }}
+                />
+              </div>
+              <div className="w-32">
+                <Select
+                  label="Operator"
+                  labelHidden
+                  options={opsFor(kindOf(filterFields, bField)).map((o) => ({ value: o.v, label: o.l }))}
+                  value={bOp}
+                  onChange={setBOp}
+                />
+              </div>
+              <Input
                 aria-label="Value"
                 placeholder="Value…"
                 value={bValue}
@@ -2183,7 +2186,7 @@ export function VehicleSheet({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") addFilter();
                 }}
-                className={cn(FIELD_CLASS, "w-48")}
+                className="w-48"
               />
               <Button
                 size="sm"
@@ -2219,7 +2222,6 @@ export function VehicleSheet({
         )}
 
         {filtered && filtered.length > PAGE_SIZE && (
-          // Phase B — shared DataGridPagination primitive.
           <Card className="p-0">
             <DataGridPagination
               page={safePage}
@@ -2231,7 +2233,6 @@ export function VehicleSheet({
           </Card>
         )}
       </div>
-      {datalists}
       {children}
     </>
   );

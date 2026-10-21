@@ -44,7 +44,7 @@ export default function LoginPage() {
 function LoginInner() {
   const router = useRouter();
   const search = useSearchParams();
-  const { user, signIn, signOut } = useAuth();
+  const { user, loading: authLoading, signIn, signOut } = useAuth();
   const explicitNext = search.get("next");
   // Set when hydrate() signs out an inactive profile, so the bounce back here
   // carries an explanation instead of looking like a failed password.
@@ -59,31 +59,36 @@ function LoginInner() {
   });
 
   const justSubmittedRef = useRef(false);
-  const clearedRef = useRef(false);
+  // "loading" until auth first settles on this page; "clearing" while a
+  // pre-existing session is signed out; then "ready".
+  const phaseRef = useRef<"loading" | "clearing" | "ready">("loading");
 
-  // Landing on /login means "I want to authenticate." If a PRE-EXISTING session
-  // is present (e.g. switching accounts), sign it out ONCE so the form is usable
-  // and the next sign-in starts clean — never auto-redirect a logged-in user
-  // away (that bounced account-switchers back as the old user).
+  // Landing on /login means "I want to authenticate." If a session is ALREADY
+  // there when auth settles (e.g. switching accounts), sign it out ONCE so the
+  // form is usable and the next sign-in starts clean — never auto-redirect a
+  // logged-in user away (that bounced account-switchers back as the old user).
   //
-  // CRITICAL: skip when the session is one our own onSubmit just created
-  // (justSubmittedRef) — otherwise this signs the freshly-logged-in user right
-  // back out. Guarded by clearedRef so it fires at most once per visit.
+  // Any session that appears AFTER that is a sign-in to follow, not to undo:
+  // one this form just made (justSubmittedRef), or one made in another tab —
+  // Supabase shares the session across tabs, and signing it out here used to
+  // log the user straight back out of the tab they had just signed in from.
+  // Either way, route to the role's home (or the explicit ?next= deep-link).
   useEffect(() => {
-    if (clearedRef.current || justSubmittedRef.current) return;
-    if (user) {
-      clearedRef.current = true;
-      void signOut();
+    if (phaseRef.current === "loading") {
+      if (authLoading) return;
+      if (user && !justSubmittedRef.current) {
+        phaseRef.current = "clearing";
+        void signOut();
+        return;
+      }
+      phaseRef.current = "ready";
     }
-  }, [user, signOut]);
-
-  // After a successful sign-in, `user` hydrates → route to the role's home
-  // (or the explicit ?next= deep-link if one was provided).
-  useEffect(() => {
-    if (justSubmittedRef.current && user) {
-      router.replace(explicitNext ?? getHomeForUser(user));
+    if (phaseRef.current === "clearing") {
+      if (!user) phaseRef.current = "ready";
+      return;
     }
-  }, [user, explicitNext, router]);
+    if (user) router.replace(explicitNext ?? getHomeForUser(user));
+  }, [authLoading, user, signOut, explicitNext, router]);
 
   async function onSubmit(values: FormValues) {
     try {

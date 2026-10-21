@@ -8,14 +8,15 @@ import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import { toast } from "@/lib/toast";
-import { describeChanges, type FieldChange } from "@/lib/field-edit";
 import {
+  describeChanges,
   nonNegative,
   notFuture,
   required,
   validDate,
   validYear,
   withinRange,
+  type FieldChange,
 } from "@/lib/field-edit";
 import { EditableCard, type EditableField } from "./editable-card";
 import { Pill } from "./primitives";
@@ -66,13 +67,12 @@ const LOCAL_IMPORT = opts(["local", "import"]);
 const SALE_STATUS = SALE_STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
 
 /**
- * Details tab — the full vehicle spec sheet. Four grouped cards (Identity /
- * Acquisition / Documentation / Registration & Compliance), each editable in
- * place (GEN-99). Compliance statuses render as tone-coded pills so MOT / Tax
- * read at a glance.
- *
- * Every card was render-only until GEN-99: a value mistyped at creation, or
- * imported wrong from a BCA form, could not be corrected anywhere in the app.
+ * Details tab — the full vehicle spec sheet. Grouped cards (Identity /
+ * Acquisition / Documentation / Registration & Compliance, then the master
+ * sheet's Buying / Receiving / Sales data), each editable in place (GEN-99) so
+ * a value mistyped at creation, or imported wrong from a BCA form, can be
+ * corrected. Compliance statuses render as tone-coded pills so MOT / Tax read
+ * at a glance.
  */
 export function DetailsTab({ vehicle, onChanged }: DetailsTabProps) {
   const { user } = useAuth();

@@ -5,12 +5,12 @@ import type { ReactNode } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
-  MaintenanceStatusBadge,
   SalesStageBadge,
   VehicleStatusBadge,
 } from "@/components/shared/status-badge";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { VehicleImage } from "@/components/shared/vehicle-image";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import {
   APPOINTMENT_OUTCOME_TONE,
   APPOINTMENT_STATUS_TONE,
@@ -71,20 +71,10 @@ export function NumberCell({ value }: { value: number | null | undefined }) {
   );
 }
 
-export function CurrencyCell({
-  value,
-  bold,
-}: {
-  value: number | null | undefined;
-  bold?: boolean;
-}) {
+export function CurrencyCell({ value }: { value: number | null | undefined }) {
   if (value === null || value === undefined) return <EmptyCell />;
   return (
-    <span
-      className={cn("tabular-nums", bold ? "font-semibold" : "font-medium")}
-    >
-      {formatCurrency(value)}
-    </span>
+    <span className="tabular-nums font-medium">{formatCurrency(value)}</span>
   );
 }
 
@@ -142,11 +132,13 @@ export function VehicleCell({ vehicle }: { vehicle: Vehicle | null | undefined }
   if (!vehicle) return <EmptyCell />;
   return (
     <div className="flex items-center gap-2">
-      <VehicleImage
-        vehicle={vehicle}
-        variant="thumb"
-        className="size-10 shrink-0 rounded-lg shadow-(--shadow-border-inset)"
-      />
+      {PHOTOS_ENABLED ? (
+        <VehicleImage
+          vehicle={vehicle}
+          variant="thumb"
+          className="size-10 shrink-0 rounded-lg shadow-(--shadow-border-inset)"
+        />
+      ) : null}
       <div className="flex min-w-0 flex-col gap-0.5 leading-tight">
         <RegPlate registration={vehicle.registration} size="sm" />
         <span className="font-mono text-xs text-muted-foreground">
@@ -157,13 +149,7 @@ export function VehicleCell({ vehicle }: { vehicle: Vehicle | null | undefined }
   );
 }
 
-export function UserCell({
-  name,
-  email,
-}: {
-  name: string | null | undefined;
-  email?: string | null;
-}) {
+export function UserCell({ name }: { name: string | null | undefined }) {
   if (!name) return <EmptyCell />;
   return (
     <div className="flex items-center gap-2">
@@ -174,11 +160,6 @@ export function UserCell({
       </Avatar>
       <div className="flex min-w-0 flex-col leading-tight">
         <span className="truncate text-xs font-medium">{name}</span>
-        {email ? (
-          <span className="truncate text-xs text-muted-foreground">
-            {email}
-          </span>
-        ) : null}
       </div>
     </div>
   );
@@ -186,43 +167,24 @@ export function UserCell({
 
 export function ChannelsCell({
   channels,
-  onToggle,
 }: {
   channels: Record<string, boolean>;
-  onToggle?: (channel: string) => void;
 }) {
-  const entries = Object.entries(channels);
   return (
     <div className="flex flex-wrap gap-1">
-      {entries.map(([channel, enabled]) => {
-        const cls = cn(
-          "rounded-md px-1.5 py-0.5 text-2xs font-medium capitalize",
-          enabled
-            ? "bg-foreground text-background"
-            : "bg-muted text-muted-foreground",
-          onToggle && "cursor-pointer transition-opacity hover:opacity-80",
-        );
-        if (!onToggle) {
-          return (
-            <span key={channel} className={cls}>
-              {channel}
-            </span>
-          );
-        }
-        return (
-          <button
-            key={channel}
-            type="button"
-            className={cls}
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggle(channel);
-            }}
-          >
-            {channel}
-          </button>
-        );
-      })}
+      {Object.entries(channels).map(([channel, enabled]) => (
+        <span
+          key={channel}
+          className={cn(
+            "rounded-md px-1.5 py-0.5 text-2xs font-medium capitalize",
+            enabled
+              ? "bg-foreground text-background"
+              : "bg-muted text-muted-foreground",
+          )}
+        >
+          {channel}
+        </span>
+      ))}
     </div>
   );
 }
@@ -247,18 +209,6 @@ export function SalesStageCell({
 }) {
   if (!stage) return <EmptyCell />;
   return <SalesStageBadge stage={stage} />;
-}
-
-export function MaintenanceStatusCell({
-  status,
-}: {
-  status:
-    | Parameters<typeof MaintenanceStatusBadge>[0]["status"]
-    | null
-    | undefined;
-}) {
-  if (!status) return <EmptyCell />;
-  return <MaintenanceStatusBadge status={status} />;
 }
 
 function tonePill(label: string, tone: string | undefined): ReactNode {

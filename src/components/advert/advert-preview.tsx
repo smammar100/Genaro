@@ -3,6 +3,7 @@
 import { Check, Sparkles } from "lucide-react";
 import type { AdvertData, Vehicle } from "@/lib/types";
 import { VehicleImage } from "@/components/shared/vehicle-image";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { formatCurrency } from "@/lib/utils";
 
 interface AdvertPreviewProps {
@@ -16,7 +17,7 @@ interface AdvertPreviewProps {
 /**
  * Live listing-card preview — renders the advert as a buyer sees it on the
  * website / AutoTrader card, updating in real time from the editor's form
- * state. The standout upgrade over ClickDMS's plain stacked form.
+ * state.
  */
 export function AdvertPreview({
   vehicle,
@@ -49,29 +50,37 @@ export function AdvertPreview({
 
   return (
     <div className="overflow-hidden rounded-(--radius-300) border border-(--border) bg-(--bg-surface)">
-      <div className="relative aspect-[16/10] w-full bg-(--bg-surface-secondary)">
-        {photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={photoUrl}
-            alt={title}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <VehicleImage
-            vehicle={vehicle}
-            variant="card"
-            className="h-full w-full"
-          />
-        )}
-        {advert.attentionGrabber.trim() && (
-          <span className="body-sm absolute left-2 top-2 rounded-(--radius-200) bg-(--bg-fill-critical-secondary) px-2 py-0.5 text-(--text-critical)">
+      {PHOTOS_ENABLED ? (
+        <div className="relative aspect-[16/10] w-full bg-(--bg-surface-secondary)">
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={photoUrl}
+              alt={title}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <VehicleImage
+              vehicle={vehicle}
+              variant="card"
+              className="h-full w-full"
+            />
+          )}
+          {advert.attentionGrabber.trim() && (
+            <span className="body-sm absolute left-2 top-2 rounded-(--radius-200) bg-(--bg-fill-critical-secondary) px-2 py-0.5 text-(--text-critical)">
+              {advert.attentionGrabber}
+            </span>
+          )}
+        </div>
+      ) : null}
+
+      <div className="flex flex-col gap-2 p-4">
+        {/* Without the photo to sit on, the attention grabber leads the text. */}
+        {!PHOTOS_ENABLED && advert.attentionGrabber.trim() && (
+          <span className="body-sm self-start rounded-(--radius-200) bg-(--bg-fill-critical-secondary) px-2 py-0.5 text-(--text-critical)">
             {advert.attentionGrabber}
           </span>
         )}
-      </div>
-
-      <div className="flex flex-col gap-2 p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="heading-sm truncate">{title}</div>

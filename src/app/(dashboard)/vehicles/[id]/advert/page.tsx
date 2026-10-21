@@ -44,7 +44,7 @@ export default function VehicleAdvertPage({
 
   if (vehicle === undefined || listing === undefined) {
     return (
-      <Page>
+      <Page fullWidth>
         <SkeletonDisplayText size="small" />
         <Layout>
           <Layout.Section>
@@ -64,7 +64,7 @@ export default function VehicleAdvertPage({
 
   if (vehicle === null) {
     return (
-      <Page>
+      <Page fullWidth>
         <EmptyState
           icon="ProductsMinor"
           heading="Vehicle not found"

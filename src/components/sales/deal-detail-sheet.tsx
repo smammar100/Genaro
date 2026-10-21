@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/sheet";
 import { Button, Card, TextField } from "@/components/polaris";
 import { RegPlate } from "@/components/shared/reg-plate";
+import { VehicleImage } from "@/components/shared/vehicle-image";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { DealStageBadge } from "@/components/sales/status-badges";
 import { useAuth } from "@/contexts/auth-context";
 import { dealNoteService } from "@/lib/services/deal-note-service";
@@ -73,9 +75,9 @@ export function DealDetailSheet({
     if (!user || !deal || !newNote.trim()) return;
     setSavingNote(true);
     try {
-      // GEN-70: append the row `add` already returns instead of a second
-      // round trip to re-fetch the whole list — the note now appears the
-      // instant the write completes.
+      // Append the row `add` already returns rather than re-fetching the
+      // whole list, so the note appears the instant the write completes
+      // (GEN-70).
       const note = await dealNoteService.add({
         dealId: deal.id,
         userId: user.id,
@@ -111,11 +113,23 @@ export function DealDetailSheet({
                 {vehicle ? (
                   <Link
                     href={vehicleDetailHref(vehicle.id, pathname)}
-                    className="-m-1 flex items-center gap-2 rounded-(--radius-200) p-1 transition-colors hover:bg-(--bg-surface-hover)"
+                    className="-m-1 flex items-center gap-3 rounded-(--radius-200) p-1 transition-colors hover:bg-(--bg-surface-hover)"
                   >
-                    <RegPlate registration={vehicle.registration} size="sm" />
-                    <span className="body-md">
-                      {vehicle.make} {vehicle.model}
+                    {/* Only a real photo: a car without one keeps the plain
+                        plate and name rather than a placeholder tile. */}
+                    {PHOTOS_ENABLED && vehicle.heroImageUrl ? (
+                      <VehicleImage
+                        vehicle={vehicle}
+                        variant="thumb"
+                        sizes="64px"
+                        className="w-16 shrink-0 rounded-(--radius-200)"
+                      />
+                    ) : null}
+                    <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                      <RegPlate registration={vehicle.registration} size="sm" />
+                      <span className="body-md">
+                        {vehicle.make} {vehicle.model}
+                      </span>
                     </span>
                   </Link>
                 ) : (

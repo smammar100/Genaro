@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   DOW,
   MONTHS,
@@ -42,6 +43,18 @@ export function MonthGrid({
   const weeks = buildMonthGrid(anchor);
   const cells = weeks.flat();
   const lastRow = (weeks.length - 1) * 7;
+  // Group once rather than scanning every event for each of the 42 cells; the
+  // grid re-renders on every popover open and clock tick.
+  const byDate = useMemo(() => {
+    const map = new Map<string, CalEvent[]>();
+    for (const e of events) {
+      const list = map.get(e.date);
+      if (list) list.push(e);
+      else map.set(e.date, [e]);
+    }
+    for (const list of map.values()) list.sort(byStart);
+    return map;
+  }, [events]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto">
@@ -60,7 +73,7 @@ export function MonthGrid({
           const iso = toISO(d);
           const inMonth = d.getMonth() === anchor.getMonth();
           const isToday = iso === todayISO;
-          const dayEvents = events.filter((e) => e.date === iso).sort(byStart);
+          const dayEvents = byDate.get(iso) ?? [];
           const shown = dayEvents.length > FITS ? dayEvents.slice(0, FITS - 1) : dayEvents;
           const more = dayEvents.length - shown.length;
           return (

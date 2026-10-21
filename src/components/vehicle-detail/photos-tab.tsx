@@ -62,12 +62,17 @@ export function PhotosTab({ vehicle, onVehicleRefetch }: PhotosTabProps) {
 
   // Re-sync local cover/angle state when the parent supplies a fresh vehicle
   // (e.g. after a refetch), so edits don't appear undone on navigate-away/back.
-  useEffect(() => {
+  // Adjusted during render rather than in an effect.
+  const [prevHeroUrl, setPrevHeroUrl] = useState(vehicle.heroImageUrl);
+  if (prevHeroUrl !== vehicle.heroImageUrl) {
+    setPrevHeroUrl(vehicle.heroImageUrl);
     setCoverUrl(vehicle.heroImageUrl);
-  }, [vehicle.heroImageUrl]);
-  useEffect(() => {
+  }
+  const [prevCustomFields, setPrevCustomFields] = useState(vehicle.customFields);
+  if (prevCustomFields !== vehicle.customFields) {
+    setPrevCustomFields(vehicle.customFields);
     setCustomFields(vehicle.customFields ?? {});
-  }, [vehicle.customFields]);
+  }
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -120,8 +125,8 @@ export function PhotosTab({ vehicle, onVehicleRefetch }: PhotosTabProps) {
           }
         }
       }
-      if (ok.length) setPhotos((prev) => [...(prev ?? []), ...ok]);
       if (ok.length) {
+        setPhotos((prev) => [...(prev ?? []), ...ok]);
         toast.success(`Uploaded ${ok.length} photo${ok.length === 1 ? "" : "s"}`);
         // Auto-set a cover when the vehicle has none yet, so it shows a real
         // image on the Work List / header immediately (the cover drives

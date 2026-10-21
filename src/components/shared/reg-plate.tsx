@@ -1,5 +1,4 @@
-import { cn } from "@/lib/utils";
-import { formatRegPlate } from "@/lib/utils";
+import { cn, formatRegPlate } from "@/lib/utils";
 
 interface Props {
   registration: string;

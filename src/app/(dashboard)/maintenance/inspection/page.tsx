@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { ClipboardCheck } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { vehicleService } from "@/lib/services/vehicle-service";
@@ -31,8 +32,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { RegPlate } from "@/components/shared/reg-plate";
-import { InspectionSidePanel } from "@/components/inspection/inspection-side-panel";
 import { cn, formatDate } from "@/lib/utils";
+
+// The checklist sheet only opens once a row is picked, so it loads in its own
+// chunk after the queue rather than with it.
+const InspectionSidePanel = dynamic(
+  () =>
+    import("@/components/inspection/inspection-side-panel").then(
+      (m) => m.InspectionSidePanel,
+    ),
+  { ssr: false },
+);
 
 interface Row {
   vehicle: Vehicle;
@@ -68,42 +78,50 @@ const SCOPE = new Set([
   "ready",
 ]);
 
+/** The in-scope vehicles with their checks, plus the team and checklist. */
+async function fetchQueue(companyId: string) {
+  const [vs, users, items] = await Promise.all([
+    vehicleService.getAll(companyId),
+    authService.getUsersForCompany(companyId),
+    inspectionChecklistService.getAll(companyId),
+  ]);
+  const scope = vs.filter((v) => SCOPE.has(v.status));
+  // GEN-70: one request per vehicle, fired together. Awaited in series, a
+  // queue of any real size is a visible stall before the page shows anything.
+  const checksByVehicle = await Promise.all(
+    scope.map((v) => inspectionService.getForVehicle(v.id)),
+  );
+  const rows: Row[] = scope.map((v, i) => {
+    const checks = checksByVehicle[i];
+    const progress = checks.filter((c) => c.status).length;
+    return { vehicle: v, checks, progress, total: items.length };
+  });
+  return { rows, users, items };
+}
+
 export default function MaintenanceInspectionListPage() {
   const { company } = useAuth();
+  const companyId = company?.id;
   const [rows, setRows] = useState<Row[] | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [items, setItems] = useState<InspectionChecklistItem[]>([]);
   const [selected, setSelected] = useState<Vehicle | null>(null);
   const [tab, setTab] = useState(0);
-
-  async function load() {
-    if (!company) return;
-    const [vs, u, checklist] = await Promise.all([
-      vehicleService.getAll(company.id),
-      authService.getUsersForCompany(company.id),
-      inspectionChecklistService.getAll(company.id),
-    ]);
-    const scope = vs.filter((v) => SCOPE.has(v.status));
-    // GEN-70: was one awaited round trip per vehicle in series — on a queue
-    // of any real size that's a visible stall before the page shows
-    // anything. Fire them together instead.
-    const checksByVehicle = await Promise.all(
-      scope.map((v) => inspectionService.getForVehicle(v.id)),
-    );
-    const out: Row[] = scope.map((v, i) => {
-      const checks = checksByVehicle[i];
-      const progress = checks.filter((c) => c.status).length;
-      return { vehicle: v, checks, progress, total: checklist.length };
-    });
-    setRows(out);
-    setUsers(u);
-    setItems(checklist);
-  }
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [company]);
+    if (!companyId) return;
+    let cancelled = false;
+    void fetchQueue(companyId).then((q) => {
+      if (cancelled) return;
+      setRows(q.rows);
+      setUsers(q.users);
+      setItems(q.items);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [companyId, refreshKey]);
 
   // Pending = still needs inspection. Completed = all 20 points recorded, so
   // it auto-moves to the Completed tab the moment the inspection is finished.
@@ -179,7 +197,7 @@ export default function MaintenanceInspectionListPage() {
         onOpenChange={(o) => {
           if (!o) setSelected(null);
         }}
-        onComplete={() => void load()}
+        onComplete={() => setRefreshKey((k) => k + 1)}
       />
     </Page>
   );

@@ -2,10 +2,14 @@
 
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { cn } from "@/lib/utils";
+import { innermostFirst } from "./layers";
 import { resolveRender } from "@/lib/as-child";
 import type React from "react";
 
-export const Popover: typeof PopoverPrimitive.Root = PopoverPrimitive.Root;
+/** Stays open while a Polaris popover inside it takes Escape or a click (see layers.ts). */
+export function Popover({ onOpenChange, ...props }: PopoverPrimitive.Root.Props) {
+  return <PopoverPrimitive.Root {...props} onOpenChange={innermostFirst(onOpenChange)} />;
+}
 
 export function PopoverTrigger({
   className,

@@ -61,6 +61,7 @@ export function ExternalInvoiceList({ kind }: Props) {
     null,
   );
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!company?.id) return;
@@ -78,7 +79,7 @@ export function ExternalInvoiceList({ kind }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [company?.id, kind, formOpen]);
+  }, [company?.id, kind, reloadKey]);
 
   const vendorById = useMemo(
     () => new Map(vendors.map((v) => [v.id, v])),
@@ -122,6 +123,12 @@ export function ExternalInvoiceList({ kind }: Props) {
     setFormOpen(true);
   }
 
+  function handleFormOpenChange(open: boolean) {
+    setFormOpen(open);
+    // Re-read once the form closes: it can add vendors as well as invoices.
+    if (!open) setReloadKey((k) => k + 1);
+  }
+
   async function handleOpenAttachment(path: string) {
     const url = await externalInvoiceService.signedAttachmentUrl(path);
     if (!url) {
@@ -149,7 +156,6 @@ export function ExternalInvoiceList({ kind }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Toolbar */}
       <div className="flex flex-wrap items-end gap-2">
         <div className="w-full sm:w-64">
           <TextField
@@ -325,7 +331,6 @@ export function ExternalInvoiceList({ kind }: Props) {
         </div>
       ) : null}
 
-      {/* Delete confirmation */}
       <Modal
         open={confirmDelete !== null}
         onClose={() => {
@@ -356,14 +361,13 @@ export function ExternalInvoiceList({ kind }: Props) {
         ) : null}
       </Modal>
 
-      {/* Form dialog (Create / Edit) */}
       <ExternalInvoiceForm
         open={formOpen}
-        onOpenChange={setFormOpen}
+        onOpenChange={handleFormOpenChange}
         defaultKind={kind}
         editing={editing}
         onSaved={() => {
-          // List re-fetches via the `formOpen` dep on the load effect.
+          // The list re-reads when the form closes.
           setEditing(null);
         }}
       />

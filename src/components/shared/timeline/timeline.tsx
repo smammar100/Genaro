@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils";
  * the title row.
  *
  * Use across:
- *   - vehicle-detail/activity-tab.tsx       (every action_type)
  *   - vehicle-detail/location-tab.tsx       (per location_movement)
  *   - locations/location-history-drawer.tsx (same movement list, sheet)
  */
@@ -25,31 +24,13 @@ export type TimelineTone =
   | "sky"
   | "slate";
 
-const TONE_STYLES: Record<TimelineTone, { wrap: string; icon: string }> = {
-  emerald: {
-    wrap: "bg-(--bg-surface-success) text-(--text-success) ring-(--border-success)",
-    icon: "",
-  },
-  amber: {
-    wrap: "bg-(--bg-surface-warning) text-(--text-warning) ring-(--border-warning)",
-    icon: "",
-  },
-  rose: {
-    wrap: "bg-(--bg-surface-critical) text-(--text-critical) ring-(--border-critical)",
-    icon: "",
-  },
-  violet: {
-    wrap: "bg-(--bg-surface-magic) text-(--text-magic) ring-(--border-magic)",
-    icon: "",
-  },
-  sky: {
-    wrap: "bg-(--bg-surface-info) text-(--text-info) ring-(--border-info)",
-    icon: "",
-  },
-  slate: {
-    wrap: "bg-muted text-muted-foreground ring-border",
-    icon: "",
-  },
+const TONE_STYLES: Record<TimelineTone, string> = {
+  emerald: "bg-(--bg-surface-success) text-(--text-success) ring-(--border-success)",
+  amber: "bg-(--bg-surface-warning) text-(--text-warning) ring-(--border-warning)",
+  rose: "bg-(--bg-surface-critical) text-(--text-critical) ring-(--border-critical)",
+  violet: "bg-(--bg-surface-magic) text-(--text-magic) ring-(--border-magic)",
+  sky: "bg-(--bg-surface-info) text-(--text-info) ring-(--border-info)",
+  slate: "bg-muted text-muted-foreground ring-border",
 };
 
 /** Diameter of the icon node + half of it as left offset for the rail. */
@@ -110,7 +91,6 @@ export function TimelineItem({
   children,
   className,
 }: TimelineItemProps) {
-  const tones = TONE_STYLES[tone];
   return (
     <li className={cn("relative", CONTENT_PADDING_LEFT, className)}>
       <span
@@ -118,11 +98,11 @@ export function TimelineItem({
         className={cn(
           "absolute top-0 inline-flex items-center justify-center rounded-full ring-2 ring-background",
           NODE_SIZE_CLASS,
-          tones.wrap,
+          TONE_STYLES[tone],
         )}
         style={{ left: 0 }}
       >
-        <Icon className={cn("size-4", tones.icon)} />
+        <Icon className="size-4" />
       </span>
 
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 pt-1.5">

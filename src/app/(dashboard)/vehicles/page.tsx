@@ -18,6 +18,7 @@ export default function VehiclesPage() {
 
   return (
     <Page
+      fullWidth
       title="All vehicles"
       subtitle="Every car you have taken in, sold or unsold. Open one to manage it end to end."
       primaryAction={{ content: "Add vehicle", onAction: () => setAddOpen(true) }}

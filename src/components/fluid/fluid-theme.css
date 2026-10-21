@@ -1,0 +1,258 @@
+/* Fluid Functionalism's own theme variables (its `tokens` and `surfaces`
+   registry items), pointed at Polaris tokens. The library supplies behaviour,
+   layout and motion; every colour and shadow here is Shopify's, so its
+   components look like the rest of the admin in light and dark. The shadcn
+   variables it also reads (foreground, border, accent…) come from
+   polaris/styles/shadcn.css. */
+
+@theme inline {
+  --color-hover: var(--hover);
+  --color-active: var(--active);
+  --color-selected: var(--selected);
+  --color-destructive-light: var(--destructive-light);
+
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
+  --color-surface-5: var(--surface-5);
+  --color-surface-6: var(--surface-6);
+  --color-surface-7: var(--surface-7);
+  --color-surface-8: var(--surface-8);
+
+  /* Their eight-step shadow ladder, straight onto Polaris's bevelled shadows. */
+  --shadow-surface-1: var(--shadow-border-inset);
+  --shadow-surface-2: var(--shadow-100);
+  --shadow-surface-3: var(--shadow-200);
+  --shadow-surface-4: var(--shadow-300);
+  --shadow-surface-5: var(--shadow-400);
+  --shadow-surface-6: var(--shadow-500);
+  --shadow-surface-7: var(--shadow-600);
+  --shadow-surface-8: var(--shadow-600);
+}
+
+/* Declared under every theme selector so a subtree themed dark (the nav
+   rail) resolves against its own Polaris tokens. */
+:root,
+[data-theme="light"],
+.light,
+[data-theme="dark"],
+.dark {
+  /* Interaction fills: Polaris's transparent fills, so hover and press read
+     the same on any surface. */
+  --hover: var(--bg-fill-transparent-hover);
+  --active: var(--bg-fill-transparent-active);
+  --selected: var(--bg-fill-transparent-selected);
+  --destructive-light: var(--bg-surface-critical);
+  --focus-ring: var(--border-focus);
+
+  /* Eight elevation levels onto Polaris's surfaces: the page, the secondary
+     surface, then the card surface for everything raised above it. */
+  --surface-1: var(--bg);
+  --surface-2: var(--bg-surface-secondary);
+  --surface-3: var(--bg-surface);
+  --surface-4: var(--bg-surface);
+  --surface-5: var(--bg-surface);
+  --surface-6: var(--bg-surface);
+  --surface-7: var(--bg-surface);
+  --surface-8: var(--bg-surface);
+}
+
+/* Overlay tint as three RGB channels, which the library composes with an
+   alpha of its own. */
+:root,
+[data-theme="light"],
+.light {
+  --overlay: 0 0 0;
+}
+
+[data-theme="dark"],
+.dark {
+  --overlay: 255 255 255;
+}
+
+/* ── Scroll edge utilities, ported from the Fluid Functionalism site CSS (not
+   shipped in its registry, but its Sidebar and ScrollArea use them). Masks,
+   not visible colours: black here means "fully shown". scroll-fade dissolves
+   content toward an edge that has more to scroll; scroll-divider draws the
+   hairline there. Apply scroll-fade to a scroller, or to a ScrollArea via
+   `viewportClassName`. */
+
+@property --sf-start {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+@property --sf-end {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+@keyframes sf-reveal-start {
+  from {
+    --sf-start: 1;
+  }
+  to {
+    --sf-start: 0;
+  }
+}
+@keyframes sf-reveal-end {
+  from {
+    --sf-end: 0;
+  }
+  to {
+    --sf-end: 1;
+  }
+}
+
+.scroll-fade,
+.scroll-fade-x {
+  --scroll-fade-size: 48px;
+}
+
+/* Static fallback: fade both edges. */
+.scroll-fade {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black var(--scroll-fade-size),
+    black calc(100% - var(--scroll-fade-size)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black var(--scroll-fade-size),
+    black calc(100% - var(--scroll-fade-size)),
+    transparent 100%
+  );
+}
+.scroll-fade-x {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black var(--scroll-fade-size),
+    black calc(100% - var(--scroll-fade-size)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black var(--scroll-fade-size),
+    black calc(100% - var(--scroll-fade-size)),
+    transparent 100%
+  );
+}
+
+/* ── scroll-divider — a hairline marking a scroll edge ──────────────────────
+   Pairs with .scroll-fade on a descendant viewport: where the fade dissolves
+   content, this draws the line that says "the region continues". The line
+   can't live inside the scroller — the fade's own mask would erase it at
+   exactly the edge it belongs on — so it rides the parent's pseudo-elements
+   and borrows the scroller's timeline by name. Browsers without scroll-driven
+   timelines simply get the fade, as before. */
+@keyframes sf-divider-start {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes sf-divider-end {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@supports (timeline-scope: --sf) {
+  .scroll-divider {
+    position: relative;
+    timeline-scope: --sf-scroller;
+    --scroll-divider-size: 48px;
+  }
+  .scroll-divider .scroll-fade {
+    scroll-timeline-name: --sf-scroller;
+  }
+  .scroll-divider::before,
+  .scroll-divider::after {
+    content: "";
+    position: absolute;
+    /* Inset so the line can hug the content's own gutter rather than the
+       panel edge — the sidebar's inset variant sets this to 8px. */
+    left: var(--scroll-divider-inset, 0px);
+    right: var(--scroll-divider-inset, 0px);
+    height: 1px;
+    background-color: var(--border);
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0;
+  }
+  /* Top edge: absent at rest, fading in as content passes above. */
+  .scroll-divider::before {
+    top: 0;
+    animation: sf-divider-start both linear;
+    animation-timeline: --sf-scroller;
+    animation-range: 0 var(--scroll-divider-size);
+  }
+  /* A region flush with the panel's own top edge has nothing above for
+     content to pass under, so the start line would read as a stray border. */
+  .scroll-divider:first-child::before {
+    content: none;
+  }
+  /* Bottom edge: present while content continues below, gone at the end. */
+  .scroll-divider::after {
+    bottom: 0;
+    animation: sf-divider-end both linear;
+    animation-timeline: --sf-scroller;
+    animation-range: calc(100% - var(--scroll-divider-size)) 100%;
+  }
+}
+
+/* Scroll-aware: the start/end edge stays solid until there's content past it. */
+@supports (animation-timeline: scroll()) {
+  .scroll-fade {
+    mask-image: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, var(--sf-start)) /* audit-ignore: mask alpha, not a colour */ 0,
+      black var(--scroll-fade-size),
+      black calc(100% - var(--scroll-fade-size)),
+      rgba(0, 0, 0, var(--sf-end)) /* audit-ignore: mask alpha, not a colour */ 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, var(--sf-start)) /* audit-ignore: mask alpha, not a colour */ 0,
+      black var(--scroll-fade-size),
+      black calc(100% - var(--scroll-fade-size)),
+      rgba(0, 0, 0, var(--sf-end)) /* audit-ignore: mask alpha, not a colour */ 100%
+    );
+    animation: sf-reveal-start both linear, sf-reveal-end both linear;
+    animation-timeline: scroll(self), scroll(self);
+    animation-range-start: 0, calc(100% - var(--scroll-fade-size));
+    animation-range-end: var(--scroll-fade-size), 100%;
+  }
+  .scroll-fade-x {
+    mask-image: linear-gradient(
+      to right,
+      rgba(0, 0, 0, var(--sf-start)) /* audit-ignore: mask alpha, not a colour */ 0,
+      black var(--scroll-fade-size),
+      black calc(100% - var(--scroll-fade-size)),
+      rgba(0, 0, 0, var(--sf-end)) /* audit-ignore: mask alpha, not a colour */ 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      rgba(0, 0, 0, var(--sf-start)) /* audit-ignore: mask alpha, not a colour */ 0,
+      black var(--scroll-fade-size),
+      black calc(100% - var(--scroll-fade-size)),
+      rgba(0, 0, 0, var(--sf-end)) /* audit-ignore: mask alpha, not a colour */ 100%
+    );
+    animation: sf-reveal-start both linear, sf-reveal-end both linear;
+    animation-timeline: scroll(self inline), scroll(self inline);
+    animation-range-start: 0, calc(100% - var(--scroll-fade-size));
+    animation-range-end: var(--scroll-fade-size), 100%;
+  }
+}

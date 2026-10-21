@@ -16,8 +16,6 @@ import type {
   Vehicle,
 } from "@/lib/types";
 import { cn, formatRelativeTime } from "@/lib/utils";
-// onComplete callback lets a side-panel host close the panel instead of
-// navigating away from the underlying page (Phase 5 — v4.1 spec §11.5).
 import {
   Badge,
   Banner,
@@ -34,7 +32,10 @@ import { toast } from "@/lib/toast";
 interface Props {
   vehicle: Vehicle;
   inspector: string;
-  /** When provided, called after the inspection completes instead of navigating. */
+  /**
+   * When provided, called after the inspection completes instead of
+   * navigating, so a side-panel host can close the panel (v4.1 spec §11.5).
+   */
   onComplete?: () => void;
 }
 
@@ -278,8 +279,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
 
                 Below sm the row becomes two stacked lines: identity above,
                 controls below. `sm:contents` dissolves both wrappers at sm and
-                up, so the children become direct flex children again and the
-                desktop layout is byte-for-byte what it was.
+                up, so the children become direct flex children of the row.
               */
               <div
                 key={item.number}

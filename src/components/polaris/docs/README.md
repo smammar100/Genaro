@@ -106,3 +106,9 @@ One file per component: when to use it, examples, every prop, Server Component n
 | Component | What it's for | Client? |
 |---|---|---|
 | [PolarisProvider](./PolarisProvider.md) | An optional app-level provider that sends every internal `url` through your router's link component. That covers Button, Link, Navigation items, IndexTable rows, Page and card actions, and every other component with a `url`. `UnstyledLink` is the anchor they all render, and you can use it for your own clickable elements. | client |
+
+## App patterns (outside the kit)
+
+| Pattern | What it's for | Client? |
+|---|---|---|
+| [Kanban boards](../../kanban/README.md) | Every board in the app: the sales pipeline, maintenance jobs and prep. `KanbanBoard`, `KanbanLane` and `KanbanCard` place soft white cards on one hairline-divided surface, with status badges, chip footers, a tilted card while dragging, dashed drop slots and a hidden-columns rail. Build new boards from these parts, not from `Card`. | client |

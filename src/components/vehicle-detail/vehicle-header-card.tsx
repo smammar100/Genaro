@@ -12,9 +12,10 @@ import { vehiclePhotoService } from "@/lib/services/vehicle-photo-service";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { VehicleStatusBadge } from "@/components/shared/status-badge";
 import { ActionList, Card, Popover } from "@/components/polaris";
-import { VEHICLE_STATUSES } from "@/lib/constants";
+import { VEHICLE_STATUS_CHOICES } from "@/lib/constants";
 import { variantLabel } from "@/lib/vehicle-variant";
 import { formatDate, titleCase } from "@/lib/utils";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
 
 /**
  * The vehicle's next logical step in the prep → sale lifecycle. The page's
@@ -26,7 +27,10 @@ export const NEXT_STEP: Record<VehicleStatus, { label: string; tab: string } | n
   received: { label: "Start inspection", tab: "inspection" },
   inspection_pending: { label: "Open inspection", tab: "inspection" },
   being_prepared: { label: "Prep and repairs", tab: "todo" },
-  photos_pending: { label: "Add photos", tab: "photos" },
+  // With photos off (Phase 1) the step after prep is the advert.
+  photos_pending: PHOTOS_ENABLED
+    ? { label: "Add photos", tab: "photos" }
+    : { label: "Build advert", tab: "listing" },
   photos_ready: { label: "Build advert", tab: "listing" },
   ready: { label: "Publish listing", tab: "listing" },
   listed: { label: "View enquiries", tab: "appointments" },
@@ -59,7 +63,7 @@ export function VehicleHeaderCard({ vehicle }: { vehicle: Vehicle }) {
   return (
     <Card>
       <div className="flex min-w-0 flex-wrap items-start gap-4">
-        {heroUrl ? (
+        {!PHOTOS_ENABLED ? null : heroUrl ? (
           // A fixed 176x112 slot: next/image serves a 1x/2x rendition of that
           // size instead of the full-size original.
           <Image
@@ -102,7 +106,11 @@ export function VehicleHeaderCard({ vehicle }: { vehicle: Vehicle }) {
  */
 function useHeroUrl(vehicle: Vehicle): string | null {
   const [firstPhotoUrl, setFirstPhotoUrl] = useState<string | null>(null);
+  // The photo list is only a fallback, so skip the request (the detail
+  // shell already lists the same photos for its tab badge) when a cover is set.
+  const hasCover = vehicle.heroImageUrl != null;
   useEffect(() => {
+    if (hasCover || !PHOTOS_ENABLED) return;
     let active = true;
     vehiclePhotoService
       .list(vehicle.id)
@@ -111,7 +119,7 @@ function useHeroUrl(vehicle: Vehicle): string | null {
     return () => {
       active = false;
     };
-  }, [vehicle.id]);
+  }, [vehicle.id, hasCover]);
   return vehicle.heroImageUrl ?? firstPhotoUrl;
 }
 
@@ -148,7 +156,7 @@ export function VehicleStatusMenu({
         sections={[
           {
             title: "Change status",
-            items: VEHICLE_STATUSES.map((s) => ({
+            items: VEHICLE_STATUS_CHOICES.map((s) => ({
               content: s.label,
               active: s.value === vehicle.status,
               onAction: () => onStatusChange(s.value),
@@ -180,12 +188,16 @@ export function VehicleSummaryAside({
       <ActionList
         className="-mx-2"
         items={[
-          {
-            content: "Photos",
-            icon: <Camera className={LUCIDE} />,
-            suffix: "ChevronRightMinor",
-            onAction: () => onNavigate("photos"),
-          },
+          ...(PHOTOS_ENABLED
+            ? [
+                {
+                  content: "Photos",
+                  icon: <Camera className={LUCIDE} />,
+                  suffix: "ChevronRightMinor" as const,
+                  onAction: () => onNavigate("photos"),
+                },
+              ]
+            : []),
           {
             content: "Listing",
             icon: <Megaphone className={LUCIDE} />,

@@ -198,6 +198,14 @@ export default function ActivityLogPage() {
     }
   };
 
+  // Id lookups for the search text and the timeline rows, so each entry
+  // doesn't scan the whole vehicle list.
+  const userById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
+  const vehicleById = useMemo(
+    () => new Map(vehicles.map((v) => [v.id, v])),
+    [vehicles],
+  );
+
   const selectFilters: SelectFilter[] = useMemo(
     () => [
       {
@@ -224,8 +232,10 @@ export default function ActivityLogPage() {
     return entries.filter((e) =>
       matchesFilterState(e, filters, {
         searchText: (row) => {
-          const user = users.find((u) => u.id === row.userId);
-          const vehicle = vehicles.find((v) => v.id === row.vehicleId);
+          const user = userById.get(row.userId);
+          const vehicle = row.vehicleId
+            ? vehicleById.get(row.vehicleId)
+            : undefined;
           return [
             row.description,
             row.actionType.replace(/_/g, " "),
@@ -240,7 +250,7 @@ export default function ActivityLogPage() {
           key === "action" ? row.actionType : key === "user" ? row.userId : null,
       }),
     );
-  }, [entries, filters, users, vehicles]);
+  }, [entries, filters, userById, vehicleById]);
 
   // Group the (already date-sorted) entries by day for the timeline.
   const groups = useMemo(() => {
@@ -284,8 +294,10 @@ export default function ActivityLogPage() {
               </h2>
               <ol className="flex flex-col">
                 {items.map((e, i) => {
-                  const user = users.find((u) => u.id === e.userId);
-                  const vehicle = vehicles.find((v) => v.id === e.vehicleId);
+                  const user = userById.get(e.userId);
+                  const vehicle = e.vehicleId
+                    ? vehicleById.get(e.vehicleId)
+                    : undefined;
                   const meta = actionMeta(e.actionType);
                   const Icon = meta.icon;
                   const last = i === items.length - 1;

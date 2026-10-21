@@ -19,10 +19,43 @@
   --info-foreground: var(--text-info);
 }
 
+/* Kanban boards (src/components/kanban). Polaris's bevelled shadows suit
+   buttons and cards on a grey page, not white cards on a white board, so the
+   board's cards get the soft lift of the reference board instead: a faint
+   drop, a 3px halo, more of both on hover, and a focus-tinted ring while one
+   is carried. In dark the board drops a step so the cards sit above it.
+   One declaration per line: the audit reads these as token definitions. */
+:root,
+[data-theme="light"],
+.light {
+  --kanban-board: var(--bg-surface);
+  --kanban-lane-target: var(--bg-surface-secondary);
+  --kanban-card-shadow: 0 2px 4px 0 rgb(35 35 35 / 0.03), 0 1px 2px 0 rgb(35 35 35 / 0.04), 0 0 0 3px rgb(205 205 205 / 0.12), 0 0 0 1px color-mix(in srgb, var(--border-secondary) 70%, transparent);
+  --kanban-card-shadow-hover: 0 2px 4px 0 rgb(35 35 35 / 0.04), 0 1px 2px 0 rgb(35 35 35 / 0.05), 0 4px 12px 0 rgb(35 35 35 / 0.06), 0 0 0 3px rgb(205 205 205 / 0.18), 0 0 0 1px var(--border-secondary);
+  --kanban-card-shadow-lift: 0 0 0 1px color-mix(in srgb, var(--border-focus) 24%, transparent), 0 0 0 4px color-mix(in srgb, var(--border-focus) 16%, transparent), 0 2px 12px 0 rgb(35 35 35 / 0.08), 0 6px 16px 0 rgb(35 35 35 / 0.12);
+}
+[data-theme="dark"],
+.dark {
+  --kanban-board: var(--bg-surface-secondary);
+  --kanban-lane-target: var(--bg-surface-hover);
+  --kanban-card-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 0 0 1px rgb(255 255 255 / 0.06), inset 0 1px 0 0 rgb(255 255 255 / 0.04);
+  --kanban-card-shadow-hover: 0 4px 12px 0 rgb(0 0 0 / 0.45), 0 0 0 1px rgb(255 255 255 / 0.1), inset 0 1px 0 0 rgb(255 255 255 / 0.06);
+  --kanban-card-shadow-lift: 0 0 0 1px color-mix(in srgb, var(--border-focus) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--border-focus) 20%, transparent), 0 6px 16px 0 rgb(0 0 0 / 0.5);
+}
+
 /* Polaris labels are sentence case; never shout. */
 .uppercase {
   text-transform: none;
   letter-spacing: normal;
+}
+
+/* The Frame's main area is the app's one scroller. Reserve the scrollbar's
+   width whether or not a page scrolls, so a page's width never depends on its
+   length: without this, a long page at a 768px window drops ~15px below
+   Page's 768px container breakpoint and gets 16px gutters while a short page
+   keeps 24px. */
+.p-frame__main {
+  scrollbar-gutter: stable;
 }
 
 /* Tables: Polaris IndexTable / DataTable anatomy for every <table> — a

@@ -25,15 +25,15 @@ import {
   ProgressBar,
   type BadgeTone,
 } from "@/components/polaris";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { KpiCard, Panel, Pill } from "./primitives";
-import { cn } from "@/lib/utils";
 import { VehicleLocationSection } from "@/components/locations/vehicle-location-section";
 import {
   computeAdvertChecks,
   type AdvertCheck,
 } from "@/lib/advert-completeness";
 import { computeCostTotals } from "@/lib/vehicle-costs";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { OverviewPricingCard } from "./overview-pricing-card";
 
 interface OverviewTabProps {
@@ -49,8 +49,8 @@ interface OverviewTabProps {
 
 /**
  * Overview tab — the dealership's "at-a-glance everything I need" surface.
- * Four KPIs up top, advert completeness on the left, valuation + marketplace
- * on the right, then a full field grid of vehicle details underneath.
+ * Four KPIs up top, advert completeness on the left, and valuation, pricing,
+ * location and marketplace on the right.
  */
 export function OverviewTab({
   vehicle,
@@ -86,12 +86,8 @@ export function OverviewTab({
   const floor = vehicle.minimumSalePrice ?? 0;
   const stockingBurn = vehicle.dailyChargeRate ?? 0;
   /**
-   * Canonical cost, from the shared rollup (GEN-88).
-   *
-   * This was a third hand-written formula — it omitted the loading and
-   * unloading fees, so the Net Profit shown here disagreed with the Financials
-   * expense ledger by exactly those lines, while a comment claimed the two
-   * matched. Deriving it means the panels cannot drift again.
+   * Canonical cost, from the shared rollup (GEN-88), so the Net Profit shown
+   * here cannot drift from the Financials expense ledger.
    */
   const { baseCost } = computeCostTotals(vehicle);
   const grossProfit =
@@ -153,10 +149,8 @@ export function OverviewTab({
           photoCount={vehicle.imagesCount}
         />
         <div className="flex flex-col gap-4">
-          {/* AutoTrader Valuation leads the right column (more frequent
-              glance value than the Location card per user feedback);
-              Module A's LocationCard sits beneath it and the
-              MarketplacePanel anchors the bottom. */}
+          {/* AutoTrader valuation leads the right column: it is glanced at
+              more often than the location card (user feedback). */}
           <ValuationPanel
             vehicle={vehicle}
             webPrice={webPrice}
@@ -198,16 +192,19 @@ function EmptyOverview({
         content: "Start inspection",
         onAction: () => onNavigate?.("inspection"),
       }}
-      secondaryAction={{
-        content: "Add photos",
-        onAction: () => onNavigate?.("photos"),
-      }}
+      secondaryAction={
+        PHOTOS_ENABLED
+          ? { content: "Add photos", onAction: () => onNavigate?.("photos") }
+          : undefined
+      }
       footerContent={
         <div className="flex flex-col items-center gap-3">
           <Button variant="plain" url={`/vehicles/${vehicleId}/advert`}>
             Set price
           </Button>
-          <span>Then: prep &amp; repairs, photos, price, advert, list</span>
+          <span>
+            Then: prep &amp; repairs, {PHOTOS_ENABLED ? "photos, " : ""}price, advert, list
+          </span>
         </div>
       }
     >

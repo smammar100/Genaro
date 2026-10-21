@@ -193,16 +193,16 @@ export function ArrivalForm() {
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    if (!company) return;
+    if (!company?.id) return;
     void dealerPartnerService
       .getAll(company.id)
       .then((p) => setPartners(p.filter((x) => x.active)));
-  }, [company]);
+  }, [company?.id]);
 
   useEffect(() => {
-    if (!company) return;
+    if (!company?.id) return;
     void teamService.getAll(company.id).then(setUsers);
-  }, [company]);
+  }, [company?.id]);
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -399,8 +399,8 @@ export function ArrivalForm() {
         });
         // NB: do NOT return here. Even for a car already in the stock book we
         // still want DVLA + AutoTrader to populate the form so the user can
-        // review the pulled make/model/compliance data — previously the early
-        // return left every field blank under the "already in stock" banner.
+        // review the pulled make/model/compliance data rather than a blank
+        // form under the "already in stock" banner.
       }
 
       // 2. Wait for DVLA (runs whether or not it's a duplicate).
@@ -439,9 +439,8 @@ export function ArrivalForm() {
       if (dvla.bodyType) form.setValue("bodyType", dvla.bodyType);
       if (dvla.transmission) form.setValue("transmission", dvla.transmission);
       if (dvla.vehicleType) form.setValue("vehicleType", dvla.vehicleType);
-      // Don't overwrite a user-typed model with DVLA's null. DVLA VES
-      // never returns model, but if a future version does we still respect
-      // any value already in the field.
+      // Only fill a blank model, never overwrite one the user typed. DVLA VES
+      // returns no model; dvla.model carries AutoTrader's after the route merge.
       const currentModel = form.getValues("model");
       if (dvla.model && !currentModel?.trim()) form.setValue("model", dvla.model);
       if (dvla.year != null) form.setValue("year", String(dvla.year));
@@ -454,9 +453,8 @@ export function ArrivalForm() {
         form.setValue("euroStatus", dvla.euroStatus);
       }
 
-      // Module-F — populate the Compliance & Verification card with the
-      // 8 additional fields the route now returns. Each value is taken
-      // verbatim (the merge rule lives server-side in /api/vehicle/lookup).
+      // Module-F — populate the Compliance & Verification card. Each value is
+      // taken verbatim (the merge rule lives server-side in /api/vehicle/lookup).
       setCompliance({
         registrationDate: dvla.registrationDate ?? null,
         co2Emissions: dvla.co2Emissions ?? null,
@@ -474,9 +472,7 @@ export function ArrivalForm() {
       setVerifiedAt(new Date());
       setDvlaMatched(true);
 
-      // AutoTrader taxonomy + valuation. Fill the model from AutoTrader when
-      // the user hasn't typed one (DVLA returns model=null). Derivative /
-      // generation / trim are captured for persistence + display.
+      // AutoTrader taxonomy + valuation, captured for persistence + display.
       setAtData({
         derivative: dvla.derivative ?? null,
         generation: dvla.generation ?? null,
@@ -487,8 +483,6 @@ export function ArrivalForm() {
         partExchangeValuation: dvla.partExchangeValuation ?? null,
         privateValuation: dvla.privateValuation ?? null,
       });
-      // dvla.model already carries AutoTrader's model after the route merge;
-      // the guard above only writes it when the model field is empty.
     } catch (e) {
       console.warn("[arrival-form] handleDvlaLookup unexpected", e);
       if (!signal.aborted) {
@@ -583,7 +577,6 @@ export function ArrivalForm() {
   async function onSubmit(values: FormInput) {
     if (!user || !company) return;
     setSubmitting(true);
-    // (errors are rendered inline below each field via form.formState.errors)
     // An unregistered car has no reg to look up — it is saved as UNREGISTERED
     // (client, 18 Sep 2026) and skips the duplicate check, which would
     // otherwise match every other unregistered car.
@@ -631,7 +624,7 @@ export function ArrivalForm() {
           receivedBy: values.receivedBy || user.id,
           sellerName: values.sellerName?.trim() ?? "",
           sellerPhone: values.sellerPhone ?? "",
-          purchaseSource: values.purchaseSource === "trade_in" ? "trade_in" : values.purchaseSource,
+          purchaseSource: values.purchaseSource,
           purchaseChannel: "supplier",
           supplierId: null,
           customFields: {},
@@ -683,7 +676,7 @@ export function ArrivalForm() {
           ),
           atValuationAt: atData.retailValuation ? new Date().toISOString() : null,
           // Costs (sheet S–AH): exactly what was entered. VAT is VAT actually
-          // paid — no longer auto-filled at 20% on every car.
+          // paid, never assumed at 20%.
           buyingPrice: costInputs.buyingPrice,
           vatOnBuyingPrice: costInputs.vatOnBuyingPrice ?? 0,
           buyersFee: costInputs.buyersFee,
@@ -811,6 +804,7 @@ export function ArrivalForm() {
       )}
 
       <Page
+        fullWidth
         title="Add vehicle"
         backAction={{ content: "Back to vehicles", url: "/vehicles" }}
         // No draft storage behind "Save as draft" yet; kept as it was.

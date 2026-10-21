@@ -69,8 +69,7 @@ const costToInput = (cost: number | null): string =>
 /**
  * Things to Do tab — repairs, prep work, and inspection follow-ups, grouped by
  * status. Every field on a row is editable in place (status, description,
- * vendor, cost) and saves straight through to `todo_items`; the list was
- * previously render-only, which is why nothing a user did to it stuck (GEN-64).
+ * vendor, cost) and saves straight through to `todo_items` (GEN-64).
  */
 export function TodoTab({
   vehicleId,

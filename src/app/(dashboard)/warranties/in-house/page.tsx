@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
@@ -21,9 +22,30 @@ import {
   WarrantyTable,
   type WarrantyRow,
 } from "@/components/warranties/warranty-table";
-import { NewWarrantyDialog } from "@/components/warranties/new-warranty-dialog";
-import { NewClaimDialog } from "@/components/warranties/new-claim-dialog";
-import { WarrantyDetailSheet } from "@/components/warranties/warranty-detail-sheet";
+
+// Dialogs and the detail sheet only open on a click, so they load in their own
+// chunks after the list rather than with it.
+const NewWarrantyDialog = dynamic(
+  () =>
+    import("@/components/warranties/new-warranty-dialog").then(
+      (m) => m.NewWarrantyDialog,
+    ),
+  { ssr: false },
+);
+const NewClaimDialog = dynamic(
+  () =>
+    import("@/components/warranties/new-claim-dialog").then(
+      (m) => m.NewClaimDialog,
+    ),
+  { ssr: false },
+);
+const WarrantyDetailSheet = dynamic(
+  () =>
+    import("@/components/warranties/warranty-detail-sheet").then(
+      (m) => m.WarrantyDetailSheet,
+    ),
+  { ssr: false },
+);
 
 type Filter = "all" | WarrantyStatus;
 
@@ -52,20 +74,22 @@ export default function InHouseWarrantiesPage() {
   const [fileClaimFor, setFileClaimFor] = useState<Warranty | null>(null);
   const refetch = () => setRefreshKey((k) => k + 1);
 
-  // The role-based "New Warranty" CTA navigates here with ?new=1 — auto-open
-  // the create dialog so the CTA lands the user straight in the create flow.
-  useEffect(() => {
+  // A ?new=1 link lands the user straight in the create dialog.
+  const [seenParams, setSeenParams] = useState<typeof searchParams | null>(null);
+  if (seenParams !== searchParams) {
+    setSeenParams(searchParams);
     if (searchParams.get("new") === "1") setNewWarrantyOpen(true);
-  }, [searchParams]);
+  }
 
   // Initial + on-refresh data load.
+  const companyId = company?.id;
   useEffect(() => {
-    if (!company) return;
+    if (!companyId) return;
     let cancel = false;
     void Promise.all([
-      warrantyService.getByType("in_house", company.id),
-      vehicleService.getAll(company.id),
-      claimService.getAll(company.id),
+      warrantyService.getByType("in_house", companyId),
+      vehicleService.getAll(companyId),
+      claimService.getAll(companyId),
     ]).then(([w, v, c]) => {
       if (cancel) return;
       setWarranties(w);
@@ -75,7 +99,7 @@ export default function InHouseWarrantiesPage() {
     return () => {
       cancel = true;
     };
-  }, [company, refreshKey]);
+  }, [companyId, refreshKey]);
 
   // Realtime subscription — invalidate cache + bump refreshKey on any change.
   useRealtimeTable({
@@ -144,8 +168,6 @@ export default function InHouseWarrantiesPage() {
         onAction: () => setNewWarrantyOpen(true),
       }}
     >
-      {/* View tabs: their own row under the header, outside the list card. */}
-
       <KpiStrip refreshKey={refreshKey} />
 
       <FilterChips

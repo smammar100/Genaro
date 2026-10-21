@@ -60,15 +60,11 @@ export default function VendorsPage() {
 
   function selectTab(v: VendorTab) {
     setTab(v);
-    if (typeof window !== "undefined") {
-      window.history.replaceState(
-        null,
-        "",
-        v === "partners"
-          ? "/admin/vendors?tab=dealer-partners"
-          : "/admin/vendors",
-      );
-    }
+    window.history.replaceState(
+      null,
+      "",
+      v === "partners" ? "/admin/vendors?tab=dealer-partners" : "/admin/vendors",
+    );
   }
 
   return (
@@ -100,7 +96,7 @@ export default function VendorsPage() {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Garages (the existing vendor list — unchanged behaviour)
+// Garages
 // ────────────────────────────────────────────────────────────────────────────
 
 const SPECIALITIES: VendorSpeciality[] = [
@@ -174,36 +170,39 @@ function GaragesTab({
   const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // The "Add garage" action lives on the page header; open the draft here.
-  useEffect(() => {
+  // The "Add garage" action lives on the page header; open a blank draft
+  // when it's pressed.
+  const [prevAddOpen, setPrevAddOpen] = useState(false);
+  if (addOpen !== prevAddOpen) {
+    setPrevAddOpen(addOpen);
     if (addOpen) setDraft({ ...EMPTY_VENDOR });
-  }, [addOpen]);
+  }
 
   function closeDraft() {
     setDraft(null);
     setAddOpen(false);
   }
 
-  const load = useCallback(async () => {
+  const load = useCallback(() => {
     if (!company) return;
-    setLoadError(false);
-    try {
-      const [v, m] = await Promise.all([
-        vendorService.getAll(company.id),
-        maintenanceService.getAll(company.id),
-      ]);
-      setVendors(v);
-      setMaintJobs(m);
-    } catch {
-      // No catch here previously: any failed/slow read left the tab on an
-      // infinite skeleton. Surface a retry instead.
-      setVendors(null);
-      setLoadError(true);
-    }
+    void Promise.all([
+      vendorService.getAll(company.id),
+      maintenanceService.getAll(company.id),
+    ])
+      .then(([v, m]) => {
+        setVendors(v);
+        setMaintJobs(m);
+      })
+      // Without this a failed read leaves the tab on an infinite skeleton;
+      // surface a retry instead.
+      .catch(() => {
+        setVendors(null);
+        setLoadError(true);
+      });
   }, [company]);
 
   useEffect(() => {
-    void load();
+    load();
   }, [load]);
 
   const rows = useMemo<VendorRow[] | null>(() => {
@@ -335,7 +334,13 @@ function GaragesTab({
       {loadError && !rows ? (
         <Banner
           tone="critical"
-          action={{ content: "Retry", onAction: () => void load() }}
+          action={{
+            content: "Retry",
+            onAction: () => {
+              setLoadError(false);
+              load();
+            },
+          }}
         >
           Couldn&apos;t load garages.
         </Banner>
@@ -453,29 +458,31 @@ function DealerPartnersTab({
   const [saving, setSaving] = useState(false);
 
   // The "Add dealer partner" action lives on the page header.
-  useEffect(() => {
+  const [prevAddOpen, setPrevAddOpen] = useState(false);
+  if (addOpen !== prevAddOpen) {
+    setPrevAddOpen(addOpen);
     if (addOpen) setDraft({ ...EMPTY_PARTNER });
-  }, [addOpen]);
+  }
 
   function closeDraft() {
     setDraft(null);
     setAddOpen(false);
   }
 
-  const reload = useCallback(async () => {
-    if (!company) return;
-    setLoadError(false);
-    try {
-      const [p, c] = await Promise.all([
-        dealerPartnerService.getAll(company.id),
-        dealerPartnerService.activeStockCounts(company.id),
-      ]);
-      setPartners(p);
-      setCounts(c);
-    } catch {
-      setPartners(null);
-      setLoadError(true);
-    }
+  const reload = useCallback(() => {
+    if (!company) return Promise.resolve();
+    return Promise.all([
+      dealerPartnerService.getAll(company.id),
+      dealerPartnerService.activeStockCounts(company.id),
+    ])
+      .then(([p, c]) => {
+        setPartners(p);
+        setCounts(c);
+      })
+      .catch(() => {
+        setPartners(null);
+        setLoadError(true);
+      });
   }, [company]);
 
   useEffect(() => {
@@ -628,7 +635,13 @@ function DealerPartnersTab({
       {loadError && !rows ? (
         <Banner
           tone="critical"
-          action={{ content: "Retry", onAction: () => void reload() }}
+          action={{
+            content: "Retry",
+            onAction: () => {
+              setLoadError(false);
+              void reload();
+            },
+          }}
         >
           Couldn&apos;t load dealer partners.
         </Banner>

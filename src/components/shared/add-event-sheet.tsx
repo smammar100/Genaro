@@ -122,22 +122,25 @@ export function AddEventSheet({
     void vehicleService.getAll(company.id).then(setVehicles);
   }, [company, open]);
 
-  // Seed the form each time the sheet opens, from the slot draft if present.
-  useEffect(() => {
-    if (!open) return;
-    const seed = defaultDraft ?? fallbackDraft(lockKind);
-    setKind(lockKind ?? seed.kind);
-    setTitle(seed.title);
-    setVehicleId("");
-    setCustomerName("");
-    setCustomerPhone("");
-    setCustomerEmail("");
-    setDate(seed.date);
-    setFromTime(seed.fromTime);
-    setToTime(seed.toTime);
-    setNotes("");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  // Seed the form each time the sheet opens, from the slot draft if present
+  // (adjust-state-on-prop-change, in render).
+  const [seededOpen, setSeededOpen] = useState(false);
+  if (open !== seededOpen) {
+    setSeededOpen(open);
+    if (open) {
+      const seed = defaultDraft ?? fallbackDraft(lockKind);
+      setKind(lockKind ?? seed.kind);
+      setTitle(seed.title);
+      setVehicleId("");
+      setCustomerName("");
+      setCustomerPhone("");
+      setCustomerEmail("");
+      setDate(seed.date);
+      setFromTime(seed.fromTime);
+      setToTime(seed.toTime);
+      setNotes("");
+    }
+  }
 
   const eligibleVehicles = useMemo(() => {
     if (kind === "appointment") {
@@ -246,7 +249,6 @@ export function AddEventSheet({
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          {/* Title */}
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -255,7 +257,6 @@ export function AddEventSheet({
           />
 
           <div className="mt-1 divide-y">
-            {/* Kind */}
             {!lockKind ? (
               <FieldRow icon={Tag}>
                 <div className="grid grid-cols-3 gap-1.5">
@@ -284,7 +285,6 @@ export function AddEventSheet({
               </FieldRow>
             ) : null}
 
-            {/* Vehicle */}
             <FieldRow icon={Car}>
               <Combobox
                 items={eligibleVehicles}
@@ -314,7 +314,6 @@ export function AddEventSheet({
               </Combobox>
             </FieldRow>
 
-            {/* Date */}
             <FieldRow icon={CalendarIcon}>
               <Input
                 type="date"
@@ -324,7 +323,6 @@ export function AddEventSheet({
               />
             </FieldRow>
 
-            {/* Time range */}
             <FieldRow icon={Clock}>
               <div className="flex items-center gap-2">
                 <Input
@@ -345,7 +343,6 @@ export function AddEventSheet({
               </div>
             </FieldRow>
 
-            {/* Customer (appointments) */}
             {kind === "appointment" ? (
               <FieldRow icon={User}>
                 <div className="flex flex-col gap-2">
@@ -372,7 +369,6 @@ export function AddEventSheet({
               </FieldRow>
             ) : null}
 
-            {/* Notes */}
             <FieldRow icon={FileText}>
               <Textarea
                 value={notes}

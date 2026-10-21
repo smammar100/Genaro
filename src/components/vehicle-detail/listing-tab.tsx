@@ -19,10 +19,11 @@ interface ListingTabProps {
 }
 
 /**
- * Listing tab (Variation A — refined record). A read-only summary of how this
- * vehicle is advertised: the AutoTrader taxonomy spec, the description, the
- * website highlights (as bullets) and selected equipment. Editing happens in
- * the Advert editor — the single "Edit Advert" action links there.
+ * Listing tab (Variation A — refined record). A summary of how this vehicle is
+ * advertised: the AutoTrader taxonomy spec, the description, the website
+ * highlights (as bullets) and selected equipment. The description and
+ * highlights edit inline (GEN-103); everything else is edited in the Advert
+ * editor, which "Edit advert" links to.
  */
 export function ListingTab({ vehicle }: ListingTabProps) {
   const [listing, setListing] = useState<Listing | null | undefined>(undefined);

@@ -61,7 +61,7 @@ export const KIND_META: Record<
   },
 };
 
-export interface EventStatus {
+interface EventStatus {
   label: string;
   tone: BadgeTone;
   Icon: LucideIcon;

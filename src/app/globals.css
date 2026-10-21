@@ -5,6 +5,11 @@
 @import "../components/polaris/styles/tailwind.css";
 @import "../components/polaris/styles/shadcn.css";
 @import "./polaris-bridge.css";
+@import "../components/fluid/fluid-theme.css";
+
+/* `dark:` follows the app's theme (the .dark class next-themes sets, or a
+   subtree themed dark such as the nav rail), not the OS setting. */
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
 
 /* Onborda ships prebuilt Tailwind classes inside its own dist, which Tailwind
    would otherwise never scan — v4 has no `content` array, so @source is the

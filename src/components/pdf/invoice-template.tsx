@@ -308,8 +308,8 @@ function depositPrefix(method: Invoice["depositMethod"]): string {
 }
 
 // ---------------------------------------------------------------------------
-// Legacy fallback (purchase / refund / uploaded invoices) — keeps the admin
-// invoicing list's print/download working after the rewrite.
+// Fallback for every non-sale invoice (purchase / refund / uploaded), used by
+// the admin invoicing list's print/download.
 // ---------------------------------------------------------------------------
 function LegacyInvoice({ invoice, companyName, companyAddress, vatNumber }: Props) {
   return (

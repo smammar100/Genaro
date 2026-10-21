@@ -50,21 +50,23 @@ export function AddEnquiryDialog({
   );
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
 
-  // Reset state every time the dialog closes — next open starts clean.
-  useEffect(() => {
+  // Reset state every time the dialog closes — next open starts clean — and
+  // drop the vehicle whenever there is none to show. Adjusted while rendering
+  // (against the previous props) rather than in an effect.
+  const [prev, setPrev] = useState({ open, vehicleId });
+  if (prev.open !== open || prev.vehicleId !== vehicleId) {
+    setPrev({ open, vehicleId });
     if (!open) {
       setStep("search");
       setSelectedId(null);
       setSelectedCustomer(null);
     }
-  }, [open]);
+    if (!open || !vehicleId) setVehicle(null);
+  }
 
   // Fetch the vehicle once on open so we can show "Vehicle: ABC 123 — Audi A4".
   useEffect(() => {
-    if (!open || !vehicleId) {
-      setVehicle(null);
-      return;
-    }
+    if (!open || !vehicleId) return;
     void vehicleService.getById(vehicleId).then((v) => setVehicle(v ?? null));
   }, [open, vehicleId]);
 

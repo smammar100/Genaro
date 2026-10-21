@@ -1,17 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  Wrench,
-  CircleDashed,
-  CircleDot,
-  CheckCircle2,
-  CircleAlert,
-  MoreHorizontal,
+  CalendarDays,
+  CircleCheck,
+  CirclePause,
+  Clock,
+  Ellipsis,
   Pencil,
   Trash2,
+  TriangleAlert,
+  Wrench,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { maintenanceService } from "@/lib/services/maintenance-service";
@@ -27,16 +29,7 @@ import type {
   Vendor,
 } from "@/lib/types";
 import { MAINTENANCE_STATUSES } from "@/lib/constants";
-import {
-  Avatar,
-  Badge,
-  Button,
-  Card,
-  EmptyState,
-  Page,
-  type BadgeTone,
-} from "@/components/polaris";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, EmptyState, Page } from "@/components/polaris";
 import { RowActionButton } from "@/components/ui/resource-list";
 import {
   DropdownMenu,
@@ -45,60 +38,120 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { AddEventSheet } from "@/components/shared/add-event-sheet";
 import { EditJobDialog } from "@/components/maintenance/edit-job-dialog";
 import { jobStatusLabel } from "@/components/maintenance/job-status";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { cn, formatCurrency, formatDate, formatRegPlate } from "@/lib/utils";
+import { VehicleImage } from "@/components/shared/vehicle-image";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
+import { KanbanBoard, KanbanSkeleton } from "@/components/kanban/kanban-board";
+import {
+  KanbanCard,
+  KanbanPlate,
+  type KanbanFact,
+} from "@/components/kanban/kanban-card";
+import {
+  dayDate,
+  daysUntil,
+  overdueText,
+  shortDate,
+  todayKey,
+} from "@/components/kanban/card-dates";
+import type { KanbanColumn } from "@/components/kanban/stage-icon";
+import { formatCurrency, formatRegPlate } from "@/lib/utils";
 import { toast } from "@/lib/toast";
-import { DragHandle } from "@/components/shared/drag-handle";
 
-const STATUS_META: Record<
+// The add-job sheet only opens from "Add job", so it loads in its own chunk
+// after the board rather than with it.
+const AddEventSheet = dynamic(
+  () => import("@/components/shared/add-event-sheet").then((m) => m.AddEventSheet),
+  { ssr: false },
+);
+
+/** Each status's place on the board: on the path, the end of it, or off it. */
+const STATUS_COLUMN: Record<
   MaintenanceStatus,
-  { Icon: typeof CircleDashed; tone: string }
+  Pick<KanbanColumn, "tone" | "kind" | "glyph">
 > = {
-  pending: { Icon: CircleDashed, tone: "text-(--icon-secondary)" },
-  in_progress: { Icon: CircleDot, tone: "text-(--icon-info)" },
-  completed: { Icon: CheckCircle2, tone: "text-(--icon-success)" },
-  stalled: { Icon: CircleAlert, tone: "text-(--icon-caution)" },
+  pending: { tone: "neutral", kind: "open" },
+  in_progress: { tone: "info", kind: "open" },
+  completed: { tone: "success", kind: "done" },
+  stalled: { tone: "caution", kind: "exception", glyph: "pause" },
 };
 
-type Urgency = "overdue" | "today" | "week" | "later" | "done";
-const URGENCY_BADGE: Record<
-  Exclude<Urgency, "later" | "done">,
-  { tone: BadgeTone; label: string }
-> = {
-  overdue: { tone: "critical", label: "Overdue" },
-  today: { tone: "attention", label: "Due today" },
-  week: { tone: "info", label: "This week" },
-};
+const COLUMNS: KanbanColumn[] = MAINTENANCE_STATUSES.map((s) => ({
+  id: s.value,
+  label: jobStatusLabel(s.value),
+  ...STATUS_COLUMN[s.value],
+}));
 
 function shortId(id: string): string {
   return id.replace(/-/g, "").slice(-6).toUpperCase();
 }
 
-/** Derive an at-a-glance urgency from the job's due date (open jobs only). */
-function urgencyOf(job: MaintenanceJob): Urgency {
-  if (job.status === "completed") return "done";
-  if (!job.dueDate) return "later";
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const due = new Date(`${job.dueDate.slice(0, 10)}T00:00:00`);
-  const days = Math.round((due.getTime() - today.getTime()) / 86_400_000);
-  if (days < 0) return "overdue";
-  if (days === 0) return "today";
-  if (days <= 7) return "week";
-  return "later";
+/** "1.5h", "2h". */
+const hours = (h: number) => `${Number(h.toFixed(1))}h`;
+
+/**
+ * The job's date line. An open job counts down to its due date in words and
+ * tone (overdue in red with how late, today in caution), then the booked time
+ * and the estimated length; a completed job shows when it finished.
+ */
+function dueFact(job: MaintenanceJob): KanbanFact {
+  if (job.status === "completed") {
+    return {
+      icon: CircleCheck,
+      tone: "success",
+      text: job.completedDate ? `Completed ${shortDate(job.completedDate)}` : "Completed",
+    };
+  }
+  const time = job.scheduledTime ? job.scheduledTime.slice(0, 5) : null;
+  const length = job.estimatedDurationHours
+    ? `${hours(job.estimatedDurationHours)} est.`
+    : undefined;
+  if (!job.dueDate) {
+    return { icon: CalendarDays, tone: "muted", text: "No due date", detail: length };
+  }
+  const days = daysUntil(job.dueDate);
+  const date = dayDate(job.dueDate);
+  if (days < 0) {
+    return {
+      icon: TriangleAlert,
+      tone: "critical",
+      text: overdueText(days),
+      detail: date,
+      title: `Was due ${date}`,
+    };
+  }
+  if (days === 0) {
+    return { icon: Clock, tone: "caution", text: time ? `Today, ${time}` : "Due today", detail: length };
+  }
+  const day = days === 1 ? "Tomorrow" : date;
+  return {
+    icon: CalendarDays,
+    text: time ? `${day}, ${time}` : `Due ${day.toLowerCase() === "tomorrow" ? "tomorrow" : day}`,
+    detail: length,
+  };
 }
 
-function UrgencyBadge({ urgency }: { urgency: Urgency }) {
-  if (urgency === "later" || urgency === "done") return null;
-  const { tone, label } = URGENCY_BADGE[urgency];
-  return (
-    <Badge tone={tone} icon={urgency === "overdue" ? "AlertMinor" : undefined}>
-      {label}
-    </Badge>
-  );
+/**
+ * Order within a column, which also places the drop slot: open jobs by due
+ * date, undated last (the service's own order); completed jobs newest first.
+ */
+function compareJobs(a: MaintenanceJob, b: MaintenanceJob, column: string): number {
+  if (column === "completed") {
+    return (b.completedDate ?? "9999").localeCompare(a.completedDate ?? "9999");
+  }
+  return (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999");
+}
+
+/** A job as it will be once moved: completing it stamps today. */
+function movedJob(job: MaintenanceJob, status: string): MaintenanceJob {
+  return {
+    ...job,
+    status: status as MaintenanceStatus,
+    completedDate:
+      status === "completed" ? (job.completedDate ?? todayKey()) : job.completedDate,
+  };
 }
 
 export default function MaintenancePage() {
@@ -106,14 +159,13 @@ export default function MaintenancePage() {
   const pathname = usePathname();
   const { confirm, confirmDialog } = useConfirm();
   const { user, company } = useAuth();
+  const companyId = company?.id;
   const [jobs, setJobs] = useState<MaintenanceJob[] | null>(null);
   const [editJob, setEditJob] = useState<MaintenanceJob | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [addOpen, setAddOpen] = useState(false);
-  const [dragId, setDragId] = useState<string | null>(null);
-  const [overLane, setOverLane] = useState<MaintenanceStatus | null>(null);
 
   function refetch() {
     if (!company) return;
@@ -121,51 +173,53 @@ export default function MaintenancePage() {
   }
 
   useEffect(() => {
-    if (!company) return;
+    if (!companyId) return;
     void Promise.all([
-      maintenanceService.getAll(company.id),
-      vehicleService.getAll(company.id),
-      vendorService.getAll(company.id),
-      authService.getUsersForCompany(company.id),
+      maintenanceService.getAll(companyId),
+      vehicleService.getAll(companyId),
+      vendorService.getAll(companyId),
+      authService.getUsersForCompany(companyId),
     ]).then(([j, v, ve, u]) => {
       setJobs(j);
       setVehicles(v);
       setVendors(ve);
       setUsers(u);
     });
-  }, [company]);
+  }, [companyId]);
 
-  const grouped = useMemo(() => {
+  const liveJobs = useMemo(() => {
     if (!jobs) return null;
     // Auto-archive: jobs completed more than 6 months ago drop off the live
     // pipeline (they remain in history / the master sheet).
     const cutoff = new Date();
     cutoff.setMonth(cutoff.getMonth() - 6);
     const cutoffDate = cutoff.toISOString().slice(0, 10);
-    const map: Record<MaintenanceStatus, MaintenanceJob[]> = {
-      pending: [],
-      in_progress: [],
-      completed: [],
-      stalled: [],
-    };
-    for (const j of jobs) {
-      if (
-        j.status === "completed" &&
-        j.completedDate &&
-        j.completedDate < cutoffDate
-      ) {
-        continue;
-      }
-      map[j.status].push(j);
-    }
-    return map;
+    return jobs.filter(
+      (j) =>
+        !(j.status === "completed" && j.completedDate && j.completedDate < cutoffDate),
+    );
   }, [jobs]);
 
+  const vehicleById = useMemo(() => new Map(vehicles.map((v) => [v.id, v])), [vehicles]);
+  const vendorById = useMemo(() => new Map(vendors.map((v) => [v.id, v])), [vendors]);
+  const userById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
+
   async function handleMove(id: string, status: MaintenanceStatus) {
-    if (!user || !company) return;
-    await maintenanceService.updateStatus(id, status, user.id);
-    setJobs(await maintenanceService.getAll(company.id));
-    toast.success("Job moved");
+    if (!user || !company || !jobs) return;
+    const job = jobs.find((j) => j.id === id);
+    if (!job || job.status === status) return;
+    const before = jobs;
+    // Optimistic, as on the sales board (GEN-70): the card lands the moment
+    // it's dropped rather than after the write and a full refetch.
+    setJobs(jobs.map((j) => (j.id === id ? movedJob(j, status) : j)));
+    try {
+      await maintenanceService.updateStatus(id, status, user.id);
+      setJobs(await maintenanceService.getAll(company.id));
+      toast.success("Job moved");
+    } catch (e) {
+      setJobs(before);
+      toast.error(e instanceof Error ? e.message : "Couldn't move the job");
+    }
   }
 
   async function handleDelete(id: string, label: string) {
@@ -186,10 +240,7 @@ export default function MaintenancePage() {
     }
   }
 
-  const totalJobs = grouped
-    ? Object.values(grouped).reduce((n, l) => n + l.length, 0)
-    : 0;
-  const isEmpty = grouped !== null && totalJobs === 0;
+  const isEmpty = liveJobs !== null && liveJobs.length === 0;
 
   return (
     <Page
@@ -203,12 +254,8 @@ export default function MaintenancePage() {
           : { content: "Add job", onAction: () => setAddOpen(true) }
       }
     >
-      {!grouped ? (
-        <div className="grid gap-3 lg:grid-cols-4">
-          {MAINTENANCE_STATUSES.map((s) => (
-            <Skeleton key={s.value} className="h-72" />
-          ))}
-        </div>
+      {!liveJobs ? (
+        <KanbanSkeleton columns={COLUMNS.length} />
       ) : isEmpty ? (
         <Card padding="0">
           <EmptyState
@@ -220,242 +267,114 @@ export default function MaintenancePage() {
           </EmptyState>
         </Card>
       ) : (
-        <div className="grid items-start gap-3 lg:grid-cols-4">
-          {MAINTENANCE_STATUSES.map((status) => {
-            const list = grouped[status.value];
-            const { Icon, tone } = STATUS_META[status.value];
+        <KanbanBoard
+          id="maintenance-jobs"
+          columns={COLUMNS}
+          items={liveJobs}
+          getId={(j) => j.id}
+          getColumnId={(j) => j.status}
+          compare={compareJobs}
+          moved={movedJob}
+          onMove={(id, status) => void handleMove(id, status as MaintenanceStatus)}
+          onAdd={() => setAddOpen(true)}
+          addLabel="Add job"
+          noun={{ one: "job", many: "jobs" }}
+          renderCard={(j) => {
+            const v = vehicleById.get(j.vehicleId);
+            const vendor = j.vendorId ? vendorById.get(j.vendorId) : undefined;
+            const assignee = j.assignedTo ? userById.get(j.assignedTo) : undefined;
+            const cost = j.actualCost ?? j.estimatedCost;
+            const jobHref = `/maintenance/jobs/${j.id}`;
             return (
-              <div
-                key={status.value}
-                onDragOver={(e) => {
-                  if (!dragId) return;
-                  e.preventDefault();
-                  setOverLane(status.value);
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const job = dragId
-                    ? jobs?.find((x) => x.id === dragId)
-                    : undefined;
-                  if (dragId && job && job.status !== status.value) {
-                    void handleMove(dragId, status.value);
-                  }
-                  setDragId(null);
-                  setOverLane(null);
-                }}
-                className={cn(
-                  "flex min-h-32 flex-col gap-2 rounded-(--radius-300) bg-(--bg-surface-secondary) p-2 transition-colors",
-                  dragId &&
-                    overLane === status.value &&
-                    "bg-(--bg-surface-secondary-selected) ring-2 ring-(--border-emphasis)",
-                )}
-              >
-                <div className="flex items-center gap-1.5 px-1.5 pt-1 pb-0.5">
-                  <Icon className={cn("size-3.5", tone)} />
-                  <h2 className="heading-sm">
-                    {jobStatusLabel(status.value)}
-                  </h2>
-                  <Badge>{String(list.length)}</Badge>
-                </div>
-                <div className="flex max-h-[calc(100dvh-22rem)] min-h-12 flex-col gap-2 overflow-y-auto pr-0.5">
-                  {list.length === 0 ? (
-                    <Button
-                      variant="tertiary"
-                      icon="PlusMinor"
-                      fullWidth
-                      onClick={() => setAddOpen(true)}
-                    >
-                      Add job
-                    </Button>
+              <KanbanCard
+                onOpen={() => router.push(jobHref)}
+                thumbnail={
+                  v && PHOTOS_ENABLED ? (
+                    <VehicleImage
+                      vehicle={v}
+                      variant="thumb"
+                      sizes="48px"
+                      className="w-12 rounded-(--radius-200)"
+                    />
+                  ) : undefined
+                }
+                identity={
+                  v ? (
+                    <KanbanPlate
+                      registration={v.registration}
+                      href={vehicleDetailHref(v.id, pathname)}
+                      title="Open vehicle"
+                    />
                   ) : (
-                    list.map((j) => {
-                      const v = vehicles.find((x) => x.id === j.vehicleId);
-                      const vendor = vendors.find((x) => x.id === j.vendorId);
-                      const assignee = users.find((u) => u.id === j.assignedTo);
-                      const cardTotal = j.actualCost ?? j.estimatedCost;
-                      const cardDate =
-                        j.completedDate ?? j.dueDate ?? j.startDate;
-                      const urgency = urgencyOf(j);
-                      return (
-                        <article
-                          key={j.id}
-                          draggable
-                          onDragStart={(e) => {
-                            setDragId(j.id);
-                            e.dataTransfer.effectAllowed = "move";
-                            e.dataTransfer.setData("text/plain", j.id);
-                          }}
-                          onDragEnd={() => {
-                            setDragId(null);
-                            setOverLane(null);
-                          }}
-                          className={cn(
-                            "group/card relative shrink-0 cursor-grab active:cursor-grabbing",
-                            dragId === j.id && "opacity-50",
-                          )}
-                        >
-                          <Card
-                            padding="0"
-                            className={cn(
-                              "flex flex-col",
-                              urgency === "overdue" &&
-                                "ring-1 ring-(--border-critical-secondary)",
-                            )}
-                          >
-                          {/* On the card's left edge rather than in the
-                              header row. These columns are narrow enough that
-                              the registration already truncates, and an inline
-                              grip took another 20px off it. The rows all carry
-                              px-3, so a grip in that padding costs the layout
-                              nothing. */}
-                          <DragHandle className="absolute left-0 top-1/2 z-10 -translate-y-1/2 [&_svg]:size-3" />
-                          {/* Accent header — reg + job # */}
-                          <div className="flex items-center justify-between gap-2 border-b border-(--border-secondary) px-3 py-2">
-                            <div className="flex min-w-0 items-baseline gap-2">
-                              {v ? (
-                                <>
-                                  {/* The plate is what identifies the car,
-                                      so it is the thing that must never be cut.
-                                      It used to `truncate` while the job id sat
-                                      `shrink-0` beside it, which is backwards:
-                                      the id took a fixed 50px of a 121px row and
-                                      the plate absorbed the whole shortfall,
-                                      rendering "L400 JCM" as "L400…" (GEN-115).
-                                      Swap the priority -- the plate keeps its
-                                      width, the id yields what is left. */}
-                                  <Link
-                                    href={vehicleDetailHref(v.id, pathname)}
-                                    className="shrink-0 font-mono text-sm font-semibold hover:underline"
-                                  >
-                                    {formatRegPlate(v.registration)}
-                                  </Link>
-                                  <Link
-                                    href={`/maintenance/jobs/${j.id}`}
-                                    title={`Job #${shortId(j.id)}`}
-                                    className="body-sm min-w-0 truncate text-(--text-secondary) hover:text-(--text) hover:underline"
-                                  >
-                                    #{shortId(j.id)}
-                                  </Link>
-                                </>
-                              ) : (
-                                <Link
-                                  href={`/maintenance/jobs/${j.id}`}
-                                  className="font-mono text-sm font-semibold hover:underline"
-                                >
-                                  #{shortId(j.id)}
-                                </Link>
-                              )}
-                            </div>
-                            <div className="flex shrink-0 items-center gap-1">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <RowActionButton aria-label="Job actions">
-                                    <MoreHorizontal />
-                                  </RowActionButton>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={() => setEditJob(j)}
-                                  >
-                                    <Pencil className="mr-2 size-3.5" />
-                                    Edit job
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    className="text-(--text-critical)"
-                                    onClick={() =>
-                                      void handleDelete(
-                                        j.id,
-                                        v ? formatRegPlate(v.registration) : `#${shortId(j.id)}`,
-                                      )
-                                    }
-                                  >
-                                    <Trash2 className="mr-2 size-3.5" />
-                                    Delete job
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          </div>
-
-                          {/* Body — click opens the job detail. The header
-                              (reg link, job# link, actions menu) sits outside
-                              this element, so those keep their own behaviour. */}
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            className="flex cursor-pointer flex-col gap-2 p-3 transition-colors hover:bg-(--bg-surface-hover)"
-                            onClick={(e) => {
-                              // A completed drag doesn't fire a click, but guard
-                              // anyway; also ignore clicks bubbling from any
-                              // interactive child.
-                              if (dragId) return;
-                              if (
-                                (e.target as HTMLElement).closest(
-                                  "a,button,[role=menuitem]",
-                                )
-                              )
-                                return;
-                              router.push(`/maintenance/jobs/${j.id}`);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                router.push(`/maintenance/jobs/${j.id}`);
-                              }
-                            }}
-                          >
-                            {cardTotal ? (
-                              <span className="body-md-numeric font-semibold">
-                                {formatCurrency(cardTotal)}
-                              </span>
-                            ) : null}
-
-                            <p className="body-md line-clamp-2">
-                              {j.description}
-                            </p>
-
-                            {(vendor || v) && (
-                              <div className="flex flex-wrap gap-1">
-                                {vendor && <Badge>{vendor.name}</Badge>}
-                                {v && (
-                                  <Badge>{`${v.make} ${v.model}`}</Badge>
-                                )}
-                              </div>
-                            )}
-
-                            <div className="flex items-center justify-between pt-1">
-                              <div className="flex items-center gap-1.5">
-                                <span className="body-sm text-(--text-secondary)">
-                                  {cardDate ? formatDate(cardDate) : "—"}
-                                </span>
-                                <UrgencyBadge urgency={urgency} />
-                              </div>
-                              {assignee ? (
-                                <span title={assignee.name} className="inline-flex">
-                                  <Avatar size="sm" name={assignee.name} />
-                                </span>
-                              ) : vendor ? (
-                                <span title={vendor.name} className="inline-flex">
-                                  <Avatar size="sm" name={vendor.name} />
-                                </span>
-                              ) : (
-                                <span title="Unassigned" className="inline-flex">
-                                  <Avatar size="sm" accessibilityLabel="Unassigned" />
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          </Card>
-                        </article>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
+                    <span className="body-sm text-(--text-secondary)">No vehicle</span>
+                  )
+                }
+                reference={`#${shortId(j.id)}`}
+                vehicle={v ? `${v.make} ${v.model}` : undefined}
+                title={
+                  <Link href={jobHref} draggable={false} className="hover:underline">
+                    {j.description}
+                  </Link>
+                }
+                titleText={j.description}
+                facts={[
+                  dueFact(j),
+                  vendor
+                    ? { icon: Wrench, text: vendor.name, title: "Garage" }
+                    : { icon: Wrench, tone: "muted", text: "No garage" },
+                ]}
+                note={
+                  j.status === "stalled"
+                    ? {
+                        icon: CirclePause,
+                        tone: "caution",
+                        text: j.notes?.trim()
+                          ? `Stalled: ${j.notes.trim()}`
+                          : "Stalled, no reason given",
+                      }
+                    : undefined
+                }
+                person={{ name: assignee?.name, empty: "Unassigned" }}
+                money={
+                  cost
+                    ? {
+                        value: formatCurrency(cost),
+                        kind: j.actualCost != null ? "actual" : "estimate",
+                      }
+                    : undefined
+                }
+                menu={
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <RowActionButton aria-label="Job actions" className="size-6">
+                        <Ellipsis />
+                      </RowActionButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditJob(j)}>
+                        <Pencil className="mr-2 size-3.5" />
+                        Edit job
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-(--text-critical)"
+                        onClick={() =>
+                          void handleDelete(
+                            j.id,
+                            v ? formatRegPlate(v.registration) : `#${shortId(j.id)}`,
+                          )
+                        }
+                      >
+                        <Trash2 className="mr-2 size-3.5" />
+                        Delete job
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                }
+              />
             );
-          })}
-        </div>
+          }}
+        />
       )}
 
       <AddEventSheet
@@ -471,11 +390,7 @@ export default function MaintenancePage() {
           if (!o) setEditJob(null);
         }}
         job={editJob}
-        vehicle={
-          editJob
-            ? (vehicles.find((v) => v.id === editJob.vehicleId) ?? null)
-            : null
-        }
+        vehicle={editJob ? (vehicleById.get(editJob.vehicleId) ?? null) : null}
         vendors={vendors}
         users={users}
         onSaved={refetch}

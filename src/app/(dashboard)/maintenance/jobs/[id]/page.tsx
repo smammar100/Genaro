@@ -64,6 +64,7 @@ export default function MaintenanceJobDetailPage({
   const pathname = usePathname();
   const { confirm, confirmDialog } = useConfirm();
   const { user, company } = useAuth();
+  const companyId = company?.id;
   const [job, setJob] = useState<MaintenanceJob | null | undefined>(undefined);
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [notes, setNotes] = useState<MaintenanceJobNote[]>([]);
@@ -74,29 +75,32 @@ export default function MaintenanceJobDetailPage({
   const [saving, setSaving] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refetch = () => setRefreshKey((k) => k + 1);
 
-  async function load() {
-    if (!company) return;
-    const j = await maintenanceService.getById(id);
-    setJob(j);
-    if (j) {
+  useEffect(() => {
+    if (!companyId) return;
+    let cancelled = false;
+    void maintenanceService.getById(id).then(async (j) => {
+      if (cancelled) return;
+      setJob(j);
+      if (!j) return;
       const [v, n, u, ve] = await Promise.all([
         vehicleService.getById(j.vehicleId),
         maintenanceNoteService.getForJob(j.id),
-        authService.getUsersForCompany(company.id),
-        vendorService.getAll(company.id),
+        authService.getUsersForCompany(companyId),
+        vendorService.getAll(companyId),
       ]);
+      if (cancelled) return;
       setVehicle(v);
       setNotes(n);
       setUsers(u);
       setVendors(ve);
-    }
-  }
-
-  useEffect(() => {
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, company]);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, companyId, refreshKey]);
 
   async function handleAddNote() {
     if (!user || !job || !newNote.trim()) return;
@@ -109,7 +113,7 @@ export default function MaintenanceJobDetailPage({
         content: newNote.trim(),
       });
       setNewNote("");
-      void load();
+      refetch();
     } finally {
       setSaving(false);
     }
@@ -119,7 +123,7 @@ export default function MaintenanceJobDetailPage({
     if (!user || !job) return;
     await maintenanceService.updateStatus(job.id, newStatus, user.id);
     toast.success(`Status: ${newStatus.replace("_", " ")}`);
-    void load();
+    refetch();
   }
 
   async function handleAssign(assignedTo: string) {
@@ -130,7 +134,7 @@ export default function MaintenanceJobDetailPage({
       user.id,
     );
     toast.success("Owner updated");
-    void load();
+    refetch();
   }
 
   async function handleDelete() {
@@ -157,14 +161,14 @@ export default function MaintenanceJobDetailPage({
 
   if (job === undefined) {
     return (
-      <Page title="Maintenance job" backAction={backAction}>
+      <Page fullWidth title="Maintenance job" backAction={backAction}>
         <Skeleton className="h-96" />
       </Page>
     );
   }
   if (job === null) {
     return (
-      <Page title="Maintenance job" backAction={backAction}>
+      <Page fullWidth title="Maintenance job" backAction={backAction}>
         <Card padding="0">
           <EmptyState
             heading="Job not found"
@@ -183,6 +187,7 @@ export default function MaintenanceJobDetailPage({
 
   return (
     <Page
+      fullWidth
       title={`Job #${shortId(job.id)}`}
       subtitle={job.description}
       backAction={backAction}
@@ -334,7 +339,7 @@ export default function MaintenanceJobDetailPage({
         vehicle={vehicle}
         vendors={vendors}
         users={users}
-        onSaved={() => void load()}
+        onSaved={refetch}
       />
 
       {confirmDialog}

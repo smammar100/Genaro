@@ -1,6 +1,6 @@
 # Select
 
-A native `<select>` styled as a Polaris field, with `SelectMinor` chevrons.
+A Polaris field with `SelectMinor` chevrons that opens a Polaris option list — never the browser's own menu.
 
 ```tsx
 import { Select, type SelectOption } from '@/components/polaris';
@@ -68,7 +68,7 @@ Placeholder until a choice is made — the value must start as `''` (`savedProvi
 | Prop | Type | Default | Notes |
 |---|---|---|---|
 | `label` | `string` | — | Required. |
-| `options` | `Array<string \| SelectOption>` | — | Required. `SelectOption` is `{ label, value, disabled? }`. |
+| `options` | `Array<string \| SelectOption>` | — | Required. `SelectOption` is `{ label, value, disabled?, media? }`; `media` (an xs `Avatar`, say) shows before the label in the list and in the field once chosen. |
 | `value` | `string` | — | Controlled value; pair with `onChange` — without it the select is locked to `value`. |
 | `defaultValue` | `string` | first option | Initial value when uncontrolled. |
 | `onChange` | `(value: string, id: string) => void` | — | |
@@ -81,10 +81,16 @@ Placeholder until a choice is made — the value must start as `''` (`savedProvi
 | `disabled` | `boolean` | — | |
 | `magic` | `boolean` | — | Sidekick state. |
 | `id` | `string` | generated | |
+| `autoFocus` | `boolean` | — | |
+| `defaultOpen` | `boolean` | — | Opens the list on mount — for an in-place editor (a spreadsheet cell). |
+| `onBlur` | `() => void` | — | The field lost focus (picking an option keeps it). |
+| `onKeyDown` | `(event) => void` | — | Runs before the field's own keys; `preventDefault()` skips them. |
 
 ## Server Components
 Client component (`'use client'`), but it works uncontrolled from a Server Component: pass `name` and `defaultValue` (or `''` with a `placeholder`) inside `<form action={serverAction}>`. `value` + `onChange` need a Client Component.
 
 ## Accessibility
-- It's a native `select`, so keyboard and screen-reader behavior come from the browser.
+- A "select-only combobox": focus stays on the field while the list is open, and `aria-activedescendant` names the highlighted option.
+- Keys: ↓/↑/Enter/Space open it; ↓/↑, Home/End and Page Up/Down move; typed letters jump (repeat a letter to cycle); Enter or Space picks; Escape closes only the list, not a modal or sheet around it; Tab closes it.
+- The list opens above the field when there's more room there. `name` posts the value through a hidden input.
 - `aria-describedby` points at the error message when `error` is a message, otherwise at the help text.

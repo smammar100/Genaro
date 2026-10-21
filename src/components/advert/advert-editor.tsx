@@ -276,7 +276,6 @@ export function AdvertEditor({
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
         {/* ── Form column ───────────────────────────────────────── */}
         <div className="flex flex-col gap-4">
-          {/* Spotlight */}
           <section id="spotlight" className="scroll-mt-24">
             <Panel
               title="AutoTrader spotlight"
@@ -307,7 +306,6 @@ export function AdvertEditor({
             </Panel>
           </section>
 
-          {/* Taxonomy */}
           <section id="taxonomy" className="scroll-mt-24">
             <Panel
               title="Taxonomy"
@@ -365,7 +363,6 @@ export function AdvertEditor({
             </Panel>
           </section>
 
-          {/* Description */}
           <section id="description" className="scroll-mt-24">
             <Panel
               title="Vehicle description"
@@ -408,7 +405,6 @@ export function AdvertEditor({
             </Panel>
           </section>
 
-          {/* Strapline */}
           <section id="strapline" className="scroll-mt-24">
             <Panel
               title="Dealer strapline"
@@ -445,7 +441,6 @@ export function AdvertEditor({
             </Panel>
           </section>
 
-          {/* Website */}
           <section id="website" className="scroll-mt-24">
             <Panel
               title="Website highlights"
@@ -488,7 +483,6 @@ export function AdvertEditor({
             </Panel>
           </section>
 
-          {/* Equipment */}
           <section id="equipment" className="scroll-mt-24">
             <Panel
               title="Equipment"
@@ -501,7 +495,6 @@ export function AdvertEditor({
             </Panel>
           </section>
 
-          {/* Channels & pricing */}
           <section id="channels" className="scroll-mt-24">
             <Panel
               title="Channels and pricing"

@@ -70,6 +70,7 @@ function monthLabel(key: string): string {
   return month ? `${month} ${y}` : key;
 }
 const dealDate = (d: SalesDeal): string => d.completionDate ?? d.updatedAt;
+const dealMonth = (d: SalesDeal): string => dealDate(d).slice(0, 7);
 const dealPrice = (d: SalesDeal): number | null =>
   d.agreedPrice ?? d.offerPrice ?? null;
 
@@ -189,25 +190,33 @@ export default function DealsPage() {
     });
   }, [closed, filters, vehicleById]);
 
-  // Sorting — default newest completion first.
-  const { sorted, sortKey, sortDir, onSort } = useSort<SalesDeal>(
-    filtered ?? undefined,
-    {
-      reg: (a, b) =>
+  // Sorting — default newest completion first. The comparators are memoised
+  // so useSort (and the grouping below) don't re-sort on every render.
+  const comparators = useMemo(
+    () => ({
+      reg: (a: SalesDeal, b: SalesDeal) =>
         (vehicleById.get(a.vehicleId)?.registration ?? "").localeCompare(
           vehicleById.get(b.vehicleId)?.registration ?? "",
         ),
-      customerName: (a, b) => a.customerName.localeCompare(b.customerName),
-      price: (a, b) => (dealPrice(a) ?? 0) - (dealPrice(b) ?? 0),
-      completed: (a, b) => dealDate(a).localeCompare(dealDate(b)),
-    },
+      customerName: (a: SalesDeal, b: SalesDeal) =>
+        a.customerName.localeCompare(b.customerName),
+      price: (a: SalesDeal, b: SalesDeal) =>
+        (dealPrice(a) ?? 0) - (dealPrice(b) ?? 0),
+      completed: (a: SalesDeal, b: SalesDeal) =>
+        dealDate(a).localeCompare(dealDate(b)),
+    }),
+    [vehicleById],
+  );
+  const { sorted, sortKey, sortDir, onSort } = useSort<SalesDeal>(
+    filtered ?? undefined,
+    comparators,
     { key: "completed", dir: "desc" },
   );
 
   // Monthly grouping — the client reviews completed sales month by month.
   const { groups, isCollapsed, toggle } = useRowGroups(
     sorted,
-    (d) => dealDate(d).slice(0, 7),
+    dealMonth,
     monthLabel,
   );
 

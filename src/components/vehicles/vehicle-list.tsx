@@ -17,10 +17,11 @@ import { useAuth } from "@/contexts/auth-context";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
 import { VehicleImage } from "@/components/shared/vehicle-image";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { VehicleStatusBadge } from "@/components/shared/status-badge";
 import { DaysInStockChip } from "@/components/shared/days-in-stock-chip";
-import { capitalizeWords, formatCurrency, titleCase } from "@/lib/utils";
+import { capitalizeWords, cn, formatCurrency, titleCase } from "@/lib/utils";
 import { variantLabel } from "@/lib/vehicle-variant";
 
 /** Saved views: each is a set of lifecycle statuses (null = every car). */
@@ -81,15 +82,22 @@ function VehicleRow({ v }: { v: Vehicle }) {
 
   return (
     <Card padding="0">
-      <div className="grid items-stretch md:grid-cols-[220px_1fr_200px]">
-        <Link href={href} tabIndex={-1} aria-hidden className="block">
-          <VehicleImage
-            vehicle={v}
-            variant="card"
-            sizes="220px"
-            className="h-44 w-full rounded-none md:aspect-auto md:h-full"
-          />
-        </Link>
+      <div
+        className={cn(
+          "grid items-stretch",
+          PHOTOS_ENABLED ? "md:grid-cols-[220px_1fr_200px]" : "md:grid-cols-[1fr_200px]",
+        )}
+      >
+        {PHOTOS_ENABLED ? (
+          <Link href={href} tabIndex={-1} aria-hidden className="block">
+            <VehicleImage
+              vehicle={v}
+              variant="card"
+              sizes="220px"
+              className="h-44 w-full rounded-none md:aspect-auto md:h-full"
+            />
+          </Link>
+        ) : null}
 
         <div className="flex min-w-0 flex-col gap-2 p-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -159,7 +167,7 @@ export function VehicleList({ onAddVehicle }: { onAddVehicle: () => void }) {
   const [page, setPage] = React.useState(0);
 
   React.useEffect(() => {
-    if (!company) return;
+    if (!company?.id) return;
     let active = true;
     void vehicleService.getAll(company.id).then((list) => {
       if (active) setVehicles(list);
@@ -167,7 +175,7 @@ export function VehicleList({ onAddVehicle }: { onAddVehicle: () => void }) {
     return () => {
       active = false;
     };
-  }, [company]);
+  }, [company?.id]);
 
   const counts = React.useMemo(
     () =>

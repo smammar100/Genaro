@@ -8,6 +8,7 @@ import type {
 } from "@/lib/types";
 import { activityService } from "./activity-service";
 import { vehicleService } from "./vehicle-service";
+import { PHOTOS_ENABLED } from "@/lib/phase-one";
 
 const NS = "maintenance:";
 
@@ -264,7 +265,8 @@ export const maintenanceService = {
           metadata: { jobId: id },
         });
         // When the last open job for a vehicle completes, advance it to
-        // photos_pending (v4.1 TC-P2-007). This applies to any pre-prep
+        // photos_pending (v4.1 TC-P2-007), or straight to ready while photos
+        // are off (Phase 1, see phase-one). This applies to any pre-prep
         // lifecycle stage — a vehicle still in received/inspection_pending whose
         // jobs are all done should move forward too, not just being_prepared.
         const { count } = await supabase
@@ -278,7 +280,11 @@ export const maintenanceService = {
           "being_prepared",
         ];
         if ((count ?? 0) === 0 && advanceFrom.includes(v.status)) {
-          await vehicleService.changeStatus(v.id, "photos_pending", actorId);
+          await vehicleService.changeStatus(
+            v.id,
+            PHOTOS_ENABLED ? "photos_pending" : "ready",
+            actorId,
+          );
         }
       }
     }
