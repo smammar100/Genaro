@@ -5,9 +5,12 @@ import { useForm } from "react-hook-form";
 import { rulesResolver, emailIssue, type FormRules } from "@/lib/auth/form-resolver";
 import { toast } from "@/lib/toast";
 import { useAutoFocusField } from "@/hooks/use-auto-focus";
-import { createClient } from "@/lib/supabase/client";
 import { Button, Link } from "@/components/polaris";
 import { AuthCard, RhfTextField } from "../_components/auth-card";
+
+// Loaded on submit, not with the page: the Supabase client is the largest
+// library here and the form paints without it.
+const getSupabase = () => import("@/lib/supabase/client").then((m) => m.createClient());
 
 interface FormValues {
   email: string;
@@ -30,7 +33,7 @@ export default function ForgotPasswordPage() {
   useAutoFocusField(form.setFocus, "email", !sent);
 
   async function onSubmit(values: FormValues) {
-    const supabase = createClient();
+    const supabase = await getSupabase();
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
       redirectTo: `${origin}/reset-password`,

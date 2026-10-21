@@ -24,33 +24,6 @@ export const FEATURE_CATEGORIES: FeatureCategory[] = [
   "Other",
 ];
 
-/** Tailwind chip tones per category — matches the AutoTrader colour key. */
-export const FEATURE_CATEGORY_TONE: Record<
-  FeatureCategory,
-  { chip: string; dot: string }
-> = {
-  Comfort: {
-    chip: "border-violet-300 text-violet-800 dark:border-violet-500/40 dark:text-violet-200",
-    dot: "bg-violet-500",
-  },
-  Exterior: {
-    chip: "border-emerald-300 text-emerald-800 dark:border-emerald-500/40 dark:text-emerald-200",
-    dot: "bg-emerald-500",
-  },
-  Interior: {
-    chip: "border-blue-300 text-blue-800 dark:border-blue-500/40 dark:text-blue-200",
-    dot: "bg-blue-500",
-  },
-  "Safety & Security": {
-    chip: "border-rose-300 text-rose-800 dark:border-rose-500/40 dark:text-rose-200",
-    dot: "bg-rose-500",
-  },
-  Other: {
-    chip: "border-amber-300 text-amber-800 dark:border-amber-500/40 dark:text-amber-200",
-    dot: "bg-amber-500",
-  },
-};
-
 const CATALOG: Record<FeatureCategory, string[]> = {
   Comfort: [
     "Air Conditioning",
@@ -238,12 +211,3 @@ interface CatalogFeature {
 export const VEHICLE_FEATURES: CatalogFeature[] = FEATURE_CATEGORIES.flatMap(
   (category) => CATALOG[category].map((name) => ({ name, category })),
 );
-
-const CATEGORY_BY_NAME = new Map<string, FeatureCategory>(
-  VEHICLE_FEATURES.map((f) => [f.name.toLowerCase(), f.category]),
-);
-
-/** Best-effort category for an arbitrary feature string (chips from saved data). */
-export function categoryForFeature(name: string): FeatureCategory {
-  return CATEGORY_BY_NAME.get(name.trim().toLowerCase()) ?? "Other";
-}

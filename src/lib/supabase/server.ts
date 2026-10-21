@@ -25,7 +25,7 @@ export async function createClient() {
               cookieStore.set(name, value, options);
             }
           } catch {
-            // setAll from a Server Component is a no-op; middleware refreshes the session.
+            // setAll from a Server Component is a no-op; the proxy (proxy.ts) refreshes the session.
           }
         },
       },

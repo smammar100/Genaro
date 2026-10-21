@@ -119,10 +119,6 @@ export function weekLabel(days: Date[]): string {
 export const dayLabel = (d: Date): string =>
   `${DAY_NAMES[weekdayMon0(d)]} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 
-/** "Sat 26 Sep". */
-export const shortDayLabel = (d: Date): string =>
-  `${DOW[weekdayMon0(d)]} ${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)}`;
-
 export function viewLabel(view: ViewKey, anchor: Date): string {
   if (view === "month") return `${MONTHS[anchor.getMonth()]} ${anchor.getFullYear()}`;
   if (view === "week") return weekLabel(weekOf(anchor));

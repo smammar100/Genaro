@@ -10,10 +10,13 @@ import {
 } from "@/lib/auth/form-resolver";
 import { toast } from "@/lib/toast";
 import { useAutoFocusField } from "@/hooks/use-auto-focus";
-import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/polaris";
 import { AuthCard, RhfTextField } from "../_components/auth-card";
+
+// Loaded on submit, not with the page: the Supabase client is the largest
+// library here and the form paints without it.
+const getSupabase = () => import("@/lib/supabase/client").then((m) => m.createClient());
 
 interface FormValues {
   password: string;
@@ -54,7 +57,7 @@ export default function SetPasswordPage() {
   useAutoFocusField(form.setFocus, "password");
 
   async function onSubmit(values: FormValues) {
-    const supabase = createClient();
+    const supabase = await getSupabase();
     const { error } = await supabase.auth.updateUser({
       password: values.password,
     });

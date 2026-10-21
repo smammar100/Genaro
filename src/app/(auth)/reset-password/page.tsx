@@ -10,9 +10,12 @@ import {
 } from "@/lib/auth/form-resolver";
 import { toast } from "@/lib/toast";
 import { useAutoFocusField } from "@/hooks/use-auto-focus";
-import { createClient } from "@/lib/supabase/client";
 import { Banner, Button } from "@/components/polaris";
 import { AuthCard, RhfTextField } from "../_components/auth-card";
+
+// Loaded once the page has painted, not with it: the Supabase client is the
+// largest library here and the form paints without it.
+const getSupabase = () => import("@/lib/supabase/client").then((m) => m.createClient());
 
 interface FormValues {
   password: string;
@@ -36,31 +39,41 @@ export default function ResetPasswordPage() {
   const [status, setStatus] = useState<RecoveryStatus>("checking");
 
   useEffect(() => {
-    const supabase = createClient();
     let settled = false;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let unsubscribe: (() => void) | undefined;
 
-    // PASSWORD_RECOVERY fires when the recovery link is exchanged for a session.
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY" && session) {
-        settled = true;
-        setStatus("ready");
-      }
+    // The client is fetched after the page paints; creating it is what
+    // exchanges the recovery link, so subscribing straight after still
+    // catches the event, as it did when the client was a static import.
+    void getSupabase().then((supabase) => {
+      if (cancelled) return;
+      // PASSWORD_RECOVERY fires when the recovery link is exchanged for a session.
+      const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === "PASSWORD_RECOVERY" && session) {
+          settled = true;
+          setStatus("ready");
+        }
+      });
+      unsubscribe = () => sub.subscription.unsubscribe();
+
+      // Also handle the case where the recovery session is already established by
+      // the time we mount (event already fired). Give the event a brief window
+      // first, then fall back to "invalid" if no recovery session materialised.
+      timer = setTimeout(() => {
+        if (settled) return;
+        void supabase.auth.getSession().then(({ data }) => {
+          if (settled) return;
+          setStatus(data.session ? "ready" : "invalid");
+        });
+      }, 1200);
     });
 
-    // Also handle the case where the recovery session is already established by
-    // the time we mount (event already fired). Give the event a brief window
-    // first, then fall back to "invalid" if no recovery session materialised.
-    const timer = setTimeout(() => {
-      if (settled) return;
-      void supabase.auth.getSession().then(({ data }) => {
-        if (settled) return;
-        setStatus(data.session ? "ready" : "invalid");
-      });
-    }, 1200);
-
     return () => {
-      clearTimeout(timer);
-      sub.subscription.unsubscribe();
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      unsubscribe?.();
     };
   }, []);
 
@@ -74,7 +87,7 @@ export default function ResetPasswordPage() {
 
   async function onSubmit(values: FormValues) {
     if (status !== "ready") return;
-    const supabase = createClient();
+    const supabase = await getSupabase();
     const { error } = await supabase.auth.updateUser({
       password: values.password,
     });

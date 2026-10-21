@@ -10,9 +10,17 @@ import {
   type ReactNode,
 } from "react";
 import { toast } from "@/lib/toast";
-import { createClient } from "@/lib/supabase/client";
 import { invalidateAll } from "@/lib/cache";
-import { warmDashboardCache } from "@/lib/cache-warmup";
+
+/*
+ * The provider wraps every route, the sign-in pages included, so it loads the
+ * Supabase client and the dashboard cache warm-up (eight services) on demand
+ * rather than at import: neither is needed to paint a page, and as static
+ * imports they sat on every first load. Every caller is already async.
+ */
+const getSupabase = () => import("@/lib/supabase/client").then((m) => m.createClient());
+const warmDashboard = (companyId: string, userId: string) =>
+  import("@/lib/cache-warmup").then((m) => m.warmDashboardCache(companyId, userId));
 import type { Company, User } from "@/lib/types";
 
 interface AuthContextValue {
@@ -122,7 +130,7 @@ export function AuthProvider({
   /**
    * Resolve the public.users + companies rows for an auth session.
    * Sets user + company state; null on failure.
-   * Note: callers re-create the client locally so we never touch
+   * Note: callers fetch the client locally so we never touch
    * `createClient()` during SSR/prerender.
    */
   const hydrate = useCallback(async (authUserId: string | null) => {
@@ -131,7 +139,7 @@ export function AuthProvider({
       setCompany(null);
       return;
     }
-    const supabase = createClient();
+    const supabase = await getSupabase();
     const { data, error } = await supabase
       .from("users")
       .select(USER_WITH_COMPANY_SELECT)
@@ -174,7 +182,7 @@ export function AuthProvider({
     setCompany(companyRow);
     // Fire-and-forget cache warm-up so the dashboard renders against a warm
     // cache. Every dashboard component will read from this within 30s.
-    void warmDashboardCache(companyRow.id, userRow.id);
+    void warmDashboard(companyRow.id, userRow.id);
   }, []);
 
   /**
@@ -188,7 +196,7 @@ export function AuthProvider({
     if (revalidatingRef.current) return;
     revalidatingRef.current = true;
     try {
-      const supabase = createClient();
+      const supabase = await getSupabase();
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -253,7 +261,8 @@ export function AuthProvider({
 
     void (async () => {
       try {
-        const supabase = createClient();
+        const supabase = await getSupabase();
+        if (!mounted) return;
         const {
           data: { session },
         } = await supabase.auth.getSession();
@@ -315,7 +324,7 @@ export function AuthProvider({
   }, [hydrate]);
 
   async function signIn(email: string, password: string): Promise<void> {
-    const supabase = createClient();
+    const supabase = await getSupabase();
     // Drop any existing session + cached rows FIRST so signing in as a
     // different user can't leave the previous identity/data in place (the
     // "logged in as someone else but still see the old user" bug).
@@ -332,7 +341,7 @@ export function AuthProvider({
   }
 
   async function signOut(): Promise<void> {
-    const supabase = createClient();
+    const supabase = await getSupabase();
     await supabase.auth.signOut();
     // Clear the cache so the next user doesn't see the previous user's rows.
     invalidateAll();

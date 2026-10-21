@@ -146,20 +146,3 @@ export function RowActionButton({
     />
   );
 }
-
-/** Small gray Polaris tag/chip: bg-fill-secondary, radius-200, 12px/500. */
-export function Chip({
-  className,
-  ...props
-}: React.ComponentProps<"span">): React.ReactElement {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 whitespace-nowrap rounded-(--radius-200) bg-(--bg-fill-secondary) px-2 py-0.5 font-medium text-(--text) text-xs leading-4",
-        className,
-      )}
-      data-slot="chip"
-      {...props}
-    />
-  );
-}

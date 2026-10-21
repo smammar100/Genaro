@@ -17,7 +17,7 @@ This document is structured for cold-read ingestion. If a row says "owns X", tha
 | `src/app/layout.tsx` | Root HTML shell; loads fonts, mounts toast container |
 | `src/app/globals.css` | Tailwind v4 `@theme inline` block: colors, surfaces, shadows, fonts, radii — light + dark mode |
 | `src/app/page.tsx` | Root redirect (`/` → `/dashboard` or `/login` depending on auth) |
-| `middleware.ts` (repo root) | Supabase session refresh on every request; public-path allow-list |
+| `proxy.ts` (repo root) | Supabase session refresh on every request; public-path allow-list |
 
 ### Auth routes (`(auth)/`)
 
@@ -283,7 +283,7 @@ Dynamic detail routes: `/vehicles/[id]/inspection/page.tsx`, `/warranties/[id]/p
 | `client.ts` | Browser Supabase client singleton + env validation |
 | `server.ts` | SSR Supabase client (cookie-aware) |
 | `admin.ts` | Service-role client (server-only) |
-| `middleware.ts` | `updateSession()` — refresh + redirect logic |
+| `proxy.ts` | `updateSession()` — refresh + redirect logic |
 | `database.types.ts` | Generated Postgres types |
 
 ### Other `src/lib/` files
@@ -348,7 +348,7 @@ Dynamic detail routes: `/vehicles/[id]/inspection/page.tsx`, `/warranties/[id]/p
 | `.env.local` (gitignored) | Local secrets (DVLA, Supabase, OpenAI) |
 | `.env.local.example` | Documentation of expected env vars |
 | `.mcp.json` | MCP servers config (Supabase, Spectrum, Shadcn UI, Claude_Preview, etc.) |
-| `middleware.ts` | Root middleware |
+| `proxy.ts` | Root proxy (Next 16 name for middleware) |
 
 ---
 

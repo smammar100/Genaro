@@ -4,6 +4,9 @@ import { Suspense, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
+import { NotificationsProvider } from "@/contexts/notifications-context";
+import { MotionProvider } from "@/components/fluid/motion-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { GridOverlay } from "@/components/layout/grid-overlay";
 import { NextAdminShell } from "@/components/layout/next-admin-shell";
 import { RouteGuard } from "@/components/layout/route-guard";
@@ -32,7 +35,7 @@ export default function DashboardLayout({
   // A dead session used to render the whole dashboard shell with nobody in it:
   // the rail collapsed to Dashboard alone and every gated page reported "Access
   // restricted", which reads as "my permissions were taken away" rather than
-  // "you are signed out". Middleware only redirects on a navigation, so a token
+  // "you are signed out". The proxy only redirects on a navigation, so a token
   // that expires while the tab sits open never triggers it — the user just
   // watches the app quietly stop working.
   //
@@ -50,7 +53,7 @@ export default function DashboardLayout({
   }, [signedOut, pathname, router]);
 
   // Force users with a temp password through /set-password before any dashboard
-  // route. Middleware can't see passwordResetRequired (public.users column, not
+  // route. The proxy can't see passwordResetRequired (public.users column, not
   // in the session JWT), so this stays client-side.
   const mustResetPassword = Boolean(user?.passwordResetRequired);
   useEffect(() => {
@@ -101,16 +104,24 @@ export default function DashboardLayout({
   }
 
   // The Polaris app shell (Frame + TopBar + Navigation, see NextAdminShell);
-  // each route renders its <Page> in the Frame's <main>.
+  // each route renders its <Page> in the Frame's <main>. Notifications (the
+  // top bar's bell), tooltips and the motion settings (the sidebar, boards
+  // and tour) are dashboard-only, so they mount here, not in the root layout.
   return (
-    <OnboardingTour>
-      <NextAdminShell navigation={!isWelcome}>
-        <RouteGuard>{children}</RouteGuard>
-      </NextAdminShell>
-      <CommandPalette />
-      <Suspense fallback={null}>
-        <GridOverlay />
-      </Suspense>
-    </OnboardingTour>
+    <MotionProvider>
+      <NotificationsProvider>
+        <TooltipProvider delay={150}>
+          <OnboardingTour>
+            <NextAdminShell navigation={!isWelcome}>
+              <RouteGuard>{children}</RouteGuard>
+            </NextAdminShell>
+            <CommandPalette />
+            <Suspense fallback={null}>
+              <GridOverlay />
+            </Suspense>
+          </OnboardingTour>
+        </TooltipProvider>
+      </NotificationsProvider>
+    </MotionProvider>
   );
 }

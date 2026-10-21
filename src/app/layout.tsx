@@ -1,19 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import { GeistMono } from "geist/font/mono";
+import { Geist_Mono, Inter } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from "@/contexts/auth-context";
-import { NotificationsProvider } from "@/contexts/notifications-context";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PolarisLinkProvider } from "@/components/polaris-link-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { VercelInsights } from "@/components/vercel-insights";
 import { getInitialAuth } from "@/lib/auth-initial";
 import { AuthBoundary } from "@/components/layout/auth-boundary";
-import { MotionProvider } from "@/components/fluid/motion-provider";
 import { SidebarPreference } from "@/components/layout/sidebar-preference";
 import { TitleTooltips } from "@/components/layout/title-tooltips";
 import { cookies } from "next/headers";
@@ -28,6 +24,16 @@ const inter = Inter({
   variable: "--font-inter",
   display: "swap",
   axes: ["opsz"],
+});
+
+// Latin only, and not preloaded: codes are never what a page paints first,
+// and the sign-in pages show none, so it shouldn't compete with Inter and the
+// CSS for the first paint. It swaps in when a page first shows a code.
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -79,7 +85,7 @@ export default async function RootLayout({
         "h-full",
         "antialiased",
         inter.variable,
-        GeistMono.variable,
+        geistMono.variable,
         "font-sans",
       )}
     >
@@ -100,15 +106,17 @@ export default async function RootLayout({
             dark under `.dark`); the top bar's switch sets it and next-themes
             remembers it. */}
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
-          <MotionProvider>
+          {/* Notifications, tooltips and the motion settings live in the
+              dashboard layout: the sign-in pages use none of them, and
+              loading them here put the notification services, realtime,
+              Base UI's tooltip and framer-motion on every auth page's
+              critical path. */}
           <SidebarPreference defaultOpen={sidebarOpen}>
           <PolarisLinkProvider>
           <Suspense
             fallback={
               <AuthProvider initialUser={null} initialCompany={null}>
-                <NotificationsProvider>
-                  <TooltipProvider delay={150}>{children}</TooltipProvider>
-                </NotificationsProvider>
+                {children}
               </AuthProvider>
             }
           >
@@ -116,7 +124,6 @@ export default async function RootLayout({
           </Suspense>
           </PolarisLinkProvider>
           </SidebarPreference>
-          </MotionProvider>
           <Toaster />
           <TitleTooltips />
         </ThemeProvider>

@@ -59,7 +59,7 @@ export async function requireUser(): Promise<AuthedActor> {
   const supabase = await createClient();
 
   // getUser() validates the access token against Supabase. If the token has
-  // expired, API routes (excluded from middleware, which is what refreshes
+  // expired, API routes (excluded from the proxy, which is what refreshes
   // tokens for page navigations) have nothing to refresh it — so getUser()
   // 401s even though the browser still holds a valid refresh token. Fall back
   // to getSession(), which uses the refresh token to mint a fresh access

@@ -55,7 +55,7 @@ The `(auth)` and `(dashboard)` parens are Next.js route groups — they organise
 ```mermaid
 sequenceDiagram
   participant Browser
-  participant Middleware as middleware.ts
+  participant Middleware as proxy.ts
   participant Page as Route page.tsx
   participant Layout as (dashboard)/layout.tsx
   participant Service as src/lib/services/*
@@ -120,7 +120,7 @@ Auth context (`src/contexts/auth-context.tsx`) reads the URL + publishable key o
 | `src/lib/` | `types.ts`, `capabilities.ts`, `roles.ts`, `cache.ts`, `vat.ts`, `utils.ts`, `elevated.tsx`, `surface-*.ts(x)`, `formatters.ts`, `constants.ts`, `enquiry-constants.ts`, `cache-warmup.ts`, `toast.ts` |
 | `src/hooks/` | `use-permissions`, `use-customer-search`, `use-postcode-lookup`, `use-realtime-table`, `use-mobile` |
 | `src/contexts/` | `auth-context`, `sidebar-state-context` |
-| `middleware.ts` | Root middleware — Supabase session refresh on every request |
+| `proxy.ts` | Root proxy (formerly middleware) — Supabase session refresh on every request |
 | `scripts/` | Tooling: Polaris theme build, master-sheet import, demo-vehicle seed, lint ratchet |
 | `docs/` | This documentation tree |
 

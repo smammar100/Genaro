@@ -1,11 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import {
   VEHICLE_STATUSES,
-  MAINTENANCE_STATUSES,
   salesStageLabel,
 } from "@/lib/constants";
 import type {
-  MaintenanceStatus,
   SalesStage,
   VehicleStatus,
 } from "@/lib/types";
@@ -65,30 +63,6 @@ export function VehicleStatusBadge({
     <ToneBadge color={meta.color} className={className}>
       {meta.label}
       {withChevron && <ChevronDown aria-hidden className="-mr-0.5 size-3" />}
-    </ToneBadge>
-  );
-}
-
-const MAINTENANCE_COLORS: Record<MaintenanceStatus, string> = {
-  pending: "yellow",
-  in_progress: "blue",
-  completed: "green",
-  stalled: "red",
-};
-
-interface MaintenanceStatusBadgeProps {
-  status: MaintenanceStatus;
-  className?: string;
-}
-
-export function MaintenanceStatusBadge({
-  status,
-  className,
-}: MaintenanceStatusBadgeProps) {
-  const meta = MAINTENANCE_STATUSES.find((s) => s.value === status);
-  return (
-    <ToneBadge color={MAINTENANCE_COLORS[status]} className={className}>
-      {meta?.label ?? status}
     </ToneBadge>
   );
 }

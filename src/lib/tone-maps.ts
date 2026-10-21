@@ -6,7 +6,6 @@
 // Existing badges that should be reused:
 //   - VehicleStatusBadge   (vehicle status)
 //   - SalesStageBadge      (sales pipeline stage)
-//   - MaintenanceStatusBadge (maintenance status)
 
 import type {
   AppointmentOutcome,
