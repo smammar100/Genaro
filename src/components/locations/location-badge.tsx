@@ -10,11 +10,11 @@ import {
 import { cn } from "@/lib/utils";
 import {
   VEHICLE_LOCATION_LABELS,
-  type VehicleLocation,
+  type CurrentLocation,
 } from "@/lib/types";
 
 interface LocationBadgeProps {
-  location: VehicleLocation;
+  location: CurrentLocation;
   outForTestDrive?: boolean;
   testDriveExpectedBackAt?: string | null;
   /** Vendor name shown in the off-site tooltip for garage moves. */
@@ -28,7 +28,7 @@ interface LocationBadgeProps {
   className?: string;
 }
 
-const OFF_SITE_LOCATIONS: VehicleLocation[] = ["garage", "staff"];
+const OFF_SITE_LOCATIONS: CurrentLocation[] = ["garage", "staff"];
 
 const OFF_SITE_DOT: Record<"garage" | "staff", string> = {
   garage: "bg-(--bg-fill-critical)",

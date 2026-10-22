@@ -13,6 +13,7 @@ import {
 import { Button, SkeletonBodyText } from "@/components/polaris";
 import {
   VEHICLE_LOCATION_LABELS,
+  type CurrentLocation,
   type LocationMovement,
   type UUID,
   type Vehicle,
@@ -26,11 +27,12 @@ import {
   type TimelineTone,
 } from "@/components/shared/timeline";
 
-const TO_LOCATION_TONE: Record<VehicleLocation, TimelineTone> = {
+const TO_LOCATION_TONE: Record<CurrentLocation, TimelineTone> = {
   forecourt: "emerald",
   yard: "slate",
   garage: "rose",
   staff: "amber",
+  sold: "sky",
 };
 
 interface LocationHistoryDrawerProps {

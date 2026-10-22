@@ -1,4 +1,4 @@
-import type { LocationMovement, VehicleLocation } from "@/lib/types";
+import type { CurrentLocation, LocationMovement } from "@/lib/types";
 
 /**
  * Rules for editing a vehicle's location history (GEN-101).
@@ -19,7 +19,7 @@ export function sortMovements(movements: LocationMovement[]): LocationMovement[]
 }
 
 interface DerivedLocationState {
-  currentLocation: VehicleLocation | null;
+  currentLocation: CurrentLocation | null;
   locationSince: string | null;
 }
 
@@ -49,7 +49,7 @@ export function isOutstanding(m: LocationMovement): boolean {
 }
 
 interface MovementEditPatch {
-  toLocation?: VehicleLocation;
+  toLocation?: CurrentLocation;
   createdAt?: string;
   expectedReturnAt?: string | null;
   actualReturnAt?: string | null;

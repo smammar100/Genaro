@@ -20,6 +20,7 @@ import {
   AUCTION_HOUSE_SUGGESTIONS,
   FUEL_OPTIONS,
   LOCAL_IMPORT_OPTIONS,
+  LOCATION_OPTIONS,
   LOG_BOOK_SUGGESTIONS,
   MASTER_SHEET_SECTIONS,
   OWNED_BY_SUGGESTIONS,
@@ -120,6 +121,18 @@ const COLS: ColDef[] = [
     toPatch: (value) => ({
       registration: String(value ?? "").trim().toUpperCase() || "UNREGISTERED",
     }),
+  },
+  // App-only: where the car is, SOLD once sold. Read-only — moves go through
+  // Locations, which keeps the movement history.
+  {
+    key: "currentLocation",
+    label: "LOCATION",
+    type: "location",
+    width: 120,
+    sticky: true,
+    section: COMMON,
+    options: LOCATION_OPTIONS,
+    mobileHide: true,
   },
 
   // ── Buying (sheet B–AI) ───────────────────────────────────────────────
@@ -357,6 +370,7 @@ const COLS: ColDef[] = [
 
 const FILTER_FIELDS: FilterField[] = [
   { key: "legacySerialNumber", label: "Legacy S/N", kind: "num" },
+  { key: "currentLocation", label: "Location", kind: "text", options: LOCATION_OPTIONS },
   { key: "make", label: "Make", kind: "text" },
   { key: "model", label: "Model", kind: "text" },
   { key: "vehicleCategory", label: "Vehicle type", kind: "text", get: (v) => vehicleCategory(v) },

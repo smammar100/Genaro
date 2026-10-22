@@ -24,6 +24,7 @@ import {
   type LocationMovement,
   type UUID,
   type User,
+  type CurrentLocation,
   type Vehicle,
   type VehicleLocation,
   type Vendor,
@@ -56,11 +57,12 @@ const OFF_SITE: Record<VehicleLocation, boolean> = {
   staff: true,
 };
 
-const TO_LOCATION_TONE: Record<VehicleLocation, TimelineTone> = {
+const TO_LOCATION_TONE: Record<CurrentLocation, TimelineTone> = {
   forecourt: "emerald",
   yard: "slate",
   garage: "rose",
   staff: "amber",
+  sold: "sky",
 };
 
 interface LocationTabProps {
@@ -68,7 +70,7 @@ interface LocationTabProps {
 }
 
 const LOCATION_TONE: Record<
-  VehicleLocation,
+  CurrentLocation,
   { dot: string; surface: string; ring: string; text: string }
 > = {
   forecourt: {
@@ -94,6 +96,12 @@ const LOCATION_TONE: Record<
     surface: "bg-(--bg-surface-caution)",
     ring: "ring-(--border-caution)",
     text: "text-(--text-caution)",
+  },
+  sold: {
+    dot: "bg-(--bg-fill-info)",
+    surface: "bg-(--bg-surface-info)",
+    ring: "ring-(--border-info)",
+    text: "text-(--text-info)",
   },
 };
 
