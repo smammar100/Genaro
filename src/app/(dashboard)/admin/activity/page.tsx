@@ -289,7 +289,7 @@ export default function ActivityLogPage() {
         <Card className="gap-6">
           {groups.map(([label, items]) => (
             <div key={label}>
-              <h2 className="mb-3 text-sm font-semibold text-(--text-secondary)">
+              <h2 className="mb-3 text-body font-semibold text-(--text-secondary)">
                 {label}
               </h2>
               <ol className="flex flex-col">
@@ -324,22 +324,22 @@ export default function ActivityLogPage() {
                         )}
                       >
                         <div>
-                          <div className="flex flex-wrap items-center gap-2 text-sm">
+                          <div className="flex flex-wrap items-center gap-2 text-body">
                             <span className="font-medium">{e.description}</span>
                             {vehicle && (
                               <Link
                                 href={vehicleDetailHref(vehicle.id, pathname)}
-                                className="rounded bg-(--bg-fill-secondary) px-1.5 py-0.5 font-mono text-xs text-(--text) hover:text-(--text-link)"
+                                className="rounded bg-(--bg-fill-secondary) px-1.5 py-0.5 font-mono text-caption text-(--text) hover:text-(--text-link)"
                               >
                                 {vehicle.registration}
                               </Link>
                             )}
                           </div>
-                          <div className="mt-0.5 text-xs text-(--text-secondary)">
+                          <div className="mt-0.5 text-caption text-(--text-secondary)">
                             {actionLabel(e.actionType)} · {user?.name ?? "—"}
                           </div>
                         </div>
-                        <span className="shrink-0 text-xs text-(--text-secondary)">
+                        <span className="shrink-0 text-caption text-(--text-secondary)">
                           {formatRelativeTime(e.createdAt)}
                         </span>
                       </div>
@@ -363,7 +363,7 @@ export default function ActivityLogPage() {
           filters.date.from !== null ||
           filters.date.to !== null ||
           Object.values(filters.selects).some((v) => v !== "")) && (
-          <p className="text-center text-xs text-(--text-secondary)">
+          <p className="text-center text-caption text-(--text-secondary)">
             Filters apply to the {entries?.length ?? 0} loaded entries; load
             older activity to search further back.
           </p>

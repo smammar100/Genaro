@@ -12,7 +12,7 @@ export function inputBoxClassName(className?: string, unstyled = false) {
   return (
     cn(
       !unstyled &&
-        "inline-flex w-full rounded-(--radius-200) border border-(--input-border) bg-(--input-bg-surface) text-[13px] text-(--text) transition-[border-color,background-color] hover:border-(--input-border-hover) hover:bg-(--input-bg-surface-hover) has-focus-visible:border-(--input-border-active) has-focus-visible:bg-(--input-bg-surface-active) has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-(--border-focus) has-aria-invalid:border-(--border-critical-secondary) has-aria-invalid:bg-(--bg-surface-critical) has-disabled:border-transparent has-disabled:bg-(--bg-surface-disabled) has-disabled:text-(--text-disabled) has-autofill:bg-foreground/4",
+        "inline-flex w-full rounded-(--radius-200) border border-(--input-border) bg-(--input-bg-surface) text-body text-(--text) transition-[border-color,background-color] hover:border-(--input-border-hover) hover:bg-(--input-bg-surface-hover) has-focus-visible:border-(--input-border-active) has-focus-visible:bg-(--input-bg-surface-active) has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-(--border-focus) has-aria-invalid:border-(--border-critical-secondary) has-aria-invalid:bg-(--bg-surface-critical) has-disabled:border-transparent has-disabled:bg-(--bg-surface-disabled) has-disabled:text-(--text-disabled) has-autofill:bg-foreground/4",
       className,
     ) || undefined
   );
@@ -28,7 +28,7 @@ export function inputControlClassName(size: InputSize = "default", type?: string
     type === "search" &&
       "[&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none",
     type === "file" &&
-      "text-muted-foreground file:me-3 file:bg-transparent file:font-medium file:text-foreground file:text-sm",
+      "text-muted-foreground file:me-3 file:bg-transparent file:font-medium file:text-foreground file:text-body",
   );
 }
 

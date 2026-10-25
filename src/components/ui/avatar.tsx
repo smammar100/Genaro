@@ -7,12 +7,12 @@ import type React from "react";
 type AvatarSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
 
 const AVATAR_SIZE_CLASS: Record<AvatarSize, string> = {
-  xs: "size-5 text-2xs",
-  sm: "size-6 text-2xs",
-  md: "size-8 text-xs",
-  lg: "size-10 text-sm",
-  xl: "size-12 text-base",
-  "2xl": "size-16 text-base",
+  xs: "size-5 text-micro",
+  sm: "size-6 text-micro",
+  md: "size-8 text-caption",
+  lg: "size-10 text-body",
+  xl: "size-12 text-subtitle",
+  "2xl": "size-16 text-subtitle",
 };
 
 export function Avatar({
@@ -26,7 +26,7 @@ export function Avatar({
     <AvatarPrimitive.Root
       className={cn(
         "inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full bg-background align-middle font-medium",
-        size ? AVATAR_SIZE_CLASS[size] : "size-8 text-xs",
+        size ? AVATAR_SIZE_CLASS[size] : "size-8 text-caption",
         className,
       )}
       data-slot="avatar"

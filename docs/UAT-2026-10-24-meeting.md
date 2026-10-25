@@ -15,7 +15,7 @@ Status legend: ✅ already works · 🔧 in this pass · ⏳ waiting on Car Capi
 
 | # | Item | Area | Status |
 |---|------|------|--------|
-| 1 | Core-facts card on the vehicle Overview (4 fields, shown large) | Vehicle detail | ⏳ waiting for the 4 fields on WhatsApp |
+| 1 | Core-facts card on the vehicle Overview (4 fields, shown large) | Vehicle detail | 🔧 *Sales highlights* card built · ⏳ confirm the 4 fields with Car Capital |
 | 2 | Book an appointment from a lead card's ⋯ menu, with a calendar icon on the card | Sales / Calendar | 🔧 |
 | 3 | V5 (logbook) tracking: DVLA deadline, "Return to owner" | Vehicle detail | ❓ |
 | 4 | Courtesy car location and tab | Locations | 🔧 (needs migration 0052) |
@@ -46,10 +46,16 @@ Status legend: ✅ already works · 🔧 in this pass · ⏳ waiting on Car Capi
 - It should stay pinned while scrolling, the way Manage does now.
 - ⏳ Car Capital is sending the four fields on WhatsApp. Service history was
   mentioned, but there isn't much data for it yet.
-- Done 25 Oct, ahead of the card: the Manage card is gone and the tab panel
-  takes the full width; the tab row spreads across it; the header's specs
-  carry icons; Advert completeness is hidden while Phase 1 runs no adverts
-  (`ADVERT_COMPLETENESS_ENABLED` in `lib/phase-one.ts`).
+- Done 25 Oct: the Manage card is gone and the tab panel takes the full
+  width; the tab row spreads across it; the header's specs carry icons; the
+  advert panels (Advert completeness, Marketplace) are hidden while Phase 1
+  runs no adverts (`ADVERTS_ENABLED` in `lib/phase-one.ts`).
+- Built 25 Oct, per Ammar: a **Sales highlights** card in Marketplace's place
+  (right column, beside Location) with **mileage, service history, MOT expiry
+  and previous owners**, set like the other Overview cards'
+  figures; the MOT flags *Due soon* within 30
+  days and *Expired* after. Swap the fields in `sales-highlights-card.tsx` if
+  Car Capital's WhatsApp list differs.
 
 ### 2. Appointments from the card (3:25–8:20)
 - On a lead card's ⋯ menu add **Book appointment**.

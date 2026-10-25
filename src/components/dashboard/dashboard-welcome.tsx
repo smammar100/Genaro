@@ -91,7 +91,7 @@ export function DashboardWelcome() {
               <div className="flex h-8 items-stretch overflow-hidden rounded-(--radius-200) border border-(--input-border) bg-plate focus-within:outline-2 focus-within:outline-offset-1 focus-within:outline-(--border-focus)">
                 <span
                   aria-hidden
-                  className="flex w-7 shrink-0 items-center justify-center bg-(--bg-fill-emphasis) text-2xs font-bold text-(--text-emphasis-on-bg-fill)"
+                  className="flex w-7 shrink-0 items-center justify-center bg-(--bg-fill-emphasis) text-micro font-bold text-(--text-emphasis-on-bg-fill)"
                 >
                   GB
                 </span>
@@ -103,7 +103,7 @@ export function DashboardWelcome() {
                   autoComplete="off"
                   spellCheck={false}
                   autoFocus
-                  className="w-40 bg-transparent text-center font-mono text-base font-semibold uppercase text-(--text-caution-on-bg-fill) outline-none placeholder:font-medium placeholder:text-(--text-caution-on-bg-fill)/40"
+                  className="w-40 bg-transparent text-center font-mono text-subtitle font-semibold uppercase text-(--text-caution-on-bg-fill) outline-none placeholder:font-medium placeholder:text-(--text-caution-on-bg-fill)/40"
                 />
               </div>
 

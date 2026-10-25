@@ -393,18 +393,18 @@ export function ExternalInvoiceForm({
                 {selectedVehicle ? (
                   <>
                     <RegPlate registration={selectedVehicle.registration} size="sm" />
-                    <span className="text-sm font-medium">
+                    <span className="text-body font-medium">
                       {selectedVehicle.make} {selectedVehicle.model}
                     </span>
-                    <span className="text-xs text-(--text-secondary)">
+                    <span className="text-caption text-(--text-secondary)">
                       · {selectedVehicle.stockId}
                     </span>
-                    <span className="ml-auto text-xs font-medium text-(--text-secondary)">
+                    <span className="ml-auto text-caption font-medium text-(--text-secondary)">
                       Locked
                     </span>
                   </>
                 ) : (
-                  <span className="text-sm text-(--text-secondary)">
+                  <span className="text-body text-(--text-secondary)">
                     Loading vehicle…
                   </span>
                 )}
@@ -492,7 +492,7 @@ export function ExternalInvoiceForm({
           />
 
           <div className="grid gap-1">
-            <p className="text-sm font-medium text-(--text)">
+            <p className="text-body font-medium text-(--text)">
               Attachment (optional)
             </p>
             <AttachmentUploader

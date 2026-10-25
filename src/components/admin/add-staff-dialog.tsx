@@ -182,10 +182,10 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
               <UserPlus className="h-4 w-4" />
             </span>
             <div className="min-w-0">
-              <DialogTitle className="text-sm font-semibold">
+              <DialogTitle>
                 Add staff member
               </DialogTitle>
-              <p className="truncate text-xs font-normal text-(--text-secondary)">
+              <p className="truncate text-caption font-normal text-(--text-secondary)">
                 Username login, no email needed
               </p>
             </div>
@@ -199,11 +199,11 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                 tone="success"
                 title="Staff login created, relay these credentials"
               >
-                <p className="text-xs text-(--text-secondary)">
+                <p className="text-caption text-(--text-secondary)">
                   Send these to the staff member (WhatsApp / phone / in person).
                   They&apos;ll set their own password on first login.
                 </p>
-                <div className="mt-3 grid gap-1.5 font-mono text-xs">
+                <div className="mt-3 grid gap-1.5 font-mono text-caption">
                   <div className="flex items-center gap-2">
                     <span className="text-(--text-secondary)">Username: </span>
                     <span className="min-w-0 flex-1 truncate">
@@ -261,7 +261,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
               {/* Identity column */}
               <div className="flex flex-col gap-4 border-b p-5 sm:overflow-y-auto sm:border-b-0 sm:border-r">
                 <div>
-                  <Label htmlFor={nameId} className="text-sm font-medium">Name</Label>
+                  <Label htmlFor={nameId} className="text-body font-medium">Name</Label>
                   <Input
                     id={nameId}
                     className="mt-1.5"
@@ -274,7 +274,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                 </div>
 
                 <div>
-                  <Label htmlFor={usernameId} className="text-sm font-medium">Username</Label>
+                  <Label htmlFor={usernameId} className="text-body font-medium">Username</Label>
                   <Input
                     id={usernameId}
                     className="mt-1.5 font-mono"
@@ -285,7 +285,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                     placeholder="ahmed.khan"
                     data-testid="add-staff-username"
                   />
-                  <p className="mt-1 text-xs text-(--text-secondary)">
+                  <p className="mt-1 text-caption text-(--text-secondary)">
                     {username && !usernameOk
                       ? "3–32 chars: lowercase letters, numbers, dot, underscore or hyphen (start & end alphanumeric)."
                       : "Staff log in with this username + the password below. No email needed."}
@@ -293,7 +293,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                 </div>
 
                 <div>
-                  <Label htmlFor={passwordId} className="text-sm font-medium">Temporary password</Label>
+                  <Label htmlFor={passwordId} className="text-body font-medium">Temporary password</Label>
                   <div className="mt-1.5 flex gap-2">
                     <Input
                       id={passwordId}
@@ -321,7 +321,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                       <RefreshCw className="h-3.5 w-3.5" />
                     </Button>
                   </div>
-                  <p className="mt-1 text-xs text-(--text-secondary)">
+                  <p className="mt-1 text-caption text-(--text-secondary)">
                     Auto-generated. The staff member is forced to set their own
                     on first login.
                   </p>
@@ -342,14 +342,14 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                     />
                   </div>
                   <span
-                    className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-2xs font-medium tabular-nums text-(--text-secondary)"
+                    className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-micro font-medium tabular-nums text-(--text-secondary)"
                     data-testid="add-staff-selected-count"
                   >
                     {caps.size}/{ALL_CAPABILITIES.length}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 border-b px-4 py-1.5">
-                  <span className="text-xs text-(--text-secondary)">
+                  <span className="text-caption text-(--text-secondary)">
                     Tick the views this staff member can access. No roles.
                   </span>
                   <div className="ml-auto flex shrink-0 gap-2">
@@ -377,7 +377,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                   {filtered.map((cap) => (
                     <label
                       key={cap}
-                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-(--bg-surface-hover)"
+                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-body hover:bg-(--bg-surface-hover)"
                     >
                       <Checkbox
                         checked={caps.has(cap)}
@@ -388,7 +388,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                     </label>
                   ))}
                   {filtered.length === 0 && (
-                    <p className="px-2 py-2 text-xs text-(--text-secondary)">
+                    <p className="px-2 py-2 text-caption text-(--text-secondary)">
                       No views match “{search}”.
                     </p>
                   )}
@@ -398,7 +398,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
 
             <div className="flex items-center justify-between gap-3 border-t px-5 py-3.5">
               {error ? (
-                <p className="text-sm text-(--text-critical)" data-testid="add-staff-error">
+                <p className="text-body text-(--text-critical)" data-testid="add-staff-error">
                   {error}
                 </p>
               ) : (

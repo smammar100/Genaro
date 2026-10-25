@@ -89,7 +89,7 @@ export function DataGridGroupHeaderRow({
         <button
           type="button"
           onClick={onToggle}
-          className="flex h-8 w-full items-center gap-1.5 text-left text-[13px] font-semibold"
+          className="flex h-8 w-full items-center gap-1.5 text-left text-body font-semibold"
         >
           <Chevron className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           <span>{label}</span>

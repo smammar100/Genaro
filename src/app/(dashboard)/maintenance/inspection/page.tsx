@@ -352,7 +352,7 @@ function QueueTable({
                   <RegPlate registration={vehicle.registration} size="sm" />
                 </TableCell>
                 <TableCell>
-                  <div className="flex flex-col leading-tight">
+                  <div className="flex flex-col">
                     {/* Below sm the Reg column is dropped entirely — three
                         columns will not fit 326px without clipping the action
                         button — so the plate rides in this cell instead. */}

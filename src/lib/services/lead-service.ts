@@ -153,12 +153,20 @@ export const leadService = {
         | "leadChannelId"
         | "vehicleId"
         | "vehicleInterest"
+        | "customerName"
+        | "customerPhone"
+        | "customerEmail"
+        | "source"
       >
     >,
   ): Promise<Lead> {
     const supabase = createClient();
     const updates: TableUpdate<"leads"> = {};
     if (patch.status !== undefined) updates.status = patch.status;
+    if (patch.customerName !== undefined) updates.customer_name = patch.customerName;
+    if (patch.customerPhone !== undefined) updates.customer_phone = patch.customerPhone;
+    if (patch.customerEmail !== undefined) updates.customer_email = patch.customerEmail;
+    if (patch.source !== undefined) updates.source = patch.source;
     if (patch.vehicleInterest !== undefined)
       updates.vehicle_interest = patch.vehicleInterest;
     if (patch.notes !== undefined) updates.notes = patch.notes;

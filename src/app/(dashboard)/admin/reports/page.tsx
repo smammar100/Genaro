@@ -499,7 +499,7 @@ export default function ReportsPage() {
             </div>
           ) : null}
         </div>
-        <p className="text-xs text-(--text-secondary)">
+        <p className="text-caption text-(--text-secondary)">
           Showing <span className="font-medium">{filterSummary}</span>. Year
           means the year of sale for a sold car, and the year of arrival for
           one still in stock.
@@ -562,8 +562,8 @@ export default function ReportsPage() {
           {/* Section header — labels the charts and hosts the period toggle */}
           <div className="flex flex-wrap items-end justify-between gap-2 border-b border-(--border) pb-3">
             <div>
-              <h2 className="text-sm font-semibold">Performance breakdown</h2>
-              <p className="text-xs text-(--text-secondary)">
+              <h2 className="text-body font-semibold">Performance breakdown</h2>
+              <p className="text-caption text-(--text-secondary)">
                 Profit and revenue by {gran}, with source and stock-age mix.
               </p>
             </div>
@@ -588,7 +588,7 @@ export default function ReportsPage() {
               <ChartCard
                 title={`Profit by ${gran}`}
                 right={
-                  <span className="text-xs font-medium tabular-nums text-(--text-secondary)">
+                  <span className="text-caption font-medium tabular-nums text-(--text-secondary)">
                     {formatCurrency(kpis.profit)}
                   </span>
                 }
@@ -607,7 +607,7 @@ export default function ReportsPage() {
               <ChartCard
                 title={`Revenue by ${gran}`}
                 right={
-                  <span className="text-xs font-medium tabular-nums text-(--text-secondary)">
+                  <span className="text-caption font-medium tabular-nums text-(--text-secondary)">
                     {formatCurrency(kpis.revenue)}
                   </span>
                 }
@@ -647,7 +647,7 @@ export default function ReportsPage() {
               <ChartCard
                 title="Best-selling models"
                 right={
-                  <span className="text-xs text-(--text-secondary)">
+                  <span className="text-caption text-(--text-secondary)">
                     {/* "Top 0 by units" is nonsense — say nothing instead. */}
                     {bestSelling.length > 0
                       ? `Top ${Math.min(MODEL_CHART_LIMIT, bestSelling.length)} by units`
@@ -671,7 +671,7 @@ export default function ReportsPage() {
               <ChartCard
                 title="Profit margin by model"
                 right={
-                  <span className="text-xs text-(--text-secondary)">
+                  <span className="text-caption text-(--text-secondary)">
                     Profit as % of revenue
                   </span>
                 }
@@ -710,9 +710,9 @@ function Kpi({
 }) {
   return (
     <Card className="h-full gap-1">
-      <div className="text-sm font-medium text-(--text-secondary)">{label}</div>
-      <div className="text-xl font-semibold tabular-nums">{value}</div>
-      {sub && <div className="text-xs text-(--text-secondary)">{sub}</div>}
+      <div className="text-body font-medium text-(--text-secondary)">{label}</div>
+      <div className="text-display font-semibold tabular-nums">{value}</div>
+      {sub && <div className="text-caption text-(--text-secondary)">{sub}</div>}
     </Card>
   );
 }
@@ -752,7 +752,7 @@ function FilterSelect({
 
   return (
     <div className="w-40">
-      <Label htmlFor={id} className="text-xs">
+      <Label htmlFor={id} className="text-caption">
         {label}
       </Label>
       <Combobox

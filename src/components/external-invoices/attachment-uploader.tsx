@@ -111,8 +111,8 @@ export function AttachmentUploader({
             )}
           </span>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium">{value.filename}</div>
-            <div className="text-xs text-(--text-secondary)">
+            <div className="truncate text-body font-medium">{value.filename}</div>
+            <div className="text-caption text-(--text-secondary)">
               {prettyBytes(value.sizeBytes)} · {value.mimeType}
             </div>
           </div>
@@ -127,7 +127,7 @@ export function AttachmentUploader({
       ) : uploading ? (
         <div
           role="status"
-          className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-(--radius-200) border border-dashed border-(--border) bg-(--bg-surface) text-sm text-(--text-secondary)"
+          className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-(--radius-200) border border-dashed border-(--border) bg-(--bg-surface) text-body text-(--text-secondary)"
         >
           <Spinner size="small" accessibilityLabel="Uploading attachment" />
           <span>Uploading…</span>

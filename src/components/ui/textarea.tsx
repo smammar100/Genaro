@@ -28,7 +28,7 @@ export function Textarea({
             // `relative` on purpose: callers overlay a leading icon as an
             // absolute sibling, and a positioned control would paint its
             // background over it.
-            "inline-flex w-full rounded-(--radius-200) border border-(--input-border) bg-(--input-bg-surface) text-[13px] text-(--text) transition-[border-color,background-color] hover:border-(--input-border-hover) hover:bg-(--input-bg-surface-hover) has-focus-visible:border-(--input-border-active) has-focus-visible:bg-(--input-bg-surface-active) has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-(--border-focus) has-aria-invalid:border-(--border-critical-secondary) has-aria-invalid:bg-(--bg-surface-critical) has-disabled:border-transparent has-disabled:bg-(--bg-surface-disabled) has-disabled:text-(--text-disabled) has-autofill:bg-foreground/4",
+            "inline-flex w-full rounded-(--radius-200) border border-(--input-border) bg-(--input-bg-surface) text-body text-(--text) transition-[border-color,background-color] hover:border-(--input-border-hover) hover:bg-(--input-bg-surface-hover) has-focus-visible:border-(--input-border-active) has-focus-visible:bg-(--input-bg-surface-active) has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-(--border-focus) has-aria-invalid:border-(--border-critical-secondary) has-aria-invalid:bg-(--bg-surface-critical) has-disabled:border-transparent has-disabled:bg-(--bg-surface-disabled) has-disabled:text-(--text-disabled) has-autofill:bg-foreground/4",
           className,
         ) || undefined
       }
@@ -45,7 +45,7 @@ export function Textarea({
         render={(defaultProps: React.ComponentProps<"textarea">) => (
           <textarea
             className={cn(
-              "field-sizing-content min-h-17.5 w-full rounded-[inherit] px-3 py-1.5 leading-5 outline-none placeholder:text-(--text-secondary)",
+              "field-sizing-content min-h-17.5 w-full rounded-[inherit] px-3 py-1.5 outline-none placeholder:text-(--text-secondary)",
               size === "sm" &&
                 "min-h-16.5 px-[calc(--spacing(2.5)-1px)] py-[calc(--spacing(1)-1px)] max-sm:min-h-19.5",
               size === "lg" &&

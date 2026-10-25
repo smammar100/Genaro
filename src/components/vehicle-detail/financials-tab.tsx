@@ -252,7 +252,7 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
             <span className="body-md text-(--text-secondary)">
               Total expenses
             </span>
-            <span className="text-base font-semibold tabular-nums">
+            <span className="text-subtitle font-semibold tabular-nums">
               {formatCurrency(expenseTotal)}
             </span>
           </div>
@@ -276,7 +276,7 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
         <div className="body-md text-(--text-secondary)">
           Net profit after VAT
         </div>
-        <div className="text-3xl font-semibold tabular-nums text-(--text-success)">
+        <div className="text-display font-semibold tabular-nums text-(--text-success)">
           {net > 0 ? formatCurrency(net) : "—"}
         </div>
         {margin ? (
@@ -301,7 +301,7 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
           <span className="body-md text-(--text-secondary)">
             Expense at point of sale
           </span>
-          <span className="text-base font-semibold tabular-nums">
+          <span className="text-subtitle font-semibold tabular-nums">
             {formatCurrency(pointOfSaleTotal)}
           </span>
         </div>
@@ -428,7 +428,7 @@ function LedgerCard({
         <span className="body-md text-(--text-secondary)">
           {tone === "bad" ? "Total expenses" : "Total revenue"}
         </span>
-        <span className="text-base font-semibold tabular-nums">
+        <span className="text-subtitle font-semibold tabular-nums">
           {formatCurrency(total)}
         </span>
       </div>
@@ -519,7 +519,7 @@ function VatStat({
       <div className="body-md text-(--text-secondary)">{label}</div>
       <div
         className={cn(
-          "mt-1 text-base font-semibold tabular-nums",
+          "mt-1 text-subtitle font-semibold tabular-nums",
           tone === "good" && "text-(--text-success)",
         )}
       >

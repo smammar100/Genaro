@@ -15,8 +15,10 @@
 export const PHOTOS_ENABLED = false;
 
 /**
- * Advert completeness on the vehicle Overview. Hidden per Ammar (25 Oct
- * 2026): Phase 1 doesn't run adverts, so a checklist of what an advert still
- * needs is noise. The Listing tab and advert pages are unaffected.
+ * The advert panels on the vehicle Overview: Advert completeness and
+ * Marketplace (the listing channels). Hidden per Ammar (25 Oct 2026): Phase 1
+ * doesn't run adverts, so a checklist of what an advert still needs and a
+ * row of channels all switched off are noise. The Listing tab and advert
+ * pages are unaffected.
  */
-export const ADVERT_COMPLETENESS_ENABLED = false;
+export const ADVERTS_ENABLED = false;

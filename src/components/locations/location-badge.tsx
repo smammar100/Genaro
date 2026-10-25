@@ -90,7 +90,7 @@ export function LocationBadge({
     <TooltipProvider delay={150}>
       <span
         className={cn(
-          "inline-flex items-center gap-1.5 whitespace-nowrap text-xs",
+          "inline-flex items-center gap-1.5 whitespace-nowrap text-caption",
           className,
         )}
       >
@@ -101,7 +101,7 @@ export function LocationBadge({
             <TooltipTrigger asChild>
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full bg-(--bg-fill-secondary) px-1.5 py-0.5 text-xs font-medium text-(--text-secondary)",
+                  "inline-flex items-center gap-1 rounded-full bg-(--bg-fill-secondary) px-1.5 py-0.5 text-caption font-medium text-(--text-secondary)",
                   compact && "gap-0 px-0.5 py-0",
                 )}
               >

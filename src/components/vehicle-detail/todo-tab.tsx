@@ -283,7 +283,7 @@ export function TodoTab({
           <span className="body-md text-(--text-secondary)">
             Grand total
           </span>
-          <span className="text-base font-semibold tabular-nums">
+          <span className="text-subtitle font-semibold tabular-nums">
             {formatCurrency(total)}
           </span>
         </div>
@@ -376,7 +376,7 @@ function TodoRow({
         value={item.status}
         onValueChange={(v) => onPatch({ status: v as TodoStatus })}
       >
-        <SelectTrigger className="h-8 w-28 shrink-0 text-xs" aria-label="Status">
+        <SelectTrigger className="h-8 w-28 shrink-0 text-caption" aria-label="Status">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -398,7 +398,7 @@ function TodoRow({
         }}
         aria-label="Description"
         className={cn(
-          "h-8 min-w-[120px] flex-1 border-transparent bg-transparent text-sm shadow-none hover:border-border focus-visible:border-input",
+          "h-8 min-w-[120px] flex-1 border-transparent bg-transparent text-body shadow-none hover:border-border focus-visible:border-input",
           item.status === "completed" && "line-through",
         )}
       />
@@ -411,7 +411,7 @@ function TodoRow({
         value={item.vendorId ?? "none"}
         onValueChange={(v) => onPatch({ vendorId: v === "none" ? null : v })}
       >
-        <SelectTrigger className="h-8 w-32 shrink-0 text-xs" aria-label="Vendor">
+        <SelectTrigger className="h-8 w-32 shrink-0 text-caption" aria-label="Vendor">
           <SelectValue placeholder={vendorName ?? "No vendor"} />
         </SelectTrigger>
         <SelectContent>
@@ -444,7 +444,7 @@ function TodoRow({
         inputMode="decimal"
         placeholder="—"
         aria-label="Cost"
-        className="h-8 w-20 shrink-0 border-transparent bg-transparent text-right text-sm tabular-nums shadow-none hover:border-border focus-visible:border-input"
+        className="h-8 w-20 shrink-0 border-transparent bg-transparent text-right text-body tabular-nums shadow-none hover:border-border focus-visible:border-input"
       />
 
       <Button
@@ -513,7 +513,7 @@ function AddRow({
           if (e.key === "Escape") onCancel();
         }}
         placeholder="What needs doing?"
-        className="h-8 min-w-[200px] flex-1 text-sm"
+        className="h-8 min-w-[200px] flex-1 text-body"
       />
       <Select
         items={{
@@ -523,7 +523,7 @@ function AddRow({
         value={vendorId}
         onValueChange={setVendorId}
       >
-        <SelectTrigger className="h-8 w-40 text-sm" aria-label="New item vendor">
+        <SelectTrigger className="h-8 w-40 text-body" aria-label="New item vendor">
           <SelectValue placeholder="Vendor (optional)" />
         </SelectTrigger>
         <SelectContent>
@@ -545,7 +545,7 @@ function AddRow({
         inputMode="decimal"
         placeholder="£0.00"
         aria-label="New item cost"
-        className="h-8 w-24 text-right text-sm tabular-nums"
+        className="h-8 w-24 text-right text-body tabular-nums"
       />
       <Button variant="primary" onClick={submit} loading={saving}>
         Add item

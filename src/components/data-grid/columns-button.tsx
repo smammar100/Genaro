@@ -77,13 +77,13 @@ export function DataGridColumnsButton<T>({
         <Button variant="outline" size="sm">
           <SlidersHorizontal className="mr-1.5 h-4 w-4" />
           Columns
-          <span className="ml-1 text-xs text-(--text-secondary) tabular-nums">
+          <span className="ml-1 text-caption text-(--text-secondary) tabular-nums">
             {visibleCount}/{columns.length}
           </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 p-0">
-        <div className="border-b border-border px-3 py-2 text-[13px] font-semibold text-foreground">
+        <div className="border-b border-border px-3 py-2 text-body font-semibold text-foreground">
           Show columns
         </div>
         <ScrollArea className="max-h-[320px]">
@@ -95,7 +95,7 @@ export function DataGridColumnsButton<T>({
               return (
                 <label
                   key={keyStr}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] hover:bg-(--bg-fill-transparent-hover)"
+                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-body hover:bg-(--bg-fill-transparent-hover)"
                 >
                   <Checkbox
                     checked={!isHidden}

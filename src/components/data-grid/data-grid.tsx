@@ -100,7 +100,7 @@ export function DataGridTable<T>({
   return (
     <table
       className={cn(
-        "border-separate text-xs",
+        "border-separate text-caption",
         fluid ? "w-full min-w-max" : "w-max",
       )}
       style={
@@ -256,7 +256,7 @@ export function DataGridHeaderRow<T>({
                   onClick={() => onSort?.(sortId)}
                   title={`Click to sort by ${c.label}`}
                   className={cn(
-                    "-mx-1 flex h-8 w-full cursor-pointer items-center gap-1.5 rounded px-1 text-xs text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground",
+                    "-mx-1 flex h-8 w-full cursor-pointer items-center gap-1.5 rounded px-1 text-caption text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground",
                     align === "right" && "justify-end",
                     align === "center" && "justify-center",
                   )}
@@ -266,7 +266,7 @@ export function DataGridHeaderRow<T>({
               ) : (
                 <div
                   className={cn(
-                    "flex h-8 items-center gap-1.5 text-xs text-muted-foreground",
+                    "flex h-8 items-center gap-1.5 text-caption text-muted-foreground",
                     align === "right" && "justify-end",
                     align === "center" && "justify-center",
                   )}

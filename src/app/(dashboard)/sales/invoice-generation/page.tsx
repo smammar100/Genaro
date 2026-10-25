@@ -828,7 +828,7 @@ function InvoiceGenerationForm() {
                     </div>
                   ) : null}
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-1 text-caption text-muted-foreground">
                   {pcLoading
                     ? "Searching…"
                     : pcError
@@ -899,14 +899,14 @@ function InvoiceGenerationForm() {
                   className="flex flex-wrap items-end gap-2 rounded-(--radius-200) border border-(--border) p-2"
                 >
                   <div className="w-28">
-                    <p className="text-xs text-(--text-secondary)">Type</p>
-                    <div className="text-sm font-medium">
+                    <p className="text-caption text-(--text-secondary)">Type</p>
+                    <div className="text-body font-medium">
                       {LINE_TYPE_LABEL[l.type]}
                     </div>
                   </div>
                   {(l.type === "addon_paid" || l.type === "addon_free") && (
                     <div className="w-40">
-                      <Label className="text-xs" htmlFor={`${l.uid}-category`}>
+                      <Label className="text-caption" htmlFor={`${l.uid}-category`}>
                         Category
                       </Label>
                       <Select
@@ -937,7 +937,7 @@ function InvoiceGenerationForm() {
                     </div>
                   )}
                   <div className="min-w-40 flex-1">
-                    <Label className="text-xs" htmlFor={`${l.uid}-description`}>
+                    <Label className="text-caption" htmlFor={`${l.uid}-description`}>
                       Description
                     </Label>
                     <Input
@@ -950,7 +950,7 @@ function InvoiceGenerationForm() {
                   </div>
                   {l.type !== "addon_free" && (
                     <div className="w-24">
-                      <Label className="text-xs" htmlFor={`${l.uid}-unit-price`}>
+                      <Label className="text-caption" htmlFor={`${l.uid}-unit-price`}>
                         Unit £
                       </Label>
                       <Input
@@ -1279,7 +1279,7 @@ function InvoiceGenerationForm() {
                   }
                 />
               </div>
-              <label className="flex items-end gap-2 text-sm">
+              <label className="flex items-end gap-2 text-body">
                 <Checkbox
                   checked={warranty.wearTearCovered}
                   onCheckedChange={(v) =>
@@ -1289,7 +1289,7 @@ function InvoiceGenerationForm() {
                 Wear and tear covered
               </label>
             </div>
-            <label className="mt-3 flex items-center gap-2 text-sm">
+            <label className="mt-3 flex items-center gap-2 text-body">
               <Checkbox
                 checked={nonWarrantyDisclaimer}
                 onCheckedChange={(v) =>
@@ -1298,7 +1298,7 @@ function InvoiceGenerationForm() {
               />
               Non-warranty disclaimer accepted (opted out of comprehensive cover)
             </label>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-2 text-caption text-muted-foreground">
               {nonWarrantyDisclaimer
                 ? "No warranty record will be created for this sale."
                 : `Issuing this invoice creates an ${
@@ -1312,7 +1312,7 @@ function InvoiceGenerationForm() {
               {PDI_ITEMS.map((it) => (
                 <label
                   key={it.key as string}
-                  className="flex items-center gap-2 text-xs"
+                  className="flex items-center gap-2 text-caption"
                 >
                   <Checkbox
                     checked={Boolean(pdc[it.key])}
@@ -1325,7 +1325,7 @@ function InvoiceGenerationForm() {
               ))}
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-body">
                 <Checkbox
                   checked={pdc.lockNut}
                   onCheckedChange={(v) =>
@@ -1441,7 +1441,7 @@ function InvoiceGenerationForm() {
           </Section>
 
           <Section letter="H" title="Notes and declarations">
-            <div className="flex flex-col gap-2 text-sm">
+            <div className="flex flex-col gap-2 text-body">
               <label className="flex items-center gap-2">
                 <Checkbox
                   checked={includeUnitStockingNote}
@@ -1499,7 +1499,7 @@ function InvoiceGenerationForm() {
 
         <Layout.Section variant="oneThird" className="lg:sticky lg:top-4 lg:self-start">
           <Card title="Cost summary">
-            <div className="flex flex-col gap-1.5 text-sm">
+            <div className="flex flex-col gap-1.5 text-body">
               <Row label="Vehicle (sales price)" v={totals.salesPrice} />
               {totals.discount > 0 && (
                 <Row label="Discount" v={-totals.discount} />

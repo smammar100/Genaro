@@ -10,12 +10,12 @@ import { useAuth } from "@/contexts/auth-context";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
+  Button,
   Card,
   EmptyState,
   Layout,
   Page,
   SkeletonBodyText,
-  SkeletonDisplayText,
   SkeletonThumbnail,
 } from "@/components/polaris";
 import { DaysInStockChip } from "@/components/shared/days-in-stock-chip";
@@ -23,7 +23,6 @@ import {
   NEXT_STEP,
   VehicleHeaderCard,
   VehicleStatusMenu,
-  vehicleTitle,
 } from "@/components/vehicle-detail/vehicle-header-card";
 import { VehicleDetailShell } from "@/components/vehicle-detail/vehicle-detail-shell";
 import { titleFromPath } from "@/components/layout/sidebar-config";
@@ -61,13 +60,13 @@ function resolveBack(from: string | null): { href: string; label: string } {
 
 /**
  * Vehicle detail — the Polaris product-detail pattern for a single piece of
- * stock. The Page header carries the back link, title, status (a menu) and
- * days-in-stock badges, the lifecycle's next step as the primary action and
- * Remove from website as a destructive secondary action. Below it,
- * `VehicleHeaderCard` (photo, plate, key facts), then `VehicleDetailShell`:
- * the tab row, and a Layout with the active tab in the main column and the
- * Manage card in the sidebar.
+ * stock. `VehicleHeaderCard` is the page's header (the Page has none, so the
+ * name isn't repeated): back, the plate with the status menu and
+ * days-in-stock chip, the lifecycle's next step as the primary action and
+ * Remove from website as a destructive one, then the name and key facts.
+ * Below it `VehicleDetailShell`: the tab row, and the active tab at full width.
  */
+
 const DETAIL_TABS = new Set([
   "overview",
   "details",
@@ -179,7 +178,6 @@ export default function VehicleDetailPage({
   if (vehicle === undefined) {
     return (
       <Page fullWidth>
-        <SkeletonDisplayText size="small" />
         <Card>
           <div className="flex gap-4">
             <SkeletonThumbnail size="large" />
@@ -192,11 +190,6 @@ export default function VehicleDetailPage({
           <Layout.Section>
             <Card>
               <SkeletonBodyText lines={8} />
-            </Card>
-          </Layout.Section>
-          <Layout.Section variant="oneThird">
-            <Card>
-              <SkeletonBodyText lines={4} />
             </Card>
           </Layout.Section>
         </Layout>
@@ -222,37 +215,36 @@ export default function VehicleDetailPage({
     vehicle.status === "sold" && vehicle.removedFromWebsiteAt === null;
 
   return (
-    <Page
-      fullWidth
-      title={vehicleTitle(vehicle)}
-      backAction={{ content: `Back to ${back.label}`, url: back.href }}
-      titleMetadata={
-        <span className="flex flex-wrap items-center gap-1">
-          <VehicleStatusMenu
-            vehicle={vehicle}
-            onStatusChange={(s) => void handleStatusChange(s)}
-          />
-          <DaysInStockChip days={vehicle.daysInStock} />
-        </span>
-      }
-      secondaryActions={
-        canRemoveFromWebsite
-          ? [
-              {
-                content: "Remove from website",
-                destructive: true,
-                onAction: () => void handleRemoveFromWebsite(),
-              },
-            ]
-          : undefined
-      }
-      primaryAction={
-        nextStep
-          ? { content: nextStep.label, onAction: () => setTab(nextStep.tab) }
-          : undefined
-      }
-    >
-      <VehicleHeaderCard vehicle={vehicle} />
+    <Page fullWidth>
+      <VehicleHeaderCard
+        vehicle={vehicle}
+        back={back}
+        badges={
+          <>
+            <VehicleStatusMenu
+              vehicle={vehicle}
+              onStatusChange={(s) => void handleStatusChange(s)}
+            />
+            <DaysInStockChip days={vehicle.daysInStock} />
+          </>
+        }
+        actions={
+          canRemoveFromWebsite || nextStep ? (
+            <>
+              {canRemoveFromWebsite ? (
+                <Button tone="critical" onClick={() => void handleRemoveFromWebsite()}>
+                  Remove from website
+                </Button>
+              ) : null}
+              {nextStep ? (
+                <Button variant="primary" onClick={() => setTab(nextStep.tab)}>
+                  {nextStep.label}
+                </Button>
+              ) : null}
+            </>
+          ) : undefined
+        }
+      />
 
       {/* Polaris product detail: the tab row under the header card, then the
           active tab's cards across the full width. */}

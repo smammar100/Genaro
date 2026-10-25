@@ -107,7 +107,7 @@ const NAV_SKIN = cn(
   "[--hover:var(--nav-bg-surface-hover)] [--active:var(--bg-surface)] [--muted-foreground:var(--text)]",
   "[&_.bg-active]:shadow-(--shadow-100)",
   "[&_[data-sidebar=menu-sub]]:[--muted-foreground:var(--text-secondary)]",
-  "[&_[data-sidebar=menu-button]]:text-[13px] [&_[data-sidebar=menu-sub-button]]:text-[13px]",
+  "[&_[data-sidebar=menu-button]]:text-body [&_[data-sidebar=menu-sub-button]]:text-body",
   "[&_[data-sidebar=menu-button]]:gap-2.5 [&_[data-sidebar=menu-button]_svg]:size-[18px]",
   "[&_[data-sidebar=menu-sub-button]]:h-8",
   "[&_[data-sidebar=menu-sub]]:ml-[17px] [&_[data-sidebar=menu-sub]]:pl-2.5",

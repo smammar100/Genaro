@@ -28,7 +28,7 @@ export function StepActions({
 }: StepActionsProps) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-(--radius-200) bg-(--bg-surface-secondary) px-3 py-2 text-sm text-(--text)">
+      <div className="rounded-(--radius-200) bg-(--bg-surface-secondary) px-3 py-2 text-body text-(--text)">
         {selectedCustomer ? (
           <>
             <span className="text-(--text-secondary)">Continuing for: </span>
@@ -36,7 +36,7 @@ export function StepActions({
               {selectedCustomer.firstName} {selectedCustomer.lastName}
             </span>
             {selectedCustomer.mobilePhone && (
-              <span className="ml-2 text-xs text-(--text-secondary)">
+              <span className="ml-2 text-caption text-(--text-secondary)">
                 {selectedCustomer.mobilePhone}
               </span>
             )}
@@ -114,10 +114,10 @@ function ActionCard({
             accent === "primary" ? "text-(--text-emphasis)" : "text-(--text-secondary)",
           )}
         />
-        <span className="text-sm font-semibold">{title}</span>
-        <span className="text-xs text-(--text-secondary)">· {subtitle}</span>
+        <span className="text-body font-semibold">{title}</span>
+        <span className="text-caption text-(--text-secondary)">· {subtitle}</span>
       </div>
-      <p className="text-xs text-(--text-secondary)">{description}</p>
+      <p className="text-caption text-(--text-secondary)">{description}</p>
     </button>
   );
 }

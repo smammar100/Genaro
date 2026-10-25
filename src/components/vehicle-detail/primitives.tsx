@@ -9,6 +9,10 @@ import { cn } from "@/lib/utils";
  * Badge so every tab panel on the vehicle page reads like a Polaris
  * ProductDetail main column: a stack of cards with sentence-case
  * heading-sm titles, plain-button actions and toned status badges.
+ *
+ * Text sits on the type scale (lib/type-scale.ts) through the Polaris classes:
+ * heading-lg (display) for big figures, heading-sm (subtitle) for titles and
+ * figures that need weight, body-md (body) for the rest.
  */
 
 // ============================================================
@@ -71,11 +75,11 @@ export function KpiCard({ icon: Icon, label, value, hint, accent }: KpiCardProps
         </span>
         {Icon && <Icon className="h-4 w-4 text-(--icon-secondary)" />}
       </div>
-      <div className="text-xl font-bold tabular-nums">{value}</div>
+      <div className="heading-lg tabular-nums">{value}</div>
       {hint && (
         <div
           className={cn(
-            "body-sm text-(--text-secondary)",
+            "body-md text-(--text-secondary)",
             accent === "amber" && "text-(--text-caution)",
             accent === "destructive" && "text-(--text-critical)",
           )}
@@ -139,7 +143,7 @@ export function Panel({
           <div className="flex min-w-0 flex-col gap-1">
             {title && <h2 className="heading-sm text-(--text)">{title}</h2>}
             {subtitle && (
-              <p className="body-sm text-(--text-secondary)">{subtitle}</p>
+              <p className="body-md text-(--text-secondary)">{subtitle}</p>
             )}
           </div>
           {action && <div className="flex shrink-0 items-center gap-2">{action}</div>}

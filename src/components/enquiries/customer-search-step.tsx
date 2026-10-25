@@ -77,12 +77,12 @@ export function CustomerSearchStep({
 
       <div className="flex flex-col gap-2">
         {trimmed.length < 2 ? (
-          <p className="rounded-(--radius-200) border border-dashed border-(--border) bg-(--bg-surface-secondary) px-3 py-6 text-center text-xs text-(--text-secondary)">
+          <p className="rounded-(--radius-200) border border-dashed border-(--border) bg-(--bg-surface-secondary) px-3 py-6 text-center text-caption text-(--text-secondary)">
             Type at least 2 characters to search.<br />
             Tip: try a name, mobile prefix like <code>07712</code>, or a postcode.
           </p>
         ) : results.length === 0 && !isLoading ? (
-          <p className="rounded-(--radius-200) border border-dashed border-(--border) bg-(--bg-surface-secondary) px-3 py-4 text-center text-xs text-(--text-secondary)">
+          <p className="rounded-(--radius-200) border border-dashed border-(--border) bg-(--bg-surface-secondary) px-3 py-4 text-center text-caption text-(--text-secondary)">
             No matches for &ldquo;{trimmed}&rdquo;. Continue with a new customer below.
           </p>
         ) : (

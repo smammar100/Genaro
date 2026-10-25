@@ -33,7 +33,7 @@ export function TourCard({
   return (
     <div className="w-[330px] max-w-[calc(100vw-2rem)] rounded-(--radius-300) bg-(--bg-surface) p-4 text-(--text) shadow-(--shadow-600)">
       <div className="flex items-start gap-3">
-        <span aria-hidden className="text-xl leading-none">
+        <span aria-hidden className="text-display">
           {step.icon}
         </span>
         <h2 className="heading-md min-w-0 flex-1">{step.title}</h2>
@@ -47,12 +47,12 @@ export function TourCard({
         />
       </div>
 
-      <p className="mt-2 text-[13px] leading-5 text-(--text-secondary)">
+      <p className="mt-2 text-body text-(--text-secondary)">
         {step.content}
       </p>
 
       {awaitsAction && (
-        <p className="mt-3 flex items-center gap-2 rounded-(--radius-200) bg-(--bg-surface-emphasis) px-3 py-2 text-[13px] font-medium text-(--text-emphasis)">
+        <p className="mt-3 flex items-center gap-2 rounded-(--radius-200) bg-(--bg-surface-emphasis) px-3 py-2 text-body font-medium text-(--text-emphasis)">
           <MousePointerClick className="size-4 shrink-0" />
           <span>
             Click <b>{guided.actionLabel}</b> to carry on

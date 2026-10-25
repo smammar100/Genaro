@@ -94,8 +94,8 @@ const STATUS_META: Record<
 function Field({ k, v }: { k: string; v: string }) {
   return (
     <div>
-      <div className="text-xs text-(--text-secondary)">{k}</div>
-      <div className="text-sm font-medium">{v}</div>
+      <div className="text-caption text-(--text-secondary)">{k}</div>
+      <div className="text-body font-medium">{v}</div>
     </div>
   );
 }
@@ -110,7 +110,7 @@ function SectionHead({
   return (
     <div className="mb-3 flex items-center gap-2">
       <Icon className="h-4 w-4 text-(--icon-secondary)" />
-      <h3 className="text-sm font-semibold">{children}</h3>
+      <h3 className="text-body font-semibold">{children}</h3>
     </div>
   );
 }
@@ -587,14 +587,14 @@ export default function ReturnsPage() {
                     <Car className="h-6 w-6" />
                   </div>
                   <div>
-                    <div className="font-mono text-sm font-semibold">
+                    <div className="font-mono text-body font-semibold">
                       {formatRegPlate(form.watch("registration") ?? "")}
                     </div>
-                    <div className="text-sm text-(--text-secondary)">
+                    <div className="text-body text-(--text-secondary)">
                       Invoice {original.invoiceNumber} ·{" "}
                       {formatCurrency(original.total)}
                     </div>
-                    <div className="text-xs text-(--text-success)">
+                    <div className="text-caption text-(--text-success)">
                       Customer prefilled from sale.
                     </div>
                   </div>
@@ -673,7 +673,7 @@ export default function ReturnsPage() {
                     placeholder="Describe the reason for the return…"
                   />
                   {form.formState.errors.reason && (
-                    <p className="mt-1 text-xs text-(--text-critical)">
+                    <p className="mt-1 text-caption text-(--text-critical)">
                       {form.formState.errors.reason.message}
                     </p>
                   )}
@@ -728,7 +728,7 @@ export default function ReturnsPage() {
                   />
                 </div>
                 <div className="rounded-lg border border-(--border-secondary) bg-(--bg-surface-secondary) p-3">
-                  <p className="mb-2 text-xs font-medium text-(--text-secondary)">
+                  <p className="mb-2 text-caption font-medium text-(--text-secondary)">
                     Refund bank details (where the refund is paid back)
                   </p>
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -798,7 +798,7 @@ export default function ReturnsPage() {
           {/* list */}
           <div className="border-b border-(--border) lg:border-b-0 lg:border-r">
             <div className="flex items-center justify-between border-b border-(--border) px-3 py-2.5">
-              <h2 className="text-sm font-semibold">Returns</h2>
+              <h2 className="text-body font-semibold">Returns</h2>
               <Badge>{String(rows.length)}</Badge>
             </div>
             <ul className="max-h-[70vh] divide-y divide-(--border-secondary) overflow-y-auto">
@@ -821,7 +821,7 @@ export default function ReturnsPage() {
                       )}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
+                        <span className="flex min-w-0 items-center gap-1.5 text-body font-medium">
                           <span
                             aria-hidden
                             className={cn(
@@ -832,19 +832,19 @@ export default function ReturnsPage() {
                           <span className="sr-only">{meta.label}:</span>
                           <span className="truncate">{r.customerName}</span>
                         </span>
-                        <span className="shrink-0 text-xs text-(--text-secondary)">
+                        <span className="shrink-0 text-caption text-(--text-secondary)">
                           {formatDate(r.returnDate)}
                         </span>
                       </div>
                       <div className="mt-0.5 flex items-center justify-between gap-2 pl-3.5">
-                        <span className="truncate text-xs text-(--text-secondary)">
+                        <span className="truncate text-caption text-(--text-secondary)">
                           {r.vehicle?.registration ?? "—"} ·{" "}
                           {r.reason ||
                             (r.reasonCode
                               ? RETURN_REASON_LABELS[r.reasonCode]
                               : "—")}
                         </span>
-                        <span className="shrink-0 text-xs font-medium tabular-nums">
+                        <span className="shrink-0 text-caption font-medium tabular-nums">
                           {formatCurrency(r.refundAmount)}
                         </span>
                       </div>
@@ -901,12 +901,12 @@ export default function ReturnsPage() {
                       )}
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm font-semibold">
+                          <span className="font-mono text-body font-semibold">
                             {selected.vehicle?.registration ?? "—"}
                           </span>
                           <Badge tone={meta.tone}>{meta.label}</Badge>
                         </div>
-                        <div className="text-sm text-(--text-secondary)">
+                        <div className="text-body text-(--text-secondary)">
                           {selected.vehicle
                             ? `${selected.vehicle.make} ${selected.vehicle.model}`
                             : "—"}
@@ -967,20 +967,20 @@ export default function ReturnsPage() {
 
                   {selected.reason && (
                     <div>
-                      <h3 className="mb-2 text-sm font-semibold">
+                      <h3 className="mb-2 text-body font-semibold">
                         Reason detail
                       </h3>
-                      <p className="text-sm">{selected.reason}</p>
+                      <p className="text-body">{selected.reason}</p>
                     </div>
                   )}
 
                   <div>
-                    <h3 className="mb-2 text-sm font-semibold">Timeline</h3>
+                    <h3 className="mb-2 text-body font-semibold">Timeline</h3>
                     <ol className="flex flex-col gap-3">
                       {steps.map((s) => (
                         <li
                           key={s.label}
-                          className="flex items-center gap-3 text-sm"
+                          className="flex items-center gap-3 text-body"
                         >
                           <span
                             className={cn(
@@ -999,7 +999,7 @@ export default function ReturnsPage() {
                           <span className={cn(!s.done && "text-(--text-secondary)")}>
                             {s.label}
                           </span>
-                          <span className="ml-auto text-xs text-(--text-secondary)">
+                          <span className="ml-auto text-caption text-(--text-secondary)">
                             {s.at}
                           </span>
                         </li>
@@ -1035,7 +1035,7 @@ export default function ReturnsPage() {
       >
         {resolving && (
           <div className="grid gap-3">
-            <p className="text-sm text-(--text-secondary)">
+            <p className="text-body text-(--text-secondary)">
               Resolving generates a{" "}
               <span className="font-medium text-(--text)">
                 refund / cancellation invoice
@@ -1089,7 +1089,7 @@ export default function ReturnsPage() {
         ]}
       >
         {rejecting && (
-          <p className="text-sm">
+          <p className="text-body">
             The return for {rejecting.customerName} will be marked as
             rejected. No refund invoice is raised.
           </p>

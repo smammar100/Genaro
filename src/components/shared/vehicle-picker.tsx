@@ -149,14 +149,14 @@ export function VehiclePicker({
             <ComboboxPrimitive.Item
               key={v.id}
               value={v}
-              className="relative grid min-h-8 cursor-default items-center rounded-sm py-1 ps-3 pe-7 text-base outline-none data-disabled:pointer-events-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:opacity-64 sm:min-h-7 sm:text-sm"
+              className="relative grid min-h-8 cursor-default items-center rounded-sm py-1 ps-3 pe-7 text-subtitle outline-none data-disabled:pointer-events-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:opacity-64 sm:min-h-7 sm:text-body"
             >
               <span className="flex min-w-0 items-center gap-2">
                 <RegPlate registration={v.registration} size="sm" />
                 <span className="truncate">
                   {v.make} {v.model}
                 </span>
-                <span className="shrink-0 text-2xs text-muted-foreground">
+                <span className="shrink-0 text-micro text-muted-foreground">
                   {v.stockId}
                 </span>
                 {renderMeta?.(v)}

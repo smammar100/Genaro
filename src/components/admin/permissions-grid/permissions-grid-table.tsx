@@ -55,7 +55,7 @@ export function PermissionsGridTable({
   return (
     <div className="relative max-h-[calc(100dvh-17rem)] min-h-80 overflow-auto">
       <table
-        className="w-max border-separate text-xs"
+        className="w-max border-separate text-caption"
         style={{ borderSpacing: 0 }}
       >
         <colgroup>
@@ -73,7 +73,7 @@ export function PermissionsGridTable({
               )}
             >
               <span
-                className="text-xs font-medium text-(--text-secondary)"
+                className="text-caption font-medium text-(--text-secondary)"
                 data-testid="member-count"
               >
                 {users.length} member{users.length === 1 ? "" : "s"}
@@ -85,7 +85,7 @@ export function PermissionsGridTable({
                 className="border-b border-l border-(--border) bg-(--bg-surface-secondary) px-1.5 py-1.5 text-center align-middle"
               >
                 <span
-                  className="line-clamp-2 text-center text-xs font-medium leading-snug text-(--text-secondary)"
+                  className="line-clamp-2 text-center text-caption font-medium text-(--text-secondary)"
                   title={CAPABILITY_LABELS[cap]}
                 >
                   {CAPABILITY_LABELS[cap]}
@@ -124,9 +124,9 @@ export function PermissionsGridTable({
                       initials={getInitials(u.name)}
                       size="md"
                     />
-                    <div className="flex min-w-0 flex-1 flex-col leading-tight">
+                    <div className="flex min-w-0 flex-1 flex-col">
                       <div className="flex items-center gap-1.5">
-                        <span className="truncate text-sm font-medium text-(--text)">
+                        <span className="truncate text-body font-medium text-(--text)">
                           {u.name}
                         </span>
                         {isYou && <Badge>You</Badge>}
@@ -134,7 +134,7 @@ export function PermissionsGridTable({
                           <Badge tone="info">Super user</Badge>
                         )}
                       </div>
-                      <span className="truncate text-xs text-(--text-secondary)">
+                      <span className="truncate text-caption text-(--text-secondary)">
                         {accountHandle(u)}
                       </span>
                     </div>

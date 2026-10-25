@@ -187,7 +187,7 @@ export function InspectionChecklistSettings() {
                   />
                 </span>
 
-                <span className="w-6 shrink-0 text-xs tabular-nums text-(--text-secondary)">
+                <span className="w-6 shrink-0 text-caption tabular-nums text-(--text-secondary)">
                   {i + 1}
                 </span>
 
@@ -245,7 +245,7 @@ export function InspectionChecklistSettings() {
               </div>
             </div>
             <div className="flex items-start justify-between gap-4">
-              <p className="text-xs text-(--text-secondary)">
+              <p className="text-caption text-(--text-secondary)">
                 Comma-separated, in the order they should appear in the status
                 dropdown on the inspection.
               </p>
@@ -269,7 +269,7 @@ export function InspectionChecklistSettings() {
           }}
           secondaryActions={[{ content: "Cancel", onAction: () => setRemoving(null) }]}
         >
-          <p className="text-sm text-(--text)">
+          <p className="text-body text-(--text)">
             It will no longer appear on inspections started after this.
             Inspections already recorded keep whatever was answered for this
             point.

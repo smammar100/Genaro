@@ -109,7 +109,7 @@ export function ResetPasswordDialog({ user, open, onOpenChange }: Props) {
       {creds ? (
         <div data-testid="reset-password-creds">
           <Banner tone="success" title="New password set, relay these">
-            <div className="grid gap-1 font-mono text-xs">
+            <div className="grid gap-1 font-mono text-caption">
               <div>
                 <span className="text-(--text-secondary)">{handleLabel}: </span>
                 {handle}
@@ -124,7 +124,7 @@ export function ResetPasswordDialog({ user, open, onOpenChange }: Props) {
       ) : (
         <div className="flex flex-col gap-3">
           {user && (
-            <p className="text-sm text-(--text-secondary)">
+            <p className="text-body text-(--text-secondary)">
               Generate a new temporary password for{" "}
               <strong className="text-(--text)">{user.name}</strong>.
               They&apos;ll be forced to set their own on next login. Relay it

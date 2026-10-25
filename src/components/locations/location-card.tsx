@@ -104,30 +104,30 @@ export function LocationCard({
       <div className="flex flex-col gap-1">
         <div className="body-md text-(--text)">
           Currently at:{" "}
-          <span className="font-semibold">
+          <span className="heading-sm">
             {VEHICLE_LOCATION_LABELS[vehicle.currentLocation]}
           </span>
         </div>
-        <div className="body-sm text-(--text-secondary)">
+        <div className="body-md text-(--text-secondary)">
           Since {shortDate(vehicle.locationSince)} · {days} day{days === 1 ? "" : "s"}
           {vehicle.outForTestDrive ? " · out for test drive" : ""}
         </div>
       </div>
 
       <div className="mt-2 flex flex-col gap-1">
-        <div className="body-sm font-semibold text-(--text-secondary)">
+        <div className="heading-sm text-(--text-secondary)">
           Recent moves
         </div>
         {movements === null ? (
           <SkeletonBodyText lines={3} />
         ) : movements.length === 0 ? (
-          <div className="body-sm text-(--text-secondary)">
+          <div className="body-md text-(--text-secondary)">
             No movements yet.
           </div>
         ) : (
           <ul className="flex flex-col gap-1">
             {movements.map((m) => (
-              <li key={m.id} className="body-sm flex items-baseline gap-2 text-(--text)">
+              <li key={m.id} className="body-md flex items-baseline gap-2 text-(--text)">
                 <span className="tabular-nums text-(--text-secondary)">
                   {shortDate(m.createdAt)}
                 </span>

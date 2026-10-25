@@ -38,7 +38,7 @@ export function DataGridPagination({
   const lastRow = Math.min(total, page * pageSize);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-(--bg-surface-secondary) px-3 py-2 text-[13px]">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-(--bg-surface-secondary) px-3 py-2 text-body">
       <div className="flex items-center gap-3 text-(--text-secondary)">
         <span className="tabular-nums">
           {total === 0

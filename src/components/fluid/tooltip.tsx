@@ -219,7 +219,7 @@ function Tooltip({
                       // where text-box is supported, keeping the same overall
                       // height (~26px) as untrimmed browsers.
                       // The Polaris tooltip surface (.p-tooltip).
-                      "rounded-(--radius-200) bg-(--bg-surface) px-2 py-1 text-[13px] text-(--text) shadow-(--shadow-300)",
+                      "rounded-(--radius-200) bg-(--bg-surface) px-2 py-1 text-body text-(--text) shadow-(--shadow-300)",
                       "[text-box:trim-both_cap_alphabetic] supports-[text-box:trim-both]:py-2",
                       className
                     )}

@@ -53,7 +53,7 @@ export function RemoveMemberDialog({ user, open, onOpenChange, onRemoved }: Prop
       secondaryActions={[{ content: "Cancel", onAction: close }]}
     >
       <div
-        className="flex flex-col gap-2 text-sm text-(--text)"
+        className="flex flex-col gap-2 text-body text-(--text)"
         data-testid="remove-member-dialog"
       >
         {user ? (
@@ -62,7 +62,7 @@ export function RemoveMemberDialog({ user, open, onOpenChange, onRemoved }: Prop
             access to Car Capital UK immediately. This action cannot be undone.
           </p>
         ) : null}
-        <ul className="list-disc pl-5 text-xs text-(--text-secondary)">
+        <ul className="list-disc pl-5 text-caption text-(--text-secondary)">
           <li>Their session is invalidated on next request.</li>
           <li>Audit-log entries authored by them remain for the record.</li>
           <li>Re-add later by sending a fresh invitation.</li>

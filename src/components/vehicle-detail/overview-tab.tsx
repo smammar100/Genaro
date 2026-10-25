@@ -33,7 +33,8 @@ import {
   computeAdvertChecks,
   type AdvertCheck,
 } from "@/lib/advert-completeness";
-import { ADVERT_COMPLETENESS_ENABLED, PHOTOS_ENABLED } from "@/lib/phase-one";
+import { ADVERTS_ENABLED, PHOTOS_ENABLED } from "@/lib/phase-one";
+import { SalesHighlightsCard } from "./sales-highlights-card";
 import { OverviewPricingCard } from "./overview-pricing-card";
 
 interface OverviewTabProps {
@@ -113,7 +114,8 @@ export function OverviewTab({
         }}
       />
       <VehicleLocationSection vehicle={vehicle} />
-      <MarketplacePanel listing={listing ?? null} />
+      <SalesHighlightsCard vehicle={vehicle} />
+      {ADVERTS_ENABLED ? <MarketplacePanel listing={listing ?? null} /> : null}
     </>
   );
 
@@ -156,7 +158,7 @@ export function OverviewTab({
         />
       </div>
 
-      {ADVERT_COMPLETENESS_ENABLED ? (
+      {ADVERTS_ENABLED ? (
         // Two-col: Advert Completeness + Valuation/Marketplace stack
         <div className="grid gap-4 @3xl:grid-cols-[1.5fr_1fr]">
           <AdvertCompletenessPanel
@@ -317,7 +319,7 @@ function AdvertCheckRow({
       </span>
       <div className="min-w-0">
         <div className="body-md-semibold">{check.name}</div>
-        <div className="mt-0.5 truncate body-sm text-(--text-secondary)">
+        <div className="mt-0.5 truncate body-md text-(--text-secondary)">
           {check.meta}
         </div>
       </div>
@@ -516,9 +518,9 @@ function PriceMeter({
           style={{ left: `${pos}%` }}
         />
       </div>
-      <div className="mt-2 flex justify-between body-xs tabular-nums text-(--text-secondary)">
+      <div className="mt-2 flex justify-between body-md tabular-nums text-(--text-secondary)">
         <span>Trade {formatCurrency(trade)}</span>
-        <span className="body-xs-semibold text-(--text)">
+        <span className="heading-sm text-(--text)">
           You {formatCurrency(webPrice)}
         </span>
         <span>Retail {formatCurrency(retail)}</span>
@@ -541,7 +543,7 @@ function ValuationCell({
       <div className="body-md text-(--text-secondary)">{label}</div>
       <div
         className={cn(
-          "mt-1 text-base font-semibold tabular-nums",
+          "mt-1 heading-sm tabular-nums",
           highlight && "text-(--text)",
         )}
       >
@@ -627,7 +629,7 @@ function MarketplacePanel({ listing }: { listing: Listing | null }) {
               </span>
               <div className="min-w-0">
                 <div className="body-md-semibold">{r.name}</div>
-                <div className="mt-0.5 body-sm text-(--text-secondary)">
+                <div className="mt-0.5 body-md text-(--text-secondary)">
 
                   {r.meta}
                 </div>

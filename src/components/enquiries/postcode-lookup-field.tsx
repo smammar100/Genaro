@@ -78,7 +78,7 @@ export function PostcodeLookupField({
           className={cn(postcodeError && "border-destructive")}
         />
         {postcodeError && touched && (
-          <p className="mt-1 text-xs text-destructive">{postcodeError}</p>
+          <p className="mt-1 text-caption text-destructive">{postcodeError}</p>
         )}
       </div>
       <div className="flex items-end sm:col-span-2">
@@ -98,7 +98,7 @@ export function PostcodeLookupField({
         </Button>
       </div>
       <div className="sm:col-span-3">
-        <p className="mb-1 text-sm font-medium text-(--text)">Address</p>
+        <p className="mb-1 text-body font-medium text-(--text)">Address</p>
         <div className="flex flex-col gap-2">
           {lines.map((line, i) => (
             <Input

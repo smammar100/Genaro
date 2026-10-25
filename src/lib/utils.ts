@@ -1,6 +1,16 @@
 import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { extendTailwindMerge } from "tailwind-merge";
 import { DAYS_IN_STOCK_THRESHOLDS } from "./constants";
+import { typeScaleRoles } from "./type-scale";
+
+/**
+ * tailwind-merge that knows the type scale's roles (text-display … text-micro,
+ * lib/type-scale.ts) are font sizes. Stock, it reads `text-body` as a colour
+ * and drops it next to `text-(--text-secondary)`.
+ */
+const twMerge = extendTailwindMerge({
+  extend: { classGroups: { "font-size": [{ text: [...typeScaleRoles] }] } },
+});
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

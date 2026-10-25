@@ -106,18 +106,18 @@ export function TimelineItem({
       </span>
 
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 pt-1.5">
-        <div className="min-w-0 text-sm leading-snug text-foreground">
+        <div className="min-w-0 text-body text-foreground">
           {children}
         </div>
         {timestamp ? (
-          <div className="shrink-0 text-xs tabular-nums text-muted-foreground">
+          <div className="shrink-0 text-caption tabular-nums text-muted-foreground">
             {timestamp}
           </div>
         ) : null}
       </div>
 
       {body ? (
-        <div className="mt-2 rounded-lg border bg-card p-3 text-sm">{body}</div>
+        <div className="mt-2 rounded-lg border bg-card p-3 text-body">{body}</div>
       ) : null}
     </li>
   );

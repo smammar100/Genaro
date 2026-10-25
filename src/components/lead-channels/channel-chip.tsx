@@ -45,7 +45,7 @@ export function ChannelChip(props: Props) {
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-(--text)",
+          "inline-flex items-center gap-1.5 whitespace-nowrap text-caption text-(--text)",
           className,
         )}
       >
@@ -62,7 +62,7 @@ export function ChannelChip(props: Props) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-(--radius-200) bg-(--bg-fill-tertiary) px-1.5 py-0.5 text-xs font-medium text-(--text)",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-(--radius-200) bg-(--bg-fill-tertiary) px-1.5 py-0.5 text-caption font-medium text-(--text)",
         className,
       )}
     >

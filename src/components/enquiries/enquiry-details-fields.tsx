@@ -40,7 +40,7 @@ export function EnquiryDetailsFields({ vehicleLabel }: EnquiryDetailsFieldsProps
   return (
     <div className="flex flex-col gap-4">
       {vehicleLabel && (
-        <div className="rounded-(--radius-200) border border-dashed border-(--border) bg-(--bg-surface-secondary) px-3 py-2 text-sm text-(--text)">
+        <div className="rounded-(--radius-200) border border-dashed border-(--border) bg-(--bg-surface-secondary) px-3 py-2 text-body text-(--text)">
           <span className="text-(--text-secondary)">Vehicle of interest: </span>
           <span className="font-medium">{vehicleLabel}</span>
         </div>
@@ -58,7 +58,7 @@ export function EnquiryDetailsFields({ vehicleLabel }: EnquiryDetailsFieldsProps
             invalid={!!errors.source}
           />
           {errors.source?.message && (
-            <p className="mt-1 text-xs text-destructive">
+            <p className="mt-1 text-caption text-destructive">
               {String(errors.source.message)}
             </p>
           )}
@@ -78,7 +78,7 @@ export function EnquiryDetailsFields({ vehicleLabel }: EnquiryDetailsFieldsProps
             invalid={!!errors.salespersonId}
           />
           {errors.salespersonId?.message && (
-            <p className="mt-1 text-xs text-destructive">
+            <p className="mt-1 text-caption text-destructive">
               {String(errors.salespersonId.message)}
             </p>
           )}
@@ -95,7 +95,7 @@ export function EnquiryDetailsFields({ vehicleLabel }: EnquiryDetailsFieldsProps
             invalid={!!errors.type}
           />
           {errors.type?.message && (
-            <p className="mt-1 text-xs text-destructive">
+            <p className="mt-1 text-caption text-destructive">
               {String(errors.type.message)}
             </p>
           )}
@@ -116,7 +116,7 @@ export function EnquiryDetailsFields({ vehicleLabel }: EnquiryDetailsFieldsProps
           <Label htmlFor="financeInterest" className="cursor-pointer">
             Interested in finance
           </Label>
-          <p className="text-xs text-(--text-secondary)">
+          <p className="text-caption text-(--text-secondary)">
             Flag this enquiry for the finance team&apos;s follow-up queue.
           </p>
         </div>

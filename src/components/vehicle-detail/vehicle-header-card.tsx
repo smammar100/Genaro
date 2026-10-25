@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Image from "next/image";
 import {
   CalendarDays,
@@ -19,7 +19,7 @@ import {
 import { vehiclePhotoService } from "@/lib/services/vehicle-photo-service";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { VehicleStatusBadge } from "@/components/shared/status-badge";
-import { ActionList, Card, Popover } from "@/components/polaris";
+import { ActionList, Button, Card, Popover } from "@/components/polaris";
 import { VEHICLE_STATUS_CHOICES } from "@/lib/constants";
 import { variantLabel } from "@/lib/vehicle-variant";
 import { formatDate, titleCase } from "@/lib/utils";
@@ -53,11 +53,25 @@ export function vehicleTitle(vehicle: Vehicle): string {
 }
 
 /**
- * Vehicle hero card — photo, plate and the key facts, the layout the team
- * knows, as the first card of the Polaris detail page. The page title,
- * status, back link and actions live in the Page header above it.
+ * Vehicle hero card — the page's header (25 Oct 2026): back, the plate with
+ * the status and days-in-stock badges beside it, the page's actions on the
+ * right, then the vehicle's name (the page's h1) and its key facts. The Page
+ * itself carries no header, so nothing repeats the name.
  */
-export function VehicleHeaderCard({ vehicle }: { vehicle: Vehicle }) {
+export function VehicleHeaderCard({
+  vehicle,
+  back,
+  badges,
+  actions,
+}: {
+  vehicle: Vehicle;
+  /** Where Back goes: the page the vehicle was opened from. */
+  back: { href: string; label: string };
+  /** Beside the plate: the status menu and days-in-stock chip. */
+  badges?: ReactNode;
+  /** Top right: the next step and any other page actions. */
+  actions?: ReactNode;
+}) {
   const heroUrl = useHeroUrl(vehicle);
   const variant = variantLabel(vehicle, "");
   // Each fact with its icon; the label is for screen readers, the icon says it
@@ -105,11 +119,24 @@ export function VehicleHeaderCard({ vehicle }: { vehicle: Vehicle }) {
             className="h-28 w-44 shrink-0 rounded-(--radius-200)"
           />
         )}
-        <div className="flex min-w-0 flex-col items-start gap-1">
-          <RegPlate registration={vehicle.registration} size="lg" />
-          <p className="heading-sm mt-1 text-(--text)">
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
+          <div className="flex w-full flex-wrap items-center gap-2">
+            <Button
+              variant="tertiary"
+              icon="ArrowLeftMinor"
+              url={back.href}
+              accessibilityLabel={`Back to ${back.label}`}
+              title={`Back to ${back.label}`}
+            />
+            <RegPlate registration={vehicle.registration} size="lg" />
+            {badges}
+            {actions ? (
+              <div className="ml-auto flex flex-wrap items-center gap-2">{actions}</div>
+            ) : null}
+          </div>
+          <h1 className="heading-lg mt-1 text-(--text)">
             {vehicleTitle(vehicle)}
-          </p>
+          </h1>
           {variant ? (
             <p className="body-md text-(--text-secondary)">{variant}</p>
           ) : null}

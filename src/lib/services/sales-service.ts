@@ -149,6 +149,27 @@ export const salesService = {
     return { deal, existing: false };
   },
 
+  /** Keep a deal's copy of the customer in step when their lead is edited. */
+  async updateCustomer(
+    id: UUID,
+    customer: Pick<SalesDeal, "customerName" | "customerPhone" | "customerEmail">,
+  ): Promise<SalesDeal> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("sales_deals")
+      .update({
+        customer_name: customer.customerName,
+        customer_phone: customer.customerPhone,
+        customer_email: customer.customerEmail,
+      })
+      .eq("id", id)
+      .select(SELECT)
+      .single();
+    if (error) throw error;
+    invalidate(NS);
+    return data as unknown as SalesDeal;
+  },
+
   async updateStage(
     id: UUID,
     stage: SalesStage,

@@ -64,7 +64,7 @@ import {
 import { VehicleImage } from "@/components/shared/vehicle-image";
 import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { VehiclePicker } from "@/components/shared/vehicle-picker";
-import { ChangeVehicleModal } from "@/components/sales/change-vehicle-modal";
+import { EditLeadModal, type LeadEdits } from "@/components/sales/edit-lead-modal";
 import {
   LEAD_STATUS_LABEL,
   LeadStatusBadge,
@@ -313,7 +313,7 @@ export default function LeadsPage() {
   const [stReason, setStReason] = useState("");
   const [stBusy, setStBusy] = useState(false);
   const [stError, setStError] = useState<string | null>(null);
-  const [vehicleOpen, setVehicleOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     if (!company) return;
@@ -580,23 +580,48 @@ export default function LeadsPage() {
   }
 
   /**
-   * The customer is buying a different car. An open deal for this lead moves
-   * with it (and carries the lead along); otherwise just the lead changes.
+   * Save Edit lead. A new car moves an open deal for this lead with it, and
+   * its reservation (salesService.changeVehicle); new contact details reach
+   * that deal too, so its pipeline card agrees with the lead.
    */
-  async function changeLeadVehicle(vehicle: Vehicle) {
+  async function saveLead(edits: LeadEdits) {
     if (!user || !company || !selected) return;
     const deal = (await salesService.getAll(company.id)).find(
       (d) => d.leadId === selected.id && d.stage !== "lost",
     );
-    if (deal) {
-      await salesService.changeVehicle(deal.id, vehicle.id, user.id);
-    } else {
-      await leadService.update(selected.id, {
-        vehicleId: vehicle.id,
-        vehicleInterest: `${vehicle.make} ${vehicle.model} (${vehicle.registration})`,
+    const vehicleId = edits.vehicle?.id ?? null;
+    if (deal && !edits.vehicle) {
+      throw new Error("This lead has an open deal, so it needs a vehicle.");
+    }
+    if (deal && edits.vehicle && vehicleId !== selected.vehicleId) {
+      await salesService.changeVehicle(deal.id, edits.vehicle.id, user.id);
+    }
+    const channel = channels.find((c) => c.id === edits.leadChannelId);
+    const slug = channel?.slug as LeadSource | undefined;
+    await leadService.update(selected.id, {
+      customerName: edits.customerName,
+      customerPhone: edits.customerPhone,
+      customerEmail: edits.customerEmail,
+      vehicleId,
+      vehicleInterest: edits.vehicleInterest,
+      leadChannelId: edits.leadChannelId,
+      ...(channel ? { source: slug && SOURCES.includes(slug) ? slug : "other" } : {}),
+      assignedTo: edits.assignedTo,
+      notes: edits.notes,
+    });
+    if (
+      deal &&
+      (deal.customerName !== edits.customerName ||
+        deal.customerPhone !== edits.customerPhone ||
+        (deal.customerEmail ?? null) !== edits.customerEmail)
+    ) {
+      await salesService.updateCustomer(deal.id, {
+        customerName: edits.customerName,
+        customerPhone: edits.customerPhone,
+        customerEmail: edits.customerEmail,
       });
     }
-    toast.success(`Vehicle changed to ${vehicle.registration}`);
+    toast.success("Lead updated");
     setLeads(await leadService.getAll(company.id));
   }
 
@@ -1002,13 +1027,13 @@ export default function LeadsPage() {
                       <Button icon="ArrowRightMinor" onClick={openStatusDialog}>
                         Update status
                       </Button>
-                      <Button icon="EditMinor" onClick={() => setVehicleOpen(true)}>
-                        {selected.vehicleId ? "Change vehicle" : "Link vehicle"}
+                      <Button icon="EditMinor" onClick={() => setEditOpen(true)}>
+                        Edit lead
                       </Button>
                     </div>
                     {!selected.vehicleId ? (
                       <p className="body-sm text-(--text-secondary)">
-                        Link a vehicle to this lead to create a deal.
+                        Add a vehicle to this lead (Edit lead) to create a deal.
                       </p>
                     ) : null}
                     {selected.status === "appointment_booked" ? (
@@ -1158,14 +1183,18 @@ export default function LeadsPage() {
         </DialogContent>
       </Dialog>
 
-      <ChangeVehicleModal
-        open={vehicleOpen}
-        onClose={() => setVehicleOpen(false)}
-        customerName={selected?.customerName ?? ""}
-        current={selectedVehicle}
-        vehicles={eligibleVehicles}
-        onSave={changeLeadVehicle}
-      />
+      {selected ? (
+        <EditLeadModal
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          lead={selected}
+          vehicle={selectedVehicle}
+          vehicles={eligibleVehicles}
+          channels={channels}
+          users={users}
+          onSave={saveLead}
+        />
+      ) : null}
     </Page>
   );
 }

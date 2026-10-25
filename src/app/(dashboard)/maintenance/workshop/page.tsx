@@ -412,13 +412,13 @@ export default function WorkshopPage() {
                       {selected.customerPhone ? (
                         <a
                           href={`tel:${selected.customerPhone}`}
-                          className="mt-0.5 inline-flex items-center gap-1.5 text-sm text-(--text-secondary) hover:text-(--text) hover:underline"
+                          className="mt-0.5 inline-flex items-center gap-1.5 text-body text-(--text-secondary) hover:text-(--text) hover:underline"
                         >
                           <Phone className="size-3.5" />
                           {selected.customerPhone}
                         </a>
                       ) : (
-                        <span className="mt-0.5 inline-flex items-center gap-1.5 text-sm text-(--text-secondary)">
+                        <span className="mt-0.5 inline-flex items-center gap-1.5 text-body text-(--text-secondary)">
                           <Phone className="size-3.5" />
                           Walk-in
                         </span>

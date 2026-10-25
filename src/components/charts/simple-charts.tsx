@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
  */
 
 /*
- * Type-scale exception (GEN-57): the text-[9px]/text-[10px] below sit on SVG
+ * Type-scale exception (GEN-57): the text-[length:var(--fs-micro-compact)]/text-[length:var(--fs-micro-compact)] below sit on SVG
  * <text> inside a fixed viewBox — they scale with the chart, not with the
  * document, so they're geometry rather than UI type and deliberately don't
  * come from the --text-* scale. Everywhere else, use the scale.
@@ -71,7 +71,7 @@ export function BarChart({
     return (
       <div
         className={cn(
-          "flex items-center justify-center rounded-md border border-dashed border-border text-xs text-muted-foreground",
+          "flex items-center justify-center rounded-md border border-dashed border-border text-caption text-muted-foreground",
           className,
         )}
         style={{ height }}
@@ -120,7 +120,7 @@ export function BarChart({
               x={padL - 6}
               y={gy + 3}
               textAnchor="end"
-              className="fill-muted-foreground text-[9px] tabular-nums"
+              className="fill-muted-foreground text-[length:var(--fs-micro-compact)] tabular-nums"
             >
               {fmtY(max * t)}
             </text>
@@ -144,7 +144,7 @@ export function BarChart({
               x={cx}
               y={H - 8}
               textAnchor="middle"
-              className="fill-muted-foreground text-[10px]"
+              className="fill-muted-foreground text-[length:var(--fs-micro-compact)]"
             >
               {d.label}
             </text>
@@ -190,7 +190,7 @@ export function DonutChart({
     return (
       <div
         className={cn(
-          "flex items-center justify-center rounded-md border border-dashed border-border text-xs text-muted-foreground",
+          "flex items-center justify-center rounded-md border border-dashed border-border text-caption text-muted-foreground",
           className,
         )}
         style={{ height: size }}
@@ -252,7 +252,7 @@ export function DonutChart({
           x={cx}
           y={cx - 2}
           textAnchor="middle"
-          className="fill-foreground text-xl font-semibold tabular-nums"
+          className="fill-foreground text-display font-semibold tabular-nums"
         >
           {format(total)}
         </text>
@@ -261,14 +261,14 @@ export function DonutChart({
             x={cx}
             y={cx + 14}
             textAnchor="middle"
-            className="fill-muted-foreground text-[10px] uppercase tracking-wide"
+            className="fill-muted-foreground text-[length:var(--fs-micro-compact)] uppercase tracking-wide"
           >
             {centerLabel}
           </text>
         )}
       </svg>
       {/* legend — swatch · label · value · share, never colour-alone */}
-      <ul className="flex min-w-[200px] flex-1 flex-col text-sm">
+      <ul className="flex min-w-[200px] flex-1 flex-col text-body">
         {data.map((d, i) => (
           <li
             key={d.label}

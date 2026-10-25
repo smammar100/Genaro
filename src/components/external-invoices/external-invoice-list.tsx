@@ -244,7 +244,7 @@ export function ExternalInvoiceList({ kind }: Props) {
                 </span>,
                 vendor?.name ?? "—",
                 veh ? (
-                  <div key="vehicle" className="text-xs">
+                  <div key="vehicle" className="text-caption">
                     <Link
                       url={vehicleDetailHref(veh.id, pathname)}
                       monochrome
@@ -260,7 +260,7 @@ export function ExternalInvoiceList({ kind }: Props) {
                 ) : (
                   "—"
                 ),
-                <span key="number" className="font-mono text-xs">
+                <span key="number" className="font-mono text-caption">
                   {r.invoiceNumber ?? "—"}
                 </span>,
                 <div
@@ -324,7 +324,7 @@ export function ExternalInvoiceList({ kind }: Props) {
       )}
 
       {rows && filtered ? (
-        <div className="text-xs text-(--text-secondary)">
+        <div className="text-caption text-(--text-secondary)">
           {filtered.length} of {rows.length} invoice
           {rows.length === 1 ? "" : "s"}
           {isFiltered ? " (filtered)" : ""}

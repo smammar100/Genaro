@@ -237,7 +237,7 @@ export function AddEventSheet({
         className="flex flex-col gap-0 p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-[440px]"
       >
         <div className="flex items-center justify-between border-b px-5 py-4">
-          <SheetTitle className="text-base">New event</SheetTitle>
+          <SheetTitle>New event</SheetTitle>
           <button
             type="button"
             aria-label="Close"
@@ -253,7 +253,7 @@ export function AddEventSheet({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Add title"
-            className="h-11 border-0 px-0 text-base font-medium shadow-none focus-visible:ring-0"
+            className="h-11 border-0 px-0 text-subtitle font-medium shadow-none focus-visible:ring-0"
           />
 
           <div className="mt-1 divide-y">
@@ -266,7 +266,7 @@ export function AddEventSheet({
                       type="button"
                       onClick={() => setKind(k.key)}
                       className={cn(
-                        "flex min-w-0 items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors",
+                        "flex min-w-0 items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-caption font-medium transition-colors",
                         kind === k.key
                           ? "border-foreground/20 bg-muted text-foreground"
                           : "border-transparent text-muted-foreground hover:bg-muted/60",
@@ -331,7 +331,7 @@ export function AddEventSheet({
                   onChange={(e) => setFromTime(e.target.value)}
                   className="h-10 min-w-0 flex-1"
                 />
-                <span className="shrink-0 text-sm text-muted-foreground">
+                <span className="shrink-0 text-body text-muted-foreground">
                   to
                 </span>
                 <Input
