@@ -6,7 +6,13 @@ import { usePathname } from "next/navigation";
 import { AlertTriangle, CheckCircle2, Download } from "lucide-react";
 import type { PrepCar } from "@/lib/services/prep-service";
 import type { User } from "@/lib/types";
-import { Badge, Button, Tooltip, type BadgeTone } from "@/components/genaro";
+import {
+  Badge,
+  Button,
+  Link as GenaroLink,
+  Tooltip,
+  type BadgeTone,
+} from "@/components/genaro";
 import { KANBAN_CARD_SURFACE, KanbanCardContext } from "@/components/kanban/kanban-card";
 import { StageIcon } from "@/components/kanban/stage-icon";
 import { RegPlate } from "@/components/shared/reg-plate";
@@ -73,11 +79,14 @@ export function PrepCard({
         <AgeBadge days={daysWaiting} />
       </header>
 
-      <button
-        type="button"
-        onClick={onOpen}
-        aria-label={`Open things to do for ${vehicle.registration}`}
-        className="flex flex-col gap-3 px-4 pb-4 pt-3 text-left transition-colors hover:bg-(--bg-surface-hover)"
+      {/* The whole middle opens the car's Things to do with a pointer, as a
+          board card does; the car's name is the keyboard's way in. */}
+      <div
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest("a,button")) return;
+          onOpen();
+        }}
+        className="flex cursor-pointer flex-col gap-3 px-4 pb-4 pt-3 transition-colors hover:bg-(--bg-surface-hover)"
       >
         <span className="flex min-w-0 items-start gap-1.5">
           {place ? (
@@ -85,7 +94,10 @@ export function PrepCard({
           ) : null}
           <span className="min-w-0 flex-1">
             <span className="block truncate body-md-semibold">
-              {titleCase(`${vehicle.make} ${vehicle.model}`)}
+              <GenaroLink monochrome removeUnderline onClick={onOpen}>
+                {titleCase(`${vehicle.make} ${vehicle.model}`)}
+                <span className="sr-only">, open things to do</span>
+              </GenaroLink>
             </span>
             <span className="block body-sm text-(--text-secondary)">{vehicle.stockId}</span>
           </span>
@@ -99,7 +111,7 @@ export function PrepCard({
             ) : null}
           </span>
         </span>
-      </button>
+      </div>
 
       {status === "ready" ? (
         <p className="mx-4 mb-4 flex items-center gap-1.5 rounded-(--radius-300) bg-(--bg-surface-success) px-2.5 py-2 body-sm text-(--text-success)">

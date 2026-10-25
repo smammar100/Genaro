@@ -10,9 +10,6 @@ import {
   CircleCheck,
   CirclePause,
   Clock,
-  Ellipsis,
-  Pencil,
-  Trash2,
   TriangleAlert,
   Wrench,
 } from "lucide-react";
@@ -30,19 +27,17 @@ import type {
   Vendor,
 } from "@/lib/types";
 import { MAINTENANCE_STATUSES } from "@/lib/constants";
-import { Button, Card, EmptyState, Page } from "@/components/genaro";
-import { QuickBookModal } from "@/components/calendar/quick-book-modal";
-import { RowActionButton } from "@/components/ui/resource-list";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  ActionMenu,
+  Button,
+  Card,
+  EmptyState,
+  Page,
+  useConfirm,
+} from "@/components/genaro";
+import { QuickBookModal } from "@/components/calendar/quick-book-modal";
 import { EditJobDialog } from "@/components/maintenance/edit-job-dialog";
 import { jobStatusLabel } from "@/components/maintenance/job-status";
-import { useConfirm } from "@/components/ui/confirm-dialog";
 import { VehicleImage } from "@/components/shared/vehicle-image";
 import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { KanbanBoard, KanbanSkeleton } from "@/components/kanban/kanban-board";
@@ -288,6 +283,7 @@ export default function MaintenancePage() {
             const assignee = j.assignedTo ? userById.get(j.assignedTo) : undefined;
             const cost = j.actualCost ?? j.estimatedCost;
             const jobHref = `/maintenance/jobs/${j.id}`;
+            const jobLabel = v ? formatRegPlate(v.registration) : `#${shortId(j.id)}`;
             return (
               <KanbanCard
                 onOpen={() => router.push(jobHref)}
@@ -359,38 +355,37 @@ export default function MaintenancePage() {
                   ) : undefined
                 }
                 menu={
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <RowActionButton aria-label="Job actions" className="size-6">
-                        <Ellipsis />
-                      </RowActionButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {j.status !== "completed" ? (
-                        <DropdownMenuItem onClick={() => setBookJob(j)}>
-                          <CalendarPlus className="mr-2 size-3.5" />
-                          Book appointment
-                        </DropdownMenuItem>
-                      ) : null}
-                      <DropdownMenuItem onClick={() => setEditJob(j)}>
-                        <Pencil className="mr-2 size-3.5" />
-                        Edit job
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-(--text-critical)"
-                        onClick={() =>
-                          void handleDelete(
-                            j.id,
-                            v ? formatRegPlate(v.registration) : `#${shortId(j.id)}`,
-                          )
-                        }
-                      >
-                        <Trash2 className="mr-2 size-3.5" />
-                        Delete job
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <ActionMenu
+                    accessibilityLabel={`Job actions for ${jobLabel}`}
+                    size="micro"
+                    preferredAlignment="right"
+                    sections={[
+                      {
+                        items: [
+                          ...(j.status !== "completed"
+                            ? [
+                                {
+                                  content: "Book appointment",
+                                  icon: <CalendarPlus />,
+                                  onAction: () => setBookJob(j),
+                                },
+                              ]
+                            : []),
+                          { content: "Edit job", icon: "EditMinor", onAction: () => setEditJob(j) },
+                        ],
+                      },
+                      {
+                        items: [
+                          {
+                            content: "Delete job",
+                            icon: "DeleteMinor",
+                            destructive: true,
+                            onAction: () => void handleDelete(j.id, jobLabel),
+                          },
+                        ],
+                      },
+                    ]}
+                  />
                 }
               />
             );

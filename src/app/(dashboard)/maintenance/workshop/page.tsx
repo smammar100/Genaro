@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Wrench,
@@ -20,7 +20,6 @@ import { workshopService } from "@/lib/services/workshop-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import { authService } from "@/lib/services/auth-service";
-import { useConfirm } from "@/components/ui/confirm-dialog";
 import type {
   MaintenanceStatus,
   User,
@@ -31,28 +30,22 @@ import {
   Button,
   Card,
   EmptyState,
+  FormSelect,
+  FormTextField,
+  Labelled,
+  Link as GenaroLink,
+  Modal,
+  OptionList,
   Page,
   Select,
+  SkeletonBox,
+  Tooltip,
+  useConfirm,
 } from "@/components/genaro";
-import { ResourceList, ResourceListItem } from "@/components/ui/resource-list";
-import { Skeleton } from "@/components/ui/skeleton";
+// TODO(genaro): Genaro has no date or time field, so date and time inputs
+// keep the app's own picker until it has one.
+// eslint-disable-next-line no-restricted-imports
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select as UiSelect,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { RegPlate } from "@/components/shared/reg-plate";
 import {
   JobStatusBadge,
@@ -62,18 +55,18 @@ import { cn, formatCurrency, formatDate, formatTime12 } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 
 const schema = z.object({
-  customerName: z.string().min(1),
+  customerName: z.string().min(1, "Enter the customer’s name"),
   customerPhone: z
     .string()
     .min(1, "Phone number is required")
     .refine(isValidUkPhone, { message: "Enter a valid UK phone number (e.g. 07712 345678 or 020 7946 0958)" }),
-  vehicleReg: z.string().min(2),
-  vehicleDescription: z.string().min(1),
-  description: z.string().min(1),
+  vehicleReg: z.string().min(2, "Enter the vehicle reg"),
+  vehicleDescription: z.string().min(1, "Describe the vehicle"),
+  description: z.string().min(1, "Describe the job"),
   assignedTo: z.string(),
   estimatedCost: z.coerce.number().optional(),
-  scheduledDate: z.string().min(1),
-  scheduledTime: z.string().min(1),
+  scheduledDate: z.string().min(1, "Choose a date"),
+  scheduledTime: z.string().min(1, "Choose a time"),
   notes: z.string().optional(),
 });
 type FormInput = z.input<typeof schema>;
@@ -87,17 +80,9 @@ const STATUS_DOT: Record<MaintenanceStatus, string> = {
 };
 
 export default function WorkshopPage() {
-  const baseId = useId();
-  const nameId = `${baseId}-name`;
-  const phoneId = `${baseId}-phone`;
-  const regId = `${baseId}-reg`;
-  const descVehicleId = `${baseId}-desc-vehicle`;
-  const jobDescId = `${baseId}-job-desc`;
-  const assignedId = `${baseId}-assigned`;
-  const costId = `${baseId}-cost`;
-  const dateId = `${baseId}-date`;
-  const timeId = `${baseId}-time`;
-  const notesId = `${baseId}-notes`;
+  const formRef = useRef<HTMLFormElement>(null);
+  const dateId = useId();
+  const timeId = useId();
   const router = useRouter();
   const pathname = usePathname();
   const { confirm, confirmDialog } = useConfirm();
@@ -142,6 +127,12 @@ export default function WorkshopPage() {
     setEditingId(null);
     form.reset(emptyDefaults());
     setOpen(true);
+  }
+
+  function closeForm() {
+    setOpen(false);
+    setEditingId(null);
+    form.reset(emptyDefaults());
   }
 
   function openEdit(j: WorkshopJob) {
@@ -242,118 +233,114 @@ export default function WorkshopPage() {
         isEmpty ? undefined : { content: "Add workshop job", onAction: openAdd }
       }
     >
-      <Dialog
+      <Modal
         open={open}
-        onOpenChange={(o) => {
-          setOpen(o);
-          if (!o) {
-            setEditingId(null);
-            form.reset(emptyDefaults());
-          }
+        onClose={closeForm}
+        title={editingId ? "Edit workshop job" : "Add workshop job"}
+        primaryAction={{
+          content: editingId ? "Save changes" : "Save job",
+          loading: form.formState.isSubmitting,
+          onAction: () => formRef.current?.requestSubmit(),
         }}
+        secondaryActions={[{ content: "Cancel", onAction: closeForm }]}
       >
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
-              {editingId ? "Edit workshop job" : "Add workshop job"}
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="grid gap-4 px-6 pb-2 sm:grid-cols-2">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={nameId}>Customer name</Label>
-                <Input id={nameId} {...form.register("customerName")} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={phoneId}>Customer phone</Label>
-                <Input id={phoneId} {...form.register("customerPhone")} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={regId}>Vehicle reg</Label>
-                <Input
-                  id={regId}
-                  {...form.register("vehicleReg")}
-                  className="font-code"
-                  placeholder="AB12 CDE"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={descVehicleId}>Vehicle description</Label>
-                <Input
-                  id={descVehicleId}
-                  {...form.register("vehicleDescription")}
-                  placeholder="Vauxhall Corsa 2014"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5 sm:col-span-2">
-                <Label htmlFor={jobDescId}>Job description</Label>
-                <Input
-                  id={jobDescId}
-                  {...form.register("description")}
-                  placeholder="AC re-gas + cabin filter"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={assignedId}>Assigned to</Label>
-                <UiSelect
-                  items={{
-                    none: "Unassigned",
-                    ...Object.fromEntries(users.map((u) => [u.id, u.name])),
-                  }}
-                  value={form.watch("assignedTo")}
-                  onValueChange={(v) => form.setValue("assignedTo", v)}
-                >
-                  <SelectTrigger id={assignedId}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Unassigned</SelectItem>
-                    {users.map((u) => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </UiSelect>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={costId}>Estimated cost</Label>
-                <Input
-                  id={costId}
-                  type="number"
-                  step="0.01"
-                  {...form.register("estimatedCost")}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={dateId}>Date</Label>
-                <Input id={dateId} type="date" {...form.register("scheduledDate")} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={timeId}>Time</Label>
-                <Input id={timeId} type="time" {...form.register("scheduledTime")} />
-              </div>
-              <div className="flex flex-col gap-1.5 sm:col-span-2">
-                <Label htmlFor={notesId}>Notes</Label>
-                <Textarea id={notesId} {...form.register("notes")} className="min-h-16" />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button onClick={() => setOpen(false)}>Cancel</Button>
-              <Button
-                submit
-                variant="primary"
-                loading={form.formState.isSubmitting}
-              >
-                {editingId ? "Save changes" : "Save job"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+        <form
+          ref={formRef}
+          noValidate
+          onSubmit={form.handleSubmit(onSubmit)}
+          // Save sits in the modal's footer, outside the form, so Enter in a
+          // field submits here, as it did with a submit button in the form.
+          onKeyDown={(e) => {
+            if (
+              e.key === "Enter" &&
+              !e.defaultPrevented &&
+              e.target instanceof HTMLInputElement
+            ) {
+              e.preventDefault();
+              e.currentTarget.requestSubmit();
+            }
+          }}
+          className="grid gap-4 sm:grid-cols-2"
+        >
+          <FormTextField
+            control={form.control}
+            name="customerName"
+            label="Customer name"
+          />
+          <FormTextField
+            control={form.control}
+            name="customerPhone"
+            label="Customer phone"
+            type="tel"
+          />
+          <div className="font-code">
+            <FormTextField
+              control={form.control}
+              name="vehicleReg"
+              label="Vehicle reg"
+              placeholder="AB12 CDE"
+            />
+          </div>
+          <FormTextField
+            control={form.control}
+            name="vehicleDescription"
+            label="Vehicle description"
+            placeholder="Vauxhall Corsa 2014"
+          />
+          <div className="sm:col-span-2">
+            <FormTextField
+              control={form.control}
+              name="description"
+              label="Job description"
+              placeholder="AC re-gas + cabin filter"
+            />
+          </div>
+          <FormSelect
+            control={form.control}
+            name="assignedTo"
+            label="Assigned to"
+            options={[
+              { label: "Unassigned", value: "none" },
+              ...users.map((u) => ({ label: u.name, value: u.id })),
+            ]}
+          />
+          <FormTextField
+            control={form.control}
+            name="estimatedCost"
+            label="Estimated cost"
+            type="number"
+            prefix="£"
+            step={0.01}
+            inputMode="decimal"
+            placeholder="0.00"
+          />
+          <Labelled
+            id={dateId}
+            label="Date"
+            error={form.formState.errors.scheduledDate?.message}
+          >
+            <Input id={dateId} type="date" {...form.register("scheduledDate")} />
+          </Labelled>
+          <Labelled
+            id={timeId}
+            label="Time"
+            error={form.formState.errors.scheduledTime?.message}
+          >
+            <Input id={timeId} type="time" {...form.register("scheduledTime")} />
+          </Labelled>
+          <div className="sm:col-span-2">
+            <FormTextField
+              control={form.control}
+              name="notes"
+              label="Notes"
+              multiline={2}
+            />
+          </div>
+        </form>
+      </Modal>
 
       {!jobs ? (
-        <Skeleton className="h-64" />
+        <SkeletonBox height={256} />
       ) : isEmpty ? (
         <Card padding="0">
           <EmptyState
@@ -371,33 +358,32 @@ export default function WorkshopPage() {
           return (
             <div className="grid items-start gap-4 lg:grid-cols-[300px_1fr]">
               {/* Job list */}
-              <Card padding="0" className="p-2">
-                <ResourceList aria-label="Workshop jobs">
-                  {jobs.map((j) => {
-                    const isSel = selected?.id === j.id;
-                    return (
-                      <ResourceListItem
-                        key={j.id}
-                        aria-current={isSel ? "true" : undefined}
-                        className={cn(isSel && "bg-(--bg-surface-selected)")}
-                        onClick={() => setSelectedId(j.id)}
-                        icon={<UserIcon />}
-                        title={j.customerName}
-                        description={`${j.vehicleReg} · ${formatTime12(j.scheduledTime)}`}
-                        trailing={
-                          <span
-                            aria-label={jobStatusLabel(j.status)}
-                            role="img"
-                            className={cn(
-                              "size-2 shrink-0 rounded-full",
-                              STATUS_DOT[j.status],
-                            )}
-                          />
-                        }
-                      />
-                    );
-                  })}
-                </ResourceList>
+              <Card padding="0">
+                <OptionList
+                  options={jobs.map((j) => ({
+                    value: j.id,
+                    label: (
+                      <span className="flex min-w-0 items-center gap-3 text-left">
+                        <span
+                          aria-label={jobStatusLabel(j.status)}
+                          role="img"
+                          className={cn(
+                            "size-2 shrink-0 rounded-(--radius-full)",
+                            STATUS_DOT[j.status],
+                          )}
+                        />
+                        <span className="flex min-w-0 flex-col">
+                          <span className="truncate font-semibold">{j.customerName}</span>
+                          <span className="body-sm truncate text-(--text-secondary)">
+                            {`${j.vehicleReg} · ${formatTime12(j.scheduledTime)}`}
+                          </span>
+                        </span>
+                      </span>
+                    ),
+                  }))}
+                  selected={selected ? [selected.id] : []}
+                  onChange={([id]) => setSelectedId(id)}
+                />
               </Card>
 
               {/* Booking detail */}
@@ -445,19 +431,19 @@ export default function WorkshopPage() {
                       <span className="inline-flex flex-wrap items-center gap-2">
                         {/* A plate-shaped link; a Genaro Button would wrap the
                             plate in its own chrome. */}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            void openVehicleFromReg(selected.vehicleReg)
-                          }
-                          className="rounded-(--radius-100) transition-opacity hover:opacity-80"
-                          title="Open vehicle details"
-                        >
-                          <RegPlate
-                            registration={selected.vehicleReg}
-                            size="sm"
-                          />
-                        </button>
+                        <Tooltip content="Open vehicle details">
+                          <GenaroLink
+                            removeUnderline
+                            onClick={() =>
+                              void openVehicleFromReg(selected.vehicleReg)
+                            }
+                          >
+                            <RegPlate
+                              registration={selected.vehicleReg}
+                              size="sm"
+                            />
+                          </GenaroLink>
+                        </Tooltip>
                         <span className="text-(--text-secondary)">
                           {selected.vehicleDescription}
                         </span>

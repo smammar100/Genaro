@@ -1,15 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import type { PrepCar } from "@/lib/services/prep-service";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet } from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { TodoTab } from "@/components/vehicle-detail/todo-tab";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";
@@ -33,36 +27,45 @@ export function PrepTodoSheet({
   onChanged: () => void;
 }) {
   const pathname = usePathname();
+  // Keep the last car on screen while the sheet slides out.
+  const [shown, setShown] = useState(car);
+  if (car && car !== shown) setShown(car);
+
   return (
-    <Sheet open={car !== null} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
-        {car ? (
-          <>
-            <SheetHeader>
-              <SheetTitle className="flex flex-wrap items-center gap-2">
-                <RegPlate registration={car.vehicle.registration} size="sm" />
-                <span>{titleCase(`${car.vehicle.make} ${car.vehicle.model}`)}</span>
-              </SheetTitle>
-              <SheetDescription>
-                <Link
-                  href={vehicleDetailHref(car.vehicle.id, pathname)}
-                  className="text-(--text-link) underline underline-offset-2"
-                >
-                  Open the full vehicle record
-                </Link>
-              </SheetDescription>
-            </SheetHeader>
-            <div className="px-4 pb-6">
-              <TodoTab
-                vehicleId={car.vehicle.id}
-                onExportPdf={() => onExport(car)}
-                exporting={exporting}
-                onChanged={onChanged}
-              />
-            </div>
-          </>
-        ) : null}
-      </SheetContent>
+    <Sheet
+      open={car !== null}
+      onClose={onClose}
+      size="large"
+      title={
+        shown ? (
+          <span className="flex flex-wrap items-center gap-2">
+            <RegPlate registration={shown.vehicle.registration} size="sm" />
+            <span>{titleCase(`${shown.vehicle.make} ${shown.vehicle.model}`)}</span>
+          </span>
+        ) : (
+          "Things to do"
+        )
+      }
+      headerActions={
+        shown
+          ? [
+              {
+                content: "Open vehicle",
+                url: vehicleDetailHref(shown.vehicle.id, pathname),
+              },
+            ]
+          : undefined
+      }
+    >
+      {shown ? (
+        <TodoTab
+          key={shown.vehicle.id}
+          vehicleId={shown.vehicle.id}
+          onExportPdf={() => onExport(shown)}
+          exporting={exporting}
+          onChanged={onChanged}
+        />
+      ) : null}
     </Sheet>
   );
 }

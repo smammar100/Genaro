@@ -7,6 +7,9 @@ import {
   Select,
   TextField,
 } from "@/components/genaro";
+// TODO(genaro): Genaro has no date or time field, so date and time inputs
+// keep the app's own picker until it has one.
+// eslint-disable-next-line no-restricted-imports
 import { Input } from "@/components/ui/input";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { useAuth } from "@/contexts/auth-context";
@@ -172,8 +175,6 @@ export function EditJobDialog({
             value={vendorId}
             onChange={setVendorId}
           />
-          {/* Genaro TextField has no date type; the app's date input keeps
-              the native picker. */}
           <Labelled id={dueDateId} label="Due date">
             <Input
               id={dueDateId}

@@ -1,15 +1,7 @@
 "use client";
 
 import type { User } from "@/lib/types";
-import { Avatar } from "@/components/genaro";
-import {
-  Combobox,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-  ComboboxPopup,
-} from "@/components/ui/combobox";
+import { Avatar, Combobox } from "@/components/genaro";
 
 /**
  * Who is prepping a car. A type-ahead rather than a 20-name scroll — the team
@@ -29,32 +21,18 @@ export function PrepAssignee({
 }) {
   return (
     <div className="flex min-w-0 flex-1 items-center gap-1.5">
-      <Combobox
-        items={users}
-        value={assignee}
-        onValueChange={(u: User | null) => onAssign(u?.id ?? null)}
-        itemToStringLabel={(u: User) => u.name}
-        // Without this the top match isn't highlighted and Enter does nothing.
-        autoHighlight
-      >
-        <ComboboxInput
-          size="sm"
-          showClear={assignee !== null}
+      <div className="min-w-0 flex-1">
+        <Combobox
+          label={`Assign ${registration}`}
+          labelHidden
           placeholder="Unassigned"
-          aria-label={`Assign ${registration}`}
-          className="w-full flex-1"
+          clearable
+          options={users.map((u) => ({ value: u.id, label: u.name }))}
+          value={assignee?.id ?? ""}
+          onChange={(id) => onAssign(id || null)}
+          emptyState="No one by that name."
         />
-        <ComboboxPopup>
-          <ComboboxEmpty>No one by that name.</ComboboxEmpty>
-          <ComboboxList>
-            {(u: User) => (
-              <ComboboxItem key={u.id} value={u}>
-                {u.name}
-              </ComboboxItem>
-            )}
-          </ComboboxList>
-        </ComboboxPopup>
-      </Combobox>
+      </div>
       {assignee ? (
         <span title={assignee.name} className="inline-flex shrink-0">
           <Avatar size="sm" name={assignee.name} />
