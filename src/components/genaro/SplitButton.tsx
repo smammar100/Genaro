@@ -55,7 +55,7 @@ export function SplitButton({ children, onAction, actions, variant, disabled, cl
         />
       </div>
       {open && actions ? (
-        <div className="p-popover__panel p-split__menu">
+        <div className="p-popover__panel p-popover__panel--right p-split__menu">
           <ActionList items={actions} onActionAnyItem={() => setOpen(false)} />
         </div>
       ) : null}

@@ -308,7 +308,8 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 .p-split__row { display:inline-flex; gap:1px; }
 .p-split__row > .p-btn:first-child { border-top-right-radius:0; border-bottom-right-radius:0; }
 .p-split__row > .p-btn:last-child { border-top-left-radius:0; border-bottom-left-radius:0; }
-.p-split__menu { top:calc(100% + var(--space-100)); left:auto; right:0; }
+/* The menu hangs from the chevron: right edges aligned (p-popover__panel--right), as wide as its longest item. */
+.p-split__menu { top:calc(100% + var(--space-100)); width:max-content; }
 
 /* PageActions */
 .p-page-actions { display:flex; align-items:center; justify-content:space-between; gap:var(--space-200); padding:var(--space-400) 0; border-top:var(--border-width-025) solid var(--border); }
