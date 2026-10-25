@@ -2,7 +2,7 @@
 
 import type * as React from "react";
 import { Sparkles } from "lucide-react";
-import { Badge, InlineError, Select, type SelectProps } from "@/components/polaris";
+import { Badge, InlineError, Select, type SelectProps } from "@/components/genaro";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
@@ -36,8 +36,8 @@ function FromDvla() {
 /**
  * Label + registered input + the (typo-only) validation message. Inputs stay
  * the app's RHF-registered `Input` (refs, onBlur-driven validation, suggestion
- * lists, date pickers); the label/help/error spacing mirrors Polaris' Labelled so
- * they line up with the Polaris Selects in the same grid. The "From DVLA"
+ * lists, date pickers); the label/help/error spacing mirrors Genaro' Labelled so
+ * they line up with the Genaro Selects in the same grid. The "From DVLA"
  * badge sits beside the <label>, not in it, so the field's accessible name is
  * unchanged.
  */
@@ -70,7 +70,7 @@ export function Field({
 }
 
 /**
- * A Polaris Select that can carry the "From DVLA" badge. Select's label is
+ * A Genaro Select that can carry the "From DVLA" badge. Select's label is
  * plain text, so when the badge shows, the visible label is drawn here and
  * the Select keeps its own (visually hidden) label as the accessible name.
  */

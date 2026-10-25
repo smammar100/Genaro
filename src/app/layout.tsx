@@ -5,7 +5,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ThemeProvider } from "@/components/theme-provider";
-import { PolarisLinkProvider } from "@/components/polaris-link-provider";
+import { GenaroLinkProvider } from "@/components/genaro-link-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { VercelInsights } from "@/components/vercel-insights";
 import { getInitialAuth } from "@/lib/auth-initial";
@@ -16,7 +16,7 @@ import { cookies } from "next/headers";
 
 // Type is Geist, and Geist Mono wherever a mono face is used (call
 // 2026-10-25). Both are self-hosted by next/font as --font-geist-sans and
-// --font-geist-mono; the Polaris tokens make them --font-sans / --font-mono.
+// --font-geist-mono; the Genaro tokens make them --font-sans / --font-mono.
 const geistSans = Geist({
   subsets: ["latin"],
   variable: "--font-geist-sans",
@@ -99,7 +99,7 @@ export default async function RootLayout({
         )}
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        {/* Light or dark, both Polaris's own token sets (tokens.css declares
+        {/* Light or dark, both Genaro's own token sets (tokens.css declares
             dark under `.dark`); the top bar's switch sets it and next-themes
             remembers it. */}
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
@@ -109,7 +109,7 @@ export default async function RootLayout({
               Base UI's tooltip and framer-motion on every auth page's
               critical path. */}
           <SidebarPreference defaultOpen={sidebarOpen}>
-          <PolarisLinkProvider>
+          <GenaroLinkProvider>
           <Suspense
             fallback={
               <AuthProvider initialUser={null} initialCompany={null}>
@@ -119,7 +119,7 @@ export default async function RootLayout({
           >
             <AuthBoundary authPromise={authPromise}>{children}</AuthBoundary>
           </Suspense>
-          </PolarisLinkProvider>
+          </GenaroLinkProvider>
           </SidebarPreference>
           <Toaster />
           <TitleTooltips />

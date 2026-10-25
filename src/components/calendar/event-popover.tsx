@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, type ReactNode } from 
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { CalendarDays, Clock, Mail, Phone, StickyNote, X, type LucideIcon } from "lucide-react";
-import { Badge, Button, Card } from "@/components/polaris";
+import { Badge, Button, Card } from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { dayLabel, fromISO, type CalEvent } from "@/lib/calendar-model";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";

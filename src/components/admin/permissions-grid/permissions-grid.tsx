@@ -3,7 +3,7 @@
 import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { Card, EmptyState, TextField } from "@/components/polaris";
+import { Card, EmptyState, TextField } from "@/components/genaro";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RemoveMemberDialog } from "@/components/admin/remove-member-dialog";
 import { EditRolesDialog } from "@/components/admin/edit-roles-dialog";

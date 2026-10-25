@@ -10,7 +10,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Button, SkeletonBodyText } from "@/components/polaris";
+import { Button, SkeletonBodyText } from "@/components/genaro";
 import {
   VEHICLE_LOCATION_LABELS,
   type CurrentLocation,

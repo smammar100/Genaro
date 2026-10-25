@@ -121,7 +121,7 @@ Auth context (`src/contexts/auth-context.tsx`) reads the URL + publishable key o
 | `src/hooks/` | `use-permissions`, `use-customer-search`, `use-postcode-lookup`, `use-realtime-table`, `use-mobile` |
 | `src/contexts/` | `auth-context`, `sidebar-state-context` |
 | `src/proxy.ts` | The proxy (formerly middleware) — Supabase session refresh on every request |
-| `scripts/` | Tooling: Polaris theme build, master-sheet import, demo-vehicle seed, lint ratchet |
+| `scripts/` | Tooling: Genaro theme build, master-sheet import, demo-vehicle seed, lint ratchet |
 | `docs/` | This documentation tree |
 
 ## Service-layer contract

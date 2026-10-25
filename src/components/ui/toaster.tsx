@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Toasts — the Polaris Toast (`p-toast`): bg-inverse at the bottom centre,
+ * Toasts — the Genaro Toast (`p-toast`): bg-inverse at the bottom centre,
  * 13px inverse text, a close button; errors on the critical fill. Backed by a tiny
  * store we own end to end; src/lib/toast.ts is the public `toast.*` API.
  */

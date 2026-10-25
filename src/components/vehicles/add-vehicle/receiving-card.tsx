@@ -2,7 +2,7 @@
 
 import { Controller } from "react-hook-form";
 import { Search } from "lucide-react";
-import { Card, Checkbox, Select } from "@/components/polaris";
+import { Card, Checkbox, Select } from "@/components/genaro";
 import {
   Combobox,
   ComboboxEmpty,

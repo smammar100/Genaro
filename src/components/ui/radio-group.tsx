@@ -39,7 +39,7 @@ function Radio({
     <RadioPrimitive.Root
       className={cn(
         hitTarget,
-        // Polaris RadioButton (.p-radio__ring): 16px ring in input tokens, brand
+        // Genaro RadioButton (.p-radio__ring): 16px ring in input tokens, brand
         // fill when checked, 2px focus outline.
         "relative inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-(--input-border) bg-(--input-bg-surface) outline-none transition-[border-color,background-color] hover:border-(--input-border-hover) hover:bg-(--input-bg-surface-hover) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--border-focus) data-checked:border-transparent data-checked:bg-(--bg-fill-brand-selected) aria-invalid:border-(--border-critical-secondary) aria-invalid:bg-(--bg-surface-critical) data-disabled:cursor-not-allowed data-disabled:border-transparent data-disabled:bg-(--bg-fill-brand-disabled)",
         className,

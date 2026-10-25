@@ -8,7 +8,7 @@ import {
   Labelled,
   Select,
   TextField,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { Input } from "@/components/ui/input";
 // Stays on the app Dialog: it hosts the VehiclePicker combobox popup and the
 // nested "Add new vendor" dialog, which both need the app overlay stack.

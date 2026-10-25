@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { Icon } from "@/components/polaris";
+import { Icon } from "@/components/genaro";
 
 /** How long the pointer rests on something before its tooltip shows. */
 const DELAY = 350;
@@ -25,10 +25,10 @@ function placeFor(el: Element, text: string): Tip {
 }
 
 /**
- * Every `title` in the app shows as a Polaris tooltip, never the browser's
+ * Every `title` in the app shows as a Genaro tooltip, never the browser's
  * own yellow box. While the pointer (or keyboard focus) is on an element, its
  * title moves to `data-p-title` and the attribute is left empty — an empty
- * title also stops the element inheriting an ancestor's — and a Polaris
+ * title also stops the element inheriting an ancestor's — and a Genaro
  * tooltip appears above it (below it near the top of the window). The text
  * stays with assistive tech as `aria-description` (or `aria-label` when it
  * was the element's only name). All of it goes back when the pointer or focus
@@ -144,7 +144,7 @@ export function TitleTooltips() {
 }
 
 /**
- * The browser's own "Please fill out this field" bubble, as a Polaris one:
+ * The browser's own "Please fill out this field" bubble, as a Genaro one:
  * when a form's built-in checks stop a submit, the first field at fault gets
  * focus and its message shows above it until you type, click or scroll.
  */

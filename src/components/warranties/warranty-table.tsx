@@ -1,7 +1,7 @@
 "use client";
 
 import type * as React from "react";
-import { Badge, Button, IndexTable, Link, Tooltip } from "@/components/polaris";
+import { Badge, Button, IndexTable, Link, Tooltip } from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { StatusPill } from "./status-pill";
 import { ProviderBadge } from "./provider-badge";
@@ -51,7 +51,7 @@ function isExpiring(row: WarrantyRow): boolean {
 
 /**
  * Coverage progress: success fill while healthy, caution when expiring,
- * disabled grey once expired. Polaris ProgressBar has no caution tone, so
+ * disabled grey once expired. Genaro ProgressBar has no caution tone, so
  * this is the same 8px track drawn from the fill tokens.
  */
 function CoverageBar({ row }: { row: WarrantyRow }) {

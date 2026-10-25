@@ -19,7 +19,7 @@ import {
 import { vehiclePhotoService } from "@/lib/services/vehicle-photo-service";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { VehicleStatusBadge } from "@/components/shared/status-badge";
-import { ActionList, Button, Card, Popover } from "@/components/polaris";
+import { ActionList, Button, Card, Popover } from "@/components/genaro";
 import { VEHICLE_STATUS_CHOICES } from "@/lib/constants";
 import { variantLabel } from "@/lib/vehicle-variant";
 import { formatDate, titleCase } from "@/lib/utils";
@@ -185,7 +185,7 @@ function useHeroUrl(vehicle: Vehicle): string | null {
 
 /**
  * The status badge beside the page title, which is also the control that
- * changes it: a Popover of every status (Polaris Popover + ActionList).
+ * changes it: a Popover of every status (Genaro Popover + ActionList).
  */
 export function VehicleStatusMenu({
   vehicle,

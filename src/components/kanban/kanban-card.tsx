@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { Avatar } from "@/components/polaris";
+import { Avatar } from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { cn } from "@/lib/utils";
 import { StageIcon, type KanbanColumn } from "./stage-icon";
@@ -103,6 +103,7 @@ export const KanbanCardContext = React.createContext<{
  * wrap (a car's name is never cut), the title clamps to two lines with the
  * full text on hover, and the footer chips wrap, the owner's name ellipsing
  * before the amount does.
+ * @import import { KanbanCard } from "@/components/kanban/kanban-card";
  */
 export function KanbanCard({
   thumbnail,
@@ -243,6 +244,7 @@ export function KanbanCard({
 /**
  * The card's reg plate, linking to the vehicle when `href` is given. It never
  * pushes the card wider: an unusually long registration ellipses.
+ * @import import { KanbanPlate } from "@/components/kanban/kanban-card";
  */
 export function KanbanPlate({
   registration,

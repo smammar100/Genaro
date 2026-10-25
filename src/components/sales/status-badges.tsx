@@ -1,4 +1,4 @@
-import { Badge, type BadgeProgress, type BadgeTone } from "@/components/polaris";
+import { Badge, type BadgeProgress, type BadgeTone } from "@/components/genaro";
 import { salesStageLabel } from "@/lib/constants";
 import type { LeadStatus, StageBehaviour } from "@/lib/types";
 
@@ -27,7 +27,7 @@ const BEHAVIOUR: Record<StageBehaviour, BadgeSpec> = {
   lost: { tone: "critical" },
 };
 
-/** A sales deal's pipeline stage as a Polaris Badge. */
+/** A sales deal's pipeline stage as a Genaro Badge. */
 export function DealStageBadge({
   stage,
   label,
@@ -61,7 +61,7 @@ const LEAD_STATUS: Record<LeadStatus, BadgeSpec> = {
   lost: { tone: "critical" },
 };
 
-/** A lead's follow-up status as a Polaris Badge. */
+/** A lead's follow-up status as a Genaro Badge. */
 export function LeadStatusBadge({ status }: { status: LeadStatus }) {
   const spec = LEAD_STATUS[status] ?? {};
   return (

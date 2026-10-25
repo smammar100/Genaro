@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { appointmentService } from "@/lib/services/appointment-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import type { Appointment, Vehicle } from "@/lib/types";
-import { Button, Card, SkeletonBodyText } from "@/components/polaris";
+import { Button, Card, SkeletonBodyText } from "@/components/genaro";
 
 function fmtTime(t: string): string {
   const [h, m] = t.split(":");

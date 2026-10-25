@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Banner, Modal } from "@/components/polaris";
+import { Banner, Modal } from "@/components/genaro";
 import type { User } from "@/lib/types";
 import { toast } from "@/lib/toast";
 

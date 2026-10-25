@@ -12,8 +12,8 @@ import type { LeadChannel } from "@/lib/types";
  * both shapes are accepted so callers don't always need the full LeadChannel.
  *
  * The dot colour is the company's own per-channel `colour` (user data), so it
- * stays an inline style; everything else is Polaris tokens. The surround
- * mirrors a neutral Polaris Tag.
+ * stays an inline style; everything else is Genaro tokens. The surround
+ * mirrors a neutral Genaro Tag.
  */
 type Props =
   | {

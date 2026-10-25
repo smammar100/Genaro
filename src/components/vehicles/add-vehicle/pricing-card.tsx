@@ -1,6 +1,6 @@
 "use client";
 
-import { Card } from "@/components/polaris";
+import { Card } from "@/components/genaro";
 import { Input } from "@/components/ui/input";
 import { Field } from "./fields";
 import type { ArrivalFormApi, FieldIds } from "./schema";

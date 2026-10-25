@@ -11,7 +11,7 @@ import { claimService } from "@/lib/services/claim-service";
 import type { Vehicle, Warranty, WarrantyClaim, WarrantyStatus } from "@/lib/types";
 import { useRealtimeTable } from "@/hooks/use-realtime-table";
 import { effectiveWarrantyStatus } from "@/lib/warranty-status";
-import { EmptyState, Page } from "@/components/polaris";
+import { EmptyState, Page } from "@/components/genaro";
 import { KpiStrip } from "@/components/warranties/kpi-strip";
 import {
   FilterChips,

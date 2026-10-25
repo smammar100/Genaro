@@ -14,7 +14,7 @@ import {
   Select,
   SkeletonBodyText,
   TextField,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import { externalInvoiceService } from "@/lib/services/external-invoice-service";

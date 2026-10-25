@@ -7,7 +7,7 @@ import { z } from "zod";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Badge, Card } from "@/components/polaris";
+import { Badge, Card } from "@/components/genaro";
 import { useAuth } from "@/contexts/auth-context";
 import { enquiryService } from "@/lib/services/enquiry-service";
 import type { Customer, EnquiryType, UUID } from "@/lib/types";

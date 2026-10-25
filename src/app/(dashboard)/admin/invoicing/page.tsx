@@ -21,7 +21,7 @@ import {
   TextField,
   type BadgeProgress,
   type BadgeTone,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import { invoiceService } from "@/lib/services/invoice-service";
@@ -41,7 +41,7 @@ import {
   type SelectFilter,
 } from "@/components/filters/filter-bar";
 // Row actions keep the app Button: the edit action relies on `title` (the
-// permission hint) and `data-testid`, which the Polaris Button doesn't take.
+// permission hint) and `data-testid`, which the Genaro Button doesn't take.
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";

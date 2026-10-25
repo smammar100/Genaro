@@ -7,7 +7,7 @@ import {
   type PrepStatus,
 } from "@/lib/services/prep-service";
 import type { User } from "@/lib/types";
-import { Card, EmptyState } from "@/components/polaris";
+import { Card, EmptyState } from "@/components/genaro";
 import { KanbanEmpty, KanbanFrame, KanbanLane, KanbanSkeleton } from "@/components/kanban/kanban-board";
 import { KanbanCardContext } from "@/components/kanban/kanban-card";
 import type { KanbanColumn } from "@/components/kanban/stage-icon";

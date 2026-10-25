@@ -23,7 +23,7 @@ export function Textarea({
       className={
         cn(
           !unstyled &&
-            // Polaris TextField (.p-field): input tokens, radius-200, a
+            // Genaro TextField (.p-field): input tokens, radius-200, a
             // darker hairline + 2px focus outline while focused. Not
             // `relative` on purpose: callers overlay a leading icon as an
             // absolute sibling, and a positioned control would paint its

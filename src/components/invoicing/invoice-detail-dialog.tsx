@@ -1,6 +1,6 @@
 "use client";
 
-import { DataTable, Modal } from "@/components/polaris";
+import { DataTable, Modal } from "@/components/genaro";
 import {
   companyInvoiceFields,
   downloadBlob,

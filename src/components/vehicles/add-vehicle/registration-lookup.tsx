@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2, Search } from "lucide-react";
-import { Badge, Banner, Button, Card, Link as PolarisLink } from "@/components/polaris";
+import { Badge, Banner, Button, Card, Link as GenaroLink } from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -107,7 +107,7 @@ export function RegistrationLookupCard({
       {dvlaState === "duplicate" && duplicate && duplicateHref && (
         <Banner tone="info">
           This car is already in your stock book as{" "}
-          <PolarisLink url={duplicateHref}>{duplicate.stockId}</PolarisLink>
+          <GenaroLink url={duplicateHref}>{duplicate.stockId}</GenaroLink>
           {duplicate.label ? ` (${duplicate.label})` : ""}.
         </Banner>
       )}

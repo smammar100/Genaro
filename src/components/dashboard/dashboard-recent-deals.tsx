@@ -14,7 +14,7 @@ import {
   Link,
   SkeletonBodyText,
   type BadgeTone,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { VehicleImage } from "@/components/shared/vehicle-image";
 import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { formatCurrency, titleCase } from "@/lib/utils";
@@ -31,7 +31,7 @@ interface DealRow extends SalesDeal {
   date: string;
 }
 
-/** Deal stage → Polaris Badge. Stage is a position in a sequence: early
+/** Deal stage → Genaro Badge. Stage is a position in a sequence: early
  *  contact reads as info, the live negotiation as attention, the paperwork
  *  stages neutral, and only the two end states carry success / critical. */
 const STAGE: Record<SalesStage, { label: string; tone?: BadgeTone }> = {

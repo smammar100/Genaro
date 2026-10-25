@@ -103,7 +103,7 @@ export default function DashboardLayout({
     return null;
   }
 
-  // The Polaris app shell (Frame + TopBar + Navigation, see NextAdminShell);
+  // The Genaro app shell (Frame + TopBar + Navigation, see NextAdminShell);
   // each route renders its <Page> in the Frame's <main>. Notifications (the
   // top bar's bell), tooltips and the motion settings (the sidebar, boards
   // and tour) are dashboard-only, so they mount here, not in the root layout.

@@ -7,10 +7,10 @@ import {
   type FieldPath,
   type FieldValues,
 } from "react-hook-form";
-import { Card, TextField, type TextFieldProps } from "@/components/polaris";
+import { Card, TextField, type TextFieldProps } from "@/components/genaro";
 
 /**
- * The Polaris sign-in layout shared by the auth pages (log in, reset, set
+ * The Genaro sign-in layout shared by the auth pages (log in, reset, set
  * password) and the public join page: one centred Card on the `bg` page
  * ground, the brand mark, a heading-lg title and a body-md subtitle.
  */
@@ -58,7 +58,7 @@ type RhfTextFieldProps<T extends FieldValues> = {
 >;
 
 /**
- * A Polaris TextField bound to react-hook-form through a Controller. The
+ * A Genaro TextField bound to react-hook-form through a Controller. The
  * resolver's message shows as the field's InlineError; a blank message (used
  * to flag a field without words, e.g. a failed sign-in) only marks it invalid.
  *

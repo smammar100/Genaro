@@ -1,7 +1,7 @@
 "use client";
 
 import { Select as SelectPrimitive } from "@base-ui/react/select";
-import { Icon } from "@/components/polaris";
+import { Icon } from "@/components/genaro";
 import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 import {
@@ -100,7 +100,7 @@ function SelectPopup({
   sideOffset = 4,
   align = "start",
   alignOffset = 0,
-  // Opens below the field, as Polaris popovers do — not over it like a
+  // Opens below the field, as Genaro popovers do — not over it like a
   // native menu.
   alignItemWithTrigger = false,
   anchor,
@@ -169,7 +169,7 @@ export function SelectItem({
   return (
     <SelectPrimitive.Item
       className={cn(
-        // Polaris OptionList rows: 13px medium, radius-200, the tick on the
+        // Genaro OptionList rows: 13px medium, radius-200, the tick on the
         // right, the chosen row filled and semibold.
         "flex min-h-8 shrink-0 cursor-default items-center justify-between gap-2 rounded-(--radius-200) p-1.5 text-body text-(--text) outline-none data-disabled:pointer-events-none data-disabled:text-(--text-disabled) data-highlighted:bg-(--bg-surface-secondary-hover) data-selected:bg-(--bg-surface-secondary-selected) data-selected:font-semibold [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,

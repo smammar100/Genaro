@@ -104,7 +104,7 @@ Dynamic detail routes: `/vehicles/[id]/inspection/page.tsx`, `/warranties/[id]/p
 | `checkbox.tsx` | `<Checkbox>` |
 | `calendar.tsx` | `<Calendar>` date picker (uses react-day-picker) |
 | `command.tsx` | `<Command>` palette (uses cmdk) |
-| `sidebar.tsx` | shadcn sidebar primitives (the app nav is the Polaris `Navigation`) |
+| `sidebar.tsx` | shadcn sidebar primitives (the app nav is the Genaro `Navigation`) |
 | `table.tsx` | `<Table>` + `<TableHeader>` etc. |
 | `sonner.tsx` | Toast container mounting sonner |
 | `breadcrumb.tsx` | `<Breadcrumb>` |
@@ -122,9 +122,9 @@ Dynamic detail routes: `/vehicles/[id]/inspection/page.tsx`, `/warranties/[id]/p
 | File | Owns |
 |---|---|
 | `next-admin-shell.tsx` | The dashboard shell: nav from the URL, capabilities and the running tour; used by `app/(dashboard)/layout.tsx` |
-| `admin-shell.tsx` | Polaris `Frame` + `AdminTopBar` + navigation; pads pages that don't render a Polaris `Page` |
-| `admin-top-bar.tsx` | Polaris `TopBar`: company logo (`#tour-brand`), health dot, search → ⌘K palette (`#tour-search`), notifications and account menus (Popover + ActionList) |
-| `admin-navigation.tsx` | Polaris `Navigation` (`#tour-nav`): sections, Settings at the foot |
+| `admin-shell.tsx` | Genaro `Frame` + `AdminTopBar` + navigation; pads pages that don't render a Genaro `Page` |
+| `admin-top-bar.tsx` | Genaro `TopBar`: company logo (`#tour-brand`), health dot, search → ⌘K palette (`#tour-search`), notifications and account menus (Popover + ActionList) |
+| `admin-navigation.tsx` | Genaro `Navigation` (`#tour-nav`): sections, Settings at the foot |
 | `nav.ts` | Pure builders from `SIDEBAR_GROUPS` to Navigation items: capability/MVP filtering, selection, tour anchors |
 | `nav-badges.ts` | Live counts on the Warranties nav items |
 | `sidebar-config.ts` | The canonical nav groups + items + `titleFromPath()` / `activeHrefForPath()` / `navTourId()` |

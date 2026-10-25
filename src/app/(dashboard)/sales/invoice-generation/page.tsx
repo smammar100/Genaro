@@ -51,7 +51,7 @@ import {
   Card,
   Layout,
   Page,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";

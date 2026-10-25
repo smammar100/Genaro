@@ -1,22 +1,22 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { Badge, Card, type BadgeTone } from "@/components/polaris";
+import { Badge, Card, type BadgeTone } from "@/components/genaro";
 import { cn } from "@/lib/utils";
 
 /**
- * Vehicle-detail primitives. Thin wrappers around the Polaris Card and
- * Badge so every tab panel on the vehicle page reads like a Polaris
+ * Vehicle-detail primitives. Thin wrappers around the Genaro Card and
+ * Badge so every tab panel on the vehicle page reads like a Genaro
  * ProductDetail main column: a stack of cards with sentence-case
  * heading-sm titles, plain-button actions and toned status badges.
  *
- * Text sits on the type scale (lib/type-scale.ts) through the Polaris classes:
+ * Text sits on the type scale (lib/type-scale.ts) through the Genaro classes:
  * heading-lg (display) for big figures, heading-sm (subtitle) for titles and
  * figures that need weight, body-md (body) for the rest.
  */
 
 // ============================================================
-// PILL — Polaris Badge with the app's tone names.
+// PILL — Genaro Badge with the app's tone names.
 // ============================================================
 
 type PillTone = "good" | "warn" | "bad" | "info" | "purple" | "neutral";
@@ -52,7 +52,7 @@ export function Pill({ tone = "neutral", dot = false, className, children }: Pil
 }
 
 // ============================================================
-// KPI CARD — Polaris metric card: label, value, optional hint.
+// KPI CARD — Genaro metric card: label, value, optional hint.
 // ============================================================
 
 interface KpiCardProps {
@@ -112,7 +112,7 @@ export function SectionDivider({ label, trailing }: SectionDividerProps) {
 }
 
 // ============================================================
-// PANEL — Polaris Card with an optional header (title / subtitle /
+// PANEL — Genaro Card with an optional header (title / subtitle /
 // trailing action). Centralises the "title + content" layout we
 // repeat in every tab.
 // ============================================================

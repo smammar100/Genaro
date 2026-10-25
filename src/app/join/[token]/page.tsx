@@ -11,7 +11,7 @@ import {
 } from "@/lib/auth/form-resolver";
 import { toast } from "@/lib/toast";
 import { useAutoFocusField } from "@/hooks/use-auto-focus";
-import { Button } from "@/components/polaris";
+import { Button } from "@/components/genaro";
 import { AuthCard, RhfTextField } from "@/app/(auth)/_components/auth-card";
 
 interface FormValues {

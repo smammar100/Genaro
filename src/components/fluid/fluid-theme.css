@@ -1,9 +1,9 @@
 /* Fluid Functionalism's own theme variables (its `tokens` and `surfaces`
-   registry items), pointed at Polaris tokens. The library supplies behaviour,
+   registry items), pointed at Genaro tokens. The library supplies behaviour,
    layout and motion; every colour and shadow here is Shopify's, so its
    components look like the rest of the admin in light and dark. The shadcn
    variables it also reads (foreground, border, accent…) come from
-   polaris/styles/shadcn.css. */
+   genaro/styles/shadcn.css. */
 
 @theme inline {
   --color-hover: var(--hover);
@@ -20,7 +20,7 @@
   --color-surface-7: var(--surface-7);
   --color-surface-8: var(--surface-8);
 
-  /* Their eight-step shadow ladder, straight onto Polaris's bevelled shadows. */
+  /* Their eight-step shadow ladder, straight onto Genaro's bevelled shadows. */
   --shadow-surface-1: var(--shadow-border-inset);
   --shadow-surface-2: var(--shadow-100);
   --shadow-surface-3: var(--shadow-200);
@@ -32,13 +32,13 @@
 }
 
 /* Declared under every theme selector so a subtree themed dark (the nav
-   rail) resolves against its own Polaris tokens. */
+   rail) resolves against its own Genaro tokens. */
 :root,
 [data-theme="light"],
 .light,
 [data-theme="dark"],
 .dark {
-  /* Interaction fills: Polaris's transparent fills, so hover and press read
+  /* Interaction fills: Genaro's transparent fills, so hover and press read
      the same on any surface. */
   --hover: var(--bg-fill-transparent-hover);
   --active: var(--bg-fill-transparent-active);
@@ -46,7 +46,7 @@
   --destructive-light: var(--bg-surface-critical);
   --focus-ring: var(--border-focus);
 
-  /* Eight elevation levels onto Polaris's surfaces: the page, the secondary
+  /* Eight elevation levels onto Genaro's surfaces: the page, the secondary
      surface, then the card surface for everything raised above it. */
   --surface-1: var(--bg);
   --surface-2: var(--bg-surface-secondary);

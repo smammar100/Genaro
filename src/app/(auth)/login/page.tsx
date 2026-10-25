@@ -12,7 +12,7 @@ import {
   syntheticEmail,
   DEFAULT_ORG_SLUG,
 } from "@/lib/auth/username";
-import { Banner, Button, Link } from "@/components/polaris";
+import { Banner, Button, Link } from "@/components/genaro";
 import { AuthCard, RhfTextField } from "../_components/auth-card";
 
 interface FormValues {
@@ -119,7 +119,7 @@ function LoginInner() {
   const handleFormSubmit = form.handleSubmit(onSubmit);
 
   return (
-    // Polaris sign-in: one centred Card on the bg page ground.
+    // Genaro sign-in: one centred Card on the bg page ground.
     <AuthCard title="Log in" subtitle="Continue to Car Capital UK">
       {/* A deactivated account is signed out mid-session, which without
           this reads as "my password stopped working" (GEN-125). Name the

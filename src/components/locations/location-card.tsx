@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { History as HistoryIcon } from "lucide-react";
-import { Button, Card, SkeletonBodyText } from "@/components/polaris";
+import { Button, Card, SkeletonBodyText } from "@/components/genaro";
 import {
   VEHICLE_LOCATION_LABELS,
   type LocationMovement,

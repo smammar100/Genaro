@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Clock, Plus } from "lucide-react";
-import { Badge, Button, ButtonGroup } from "@/components/polaris";
+import { Badge, Button, ButtonGroup } from "@/components/genaro";
 import { fmtHour, type BusinessHours, type Kind, type ViewKey } from "@/lib/calendar-model";
 import { cn } from "@/lib/utils";
 import { KIND_META } from "./event-meta";

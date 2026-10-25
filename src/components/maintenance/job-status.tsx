@@ -1,9 +1,9 @@
-import { Badge, type BadgeProgress, type BadgeTone } from "@/components/polaris";
+import { Badge, type BadgeProgress, type BadgeTone } from "@/components/genaro";
 import { MAINTENANCE_STATUSES } from "@/lib/constants";
 import type { MaintenanceStatus } from "@/lib/types";
 
 /**
- * Polaris tone + progress pip for each maintenance status, so a job reads the
+ * Genaro tone + progress pip for each maintenance status, so a job reads the
  * same on the pipeline, the job page and the edit dialog.
  */
 export const JOB_STATUS_BADGE: Record<

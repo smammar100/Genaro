@@ -1,4 +1,4 @@
-import { Badge, type BadgeProgress, type BadgeTone } from "@/components/polaris";
+import { Badge, type BadgeProgress, type BadgeTone } from "@/components/genaro";
 import type {
   ClaimStatus,
   WarrantyPurchaseStatus,
@@ -6,7 +6,7 @@ import type {
 } from "@/lib/types";
 
 /**
- * Status badge for any warranty- or claim-related status value — a Polaris
+ * Status badge for any warranty- or claim-related status value — a Genaro
  * Badge, so tone and theming come from the design system.
  */
 

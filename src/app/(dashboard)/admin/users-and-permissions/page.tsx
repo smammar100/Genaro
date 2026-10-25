@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ShieldX } from "lucide-react";
-import { Card, EmptyState, Page } from "@/components/polaris";
+import { Card, EmptyState, Page } from "@/components/genaro";
 import { usePermissions } from "@/hooks/use-permissions";
 import { AddStaffDialog } from "@/components/admin/add-staff-dialog";
 import {

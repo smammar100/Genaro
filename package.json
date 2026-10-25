@@ -15,7 +15,9 @@
     "test": "pnpm test:unit",
     "test:unit": "vitest run",
     "test:watch": "vitest",
-    "lighthouse": "npx --yes @lhci/cli@0.14.x autorun"
+    "lighthouse": "npx --yes @lhci/cli@0.14.x autorun",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@base-ui/react": "1.4.1",
@@ -44,6 +46,10 @@
     "zod": "^4.4.1"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "^10.6.3",
+    "@storybook/addon-docs": "^10.6.3",
+    "@storybook/addon-mcp": "^10.6.3",
+    "@storybook/nextjs-vite": "^10.6.3",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -53,9 +59,12 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "eslint-plugin-storybook": "^10.6.3",
     "jsdom": "^29.1.1",
+    "storybook": "^10.6.3",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "vite": "^8.3.5",
     "vitest": "^4.1.9"
   }
 }

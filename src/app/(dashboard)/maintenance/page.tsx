@@ -30,7 +30,7 @@ import type {
   Vendor,
 } from "@/lib/types";
 import { MAINTENANCE_STATUSES } from "@/lib/constants";
-import { Button, Card, EmptyState, Page } from "@/components/polaris";
+import { Button, Card, EmptyState, Page } from "@/components/genaro";
 import { QuickBookModal } from "@/components/calendar/quick-book-modal";
 import { RowActionButton } from "@/components/ui/resource-list";
 import {

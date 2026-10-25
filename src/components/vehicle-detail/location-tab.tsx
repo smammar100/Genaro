@@ -15,7 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge, Button, Card } from "@/components/polaris";
+import { Badge, Button, Card } from "@/components/genaro";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";

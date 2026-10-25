@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Badge, Card } from "@/components/polaris";
+import { Badge, Card } from "@/components/genaro";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { enquiryService } from "@/lib/services/enquiry-service";

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { innermostFirst } from "./layers";
 import type React from "react";
 
-/** Stays open while a Polaris popover inside it takes Escape or a click (see layers.ts). */
+/** Stays open while a Genaro popover inside it takes Escape or a click (see layers.ts). */
 export function AlertDialog({ onOpenChange, ...props }: AlertDialogPrimitive.Root.Props) {
   return <AlertDialogPrimitive.Root {...props} onOpenChange={innermostFirst(onOpenChange)} />;
 }

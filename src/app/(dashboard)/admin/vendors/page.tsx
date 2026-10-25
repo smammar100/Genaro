@@ -30,7 +30,7 @@ import {
   Tabs,
   TextField,
   type BadgeTone,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 
@@ -370,7 +370,7 @@ function GaragesTab({
                 size="sm"
                 label={
                   <Button
-                    variant="monochromePlain"
+                    variant="plain"
                     onClick={() =>
                       setDraft({
                         id: row.id,
@@ -694,7 +694,7 @@ interface KpiTile {
 }
 
 /**
- * Four-tile summary — the Polaris stat-tiles pattern: one flush card, tiles
+ * Four-tile summary — the Genaro stat-tiles pattern: one flush card, tiles
  * split by hairlines, 2 × 2 on narrow screens.
  */
 function KpiStrip({ tiles, loading }: { tiles: KpiTile[]; loading: boolean }) {

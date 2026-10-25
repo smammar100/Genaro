@@ -9,7 +9,7 @@ import {
   ContextualSaveBar,
   Layout,
   Page,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useAuth } from "@/contexts/auth-context";
 import { vehicleService } from "@/lib/services/vehicle-service";
@@ -53,7 +53,7 @@ import { TodosCard, type ArrivalTodo } from "./add-vehicle/todos-card";
 import { ValuationCard } from "./add-vehicle/valuation-card";
 import { VehicleConfirmationCard } from "./add-vehicle/vehicle-confirmation-card";
 
-// v4.1 spec §11.3 — Add Vehicle arrival form, laid out as one Polaris product
+// v4.1 spec §11.3 — Add Vehicle arrival form, laid out as one Genaro product
 // form (Variation A, "lookup first, then one page"): the registration lookup
 // first, then every section's card in the main column, with the valuation
 // and a live cost summary in the sidebar. A
@@ -785,7 +785,7 @@ export function ArrivalForm() {
 
   return (
     <>
-      {/* Polaris' unsaved-changes bar. It sits over the top bar (the Frame is
+      {/* Genaro' unsaved-changes bar. It sits over the top bar (the Frame is
           its containing block), as in Shopify, so showing it never moves the
           page under the cursor. */}
       {unsaved && (

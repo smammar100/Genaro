@@ -37,7 +37,7 @@ import {
   SkeletonBodyText,
   TextField,
   Tooltip,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { StatusPill } from "./status-pill";
 import { ProviderBadge } from "./provider-badge";

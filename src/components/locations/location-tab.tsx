@@ -13,7 +13,7 @@ import {
   TextField,
   type BadgeTone,
   type IndexTableHeading,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import {
   VEHICLE_LOCATION_LABELS,

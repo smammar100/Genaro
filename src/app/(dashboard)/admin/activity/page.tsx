@@ -34,7 +34,7 @@ import type {
   User,
   Vehicle,
 } from "@/lib/types";
-import { Button, Card, EmptyState, Page } from "@/components/polaris";
+import { Button, Card, EmptyState, Page } from "@/components/genaro";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   FilterBar,

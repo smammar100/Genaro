@@ -11,7 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Button, Card, TextField } from "@/components/polaris";
+import { Button, Card, TextField } from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { VehicleImage } from "@/components/shared/vehicle-image";
 import { PHOTOS_ENABLED } from "@/lib/phase-one";

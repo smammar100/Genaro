@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Layout } from "@/components/polaris";
+import { Layout } from "@/components/genaro";
 import { cn } from "@/lib/utils";
 import { scrollParent } from "./scroll";
 import { STEPPER_OFFSET_VAR } from "./section-stepper";

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { AlertTriangle, CheckCircle2, Download } from "lucide-react";
 import type { PrepCar } from "@/lib/services/prep-service";
 import type { User } from "@/lib/types";
-import { Badge, Button, Tooltip, type BadgeTone } from "@/components/polaris";
+import { Badge, Button, Tooltip, type BadgeTone } from "@/components/genaro";
 import { KANBAN_CARD_SURFACE, KanbanCardContext } from "@/components/kanban/kanban-card";
 import { StageIcon } from "@/components/kanban/stage-icon";
 import { RegPlate } from "@/components/shared/reg-plate";

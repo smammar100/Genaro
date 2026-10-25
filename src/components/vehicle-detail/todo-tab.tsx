@@ -9,7 +9,7 @@ import { vendorService } from "@/lib/services/vendor-service";
 import { toast } from "@/lib/toast";
 import { parseNumeric } from "@/lib/field-edit";
 import { useAutoFocus } from "@/hooks/use-auto-focus";
-import { Banner, Button } from "@/components/polaris";
+import { Banner, Button } from "@/components/genaro";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {

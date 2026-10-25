@@ -1,7 +1,7 @@
 "use client";
 
 import type * as React from "react";
-import { Card, SkeletonBodyText, TextField } from "@/components/polaris";
+import { Card, SkeletonBodyText, TextField } from "@/components/genaro";
 
 interface WarrantyListCardProps {
   query: string;

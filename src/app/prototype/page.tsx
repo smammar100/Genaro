@@ -1,4 +1,4 @@
-import { EmptyState, Page } from "@/components/polaris";
+import { EmptyState, Page } from "@/components/genaro";
 
 /**
  * Scratch route for comparing design variations (see

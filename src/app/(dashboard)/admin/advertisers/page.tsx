@@ -13,7 +13,7 @@ import {
   Pagination,
   SkeletonBodyText,
   type BadgeTone,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import type { AdvertiserRecord } from "@/lib/types";
 
 const PAGE_SIZE = 20;

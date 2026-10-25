@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  * DonutChart for a categorical breakdown with a full-width data legend.
  * Colours come from the app's brand --chart-1..5 tokens in a fixed order
  * (never cycled); marks are thin with rounded data-ends and recessive axes;
- * each mark carries a data-tooltip, shown as a Polaris tooltip (TitleTooltips).
+ * each mark carries a data-tooltip, shown as a Genaro tooltip (TitleTooltips).
  */
 
 /*

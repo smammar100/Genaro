@@ -10,7 +10,7 @@ import { appointmentService } from "@/lib/services/appointment-service";
 import { enquiryService } from "@/lib/services/enquiry-service";
 import { customerService } from "@/lib/services/customer-service";
 import { teamService } from "@/lib/services/team-service";
-import { Banner, Button, EmptyState, ProgressBar } from "@/components/polaris";
+import { Banner, Button, EmptyState, ProgressBar } from "@/components/genaro";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,

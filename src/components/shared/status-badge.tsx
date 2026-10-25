@@ -12,8 +12,8 @@ import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 
 /**
- * The status colour names used in lib/constants → Polaris Badge tones.
- * Pink (Reserved, Deposit taken) has no Polaris tone of its own, so it is the
+ * The status colour names used in lib/constants → Genaro Badge tones.
+ * Pink (Reserved, Deposit taken) has no Genaro tone of its own, so it is the
  * strong info badge — distinct from the plain info of Received / New lead.
  */
 type Tone = "info" | "attention" | "warning" | "success" | "magic" | "neutral" | "critical";

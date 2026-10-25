@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Banner, Labelled, Modal } from "@/components/polaris";
+import { Banner, Labelled, Modal } from "@/components/genaro";
 import { VehiclePicker } from "@/components/shared/vehicle-picker";
 import type { Vehicle } from "@/lib/types";
 

@@ -7,7 +7,7 @@ import { listingService } from "@/lib/services/listing-service";
 import { invoiceService } from "@/lib/services/invoice-service";
 import { paidAddonsTotal } from "@/lib/invoice-calc";
 import { carMargin } from "@/lib/car-margin";
-import { Button, Card } from "@/components/polaris";
+import { Button, Card } from "@/components/genaro";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { Field, FieldGrid, Panel, Pill } from "./primitives";
 import { EditableCard, type EditableField } from "./editable-card";

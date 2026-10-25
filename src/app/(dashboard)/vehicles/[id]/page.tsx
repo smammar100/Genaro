@@ -17,7 +17,7 @@ import {
   Page,
   SkeletonBodyText,
   SkeletonThumbnail,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { DaysInStockChip } from "@/components/shared/days-in-stock-chip";
 import {
   NEXT_STEP,
@@ -59,7 +59,7 @@ function resolveBack(from: string | null): { href: string; label: string } {
 }
 
 /**
- * Vehicle detail — the Polaris product-detail pattern for a single piece of
+ * Vehicle detail — the Genaro product-detail pattern for a single piece of
  * stock. `VehicleHeaderCard` is the page's header (the Page has none, so the
  * name isn't repeated): back, the plate with the status menu and
  * days-in-stock chip, the lifecycle's next step as the primary action and
@@ -246,7 +246,7 @@ export default function VehicleDetailPage({
         }
       />
 
-      {/* Polaris product detail: the tab row under the header card, then the
+      {/* Genaro product detail: the tab row under the header card, then the
           active tab's cards across the full width. */}
       <VehicleDetailShell
         vehicle={vehicle}

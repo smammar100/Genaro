@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Banner } from "@/components/polaris";
+import { Banner } from "@/components/genaro";
 import type { Warranty } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 

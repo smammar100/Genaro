@@ -20,7 +20,7 @@ import {
   EmptyState,
   Page,
   SkeletonBodyText,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import {
   DataGridGroupHeaderRow,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Checkbox, Modal } from "@/components/polaris";
+import { Checkbox, Modal } from "@/components/genaro";
 import {
   ROLE_DEFS,
   ROLE_GROUPS,

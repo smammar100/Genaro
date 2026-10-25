@@ -33,7 +33,7 @@ import {
   EmptyState,
   Page,
   Select,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { ResourceList, ResourceListItem } from "@/components/ui/resource-list";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -443,7 +443,7 @@ export default function WorkshopPage() {
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <Field icon={Car} label="Vehicle">
                       <span className="inline-flex flex-wrap items-center gap-2">
-                        {/* A plate-shaped link; a Polaris Button would wrap the
+                        {/* A plate-shaped link; a Genaro Button would wrap the
                             plate in its own chrome. */}
                         <button
                           type="button"
@@ -506,7 +506,6 @@ export default function WorkshopPage() {
                         Edit job
                       </Button>
                       <Button
-                        tone="success"
                         onClick={() =>
                           void handleStatus(selected.id, "completed")
                         }

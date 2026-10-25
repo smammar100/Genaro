@@ -93,7 +93,7 @@ function ActionCard({
   onClick: () => void;
   accent: "primary" | "muted";
 }) {
-  // A selectable card (icon, title, timing, description) — a Polaris Button
+  // A selectable card (icon, title, timing, description) — a Genaro Button
   // can't hold this layout, so it stays a token-styled native <button>.
   return (
     <button

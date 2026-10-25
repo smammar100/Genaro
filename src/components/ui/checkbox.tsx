@@ -12,7 +12,7 @@ export function Checkbox({
     <CheckboxPrimitive.Root
       className={cn(
         hitTarget,
-        // Polaris Checkbox (.p-checkbox__box): 16px, radius-100, input-border
+        // Genaro Checkbox (.p-checkbox__box): 16px, radius-100, input-border
         // hairline, brand fill when checked, 2px focus outline.
         "relative inline-flex size-4 shrink-0 items-center justify-center rounded-(--radius-100) border border-(--input-border) bg-(--bg-surface) outline-none transition-[border-color,background-color] hover:border-(--input-border-hover) hover:bg-(--input-bg-surface-hover) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--border-focus) aria-invalid:border-(--border-critical-secondary) aria-invalid:bg-(--bg-surface-critical) data-disabled:cursor-not-allowed data-disabled:border-transparent data-disabled:bg-(--checkbox-bg-surface-disabled) data-checked:border-transparent data-indeterminate:border-transparent",
         className,

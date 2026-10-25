@@ -1,12 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { Popover } from "@/components/polaris";
+import { Popover } from "@/components/genaro";
 import { cn } from "@/lib/utils";
 import { writeValue } from "./input-value";
 
 type SuggestInputProps = React.ComponentProps<"input"> & {
-  /** Values offered as you type: Polaris's option list in place of a <datalist>. */
+  /** Values offered as you type: Genaro's option list in place of a <datalist>. */
   suggestions: readonly string[];
   /** Classes for the block the list is anchored to (the input fills it). */
   wrapperClassName?: string;
@@ -16,7 +16,7 @@ type SuggestInputProps = React.ComponentProps<"input"> & {
 const LIMIT = 8;
 
 /**
- * A text input that offers matching values in a Polaris option list as you
+ * A text input that offers matching values in a Genaro option list as you
  * type (or click, or press the down arrow). Picking one writes it into the
  * input as typing would, so the caller's onChange — or react-hook-form's
  * register() — gets it. Anything else can still be typed.

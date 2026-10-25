@@ -260,7 +260,7 @@ const SidebarProvider = forwardRef<HTMLDivElement, SidebarProviderProps>(
           target.tagName === "INPUT" ||
           target.tagName === "TEXTAREA" ||
           target.tagName === "SELECT" ||
-          // A Polaris Select is a combobox button that takes typed letters.
+          // A Genaro Select is a combobox button that takes typed letters.
           target.getAttribute("role") === "combobox" ||
           target.isContentEditable
         )

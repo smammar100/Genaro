@@ -1,6 +1,6 @@
 "use client";
 
-import { ContextualSaveBar } from "@/components/polaris";
+import { ContextualSaveBar } from "@/components/genaro";
 
 interface Props {
   changeCount: number;

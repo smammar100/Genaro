@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Button, Checkbox, Tabs, Tag, TextField } from "@/components/polaris";
+import { Button, Checkbox, Tabs, Tag, TextField } from "@/components/genaro";
 import {
   VEHICLE_FEATURES,
   FEATURE_CATEGORIES,

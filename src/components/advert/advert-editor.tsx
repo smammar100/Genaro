@@ -21,7 +21,7 @@ import {
   ProgressBar,
   TextField,
   type BadgeTone,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { Switch } from "@/components/ui/switch";
 import { Panel } from "@/components/vehicle-detail/primitives";
 import { RegPlate } from "@/components/shared/reg-plate";

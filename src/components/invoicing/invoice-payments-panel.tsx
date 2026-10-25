@@ -14,7 +14,7 @@ import {
   Select,
   SkeletonBodyText,
   TextField,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { Input } from "@/components/ui/input";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { toast } from "@/lib/toast";

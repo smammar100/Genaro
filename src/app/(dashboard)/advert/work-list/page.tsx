@@ -31,7 +31,7 @@ import {
   Select,
   TextField,
   type BadgeTone,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { Switch } from "@/components/ui/switch";
 import { DaysInStockChip } from "@/components/shared/days-in-stock-chip";
 import { RegPlate } from "@/components/shared/reg-plate";

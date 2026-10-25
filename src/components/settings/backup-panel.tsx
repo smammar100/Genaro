@@ -8,7 +8,7 @@ import {
   Card,
   Layout,
   type BadgeTone,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { toast } from "@/lib/toast";
 import { useAuth } from "@/contexts/auth-context";
 import { backupService } from "@/lib/services/backup-service";

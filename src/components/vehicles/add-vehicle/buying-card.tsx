@@ -1,7 +1,7 @@
 "use client";
 
 import { Controller } from "react-hook-form";
-import { Card, Select } from "@/components/polaris";
+import { Card, Select } from "@/components/genaro";
 import { Input } from "@/components/ui/input";
 import { AUCTION_HOUSES, FINANCE_PROVIDERS } from "@/lib/constants";
 import { AUCTION_HOUSE_SUGGESTIONS, OWNED_BY_SUGGESTIONS } from "@/lib/master-sheet";

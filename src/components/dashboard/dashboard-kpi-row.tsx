@@ -21,7 +21,7 @@ import { leadService } from "@/lib/services/lead-service";
 import { maintenanceService } from "@/lib/services/maintenance-service";
 import { salesService } from "@/lib/services/sales-service";
 import type { Capability } from "@/lib/capabilities";
-import { Card, SkeletonDisplayText } from "@/components/polaris";
+import { Card, SkeletonDisplayText } from "@/components/genaro";
 import { cn } from "@/lib/utils";
 
 interface Stats {
@@ -326,7 +326,7 @@ export function DashboardKpiRow() {
   if (visibleKpis.length === 0) return null;
 
   return (
-    // Polaris analytics stat tiles: ONE flush card, one row of metrics split
+    // Genaro analytics stat tiles: ONE flush card, one row of metrics split
     // by hairline dividers; wraps to 2 / 3 columns on narrower screens.
     <Card padding="0">
       <div className="grid grid-cols-2 p-1 sm:grid-cols-3 xl:flex xl:items-stretch xl:divide-x xl:divide-(--border-secondary)">

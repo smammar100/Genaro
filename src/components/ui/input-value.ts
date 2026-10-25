@@ -2,7 +2,7 @@ const nativeValue = () => Object.getOwnPropertyDescriptor(HTMLInputElement.proto
 
 /**
  * Sets an input's value the way typing does, so React's onChange (and
- * react-hook-form's) fires for a value picked from a Polaris list.
+ * react-hook-form's) fires for a value picked from a Genaro list.
  */
 export function writeValue(el: HTMLInputElement, value: string) {
   if (el.value === value) return;

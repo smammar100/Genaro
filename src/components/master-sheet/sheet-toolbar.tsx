@@ -8,7 +8,7 @@ import {
   Select,
   Tag,
   TextField,
-} from "@/components/polaris";
+} from "@/components/genaro";
 
 type Option = { value: string; label: string };
 

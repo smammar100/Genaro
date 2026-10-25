@@ -10,7 +10,7 @@ interface Props {
 }
 
 /**
- * Empty / no-access state with the Polaris EmptyState look, drawn with the
+ * Empty / no-access state with the Genaro EmptyState look, drawn with the
  * kit's `p-empty` classes: a tinted icon tile, a 14px semibold heading, a
  * 12px body and the action underneath. Kept as its own component (rather than
  * the kit's EmptyState) because callers pass a lucide icon and a ready-made

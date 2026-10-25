@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { FileText, ImageIcon } from "lucide-react";
-import { Button, DropZone, Spinner } from "@/components/polaris";
+import { Button, DropZone, Spinner } from "@/components/genaro";
 import { cn } from "@/lib/utils";
 import {
   externalInvoiceService,
@@ -41,7 +41,7 @@ function prettyBytes(n: number | null): string {
 }
 
 /**
- * Spec v3.0 · Module D.4 — drag/drop or button-pick attachment slot (Polaris
+ * Spec v3.0 · Module D.4 — drag/drop or button-pick attachment slot (Genaro
  * DropZone; it drops files that don't match `ACCEPT`).
  * Allowed: JPG, PNG, PDF up to 10 MB. Uploads to the
  * `external-invoices` Supabase Storage bucket; stores the object path.
