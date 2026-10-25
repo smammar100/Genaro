@@ -167,7 +167,7 @@ function colKey(c: ColDef): string {
 
 /**
  * The in-place editor for a text, number or date cell, flush with the cell
- * (text-xs, the same inset, a tint rather than a border the cell's
+ * (text-caption, the same inset, a tint rather than a border the cell's
  * overflow-hidden would clip) so the value doesn't jump when editing starts
  * (GEN-39). Dates get the Polaris date field; free-text cells with suggestions
  * offer them in a Polaris list. Enter or leaving the cell saves, Escape cancels.
@@ -212,7 +212,7 @@ function CellInput({
   };
   const type = c.type === "number" || c.type === "currency" ? "number" : "text";
   const flush = cn(
-    "h-7 w-full min-w-0 rounded bg-primary/10 px-1 text-xs text-foreground caret-primary outline-none disabled:opacity-60",
+    "h-7 w-full min-w-0 rounded bg-primary/10 px-1 text-caption text-foreground caret-primary outline-none disabled:opacity-60",
     alignEnd && "text-right",
   );
   return (
@@ -481,7 +481,7 @@ function CellContent({ col, v }: { col: ColDef; v: Vehicle }) {
   switch (col.type) {
     case "stockId":
       return (
-        <span className="font-mono text-xs font-medium">{v.stockId}</span>
+        <span className="font-mono text-caption font-medium">{v.stockId}</span>
       );
     case "vehicle":
       return (
@@ -525,7 +525,7 @@ function CellContent({ col, v }: { col: ColDef; v: Vehicle }) {
       );
     case "select":
       return (
-        <span className="inline-flex max-w-full items-center rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide text-foreground/80">
+        <span className="inline-flex max-w-full items-center rounded-md bg-muted px-1.5 py-0.5 text-caption font-medium uppercase tracking-wide text-foreground/80">
           <span className="truncate">{String(raw)}</span>
         </span>
       );
@@ -535,7 +535,7 @@ function CellContent({ col, v }: { col: ColDef; v: Vehicle }) {
       return (
         <span
           className={cn(
-            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+            "inline-flex items-center rounded-full px-2 py-0.5 text-caption font-medium",
             STATUS_TONE[status],
           )}
         >
@@ -1365,7 +1365,7 @@ export function VehicleSheet({
       {/* Says out loud what the responsive rule does, and that
           choosing columns turns it off (GEN-93). */}
       {!userPickedColumns && allCols.some((c) => c.mobileHide) && (
-        <p className="mb-3 text-2xs leading-relaxed text-muted-foreground">
+        <p className="mb-3 text-caption text-muted-foreground">
           On a narrow screen some columns are hidden to keep the
           grid readable. Choose your own columns here and every one
           you pick stays visible at any width.
@@ -1390,7 +1390,7 @@ export function VehicleSheet({
           return (
             <Label
               key={k}
-              className="flex items-center gap-2 text-xs"
+              className="flex items-center gap-2 text-caption"
             >
               <Checkbox
                 checked={visible.has(k)}
@@ -1436,7 +1436,7 @@ export function VehicleSheet({
             shrunk (GEN-20). The explicit width tracks the summed columns
             so the container scrolls horizontally as before. */}
         <table
-          className="table-fixed border-separate text-xs"
+          className="table-fixed border-separate text-caption"
           style={{
             width: 80 + cols.reduce((sum, c) => sum + widthFor(c), 0),
             borderSpacing: 0,
@@ -1465,7 +1465,7 @@ export function VehicleSheet({
                     key={`${b.section}-${i}`}
                     colSpan={b.span}
                     className={cn(
-                      "h-5 border-b px-2 text-left text-2xs font-semibold uppercase tracking-wide",
+                      "h-5 border-b px-2 text-left text-micro font-semibold uppercase tracking-wide",
                       SECTION_TONE[b.section] ?? SECTION_TONE.common,
                       // Workbook: the identity band pins with the columns
                       // under it, rather than scrolling off above them.
@@ -1546,7 +1546,7 @@ export function VehicleSheet({
                         : c.label
                     }
                     className={cn(
-                      "flex w-full min-w-0 cursor-pointer items-center gap-1 pr-1 text-left text-xs hover:text-foreground",
+                      "flex w-full min-w-0 cursor-pointer items-center gap-1 pr-1 text-left text-caption hover:text-foreground",
                       // Sheets with sections carry the client's long Excel
                       // headers ("BCA ESSENTIAL CHECK / BCA ASSURED
                       // CHARGE"): let them wrap to two lines, not clip.
@@ -1556,7 +1556,7 @@ export function VehicleSheet({
                     <span
                       className={cn(
                         "min-w-0 font-medium text-foreground",
-                        sections ? "line-clamp-2 leading-tight" : "truncate",
+                        sections ? "line-clamp-2" : "truncate",
                       )}
                     >
                       {c.label}
@@ -1785,7 +1785,7 @@ export function VehicleSheet({
                   className="border-b px-2 py-2"
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                    <span className="flex items-center gap-1 text-caption font-medium text-muted-foreground">
                       <Plus className="h-3.5 w-3.5" /> Quick add
                     </span>
                     <Input
@@ -1797,7 +1797,7 @@ export function VehicleSheet({
                         })
                       }
                       placeholder="Reg *"
-                      className="h-8 w-28 text-xs uppercase"
+                      className="h-8 w-28 text-caption uppercase"
                     />
                     <Input
                       value={quick.make}
@@ -1805,7 +1805,7 @@ export function VehicleSheet({
                         setQuick({ ...quick, make: e.target.value })
                       }
                       placeholder="Make *"
-                      className="h-8 w-28 text-xs"
+                      className="h-8 w-28 text-caption"
                     />
                     <Input
                       value={quick.model}
@@ -1813,7 +1813,7 @@ export function VehicleSheet({
                         setQuick({ ...quick, model: e.target.value })
                       }
                       placeholder="Model"
-                      className="h-8 w-28 text-xs"
+                      className="h-8 w-28 text-caption"
                     />
                     <Input
                       value={quick.year}
@@ -1822,7 +1822,7 @@ export function VehicleSheet({
                       }
                       placeholder="Year"
                       type="number"
-                      className="h-8 w-20 text-xs"
+                      className="h-8 w-20 text-caption"
                     />
                     <Input
                       value={quick.colour}
@@ -1830,7 +1830,7 @@ export function VehicleSheet({
                         setQuick({ ...quick, colour: e.target.value })
                       }
                       placeholder="Colour"
-                      className="h-8 w-24 text-xs"
+                      className="h-8 w-24 text-caption"
                     />
                     <Input
                       value={quick.mileage}
@@ -1839,7 +1839,7 @@ export function VehicleSheet({
                       }
                       placeholder="Mileage"
                       type="number"
-                      className="h-8 w-24 text-xs"
+                      className="h-8 w-24 text-caption"
                     />
                     <div className="w-44">
                       <Select
@@ -2031,10 +2031,10 @@ export function VehicleSheet({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             {title ? (
-              <h1 className="text-xl font-semibold text-foreground">{title}</h1>
+              <h1 className="text-display font-semibold text-foreground">{title}</h1>
             ) : null}
             {helper}
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               {summary(filtered?.length ?? null, selected.size)}
             </p>
           </div>
@@ -2066,18 +2066,18 @@ export function VehicleSheet({
         {/* Variation C — filter-chip bar: applied chips + add-condition builder */}
         <div className="flex flex-col gap-2 rounded-xl border border-(--border) bg-card px-3 py-2 shadow-(--shadow-100)">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-(--text-secondary)">
+            <span className="text-body font-medium text-(--text-secondary)">
               Filters
             </span>
             {filters.length === 0 && (
-              <span className="text-sm text-muted-foreground">
+              <span className="text-body text-muted-foreground">
                 No filters applied
               </span>
             )}
             {filters.map((f) => (
               <span
                 key={f.id}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-(--bg-fill-transparent-secondary) px-2 py-0.5 text-xs font-medium text-(--text)"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-(--bg-fill-transparent-secondary) px-2 py-0.5 text-caption font-medium text-(--text)"
               >
                 <span className="text-muted-foreground">{f.label}</span>
                 <span className="text-muted-foreground">{opLabel(f.op)}</span>
@@ -2106,13 +2106,13 @@ export function VehicleSheet({
                     setSearch(e.target.value);
                     setPage(1);
                   }}
-                  className="h-8 w-56 rounded-lg pl-7 text-sm"
+                  className="h-8 w-56 rounded-lg pl-7 text-body"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => setBuilderOpen((o) => !o)}
-                className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-sm font-medium text-(--text) hover:bg-(--bg-fill-transparent-hover)"
+                className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-body font-medium text-(--text) hover:bg-(--bg-fill-transparent-hover)"
               >
                 <Plus className="h-3.5 w-3.5" /> Add filter
               </button>
@@ -2137,7 +2137,7 @@ export function VehicleSheet({
                           setPage(1);
                         }}
                         className={cn(
-                          "h-7 rounded-lg px-3 text-sm transition-colors",
+                          "h-7 rounded-lg px-3 text-body transition-colors",
                           on
                             ? "bg-(--bg-fill-transparent-selected) font-medium text-(--text)"
                             : "text-(--text-secondary) hover:bg-(--bg-fill-transparent-hover)",
@@ -2153,7 +2153,7 @@ export function VehicleSheet({
           </div>
           {builderOpen && (
             <div className="flex flex-wrap items-center gap-2 rounded-lg bg-(--bg-surface-secondary) p-2">
-              <span className="text-sm font-medium text-(--text-secondary)">
+              <span className="text-body font-medium text-(--text-secondary)">
                 Add condition
               </span>
               <div className="w-44">

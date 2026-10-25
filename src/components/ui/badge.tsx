@@ -27,7 +27,7 @@ const badgeVariants = cva(
       size: {
         default: "",
         lg: "p-badge--large",
-        sm: "px-1.5 py-0 text-2xs leading-4",
+        sm: "px-1.5 py-0 text-micro",
       },
       variant: {
         default: "p-badge--neutral [button&,a&]:hover:bg-(--bg-fill-transparent-secondary-hover)",

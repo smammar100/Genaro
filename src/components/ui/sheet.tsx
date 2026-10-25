@@ -80,7 +80,7 @@ function SheetPopup({
       <SheetViewport side={side} variant={variant}>
         <SheetPrimitive.Popup
           className={cn(
-            "relative flex max-h-full min-h-0 w-full min-w-0 flex-col bg-popover text-[13px] text-popover-foreground shadow-(--shadow-600) transition-[opacity,translate] duration-200 ease-out will-change-transform data-ending-style:opacity-0 data-starting-style:opacity-0",
+            "relative flex max-h-full min-h-0 w-full min-w-0 flex-col bg-popover text-body text-popover-foreground shadow-(--shadow-600) transition-[opacity,translate] duration-200 ease-out will-change-transform data-ending-style:opacity-0 data-starting-style:opacity-0",
             side === "bottom" &&
               "row-start-2 border-t data-ending-style:translate-y-8 data-starting-style:translate-y-8",
             side === "top" &&
@@ -140,7 +140,7 @@ export function SheetTitle({
   return (
     <SheetPrimitive.Title
       className={cn(
-        "font-semibold text-sm text-balance leading-5 text-foreground",
+        "font-semibold text-title text-balance text-foreground",
         className,
       )}
       data-slot="sheet-title"
@@ -155,7 +155,7 @@ export function SheetDescription({
 }: SheetPrimitive.Description.Props): React.ReactElement {
   return (
     <SheetPrimitive.Description
-      className={cn("text-muted-foreground text-[13px] leading-5 text-pretty", className)}
+      className={cn("text-muted-foreground text-body text-pretty", className)}
       data-slot="sheet-description"
       {...props}
     />

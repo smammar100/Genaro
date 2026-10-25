@@ -23,7 +23,7 @@ export function ResourceList({
 }: useRender.ComponentProps<"ul">): React.ReactElement {
   const defaultProps = {
     className: cn(
-      "flex flex-col divide-y divide-(--border) overflow-hidden rounded-(--radius-200) border border-(--border) bg-(--bg-surface) text-[13px]",
+      "flex flex-col divide-y divide-(--border) overflow-hidden rounded-(--radius-200) border border-(--border) bg-(--bg-surface) text-body",
       className,
     ),
     "data-slot": "resource-list",

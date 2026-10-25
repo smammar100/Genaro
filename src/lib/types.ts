@@ -145,20 +145,31 @@ export type Transmission = "automatic" | "manual";
  * Exactly one of these at any time; movements between values are audited
  * via the `location_movements` table.
  */
-export type VehicleLocation = "forecourt" | "yard" | "garage" | "staff";
+export type VehicleLocation = "forecourt" | "yard" | "garage" | "staff" | "courtesy_car";
+
+/**
+ * Where a vehicle is recorded: one of the places above, or "sold" once its
+ * master sheet AVAILABLE / SOLD reads SOLD (migration 0051's trigger sets it).
+ * Sold is not somewhere a car can be moved to, so it is not in
+ * VEHICLE_LOCATIONS (the Locations tabs and move destinations).
+ */
+export type CurrentLocation = VehicleLocation | "sold";
 
 export const VEHICLE_LOCATIONS: VehicleLocation[] = [
   "forecourt",
   "yard",
   "garage",
   "staff",
+  "courtesy_car",
 ];
 
-export const VEHICLE_LOCATION_LABELS: Record<VehicleLocation, string> = {
+export const VEHICLE_LOCATION_LABELS: Record<CurrentLocation, string> = {
   forecourt: "Forecourt",
   yard: "Yard",
   garage: "Garage",
   staff: "Staff",
+  courtesy_car: "Courtesy car",
+  sold: "Sold",
 };
 
 /**
@@ -299,8 +310,8 @@ export interface Vehicle {
   legacyData?: Record<string, unknown>;
 
   // Module A — physical location (migration 0010).
-  /** Current physical location. Always set; defaults to 'forecourt'. */
-  currentLocation: VehicleLocation;
+  /** Current location. Always set; defaults to 'forecourt', 'sold' once sold. */
+  currentLocation: CurrentLocation;
   /** When the car was placed at `currentLocation`. Updates on every move. */
   locationSince: ISODateTime;
   /**
@@ -397,15 +408,16 @@ export interface Vehicle {
  * Append-only audit of a vehicle relocation (Spec v3.0 · Module A).
  *
  * `from_location` is null only for the very first placement after arrival;
- * `to_location` is always one of the 4 valid VehicleLocation values.
+ * `to_location` is one of the 4 places, or 'sold' for the move the sale
+ * trigger records (migration 0051).
  * Garage moves carry `externalVendorId`; staff moves carry `staffUserId`
  * (DB-level CHECK constraints in migration 0010).
  */
 export interface LocationMovement {
   id: UUID;
   vehicleId: UUID;
-  fromLocation: VehicleLocation | null;
-  toLocation: VehicleLocation;
+  fromLocation: CurrentLocation | null;
+  toLocation: CurrentLocation;
 
   /** Populated only when `toLocation === 'garage'`. */
   externalVendorId: UUID | null;

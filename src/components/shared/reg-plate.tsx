@@ -9,10 +9,10 @@ interface Props {
 export function RegPlate({ registration, size = "md", className }: Props) {
   const sizeClasses =
     size === "sm"
-      ? "px-2 py-0.5 text-2xs tracking-[0.08em]"
+      ? "px-2 py-0.5 text-micro tracking-[0.08em]"
       : size === "lg"
-        ? "px-3 py-1.5 text-base tracking-[0.12em]"
-        : "px-2.5 py-1 text-xs tracking-[0.1em]";
+        ? "px-3 py-1.5 text-subtitle tracking-[0.12em]"
+        : "px-2.5 py-1 text-caption tracking-[0.1em]";
   return (
     <span
       className={cn(

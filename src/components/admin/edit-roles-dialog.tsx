@@ -85,7 +85,7 @@ export function EditRolesDialog({ user, open, onOpenChange, onSaved }: Props) {
     >
       <div className="flex flex-col gap-3">
         {user && (
-          <p className="text-sm text-(--text-secondary)">
+          <p className="text-body text-(--text-secondary)">
             Update the role bundle for{" "}
             <strong className="text-(--text)">{user.name}</strong> (
             {accountHandle(user)}).

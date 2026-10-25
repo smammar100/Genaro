@@ -73,10 +73,10 @@ export default function DashboardLayout({
         <div className="w-full max-w-md rounded-(--radius-300) bg-(--bg-surface) p-6 shadow-(--shadow-100)">
           <div className="mb-3 flex items-center gap-2 text-destructive">
             <AlertCircle className="h-5 w-5" />
-            <h1 className="text-base font-semibold">Can&apos;t connect</h1>
+            <h1 className="text-subtitle font-semibold">Can&apos;t connect</h1>
           </div>
-          <p className="mb-4 text-sm text-muted-foreground">{error}</p>
-          <p className="mb-4 text-xs text-muted-foreground">
+          <p className="mb-4 text-body text-muted-foreground">{error}</p>
+          <p className="mb-4 text-caption text-muted-foreground">
             If you&apos;re a deployer: check that{" "}
             <code className="rounded bg-muted px-1 py-0.5">
               NEXT_PUBLIC_SUPABASE_URL

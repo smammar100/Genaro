@@ -84,7 +84,7 @@ export function AddVehicleModal({ open, onOpenChange, extraParams }: Props) {
           if (e.key === "Enter" && canLookup) go(true);
         }}
       >
-        <p className="text-sm text-(--text-secondary)">
+        <p className="text-body text-(--text-secondary)">
           Start a new stock record, look it up automatically or enter it by
           hand. Enter the registration and mileage; we&apos;ll pull make,
           model, derivative, tax, MOT and an AutoTrader valuation

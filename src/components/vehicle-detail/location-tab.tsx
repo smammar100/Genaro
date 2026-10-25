@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "@/lib/toast";
 import {
   ArrowRight,
+  CarFront,
   CheckCircle2,
   Clock,
   MapPin,
@@ -24,6 +25,7 @@ import {
   type LocationMovement,
   type UUID,
   type User,
+  type CurrentLocation,
   type Vehicle,
   type VehicleLocation,
   type Vendor,
@@ -47,6 +49,7 @@ const LOCATION_ICON: Record<VehicleLocation, LucideIcon> = {
   yard: ParkingSquare,
   garage: Wrench,
   staff: UserRound,
+  courtesy_car: CarFront,
 };
 
 const OFF_SITE: Record<VehicleLocation, boolean> = {
@@ -54,13 +57,16 @@ const OFF_SITE: Record<VehicleLocation, boolean> = {
   yard: false,
   garage: true,
   staff: true,
+  courtesy_car: true,
 };
 
-const TO_LOCATION_TONE: Record<VehicleLocation, TimelineTone> = {
+const TO_LOCATION_TONE: Record<CurrentLocation, TimelineTone> = {
   forecourt: "emerald",
   yard: "slate",
   garage: "rose",
   staff: "amber",
+  courtesy_car: "violet",
+  sold: "sky",
 };
 
 interface LocationTabProps {
@@ -68,7 +74,7 @@ interface LocationTabProps {
 }
 
 const LOCATION_TONE: Record<
-  VehicleLocation,
+  CurrentLocation,
   { dot: string; surface: string; ring: string; text: string }
 > = {
   forecourt: {
@@ -94,6 +100,18 @@ const LOCATION_TONE: Record<
     surface: "bg-(--bg-surface-caution)",
     ring: "ring-(--border-caution)",
     text: "text-(--text-caution)",
+  },
+  courtesy_car: {
+    dot: "bg-(--bg-fill-magic)",
+    surface: "bg-(--bg-surface-magic)",
+    ring: "ring-(--border-magic)",
+    text: "text-(--text-magic)",
+  },
+  sold: {
+    dot: "bg-(--bg-fill-info)",
+    surface: "bg-(--bg-surface-info)",
+    ring: "ring-(--border-info)",
+    text: "text-(--text-info)",
   },
 };
 

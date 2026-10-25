@@ -28,9 +28,9 @@ export function PurchaseCostsCard({
         paid; +20% fills the standard rate.
       </p>
       <div className="mt-2 overflow-x-auto">
-        <table className="w-full min-w-88 text-sm">
+        <table className="w-full min-w-88 text-body">
           <thead>
-            <tr className="border-b border-(--border-secondary) text-left text-xs text-(--text-secondary)">
+            <tr className="border-b border-(--border-secondary) text-left text-caption text-(--text-secondary)">
               <th className="py-1.5 pr-2 font-medium">Cost item</th>
               <th className="whitespace-nowrap py-1.5 pr-2 text-right font-medium">Amount £</th>
               <th className="whitespace-nowrap py-1.5 pr-2 text-right font-medium">VAT paid £</th>
@@ -52,7 +52,7 @@ export function PurchaseCostsCard({
               </td>
             </tr>
             <tr>
-              <td colSpan={3} className="pt-4 text-xs text-(--text-secondary)">
+              <td colSpan={3} className="pt-4 text-caption text-(--text-secondary)">
                 Not part of the total buying price on the master sheet:
               </td>
             </tr>
@@ -88,7 +88,7 @@ function CostRow({
   return (
     <tr className="border-b border-(--border-secondary) align-top last:border-b-0">
       <td className="py-1.5 pr-2">
-        <Label className="text-xs font-normal" htmlFor={fieldId}>
+        <Label className="text-caption font-normal" htmlFor={fieldId}>
           {label}
         </Label>
         {error ?? vatError ? <InlineError message={error ?? vatError} /> : null}
@@ -132,7 +132,7 @@ function CostRow({
             </Button>
           </div>
         ) : (
-          <span className="text-xs text-(--text-secondary)">—</span>
+          <span className="text-caption text-(--text-secondary)">—</span>
         )}
       </td>
     </tr>

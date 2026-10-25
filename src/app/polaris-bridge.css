@@ -68,8 +68,8 @@ table {
 table thead th {
   background-color: var(--bg-surface-secondary);
   color: var(--text-secondary);
-  font-size: 0.75rem;
-  line-height: 1.25rem;
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
   font-weight: 500;
   padding-block: var(--space-200);
   border-width: 0;
@@ -81,8 +81,8 @@ table thead th span {
   font-weight: inherit;
 }
 table tbody td {
-  font-size: 0.8125rem;
-  line-height: 1.25rem;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
   color: var(--text);
   padding-block: var(--space-150);
   border-width: 1px 0 0 0;

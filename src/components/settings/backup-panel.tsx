@@ -109,14 +109,14 @@ export function BackupPanel() {
           actions={loading ? null : <Badge tone={badge.tone}>{badge.label}</Badge>}
         >
           <div
-            className="text-sm text-(--text)"
+            className="text-body text-(--text)"
             data-testid="backup-status"
             aria-live="polite"
           >
             {loading ? "Checking…" : status.message}
           </div>
           {lastBackupAt && !loading && (
-            <div className="text-xs text-(--text-secondary)">
+            <div className="text-caption text-(--text-secondary)">
               Last backup: {formatDateTime(lastBackupAt)}
             </div>
           )}

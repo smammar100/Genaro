@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Banknote,
+  CalendarClock,
   CalendarDays,
+  CalendarPlus,
   CircleCheck,
   CircleX,
   Clock,
@@ -18,7 +20,9 @@ import { salesService } from "@/lib/services/sales-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import { authService } from "@/lib/services/auth-service";
 import { pipelineStageService } from "@/lib/services/pipeline-stage-service";
+import { appointmentService } from "@/lib/services/appointment-service";
 import type {
+  Appointment,
   PipelineStage,
   SalesDeal,
   SalesStage,
@@ -38,6 +42,8 @@ import {
 import { VehicleImage } from "@/components/shared/vehicle-image";
 import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { DealDetailSheet } from "@/components/sales/deal-detail-sheet";
+import { QuickBookModal } from "@/components/calendar/quick-book-modal";
+import { ChangeVehicleModal } from "@/components/sales/change-vehicle-modal";
 import { RowActionButton } from "@/components/ui/resource-list";
 import {
   DropdownMenu,
@@ -55,6 +61,7 @@ import {
   dayDate,
   daysUntil,
   shortDate,
+  todayKey,
 } from "@/components/kanban/card-dates";
 import type { KanbanColumn, KanbanTone } from "@/components/kanban/stage-icon";
 import { formatCurrency, formatRelativeTime } from "@/lib/utils";
@@ -145,6 +152,9 @@ export default function SalesPipelinePage() {
   const [agentFilter, setAgentFilter] = useState<string | "all">("all");
   const [nowTs, setNowTs] = useState<number | null>(null);
   const [viewDeal, setViewDeal] = useState<SalesDeal | null>(null);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [bookDeal, setBookDeal] = useState<SalesDeal | null>(null);
+  const [swapDeal, setSwapDeal] = useState<SalesDeal | null>(null);
 
   useEffect(() => {
     if (!company) return;
@@ -153,14 +163,51 @@ export default function SalesPipelinePage() {
       pipelineStageService.getEnabled(company.id),
       vehicleService.getAll(company.id),
       authService.getUsersForCompany(company.id),
-    ]).then(([d, s, v, u]) => {
+      appointmentService.getAll(company.id),
+    ]).then(([d, s, v, u, a]) => {
       setDeals(d);
       setStages(s);
       setVehicles(v);
       setUsers(u);
+      setAppointments(a);
       setNowTs(Date.now());
     });
   }, [company]);
+
+  /**
+   * Each deal's next upcoming appointment, shown on its card. Matched on the
+   * lead when the deal has one, else on the car and the customer's name.
+   */
+  const nextAppointment = useMemo(() => {
+    const today = todayKey();
+    const upcoming = appointments
+      .filter((a) => a.status === "upcoming" && a.date >= today)
+      .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+    return (d: SalesDeal) =>
+      upcoming.find((a) =>
+        d.leadId
+          ? a.leadId === d.leadId
+          : a.vehicleId === d.vehicleId && a.customerName === d.customerName,
+      ) ?? null;
+  }, [appointments]);
+
+  // Cars a deal can move to: anything still in the business.
+  const swappable = useMemo(
+    () => vehicles.filter((v) => v.status !== "sold" && v.status !== "returned"),
+    [vehicles],
+  );
+
+  async function changeDealVehicle(vehicle: Vehicle) {
+    if (!user || !company || !swapDeal) return;
+    await salesService.changeVehicle(swapDeal.id, vehicle.id, user.id);
+    const [d, v] = await Promise.all([
+      salesService.getAll(company.id),
+      vehicleService.getAll(company.id),
+    ]);
+    setDeals(d);
+    setVehicles(v);
+    toast.success(`Vehicle changed to ${vehicle.registration}`);
+  }
 
   const boardDeals = useMemo(() => {
     if (!deals || stages.length === 0) return null;
@@ -309,6 +356,8 @@ export default function SalesPipelinePage() {
             const invoiceUrl = v
               ? `/sales/invoice-generation?vehicleId=${v.id}`
               : "/sales/invoice-generation";
+            const open = behaviour !== "won" && behaviour !== "lost";
+            const appt = open ? nextAppointment(d) : null;
             return (
               <KanbanCard
                 onOpen={() => setViewDeal(d)}
@@ -348,6 +397,16 @@ export default function SalesPipelinePage() {
                 titleText={d.customerName}
                 facts={[
                   dateFact(d, behaviour),
+                  appt
+                    ? {
+                        icon: CalendarClock,
+                        tone: daysUntil(appt.date) === 0 ? "caution" : undefined,
+                        text:
+                          daysUntil(appt.date) === 0
+                            ? `Appointment today, ${appt.time.slice(0, 5)}`
+                            : `Appointment ${dayDate(appt.date)}, ${appt.time.slice(0, 5)}`,
+                      }
+                    : null,
                   d.customerPhone
                     ? {
                         icon: Phone,
@@ -399,6 +458,16 @@ export default function SalesPipelinePage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => setViewDeal(d)}>View deal</DropdownMenuItem>
+                      {open && v ? (
+                        <DropdownMenuItem onClick={() => setBookDeal(d)}>
+                          Book appointment
+                        </DropdownMenuItem>
+                      ) : null}
+                      {behaviour !== "won" ? (
+                        <DropdownMenuItem onClick={() => setSwapDeal(d)}>
+                          Change vehicle
+                        </DropdownMenuItem>
+                      ) : null}
                       {v ? (
                         <DropdownMenuItem
                           onClick={() => router.push(vehicleDetailHref(v.id, pathname))}
@@ -413,6 +482,18 @@ export default function SalesPipelinePage() {
                       ) : null}
                     </DropdownMenuContent>
                   </DropdownMenu>
+                }
+                quickAction={
+                  open && v ? (
+                    <Button
+                      variant="tertiary"
+                      size="micro"
+                      icon={<CalendarPlus />}
+                      accessibilityLabel={`Book appointment for ${d.customerName}`}
+                      title="Book appointment"
+                      onClick={() => setBookDeal(d)}
+                    />
+                  ) : undefined
                 }
                 action={
                   showInvoiceCta ? (
@@ -436,6 +517,24 @@ export default function SalesPipelinePage() {
         onOpenChange={(o) => {
           if (!o) setViewDeal(null);
         }}
+      />
+
+      <QuickBookModal
+        booking={bookDeal ? { kind: "appt", deal: bookDeal } : null}
+        vehicles={swappable}
+        onClose={() => setBookDeal(null)}
+        onBooked={() => {
+          if (company) void appointmentService.getAll(company.id).then(setAppointments);
+        }}
+      />
+
+      <ChangeVehicleModal
+        open={swapDeal !== null}
+        onClose={() => setSwapDeal(null)}
+        customerName={swapDeal?.customerName ?? ""}
+        current={swapDeal ? (vehicleById.get(swapDeal.vehicleId) ?? null) : null}
+        vehicles={swappable}
+        onSave={changeDealVehicle}
       />
     </Page>
   );

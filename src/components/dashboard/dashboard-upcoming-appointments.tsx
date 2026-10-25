@@ -79,7 +79,7 @@ export function DashboardUpcomingAppointments() {
               <li className="flex items-center gap-3 py-1.5" key={a.id}>
                 {/* Calendar chip: weekday band over the date. */}
                 <span className="flex w-9 shrink-0 flex-col overflow-hidden rounded-(--radius-200) border border-(--border) bg-(--bg-surface)">
-                  <span className="grid h-3.5 place-items-center bg-(--bg-surface-secondary) text-2xs font-semibold text-(--text-secondary)">
+                  <span className="grid h-3.5 place-items-center bg-(--bg-surface-secondary) text-micro font-semibold text-(--text-secondary)">
                     {wd}
                   </span>
                   <span className="heading-sm grid h-6 place-items-center text-(--text) tabular-nums">

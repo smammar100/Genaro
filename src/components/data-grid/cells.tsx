@@ -92,7 +92,7 @@ export function DateRangeCell({
 }) {
   if (!start && !end) return <EmptyCell />;
   return (
-    <span className="tabular-nums text-xs">
+    <span className="tabular-nums text-caption">
       {start ? formatDate(start) : "—"}
       <span className="px-1 text-muted-foreground">→</span>
       {end ? formatDate(end) : "—"}
@@ -118,7 +118,7 @@ export function BooleanCell({ value }: { value: boolean | null | undefined }) {
 export function SelectCell({ value }: { value: unknown }) {
   if (value === null || value === undefined || value === "") return <EmptyCell />;
   return (
-    <span className="inline-flex max-w-full items-center rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide text-foreground/80">
+    <span className="inline-flex max-w-full items-center rounded-md bg-muted px-1.5 py-0.5 text-caption font-medium uppercase tracking-wide text-foreground/80">
       <span className="truncate">{String(value).replace(/_/g, " ")}</span>
     </span>
   );
@@ -139,9 +139,9 @@ export function VehicleCell({ vehicle }: { vehicle: Vehicle | null | undefined }
           className="size-10 shrink-0 rounded-lg shadow-(--shadow-border-inset)"
         />
       ) : null}
-      <div className="flex min-w-0 flex-col gap-0.5 leading-tight">
+      <div className="flex min-w-0 flex-col gap-0.5">
         <RegPlate registration={vehicle.registration} size="sm" />
-        <span className="font-mono text-xs text-muted-foreground">
+        <span className="font-mono text-caption text-muted-foreground">
           {vehicle.stockId}
         </span>
       </div>
@@ -154,12 +154,12 @@ export function UserCell({ name }: { name: string | null | undefined }) {
   return (
     <div className="flex items-center gap-2">
       <Avatar size="sm">
-        <AvatarFallback className="text-2xs">
+        <AvatarFallback className="text-micro">
           {getInitials(name)}
         </AvatarFallback>
       </Avatar>
-      <div className="flex min-w-0 flex-col leading-tight">
-        <span className="truncate text-xs font-medium">{name}</span>
+      <div className="flex min-w-0 flex-col">
+        <span className="truncate text-caption font-medium">{name}</span>
       </div>
     </div>
   );
@@ -176,7 +176,7 @@ export function ChannelsCell({
         <span
           key={channel}
           className={cn(
-            "rounded-md px-1.5 py-0.5 text-2xs font-medium capitalize",
+            "rounded-md px-1.5 py-0.5 text-micro font-medium capitalize",
             enabled
               ? "bg-foreground text-background"
               : "bg-muted text-muted-foreground",

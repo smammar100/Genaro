@@ -64,14 +64,14 @@ export function DataGridDensityToggle({
             type="button"
             onClick={() => onChange(opt.value)}
             className={cn(
-              "flex h-8 w-full items-center rounded-lg px-2 text-[13px] hover:bg-(--bg-fill-transparent-hover)",
+              "flex h-8 w-full items-center rounded-lg px-2 text-body hover:bg-(--bg-fill-transparent-hover)",
               density === opt.value && "bg-(--bg-fill-transparent-selected) font-medium text-(--text)",
               density !== opt.value && "text-(--text)",
             )}
           >
             {opt.label}
             {density === opt.value ? (
-              <span className="ml-auto text-xs text-foreground">✓</span>
+              <span className="ml-auto text-caption text-foreground">✓</span>
             ) : null}
           </button>
         ))}

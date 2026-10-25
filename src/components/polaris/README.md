@@ -24,7 +24,7 @@ import { Page, Layout, Card, IndexTable, Badge, Button } from '@/components/pola
 ## Rules
 - Compose pages from components: `Page` → `Layout` / `Grid` → `Card` → content. Controls are always Polaris components.
 - Style only with tokens: `var(--bg-surface)` / Tailwind `bg-(--bg-surface)`, `text-(--text-secondary)`, `rounded-(--radius-300)`, `shadow-(--shadow-100)`; spacing with Tailwind's scale (`p-4` = `space-400`). Semantic tokens only — never primitives (`gray-12`) or Tailwind palette colors. No `dark:` color overrides.
-- Type classes: `heading-lg` (page titles), `heading-sm` (card titles), `body-md` (default), `body-sm` (secondary/help), `body-md-numeric` (numbers).
+- Type classes: `heading-lg` (page titles), `heading-sm` (card titles), `body-md` (default), `body-sm` (secondary/help), `body-md-numeric` (numbers). In this app each class is a role of the Fluid Functionalism type scale (`src/lib/type-scale.ts`, 24px largest); the role tokens `text-display` … `text-micro` work too. Never hard-code a size or line height.
 - One primary action per view; destructive = `tone="critical"` + confirmation Modal.
 - Sentence case, verb + noun buttons, one- or two-word badges, no emoji.
 - Server Components by default: pass serializable props and navigate with `url`; callbacks and state only in small `'use client'` components.

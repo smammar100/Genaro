@@ -38,7 +38,7 @@ export function TodosCard({
           {todos.map((t, i) => (
             <li
               key={i}
-              className="flex items-center justify-between gap-2 rounded-(--radius-200) border border-(--border) py-1 pl-2 pr-1 text-xs"
+              className="flex items-center justify-between gap-2 rounded-(--radius-200) border border-(--border) py-1 pl-2 pr-1 text-caption"
             >
               <span className="flex-1">{t.description}</span>
               <span className="tabular-nums">{formatCurrency(t.cost)}</span>

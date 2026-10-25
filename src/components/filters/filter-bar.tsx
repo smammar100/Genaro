@@ -181,7 +181,7 @@ export function FilterBar({
           value={state.search}
           onChange={(e) => onChange({ ...state, search: e.target.value })}
           placeholder={searchPlaceholder}
-          className="h-8 pl-7 text-xs"
+          className="h-8 pl-7 text-caption"
           aria-label="Search"
         />
       </div>
@@ -205,7 +205,7 @@ export function FilterBar({
           </div>
           {showCustom && (
             <div className="flex items-center gap-1.5">
-              <span className="text-xs text-(--text-secondary)">from</span>
+              <span className="text-caption text-(--text-secondary)">from</span>
               <Input
                 type="date"
                 aria-label={`${dateLabel} from`}
@@ -218,7 +218,7 @@ export function FilterBar({
                 }
                 className="w-40"
               />
-              <span className="text-xs text-(--text-secondary)">to</span>
+              <span className="text-caption text-(--text-secondary)">to</span>
               <Input
                 type="date"
                 aria-label={`${dateLabel} to`}
@@ -263,7 +263,7 @@ export function FilterBar({
           type="button"
           size="sm"
           variant="ghost"
-          className="ml-auto h-8 gap-1 text-xs text-muted-foreground"
+          className="ml-auto h-8 gap-1 text-caption text-muted-foreground"
           onClick={() =>
             onChange({ search: "", date: { from: null, to: null }, selects: {} })
           }

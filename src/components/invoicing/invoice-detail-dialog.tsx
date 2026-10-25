@@ -97,7 +97,7 @@ export function InvoiceDetailDialog({
               <dt className="inline text-(--text-secondary)">VAT: </dt>
               <dd className="inline">{formatCurrency(invoice.vatAmount)}</dd>
             </div>
-            <div className="text-base font-semibold">
+            <div className="text-subtitle font-semibold">
               <dt className="inline">Total: </dt>
               <dd className="inline">{formatCurrency(invoice.total)}</dd>
             </div>

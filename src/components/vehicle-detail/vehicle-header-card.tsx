@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Image from "next/image";
-import { Camera, Megaphone, PoundSterling, Wrench } from "lucide-react";
+import {
+  CalendarDays,
+  Cog,
+  Fuel,
+  Gauge,
+  Hash,
+  Palette,
+  type LucideIcon,
+} from "lucide-react";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
 import {
   VehicleImage,
@@ -11,7 +19,7 @@ import {
 import { vehiclePhotoService } from "@/lib/services/vehicle-photo-service";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { VehicleStatusBadge } from "@/components/shared/status-badge";
-import { ActionList, Card, Popover } from "@/components/polaris";
+import { ActionList, Button, Card, Popover } from "@/components/polaris";
 import { VEHICLE_STATUS_CHOICES } from "@/lib/constants";
 import { variantLabel } from "@/lib/vehicle-variant";
 import { formatDate, titleCase } from "@/lib/utils";
@@ -45,20 +53,49 @@ export function vehicleTitle(vehicle: Vehicle): string {
 }
 
 /**
- * Vehicle hero card — photo, plate and the key facts, the layout the team
- * knows, as the first card of the Polaris detail page. The page title,
- * status, back link and actions live in the Page header above it.
+ * Vehicle hero card — the page's header (25 Oct 2026): back, the plate with
+ * the status and days-in-stock badges beside it, the page's actions on the
+ * right, then the vehicle's name (the page's h1) and its key facts. The Page
+ * itself carries no header, so nothing repeats the name.
  */
-export function VehicleHeaderCard({ vehicle }: { vehicle: Vehicle }) {
+export function VehicleHeaderCard({
+  vehicle,
+  back,
+  badges,
+  actions,
+}: {
+  vehicle: Vehicle;
+  /** Where Back goes: the page the vehicle was opened from. */
+  back: { href: string; label: string };
+  /** Beside the plate: the status menu and days-in-stock chip. */
+  badges?: ReactNode;
+  /** Top right: the next step and any other page actions. */
+  actions?: ReactNode;
+}) {
   const heroUrl = useHeroUrl(vehicle);
-  const meta = [
-    variantLabel(vehicle, ""),
-    vehicle.stockId,
-    vehicle.mileage ? `${vehicle.mileage.toLocaleString("en-GB")} mi` : "",
-    vehicle.fuelType ? titleCase(String(vehicle.fuelType)) : "",
-    vehicle.transmission ? titleCase(String(vehicle.transmission)) : "",
-    vehicle.colour ? titleCase(vehicle.colour.toLowerCase()) : "",
-  ].filter(Boolean);
+  const variant = variantLabel(vehicle, "");
+  // Each fact with its icon; the label is for screen readers, the icon says it
+  // at a glance.
+  const facts: { icon: LucideIcon; label: string; value: string }[] = [
+    { icon: Hash, label: "Stock ID", value: vehicle.stockId },
+    {
+      icon: Gauge,
+      label: "Mileage",
+      value: vehicle.mileage ? `${vehicle.mileage.toLocaleString("en-GB")} mi` : "",
+    },
+    { icon: Fuel, label: "Fuel", value: vehicle.fuelType ? titleCase(String(vehicle.fuelType)) : "" },
+    {
+      icon: Cog,
+      label: "Gearbox",
+      value: vehicle.transmission ? titleCase(String(vehicle.transmission)) : "",
+    },
+    {
+      icon: Palette,
+      label: "Colour",
+      value: vehicle.colour ? titleCase(vehicle.colour.toLowerCase()) : "",
+    },
+    { icon: CalendarDays, label: "Received", value: `Received ${formatDate(vehicle.receivedDate)}` },
+  ].filter((f) => f.value);
 
   return (
     <Card>
@@ -82,17 +119,40 @@ export function VehicleHeaderCard({ vehicle }: { vehicle: Vehicle }) {
             className="h-28 w-44 shrink-0 rounded-(--radius-200)"
           />
         )}
-        <div className="flex min-w-0 flex-col items-start gap-1">
-          <RegPlate registration={vehicle.registration} size="lg" />
-          <p className="heading-sm mt-1 text-(--text)">
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
+          <div className="flex w-full flex-wrap items-center gap-2">
+            <Button
+              variant="tertiary"
+              icon="ArrowLeftMinor"
+              url={back.href}
+              accessibilityLabel={`Back to ${back.label}`}
+              title={`Back to ${back.label}`}
+            />
+            <RegPlate registration={vehicle.registration} size="lg" />
+            {badges}
+            {actions ? (
+              <div className="ml-auto flex flex-wrap items-center gap-2">{actions}</div>
+            ) : null}
+          </div>
+          <h1 className="heading-lg mt-1 text-(--text)">
             {vehicleTitle(vehicle)}
-          </p>
-          {meta.length > 0 ? (
-            <p className="body-md text-(--text-secondary)">{meta.join(" · ")}</p>
+          </h1>
+          {variant ? (
+            <p className="body-md text-(--text-secondary)">{variant}</p>
           ) : null}
-          <p className="body-sm text-(--text-secondary)">
-            Received {formatDate(vehicle.receivedDate)}
-          </p>
+          <ul className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+            {facts.map(({ icon: Icon, label, value }) => (
+              <li
+                key={label}
+                title={label}
+                className="flex items-center gap-1.5 body-md text-(--text-secondary)"
+              >
+                <Icon aria-hidden className="size-4 shrink-0 text-(--icon-secondary)" />
+                {label === "Received" ? null : <span className="sr-only">{label}: </span>}
+                {value}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </Card>
@@ -165,59 +225,5 @@ export function VehicleStatusMenu({
         ]}
       />
     </Popover>
-  );
-}
-
-/** Lucide glyphs are stroked; the Polaris icon slot fills by default. */
-const LUCIDE = "fill-none";
-
-/**
- * Sidebar (Layout oneThird) card: quick links into the detail tabs. The photo,
- * plate and identifiers live in the header card.
- */
-export function VehicleSummaryAside({
-  onNavigate,
-}: {
-  vehicle: Vehicle;
-  /** Jump to a detail tab from the "Manage" list rows. */
-  onNavigate?: (tab: string) => void;
-}) {
-  if (!onNavigate) return null;
-  return (
-    <Card title="Manage">
-      <ActionList
-        className="-mx-2"
-        items={[
-          ...(PHOTOS_ENABLED
-            ? [
-                {
-                  content: "Photos",
-                  icon: <Camera className={LUCIDE} />,
-                  suffix: "ChevronRightMinor" as const,
-                  onAction: () => onNavigate("photos"),
-                },
-              ]
-            : []),
-          {
-            content: "Listing",
-            icon: <Megaphone className={LUCIDE} />,
-            suffix: "ChevronRightMinor",
-            onAction: () => onNavigate("listing"),
-          },
-          {
-            content: "Financials",
-            icon: <PoundSterling className={LUCIDE} />,
-            suffix: "ChevronRightMinor",
-            onAction: () => onNavigate("financials"),
-          },
-          {
-            content: "Things to do",
-            icon: <Wrench className={LUCIDE} />,
-            suffix: "ChevronRightMinor",
-            onAction: () => onNavigate("todo"),
-          },
-        ]}
-      />
-    </Card>
   );
 }

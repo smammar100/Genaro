@@ -227,7 +227,7 @@ export function PipelineStageSettings() {
                     onCommit={(label) => handleRename(stage, label)}
                   />
                   <span
-                    className={cn("px-1 text-xs", BEHAVIOUR_TONE[stage.behaviour])}
+                    className={cn("px-1 text-caption", BEHAVIOUR_TONE[stage.behaviour])}
                     title={BEHAVIOUR_HINT[stage.behaviour]}
                   >
                     {BEHAVIOUR_LABEL[stage.behaviour]}
@@ -283,7 +283,7 @@ export function PipelineStageSettings() {
                 Add stage
               </Button>
             </div>
-            <p className="text-xs text-(--text-secondary)">
+            <p className="text-caption text-(--text-secondary)">
               {BEHAVIOUR_HINT[newBehaviour]}
             </p>
           </div>
@@ -304,7 +304,7 @@ export function PipelineStageSettings() {
           secondaryActions={[{ content: "Cancel", onAction: () => setRemoving(null) }]}
         >
           <div className="flex flex-col gap-4">
-            <p className="text-sm text-(--text)">
+            <p className="text-body text-(--text)">
               {removalCount === null
                 ? "Checking what's in this stage…"
                 : removalCount === 0

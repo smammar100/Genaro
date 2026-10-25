@@ -48,8 +48,8 @@ export function CreateNewCustomerRow({
         <Plus aria-hidden className="size-4 text-(--text-secondary)" />
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="text-sm font-medium">Create new customer</span>
-        <p className="truncate text-xs text-(--text-secondary)">
+        <span className="text-body font-medium">Create new customer</span>
+        <p className="truncate text-caption text-(--text-secondary)">
           {trimmed
             ? `No good match for “${trimmed}”. Create a new customer record.`
             : "Create a new customer record."}

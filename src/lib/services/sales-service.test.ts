@@ -41,6 +41,11 @@ const listingMocks = vi.hoisted(() => ({
 }));
 vi.mock("./listing-service", () => ({ listingService: listingMocks }));
 
+const leadMocks = vi.hoisted(() => ({
+  update: vi.fn(async () => undefined),
+}));
+vi.mock("./lead-service", () => ({ leadService: leadMocks }));
+
 import { salesService } from "./sales-service";
 
 function setup(opts: {
@@ -66,6 +71,7 @@ beforeEach(() => {
   vehicleMocks.update.mockReset().mockResolvedValue(undefined);
   listingMocks.getForVehicle.mockReset();
   listingMocks.setStatusForVehicle.mockReset().mockResolvedValue(undefined);
+  leadMocks.update.mockReset().mockResolvedValue(undefined);
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-07-02T12:00:00Z"));
 });
@@ -243,5 +249,111 @@ describe("create — active-deal dedupe", () => {
       vehicle_id: "veh-0001",
       lead_id: "lead-0001",
     });
+  });
+});
+
+describe("changeVehicle — the customer buys a different car", () => {
+  const OLD = "veh-0001";
+  const NEW = "veh-0002";
+
+  /**
+   * sales_deals answers three queries: the deal lookup (maybeSingle), the
+   * clash probe (limit) and the update. `clash` is what the probe finds.
+   */
+  function setupSwap(opts: {
+    stage: SalesStage;
+    clash?: { id: string; customerName: string }[];
+    oldVehicle?: Partial<Vehicle>;
+    newVehicle?: Partial<Vehicle>;
+    listing?: Partial<Listing>;
+  }) {
+    const deal = makeSalesDeal({ stage: opts.stage, vehicleId: OLD });
+    db.current = createSupabaseMock((call) => {
+      if (call.table !== "sales_deals") return undefined;
+      const methods = call.steps.map((s) => s.method);
+      if (methods.includes("update")) {
+        return { data: { ...deal, vehicleId: NEW }, error: null };
+      }
+      if (methods.includes("limit")) return { data: opts.clash ?? [], error: null };
+      return { data: deal, error: null };
+    });
+    vehicleMocks.getById.mockImplementation(async (id: string) =>
+      id === OLD
+        ? makeVehicle({ id: OLD, registration: "AB12 CDE", ...opts.oldVehicle })
+        : makeVehicle({
+            id: NEW,
+            registration: "XY34 ZZZ",
+            make: "VOLKSWAGEN",
+            model: "POLO",
+            ...opts.newVehicle,
+          }),
+    );
+    listingMocks.getForVehicle.mockResolvedValue(makeListing(opts.listing));
+    return deal;
+  }
+
+  const updateCall = () =>
+    db.current.calls.find((c) => c.steps.some((s) => s.method === "update"));
+
+  it("moves an open deal and its lead to the new car, leaving statuses alone", async () => {
+    setupSwap({ stage: "offer_made" });
+    const res = await salesService.changeVehicle("deal-0001", NEW, "user-9");
+
+    expect(res.vehicleId).toBe(NEW);
+    expect(stepArgs(updateCall()!, "update")).toEqual([{ vehicle_id: NEW }]);
+    expect(leadMocks.update).toHaveBeenCalledWith("lead-0001", {
+      vehicleId: NEW,
+      vehicleInterest: "VOLKSWAGEN POLO (XY34 ZZZ)",
+    });
+    expect(vehicleMocks.changeStatus).not.toHaveBeenCalled();
+    expect(listingMocks.setStatusForVehicle).not.toHaveBeenCalled();
+  });
+
+  it("moves a deposit's reservation: the old car goes back on sale, the new one is reserved", async () => {
+    setupSwap({
+      stage: "deposit_taken",
+      oldVehicle: { status: "reserved" },
+      newVehicle: { status: "listed" },
+      listing: { status: "reserved" },
+    });
+    await salesService.changeVehicle("deal-0001", NEW, "user-9");
+
+    expect(vehicleMocks.changeStatus).toHaveBeenCalledWith(OLD, "listed", "user-9");
+    expect(vehicleMocks.changeStatus).toHaveBeenCalledWith(NEW, "reserved", "user-9");
+    expect(listingMocks.setStatusForVehicle).toHaveBeenCalledWith(OLD, "live");
+    expect(listingMocks.setStatusForVehicle).toHaveBeenCalledWith(NEW, "reserved");
+  });
+
+  it("refuses a completed sale", async () => {
+    setupSwap({ stage: "completed_sale" });
+    await expect(salesService.changeVehicle("deal-0001", NEW, "user-9")).rejects.toThrow(
+      "This sale is complete",
+    );
+    expect(updateCall()).toBeUndefined();
+    expect(leadMocks.update).not.toHaveBeenCalled();
+  });
+
+  it("refuses a car another open deal already holds, naming the customer", async () => {
+    setupSwap({
+      stage: "offer_made",
+      clash: [{ id: "deal-0002", customerName: "Imran Qureshi" }],
+    });
+    await expect(salesService.changeVehicle("deal-0001", NEW, "user-9")).rejects.toThrow(
+      "already on an open deal for Imran Qureshi",
+    );
+    expect(updateCall()).toBeUndefined();
+    // The probe ignores lost deals and this deal itself.
+    const probe = db.current.calls.find((c) => c.steps.some((s) => s.method === "limit"));
+    expect(probe!.steps.filter((s) => s.method === "neq").map((s) => s.args)).toEqual([
+      ["stage", "lost"],
+      ["id", "deal-0001"],
+    ]);
+  });
+
+  it("does nothing when the car is unchanged", async () => {
+    setupSwap({ stage: "offer_made" });
+    await salesService.changeVehicle("deal-0001", OLD, "user-9");
+    expect(updateCall()).toBeUndefined();
+    expect(leadMocks.update).not.toHaveBeenCalled();
   });
 });

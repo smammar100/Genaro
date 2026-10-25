@@ -49,6 +49,20 @@ describe("navRows", () => {
     expect(find(rows, "Sales").pages?.some((p) => p.selected)).toBe(false);
   });
 
+  it("starts a new section at the lifecycle and at Administrative", () => {
+    const rows = navRows(groups, { pathname: "/dashboard", tourGroup: null });
+    expect(rows.filter((r) => r.newSection).map((r) => r.label)).toEqual([
+      "Inventory",
+      "Administrative",
+    ]);
+  });
+
+  it("moves the section gap to the first group a user can see", () => {
+    const salesOnly = visibleNavGroups(only("sales:create_lead"), false);
+    const rows = navRows(salesOnly, { pathname: "/dashboard", tourGroup: null });
+    expect(rows.filter((r) => r.newSection).map((r) => r.label)).toEqual(["Sales"]);
+  });
+
   it("closes the route's section when the user closes it", () => {
     const rows = navRows(groups, { pathname: "/maintenance/calendar", tourGroup: null, openGroup: null });
     expect(rows.filter((r) => r.pages && r.selected)).toEqual([]);

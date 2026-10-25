@@ -200,7 +200,7 @@ export function FullEnquiryForm({
         className="flex flex-col gap-4"
       >
         {selectedCustomer && (
-          <div className="flex items-center justify-between rounded-(--radius-200) bg-(--bg-surface-secondary) px-3 py-2 text-sm text-(--text)">
+          <div className="flex items-center justify-between rounded-(--radius-200) bg-(--bg-surface-secondary) px-3 py-2 text-body text-(--text)">
             <span>
               <span className="text-(--text-secondary)">Customer: </span>
               <span className="font-medium">
@@ -213,7 +213,7 @@ export function FullEnquiryForm({
 
         {/* Step indicator (only shows if 2 steps are in play) */}
         {!selectedCustomer && (
-          <div className="flex items-center gap-2 text-xs text-(--text-secondary)">
+          <div className="flex items-center gap-2 text-caption text-(--text-secondary)">
             <StepPill active={step === 1} done={step > 1} label="1. Customer" />
             <div className="h-px flex-1 bg-(--border)" />
             <StepPill active={step === 2} done={false} label="2. Enquiry" />

@@ -164,7 +164,7 @@ export function ComplianceCard({
         />
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-(--text-secondary)">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-caption text-(--text-secondary)">
         {verifiedAt ? (
           <p>Verified by DVLA + DVSA at {verifiedAt.toLocaleTimeString()}.</p>
         ) : (
@@ -238,8 +238,8 @@ function StatusTile({
   return (
     <div className="flex items-center justify-between gap-3 rounded-(--radius-200) border border-(--border) px-3 py-2">
       <div>
-        <div className="text-sm font-medium text-(--text-secondary)">{label}</div>
-        <div className="mt-0.5 text-xs text-(--text-secondary)">{subtitle}</div>
+        <div className="text-body font-medium text-(--text-secondary)">{label}</div>
+        <div className="mt-0.5 text-caption text-(--text-secondary)">{subtitle}</div>
       </div>
       <Badge tone={badgeTone}>{status ?? "—"}</Badge>
     </div>
@@ -287,7 +287,7 @@ function EditableField({
           if (type === "date") commit(e.target.value);
         }}
         onBlur={() => commit(draft)}
-        className="text-sm"
+        className="text-body"
       />
     </div>
   );

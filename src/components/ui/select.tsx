@@ -39,7 +39,7 @@ export function Select<Multiple extends boolean | undefined = false>({
 }
 
 export const selectTriggerVariants = cva(
-  "relative inline-flex min-h-8 w-full min-w-36 select-none items-center justify-between gap-2 rounded-(--radius-200) border border-(--input-border) bg-(--input-bg-surface) px-3 text-left text-[13px] text-(--text) outline-none transition-[border-color,background-color] hover:border-(--input-border-hover) hover:bg-(--input-bg-surface-hover) after:absolute after:top-1/2 after:left-1/2 after:size-full after:min-h-10 after:-translate-x-1/2 after:-translate-y-1/2 pointer-coarse:after:min-h-11 focus-visible:border-(--input-border-active) focus-visible:bg-(--input-bg-surface-active) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--border-focus) aria-invalid:border-(--border-critical-secondary) aria-invalid:bg-(--bg-surface-critical) data-disabled:pointer-events-none data-disabled:border-transparent data-disabled:bg-(--bg-surface-disabled) data-disabled:text-(--text-disabled) [&_svg:not([class*='opacity-'])]:opacity-80 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [[data-disabled],:focus-visible,[aria-invalid],[data-pressed]]:shadow-none",
+  "relative inline-flex min-h-8 w-full min-w-36 select-none items-center justify-between gap-2 rounded-(--radius-200) border border-(--input-border) bg-(--input-bg-surface) px-3 text-left text-body text-(--text) outline-none transition-[border-color,background-color] hover:border-(--input-border-hover) hover:bg-(--input-bg-surface-hover) after:absolute after:top-1/2 after:left-1/2 after:size-full after:min-h-10 after:-translate-x-1/2 after:-translate-y-1/2 pointer-coarse:after:min-h-11 focus-visible:border-(--input-border-active) focus-visible:bg-(--input-bg-surface-active) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--border-focus) aria-invalid:border-(--border-critical-secondary) aria-invalid:bg-(--bg-surface-critical) data-disabled:pointer-events-none data-disabled:border-transparent data-disabled:bg-(--bg-surface-disabled) data-disabled:text-(--text-disabled) [&_svg:not([class*='opacity-'])]:opacity-80 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [[data-disabled],:focus-visible,[aria-invalid],[data-pressed]]:shadow-none",
   {
     defaultVariants: {
       size: "default",
@@ -171,7 +171,7 @@ export function SelectItem({
       className={cn(
         // Polaris OptionList rows: 13px medium, radius-200, the tick on the
         // right, the chosen row filled and semibold.
-        "flex min-h-8 shrink-0 cursor-default items-center justify-between gap-2 rounded-(--radius-200) p-1.5 text-[13px] leading-5 font-medium text-(--text) outline-none data-disabled:pointer-events-none data-disabled:text-(--text-disabled) data-highlighted:bg-(--bg-surface-secondary-hover) data-selected:bg-(--bg-surface-secondary-selected) data-selected:font-semibold [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "flex min-h-8 shrink-0 cursor-default items-center justify-between gap-2 rounded-(--radius-200) p-1.5 text-body font-medium text-(--text) outline-none data-disabled:pointer-events-none data-disabled:text-(--text-disabled) data-highlighted:bg-(--bg-surface-secondary-hover) data-selected:bg-(--bg-surface-secondary-selected) data-selected:font-semibold [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       data-slot="select-item"
@@ -213,7 +213,7 @@ export function SelectLabel({
   return (
     <SelectPrimitive.Label
       className={cn(
-        "not-in-data-[slot=field]:mb-2 inline-flex cursor-default items-center gap-2 font-medium text-base/4.5 text-foreground sm:text-sm/4",
+        "not-in-data-[slot=field]:mb-2 inline-flex cursor-default items-center gap-2 font-medium text-body text-foreground",
         className,
       )}
       data-slot="select-label"

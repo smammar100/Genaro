@@ -145,7 +145,7 @@ export function QuickEnquiryForm({
         className="flex flex-col gap-4"
       >
         {selectedCustomer && (
-          <div className="flex items-center justify-between rounded-(--radius-200) bg-(--bg-surface-secondary) px-3 py-2 text-sm text-(--text)">
+          <div className="flex items-center justify-between rounded-(--radius-200) bg-(--bg-surface-secondary) px-3 py-2 text-body text-(--text)">
             <span>
               <span className="text-(--text-secondary)">Customer: </span>
               <span className="font-medium">
@@ -167,7 +167,7 @@ export function QuickEnquiryForm({
                 className={cn(errors.firstName && "border-destructive")}
               />
               {errors.firstName?.message && (
-                <p className="mt-1 text-xs text-destructive">
+                <p className="mt-1 text-caption text-destructive">
                   {errors.firstName.message}
                 </p>
               )}
@@ -181,7 +181,7 @@ export function QuickEnquiryForm({
                 className={cn(errors.lastName && "border-destructive")}
               />
               {errors.lastName?.message && (
-                <p className="mt-1 text-xs text-destructive">
+                <p className="mt-1 text-caption text-destructive">
                   {errors.lastName.message}
                 </p>
               )}
@@ -197,7 +197,7 @@ export function QuickEnquiryForm({
                 className={cn(errors.mobilePhone && "border-destructive")}
               />
               {errors.mobilePhone?.message && (
-                <p className="mt-1 text-xs text-destructive">
+                <p className="mt-1 text-caption text-destructive">
                   {errors.mobilePhone.message}
                 </p>
               )}
@@ -212,7 +212,7 @@ export function QuickEnquiryForm({
                 className={cn(errors.email && "border-destructive")}
               />
               {errors.email?.message && (
-                <p className="mt-1 text-xs text-destructive">
+                <p className="mt-1 text-caption text-destructive">
                   {errors.email.message}
                 </p>
               )}
@@ -222,7 +222,7 @@ export function QuickEnquiryForm({
 
         <Card title="Enquiry">
           {vehicleLabel && (
-            <div className="rounded-(--radius-200) border border-dashed border-(--border) bg-(--bg-surface-secondary) px-3 py-2 text-sm text-(--text)">
+            <div className="rounded-(--radius-200) border border-dashed border-(--border) bg-(--bg-surface-secondary) px-3 py-2 text-body text-(--text)">
               <span className="text-(--text-secondary)">Vehicle: </span>
               <span className="font-medium">{vehicleLabel}</span>
             </div>
@@ -242,7 +242,7 @@ export function QuickEnquiryForm({
                 invalid={!!errors.source}
               />
               {errors.source?.message && (
-                <p className="mt-1 text-xs text-destructive">
+                <p className="mt-1 text-caption text-destructive">
                   {errors.source.message}
                 </p>
               )}
@@ -261,7 +261,7 @@ export function QuickEnquiryForm({
                 invalid={!!errors.salespersonId}
               />
               {errors.salespersonId?.message && (
-                <p className="mt-1 text-xs text-destructive">
+                <p className="mt-1 text-caption text-destructive">
                   {errors.salespersonId.message}
                 </p>
               )}
@@ -280,7 +280,7 @@ export function QuickEnquiryForm({
                 invalid={!!errors.type}
               />
               {errors.type?.message && (
-                <p className="mt-1 text-xs text-destructive">
+                <p className="mt-1 text-caption text-destructive">
                   {errors.type.message}
                 </p>
               )}

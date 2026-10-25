@@ -26,6 +26,7 @@ import {
 import { notify } from "@/lib/toast";
 import { CalendarFilters, CalendarToolbar } from "./calendar-toolbar";
 import { EventFormModal, EMPTY_FIELDS, fieldsForEvent, type FormFields } from "./event-form-modal";
+import { createEvent, updateEvent } from "./event-actions";
 import { KIND_META } from "./event-meta";
 import { EventPopover } from "./event-popover";
 import { MonthGrid } from "./month-grid";
@@ -196,102 +197,19 @@ export function SharedCalendar({
     let message = "";
     try {
       if (form.mode === "create") {
-        if (fields.kind === "appt") {
-          await appointmentService.create({
-            companyId: company.id,
-            vehicleId: fields.vehicleId,
-            leadId: null,
-            customerName: fields.customerName.trim(),
-            customerPhone: fields.customerPhone.trim(),
-            customerEmail: fields.customerEmail.trim(),
-            date: fields.date,
-            time: fields.time,
-            specialRequirements: fields.notes.trim() || null,
-            createdBy: user.id,
-          });
-        } else if (fields.kind === "workshop") {
-          // Walk-ins aren't linked to stock: workshop_jobs has no vehicle_id.
-          await workshopService.create(
-            {
-              companyId: company.id,
-              customerName: fields.customerName.trim(),
-              customerPhone: fields.customerPhone.trim(),
-              vehicleReg: fields.vehicleReg.trim(),
-              vehicleDescription: fields.vehicleDescription.trim(),
-              description: fields.description.trim(),
-              assignedTo: null,
-              estimatedCost: null,
-              scheduledDate: fields.date,
-              scheduledTime: fields.time,
-              notes: fields.notes.trim() || null,
-            },
-            user.id,
-          );
-        } else {
-          // A calendar-made job is a stub: vendor, assignee, costs and duration
-          // are filled in later from the Maintenance pipeline. It starts on its
-          // due date so it's schedulable straight away.
-          await maintenanceService.create(
-            {
-              companyId: company.id,
-              vehicleId: fields.vehicleId,
-              description: fields.description.trim(),
-              assignedTo: null,
-              vendorId: null,
-              estimatedCost: null,
-              estimatedDurationHours: null,
-              startDate: fields.date,
-              dueDate: fields.date,
-              scheduledTime: fields.time || null,
-              notes: fields.notes.trim() || null,
-            },
-            user.id,
-          );
-        }
+        await createEvent(fields, { companyId: company.id, userId: user.id });
         message = `${KIND_META[fields.kind].singular} added`;
       } else {
         const ev = form.ev;
-        if (ev.kind === "appt") {
-          await appointmentService.update(
-            ev.id,
-            {
-              customerName: fields.customerName.trim(),
-              customerPhone: fields.customerPhone.trim(),
-              customerEmail: fields.customerEmail.trim(),
-              vehicleId: fields.vehicleId,
-              date: fields.date,
-              time: fields.time,
-              specialRequirements: fields.notes.trim() || null,
-            },
-            user.id,
-          );
-        } else if (ev.kind === "workshop") {
-          await workshopService.update(ev.id, {
-            customerName: fields.customerName.trim(),
-            customerPhone: fields.customerPhone.trim(),
-            vehicleReg: fields.vehicleReg.trim(),
-            vehicleDescription: fields.vehicleDescription.trim(),
-            description: fields.description.trim(),
-            scheduledDate: fields.date,
-            scheduledTime: fields.time,
-            notes: fields.notes.trim() || null,
-          });
-        } else {
-          // Stored times carry seconds; only send the time when it changed, so
-          // an untouched save doesn't log a "Job updated" note.
-          const timeChanged = (ev.raw.scheduledTime ?? "").slice(0, 5) !== fields.time;
-          await maintenanceService.update(
-            ev.id,
-            {
-              vehicleId: fields.vehicleId,
-              description: fields.description.trim(),
-              dueDate: fields.date,
-              ...(timeChanged ? { scheduledTime: fields.time || null } : {}),
-              notes: fields.notes.trim() || null,
-            },
-            user.id,
-          );
-        }
+        await updateEvent(
+          {
+            kind: ev.kind,
+            id: ev.id,
+            scheduledTime: ev.kind === "maint" ? ev.raw.scheduledTime : undefined,
+          },
+          fields,
+          user.id,
+        );
         message = "Changes saved";
       }
       await reloadAll(company.id);

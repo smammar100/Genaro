@@ -330,14 +330,14 @@ function ProfilePanel() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-(--text)">Sign-in</span>
+              <span className="text-body font-medium text-(--text)">Sign-in</span>
               <div className="flex items-center gap-3 rounded-(--radius-200) bg-(--bg-surface-secondary) px-3 py-2">
                 <Icon source={<KeyRound className="size-4" />} tone="subdued" />
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-(--text)">
+                  <div className="truncate text-body font-medium text-(--text)">
                     {user ? accountHandle(user) : "—"}
                   </div>
-                  <div className="text-xs text-(--text-secondary)">
+                  <div className="text-caption text-(--text-secondary)">
                     Managed from Users and permissions
                   </div>
                 </div>

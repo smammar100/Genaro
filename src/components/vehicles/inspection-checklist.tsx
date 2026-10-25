@@ -61,7 +61,7 @@ function ProgressRing({ percent }: { percent: number }) {
           className="stroke-(--bg-fill-success) transition-[stroke-dashoffset]"
         />
       </svg>
-      <span className="absolute inset-0 grid place-items-center text-2xs font-semibold tabular-nums">
+      <span className="absolute inset-0 grid place-items-center text-micro font-semibold tabular-nums">
         {percent}%
       </span>
     </div>
@@ -207,7 +207,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <ProgressRing percent={percent} />
-            <div className="text-sm">
+            <div className="text-body">
               <div className="flex flex-wrap items-center gap-2 font-medium">
                 <span>{completed}/{total} completed</span>
                 {flagged > 0 && (
@@ -216,7 +216,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
                   </Badge>
                 )}
               </div>
-              <div className="mt-0.5 flex items-center gap-2 text-xs text-(--text-secondary)">
+              <div className="mt-0.5 flex items-center gap-2 text-caption text-(--text-secondary)">
                 <span>Inspector: {inspector}</span>
                 <span aria-hidden>·</span>
                 {saving ? (
@@ -294,10 +294,10 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
                     className={cn("size-2.5 shrink-0 rounded-full", dot)}
                     title={status || "Not checked"}
                   />
-                  <span className="w-6 shrink-0 text-xs tabular-nums text-(--text-secondary)">
+                  <span className="w-6 shrink-0 text-caption tabular-nums text-(--text-secondary)">
                     {item.number}
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium sm:w-40 sm:flex-none sm:shrink-0">
+                  <span className="min-w-0 flex-1 truncate text-body font-medium sm:w-40 sm:flex-none sm:shrink-0">
                     {item.item}
                   </span>
                 </div>
@@ -324,7 +324,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
                         handleActionChange(item.number, e.target.value)
                       }
                       className={cn(
-                        "h-10 text-xs sm:h-8",
+                        "h-10 text-caption sm:h-8",
                         isNegative && "border-transparent",
                       )}
                     />
@@ -340,7 +340,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
       <Card
         title="Inspection notes"
         actions={
-          <span className="text-xs text-(--text-secondary)">
+          <span className="text-caption text-(--text-secondary)">
             {notes.length} note{notes.length === 1 ? "" : "s"} · append-only
           </span>
         }
@@ -372,13 +372,13 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
               return (
                 <div
                   key={n.id}
-                  className="rounded-(--radius-200) bg-(--bg-surface-secondary) p-3 text-sm"
+                  className="rounded-(--radius-200) bg-(--bg-surface-secondary) p-3 text-body"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium">
+                    <span className="text-caption font-medium">
                       {author?.name ?? "Unknown"}
                     </span>
-                    <span className="text-xs text-(--text-secondary)">
+                    <span className="text-caption text-(--text-secondary)">
                       {formatRelativeTime(n.createdAt)}
                     </span>
                   </div>

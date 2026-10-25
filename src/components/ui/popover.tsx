@@ -66,9 +66,9 @@ function PopoverPopup({
       >
         <PopoverPrimitive.Popup
           className={cn(
-            "relative flex h-(--popup-height,auto) w-(--popup-width,auto) origin-(--transform-origin) rounded-xl bg-popover text-[13px] text-popover-foreground shadow-(--shadow-300) outline-none transition-[width,height,scale,opacity] data-starting-style:scale-98 data-starting-style:opacity-0",
+            "relative flex h-(--popup-height,auto) w-(--popup-width,auto) origin-(--transform-origin) rounded-xl bg-popover text-body text-popover-foreground shadow-(--shadow-300) outline-none transition-[width,height,scale,opacity] data-starting-style:scale-98 data-starting-style:opacity-0",
             tooltipStyle &&
-              "w-fit text-balance rounded-lg text-xs",
+              "w-fit text-balance rounded-lg text-caption",
             className,
           )}
           data-slot="popover-popup"

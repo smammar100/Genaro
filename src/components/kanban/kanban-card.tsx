@@ -45,6 +45,11 @@ export interface KanbanCardProps {
   menu?: React.ReactNode;
   /** The footer's last row, e.g. a "Generate invoice" button. */
   action?: React.ReactNode;
+  /**
+   * A one-tap action that's always visible, unlike the menu: an icon button
+   * at the footer's right end, e.g. booking an appointment.
+   */
+  quickAction?: React.ReactNode;
   /** Clicking the card anywhere outside its own links and buttons opens it. */
   onOpen?: () => void;
 }
@@ -112,6 +117,7 @@ export function KanbanCard({
   money,
   menu,
   action,
+  quickAction,
   onOpen,
 }: KanbanCardProps) {
   const lines = (facts ?? []).filter((f): f is KanbanFact => Boolean(f));
@@ -201,7 +207,7 @@ export function KanbanCard({
         ) : null}
       </div>
 
-      {person || money || action ? (
+      {person || money || action || quickAction ? (
         <div className="flex min-w-0 flex-wrap items-center gap-2 border-t border-(--border-secondary) px-4 py-3">
           {person ? (
             // A long name ellipses (full name on hover) before the amount
@@ -223,6 +229,9 @@ export function KanbanCard({
               <span className="body-sm-semibold truncate whitespace-nowrap tabular-nums text-(--text)">{money.value}</span>
               {money.kind ? <span className="truncate">{money.kind}</span> : null}
             </span>
+          ) : null}
+          {quickAction ? (
+            <span className={cn("inline-flex shrink-0", !money && "ml-auto")}>{quickAction}</span>
           ) : null}
           {action ? <div className="basis-full">{action}</div> : null}
         </div>

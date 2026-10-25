@@ -371,7 +371,7 @@ export default function InvoicingPage() {
         <Button
           key="number"
           variant="link"
-          className="h-auto font-mono text-xs"
+          className="h-auto font-mono text-caption"
           onClick={(e) => {
             e.stopPropagation();
             setViewing(inv);
@@ -605,7 +605,7 @@ export default function InvoicingPage() {
           )}
 
           <Card title="VAT summary">
-            <p className="text-xs text-(--text-secondary)">
+            <p className="text-caption text-(--text-secondary)">
               Input VAT (purchases) − Output VAT (sales) = net.
             </p>
             {vat ? (
@@ -766,9 +766,9 @@ function KpiTile({
 }) {
   return (
     <div className="bg-(--bg-surface) p-4">
-      <div className="text-xs font-medium text-(--text-secondary)">{label}</div>
+      <div className="text-caption font-medium text-(--text-secondary)">{label}</div>
       <div className={cn("heading-lg mt-1 tabular-nums", tone)}>{value}</div>
-      <div className="mt-0.5 text-xs text-(--text-secondary)">{sub}</div>
+      <div className="mt-0.5 text-caption text-(--text-secondary)">{sub}</div>
     </div>
   );
 }
@@ -776,7 +776,7 @@ function KpiTile({
 function SummaryStat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-xs font-medium text-(--text-secondary)">{label}</div>
+      <div className="text-caption font-medium text-(--text-secondary)">{label}</div>
       <div className="mt-0.5 font-semibold tabular-nums">{value}</div>
     </div>
   );
@@ -828,10 +828,10 @@ function VatStat({
 }) {
   return (
     <div className="rounded-(--radius-200) bg-(--bg-surface-secondary) p-3">
-      <div className="text-xs font-medium text-(--text-secondary)">{label}</div>
+      <div className="text-caption font-medium text-(--text-secondary)">{label}</div>
       <div
         className={cn(
-          "mt-1 text-base font-semibold tabular-nums",
+          "mt-1 text-subtitle font-semibold tabular-nums",
           tone === "positive" && "text-(--text-success)",
           tone === "negative" && "text-(--text-critical)",
         )}

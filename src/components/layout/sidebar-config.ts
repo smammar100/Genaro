@@ -47,6 +47,12 @@ export interface SidebarGroup {
    */
   icon?: LucideIcon;
   items: SidebarItem[];
+  /**
+   * Which of the nav's three sections the group sits in: home (Dashboard),
+   * the vehicle's lifecycle (the default), or oversight of it (admin). The
+   * sections are spaced apart in the rail.
+   */
+  section?: "home" | "admin";
 }
 
 /**
@@ -80,6 +86,7 @@ export interface SidebarGroup {
 export const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: null,
+    section: "home",
     items: [{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard }],
   },
   {
@@ -279,6 +286,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     // Oversight of the lifecycle rather than a stage in it, so it sits last.
     label: "Administrative",
     icon: Building2,
+    section: "admin",
     items: [
       {
         label: "Master sheet",

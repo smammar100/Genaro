@@ -52,7 +52,7 @@ export function EnquiryTypeDropdown({
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
-          <SelectLabel className="text-xs text-(--text-secondary)">
+          <SelectLabel className="text-caption text-(--text-secondary)">
             Active
           </SelectLabel>
           {ENQUIRY_TYPES_ACTIVE.map((t) => (
@@ -63,7 +63,7 @@ export function EnquiryTypeDropdown({
         </SelectGroup>
         <SelectSeparator />
         <SelectGroup>
-          <SelectLabel className="text-xs text-(--text-secondary)">
+          <SelectLabel className="text-caption text-(--text-secondary)">
             Lost
           </SelectLabel>
           {ENQUIRY_TYPES_LOST.map((t) => (

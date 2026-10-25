@@ -7,11 +7,7 @@ import {
   type SheetSectionContext,
 } from "@/components/vehicles/vehicle-sheet";
 import { SectionTabs } from "@/components/master-sheet/section-tabs";
-import { SectionSummary } from "@/components/master-sheet/section-summary";
-import {
-  columnCountsBySection,
-  type MetricSection,
-} from "@/lib/master-sheet-metrics";
+import { columnCountsBySection } from "@/lib/master-sheet-metrics";
 import type { Vehicle } from "@/lib/types";
 import { VehicleImage } from "@/components/shared/vehicle-image";
 import { PHOTOS_ENABLED } from "@/lib/phase-one";
@@ -20,6 +16,7 @@ import {
   AUCTION_HOUSE_SUGGESTIONS,
   FUEL_OPTIONS,
   LOCAL_IMPORT_OPTIONS,
+  LOCATION_OPTIONS,
   LOG_BOOK_SUGGESTIONS,
   MASTER_SHEET_SECTIONS,
   OWNED_BY_SUGGESTIONS,
@@ -47,10 +44,11 @@ import {
 /**
  * The Master Sheet — Car Capital's own Excel sheet (A–BS), column for column.
  *
- * Layout: section tabs (badged with their column counts) and four summary
- * figures for the selected tab over the grid; inside the grid's card, one
- * toolbar row, coloured section bands, calculated (ƒ) columns and a totals
- * row. Chosen from the /prototype variations D (header) and A (table).
+ * Layout: section tabs (badged with their column counts) over the grid;
+ * inside the grid's card, one toolbar row, coloured section bands and
+ * calculated (ƒ) columns. Chosen from the /prototype variations D (header)
+ * and A (table). The summary figures and the totals row came off so more
+ * rows fit (2026-10-25).
  *
  * Headers are the sheet's own, minus its "(1)" / "(2)" entry markers; the
  * order is the sheet's order. Formula columns (`value`) are computed, never
@@ -120,6 +118,18 @@ const COLS: ColDef[] = [
     toPatch: (value) => ({
       registration: String(value ?? "").trim().toUpperCase() || "UNREGISTERED",
     }),
+  },
+  // App-only: where the car is, SOLD once sold. Read-only — moves go through
+  // Locations, which keeps the movement history.
+  {
+    key: "currentLocation",
+    label: "LOCATION",
+    type: "location",
+    width: 120,
+    sticky: true,
+    section: COMMON,
+    options: LOCATION_OPTIONS,
+    mobileHide: true,
   },
 
   // ── Buying (sheet B–AI) ───────────────────────────────────────────────
@@ -357,6 +367,7 @@ const COLS: ColDef[] = [
 
 const FILTER_FIELDS: FilterField[] = [
   { key: "legacySerialNumber", label: "Legacy S/N", kind: "num" },
+  { key: "currentLocation", label: "Location", kind: "text", options: LOCATION_OPTIONS },
   { key: "make", label: "Make", kind: "text" },
   { key: "model", label: "Model", kind: "text" },
   { key: "vehicleCategory", label: "Vehicle type", kind: "text", get: (v) => vehicleCategory(v) },
@@ -387,22 +398,15 @@ const FILTER_FIELDS: FilterField[] = [
 /** Columns per section, for the tab badges. */
 const COLUMN_COUNTS = columnCountsBySection(COLS.filter((c) => !c.gridHidden));
 
-/** Section tabs, then four summary figures for the selected tab. */
-function MasterSheetSectionHeader({
-  section,
-  onSectionChange,
-  rows,
-}: SheetSectionContext) {
+/** The section tabs over the grid. */
+function MasterSheetSectionHeader({ section, onSectionChange }: SheetSectionContext) {
   return (
-    <>
-      <SectionTabs
-        sections={MASTER_SHEET_SECTIONS}
-        counts={COLUMN_COUNTS}
-        value={section}
-        onChange={onSectionChange}
-      />
-      <SectionSummary section={(section ?? "all") as MetricSection} rows={rows} />
-    </>
+    <SectionTabs
+      sections={MASTER_SHEET_SECTIONS}
+      counts={COLUMN_COUNTS}
+      value={section}
+      onChange={onSectionChange}
+    />
   );
 }
 
@@ -415,7 +419,6 @@ export default function MasterSheetPage() {
       sections={MASTER_SHEET_SECTIONS}
       csvName="master-sheet"
       layout="workbook"
-      showTotals
       sectionHeader={MasterSheetSectionHeader}
       summary={(_count, selected) =>
         `Every car from purchase to sale. Edit cells in place; ƒ columns calculate themselves.${

@@ -19,7 +19,7 @@ export function ValuationCard({
 }) {
   return (
     <Card title="AutoTrader valuation">
-      <p className="text-xs text-(--text-secondary)">
+      <p className="text-caption text-(--text-secondary)">
         Based on {mileage.toLocaleString()} mi
       </p>
       <dl className="flex flex-col gap-1">
@@ -50,10 +50,10 @@ function ValuationRow({
         highlight && "bg-(--bg-surface-secondary)",
       )}
     >
-      <dt className="text-sm text-(--text-secondary)">{label}</dt>
+      <dt className="text-body text-(--text-secondary)">{label}</dt>
       <dd
         className={cn(
-          "text-sm tabular-nums",
+          "text-body tabular-nums",
           highlight ? "font-semibold" : "font-medium",
         )}
       >

@@ -76,7 +76,7 @@ export default function LocationsPage() {
       })
       .catch(() => {
         if (!cancelled) {
-          setCounts({ forecourt: 0, yard: 0, garage: 0, staff: 0 });
+          setCounts({ forecourt: 0, yard: 0, garage: 0, staff: 0, courtesy_car: 0 });
         }
       });
     return () => {

@@ -255,8 +255,8 @@ export function EditableCard<T extends object>({
               >
                 <span
                   className={cn(
-                    "shrink-0 body-sm text-(--text-secondary)",
-                    editing && !f.readOnly && "body-sm-semibold",
+                    "shrink-0 body-md text-(--text-secondary)",
+                    editing && !f.readOnly && "text-(--text)",
                   )}
                 >
                   {f.label}
@@ -317,7 +317,7 @@ function FieldInput<T>({
         value={String(value ?? "")}
         onValueChange={(v) => onChange(String(v))}
       >
-        <SelectTrigger className="h-8 w-full text-sm" aria-label={field.label}>
+        <SelectTrigger className="h-8 w-full text-body" aria-label={field.label}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -351,12 +351,12 @@ function FieldInput<T>({
     <div className="flex w-full flex-col gap-1">
       {control}
       {error && (
-        <span id={describedBy} role="alert" className="body-sm text-(--text-critical)">
+        <span id={describedBy} role="alert" className="body-md text-(--text-critical)">
           {error}
         </span>
       )}
       {!error && field.hint && (
-        <span className="body-sm text-(--text-secondary)">{field.hint}</span>
+        <span className="body-md text-(--text-secondary)">{field.hint}</span>
       )}
     </div>
   );

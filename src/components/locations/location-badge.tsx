@@ -10,11 +10,11 @@ import {
 import { cn } from "@/lib/utils";
 import {
   VEHICLE_LOCATION_LABELS,
-  type VehicleLocation,
+  type CurrentLocation,
 } from "@/lib/types";
 
 interface LocationBadgeProps {
-  location: VehicleLocation;
+  location: CurrentLocation;
   outForTestDrive?: boolean;
   testDriveExpectedBackAt?: string | null;
   /** Vendor name shown in the off-site tooltip for garage moves. */
@@ -28,11 +28,10 @@ interface LocationBadgeProps {
   className?: string;
 }
 
-const OFF_SITE_LOCATIONS: VehicleLocation[] = ["garage", "staff"];
-
-const OFF_SITE_DOT: Record<"garage" | "staff", string> = {
+const OFF_SITE_DOT: Partial<Record<CurrentLocation, string>> = {
   garage: "bg-(--bg-fill-critical)",
   staff: "bg-(--bg-fill-warning)",
+  courtesy_car: "bg-(--bg-fill-magic)",
 };
 
 function formatHm(iso: string | null | undefined): string | null {
@@ -67,7 +66,8 @@ export function LocationBadge({
   compact = false,
   className,
 }: LocationBadgeProps) {
-  const isOffSite = OFF_SITE_LOCATIONS.includes(location);
+  const offSiteDot = OFF_SITE_DOT[location];
+  const isOffSite = offSiteDot !== undefined;
   const offSiteTooltip =
     location === "garage"
       ? workshopName
@@ -77,7 +77,9 @@ export function LocationBadge({
         ? staffName
           ? `With ${staffName}${expectedReturnAt ? ` · back ${formatHm(expectedReturnAt)}` : ""}`
           : "With a staff member"
-        : null;
+        : location === "courtesy_car"
+          ? "Lent to a customer as a courtesy car"
+          : null;
   const testDriveTooltip = outForTestDrive
     ? testDriveExpectedBackAt
       ? `Out for test drive · back ${formatHm(testDriveExpectedBackAt)}`
@@ -88,7 +90,7 @@ export function LocationBadge({
     <TooltipProvider delay={150}>
       <span
         className={cn(
-          "inline-flex items-center gap-1.5 whitespace-nowrap text-xs",
+          "inline-flex items-center gap-1.5 whitespace-nowrap text-caption",
           className,
         )}
       >
@@ -99,15 +101,12 @@ export function LocationBadge({
             <TooltipTrigger asChild>
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full bg-(--bg-fill-secondary) px-1.5 py-0.5 text-xs font-medium text-(--text-secondary)",
+                  "inline-flex items-center gap-1 rounded-full bg-(--bg-fill-secondary) px-1.5 py-0.5 text-caption font-medium text-(--text-secondary)",
                   compact && "gap-0 px-0.5 py-0",
                 )}
               >
                 <span
-                  className={cn(
-                    "block size-1.5 rounded-full",
-                    location === "garage" ? OFF_SITE_DOT.garage : OFF_SITE_DOT.staff,
-                  )}
+                  className={cn("block size-1.5 rounded-full", offSiteDot)}
                   aria-hidden
                 />
                 {!compact ? <span>Off-site</span> : null}

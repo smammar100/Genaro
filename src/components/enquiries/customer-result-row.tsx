@@ -79,22 +79,22 @@ export function CustomerResultRow({
         )}
       </div>
       <Avatar className="size-10 shrink-0">
-        <AvatarFallback className="text-xs">
+        <AvatarFallback className="text-caption">
           {getInitials(fullName)}
         </AvatarFallback>
       </Avatar>
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-medium">
+          <span className="truncate text-body font-medium">
             <Highlight text={fullName} query={query} />
           </span>
           {company && (
-            <span className="truncate text-xs text-(--text-secondary)">
+            <span className="truncate text-caption text-(--text-secondary)">
               · <Highlight text={company} query={query} />
             </span>
           )}
         </div>
-        <p className="truncate text-xs text-(--text-secondary)">
+        <p className="truncate text-caption text-(--text-secondary)">
           <Highlight text={contactBits || "—"} query={query} />
         </p>
       </div>

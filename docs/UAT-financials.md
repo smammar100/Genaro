@@ -11,12 +11,12 @@ Files: `src/components/vehicle-detail/financials-tab.tsx`,
 
 | # | Test case | Steps | Expected | Status |
 |---|-----------|-------|----------|--------|
-| 1 | Compact intro | Open **Financials** | One-line muted helper (no bulky banner) explaining the margin scheme. | ☐ |
-| 2 | Money-in / money-out | View top | **Money out · Expenses** (full ledger, all rows incl £0) ↔ chevron ↔ **Money in · Revenue** (Retail + add-ons), each with a total. | ☐ |
-| 3 | Net result | Below ledgers | Centred "Net profit after margin VAT" with Gross − Margin VAT explanation. | ☐ |
+| 1 | Compact intro | Open **Financials** | One-line muted helper (no bulky banner): VAT is 20% of the margin. | ☐ |
+| 2 | Money-in / money-out | View top | **Money out · Expenses** (full ledger, all rows incl £0) ↔ chevron ↔ **Money in · Revenue** (Retail + add-ons, or **Sale price** once the car has sold), each with a total. | ☐ |
+| 3 | Net result | Below ledgers | Centred "Net profit after VAT" with Margin − VAT (+ add-ons) explanation. Add-ons are counted once. | ☐ |
 | 4 | AutoTrader position | If valuation present | Card with Retail/Trade/Part-ex/Private + a market-position bar and Priced-to-sell / At / Above market verdict. | ☐ |
 | 5 | Purchase Information | View | Supplier, VAT scheme, source, buying price, total buying, stocking provider + Print Invoice. | ☐ |
-| 6 | VAT Margin Scheme | View | Gross Profit / Margin VAT / Car Margin / Net Profit (SIV) with formulas. | ☐ |
+| 6 | VAT on margin | View | Subtitle: sale price − total cost (expenses + point of sale). Margin / VAT (margin × 20%) / Car profit / Net profit (SIV) with formulas; Car profit matches the Overview's Net profit KPI. | ☐ |
 | 7 | No info lost | Compare to old tab | All KPIs/values present across the new sections. | ☐ |
 
 ## External Invoices section

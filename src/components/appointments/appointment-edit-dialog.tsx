@@ -154,7 +154,7 @@ function AppointmentEditForm({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-base">Edit appointment</DialogTitle>
+          <DialogTitle>Edit appointment</DialogTitle>
           <DialogDescription>
             Reschedule, correct the customer&apos;s details, or record how it went.
           </DialogDescription>

@@ -89,8 +89,12 @@ function MovementEditForm({
   companyId,
   onSaved,
 }: MovementEditDialogProps & { movement: LocationMovement }) {
+  // The database records the move to Sold when AVAILABLE / SOLD turns SOLD
+  // (migration 0051). Its destination follows the sale, so only its time and
+  // notes are corrected here.
+  const isSale = movement.toLocation === "sold";
   const [toLocation, setToLocation] = useState<VehicleLocation>(
-    movement.toLocation,
+    movement.toLocation === "sold" ? "forecourt" : movement.toLocation,
   );
   const [movedAt, setMovedAt] = useState(() => toLocalInput(movement.createdAt));
   const [expectedReturn, setExpectedReturn] = useState(() =>
@@ -103,11 +107,11 @@ function MovementEditForm({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const isStay = toLocation === "garage" || toLocation === "staff";
+  const isStay = !isSale && (toLocation === "garage" || toLocation === "staff");
 
   async function handleSave() {
     const patch = {
-      toLocation,
+      ...(isSale ? {} : { toLocation }),
       createdAt: fromLocalInput(movedAt) ?? movement.createdAt,
       expectedReturnAt: fromLocalInput(expectedReturn),
       actualReturnAt: fromLocalInput(actualReturn),
@@ -153,16 +157,27 @@ function MovementEditForm({
           location is re-derived from the timeline after saving.
         </p>
 
-        <Select
-          id="movement-destination"
-          label="Location"
-          options={VEHICLE_LOCATIONS.map((l) => ({
-            label: VEHICLE_LOCATION_LABELS[l],
-            value: l,
-          }))}
-          value={toLocation}
-          onChange={(v) => setToLocation(v as VehicleLocation)}
-        />
+        {isSale ? (
+          <Select
+            id="movement-destination"
+            label="Location"
+            options={[{ label: VEHICLE_LOCATION_LABELS.sold, value: "sold" }]}
+            value="sold"
+            disabled
+            helpText="Set by the sale. Change AVAILABLE / SOLD on the master sheet to undo it."
+          />
+        ) : (
+          <Select
+            id="movement-destination"
+            label="Location"
+            options={VEHICLE_LOCATIONS.map((l) => ({
+              label: VEHICLE_LOCATION_LABELS[l],
+              value: l,
+            }))}
+            value={toLocation}
+            onChange={(v) => setToLocation(v as VehicleLocation)}
+          />
+        )}
 
         <Labelled id="movement-date" label="Moved at">
           <Input

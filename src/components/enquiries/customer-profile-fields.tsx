@@ -80,7 +80,7 @@ export function CustomerProfileFields({ readonly }: CustomerProfileFieldsProps) 
             className={cn(errors.firstName && "border-destructive")}
           />
           {errors.firstName?.message && (
-            <p className="mt-1 text-xs text-destructive">
+            <p className="mt-1 text-caption text-destructive">
               {String(errors.firstName.message)}
             </p>
           )}
@@ -95,7 +95,7 @@ export function CustomerProfileFields({ readonly }: CustomerProfileFieldsProps) 
             className={cn(errors.lastName && "border-destructive")}
           />
           {errors.lastName?.message && (
-            <p className="mt-1 text-xs text-destructive">
+            <p className="mt-1 text-caption text-destructive">
               {String(errors.lastName.message)}
             </p>
           )}
@@ -135,7 +135,7 @@ export function CustomerProfileFields({ readonly }: CustomerProfileFieldsProps) 
             className={cn(errors.mobilePhone && "border-destructive")}
           />
           {errors.mobilePhone?.message && (
-            <p className="mt-1 text-xs text-destructive">
+            <p className="mt-1 text-caption text-destructive">
               {String(errors.mobilePhone.message)}
             </p>
           )}
@@ -154,7 +154,7 @@ export function CustomerProfileFields({ readonly }: CustomerProfileFieldsProps) 
             className={cn(errors.email && "border-destructive")}
           />
           {errors.email?.message && (
-            <p className="mt-1 text-xs text-destructive">
+            <p className="mt-1 text-caption text-destructive">
               {String(errors.email.message)}
             </p>
           )}
@@ -166,7 +166,7 @@ export function CustomerProfileFields({ readonly }: CustomerProfileFieldsProps) 
           <Label htmlFor="marketingConsent" className="cursor-pointer">
             Marketing consent
           </Label>
-          <p className="text-xs text-(--text-secondary)">
+          <p className="text-caption text-(--text-secondary)">
             Customer has agreed to receive marketing emails and SMS.
           </p>
         </div>

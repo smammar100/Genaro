@@ -763,20 +763,22 @@
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
-/* Type styles — use these classes (or their exact values) for text. */
-.heading-3xl { font-family: var(--font-sans); font-size: 36px; line-height: 48px; font-weight: 700; letter-spacing: -0.54px; }
-.heading-2xl { font-family: var(--font-sans); font-size: 30px; line-height: 40px; font-weight: 700; letter-spacing: -0.3px; }
-.heading-xl { font-family: var(--font-sans); font-size: 24px; line-height: 32px; font-weight: 700; letter-spacing: -0.2px; }
-.heading-lg { font-family: var(--font-sans); font-size: 20px; line-height: 24px; font-weight: 600; letter-spacing: -0.2px; }
-.heading-md { font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 600; }
-.heading-sm { font-family: var(--font-sans); font-size: 13px; line-height: 20px; font-weight: 600; }
-.body-lg { font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 500; }
-.body-lg-semibold { font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 600; }
-.body-md { font-family: var(--font-sans); font-size: 13px; line-height: 20px; font-weight: 500; }
-.body-md-semibold { font-family: var(--font-sans); font-size: 13px; line-height: 20px; font-weight: 600; }
-.body-md-numeric { font-family: var(--font-sans); font-size: 13px; line-height: 20px; font-weight: 500; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; }
-.body-sm { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 500; }
-.body-sm-semibold { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 600; }
-.body-xs { font-family: var(--font-sans); font-size: 11px; line-height: 12px; font-weight: 500; }
-.body-xs-semibold { font-family: var(--font-sans); font-size: 11px; line-height: 12px; font-weight: 600; }
-.body-md-mono { font-family: var(--font-mono); font-size: 14px; line-height: 16px; font-weight: 400; }
+/* Type styles — use these classes (or their exact values) for text. Since 25 Oct 2026 each is
+   one role of the Fluid Functionalism scale (--fs-* / --lh-*, set in app/globals.css): display,
+   title, subtitle, body, caption, micro. Weights and tracking are Polaris's. */
+.heading-3xl { font-family: var(--font-sans); font-size: var(--fs-display); line-height: var(--lh-display); font-weight: 700; letter-spacing: -0.54px; }
+.heading-2xl { font-family: var(--font-sans); font-size: var(--fs-display); line-height: var(--lh-display); font-weight: 700; letter-spacing: -0.3px; }
+.heading-xl { font-family: var(--font-sans); font-size: var(--fs-display); line-height: var(--lh-display); font-weight: 700; letter-spacing: -0.2px; }
+.heading-lg { font-family: var(--font-sans); font-size: var(--fs-display); line-height: var(--lh-display); font-weight: 600; letter-spacing: -0.2px; }
+.heading-md { font-family: var(--font-sans); font-size: var(--fs-subtitle); line-height: var(--lh-subtitle); font-weight: 600; }
+.heading-sm { font-family: var(--font-sans); font-size: var(--fs-subtitle); line-height: var(--lh-subtitle); font-weight: 600; }
+.body-lg { font-family: var(--font-sans); font-size: var(--fs-subtitle); line-height: var(--lh-subtitle); font-weight: 500; }
+.body-lg-semibold { font-family: var(--font-sans); font-size: var(--fs-subtitle); line-height: var(--lh-subtitle); font-weight: 600; }
+.body-md { font-family: var(--font-sans); font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 500; }
+.body-md-semibold { font-family: var(--font-sans); font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 600; }
+.body-md-numeric { font-family: var(--font-sans); font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 500; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; }
+.body-sm { font-family: var(--font-sans); font-size: var(--fs-caption); line-height: var(--lh-caption); font-weight: 500; }
+.body-sm-semibold { font-family: var(--font-sans); font-size: var(--fs-caption); line-height: var(--lh-caption); font-weight: 600; }
+.body-xs { font-family: var(--font-sans); font-size: var(--fs-micro); line-height: var(--lh-micro); font-weight: 500; }
+.body-xs-semibold { font-family: var(--font-sans); font-size: var(--fs-micro); line-height: var(--lh-micro); font-weight: 600; }
+.body-md-mono { font-family: var(--font-mono); font-size: var(--fs-subtitle); line-height: var(--lh-subtitle); font-weight: 400; }

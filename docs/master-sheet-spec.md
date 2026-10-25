@@ -37,6 +37,7 @@ editable inline on the Master Sheet and on the vehicle page.
 |---|---|---|---|---|---|
 | A | LEGACY S/N | in | `legacySerialNumber` | `legacy_serial_number` | Serial from the old Excel sheet. Filled by the importer; blank for cars added in the app (they get a **Stock ID** instead). Used to find an old physical card. Presence also locks `TOTAL VALUE ADDITION` (see BB). |
 | — | STOCK ID | auto | `stockId` | `stock_id` | App serial, `CC-0001…`. Not in the Excel sheet. |
+| — | LOCATION | auto | `currentLocation` | `current_location` | Not in the Excel sheet. FORECOURT / YARD / GARAGE / STAFF, or SOLD. New cars start on the forecourt; a trigger (migration 0051) sets SOLD when AVAILABLE / SOLD turns SOLD and puts the car back on the forecourt if the sale is undone. Read-only on the grid: moves go through Locations, which keeps the movement history. |
 
 ### Buying (entered when the car is bought — Add Vehicle steps 1–3)
 

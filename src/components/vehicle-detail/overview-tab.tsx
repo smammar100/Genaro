@@ -26,14 +26,15 @@ import {
   type BadgeTone,
 } from "@/components/polaris";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { carMargin } from "@/lib/car-margin";
 import { KpiCard, Panel, Pill } from "./primitives";
 import { VehicleLocationSection } from "@/components/locations/vehicle-location-section";
 import {
   computeAdvertChecks,
   type AdvertCheck,
 } from "@/lib/advert-completeness";
-import { computeCostTotals } from "@/lib/vehicle-costs";
-import { PHOTOS_ENABLED } from "@/lib/phase-one";
+import { ADVERTS_ENABLED, PHOTOS_ENABLED } from "@/lib/phase-one";
+import { SalesHighlightsCard } from "./sales-highlights-card";
 import { OverviewPricingCard } from "./overview-pricing-card";
 
 interface OverviewTabProps {
@@ -85,15 +86,8 @@ export function OverviewTab({
   }
   const floor = vehicle.minimumSalePrice ?? 0;
   const stockingBurn = vehicle.dailyChargeRate ?? 0;
-  /**
-   * Canonical cost, from the shared rollup (GEN-88), so the Net Profit shown
-   * here cannot drift from the Financials expense ledger.
-   */
-  const { baseCost } = computeCostTotals(vehicle);
-  const grossProfit =
-    webPrice && baseCost ? Math.max(0, webPrice - baseCost) : 0;
-  const marginVat = grossProfit > 0 ? grossProfit * (0.2 / 1.2) : 0;
-  const netProfit = grossProfit - marginVat;
+  // Same figure as the Financials tab: one calculation, car-margin.ts.
+  const netProfit = carMargin(vehicle, webPrice)?.profit ?? 0;
 
   const daysAccent =
     vehicle.daysInStock >= 90
@@ -101,6 +95,29 @@ export function OverviewTab({
       : vehicle.daysInStock >= 60
         ? "amber"
         : undefined;
+
+  // AutoTrader valuation leads: it is glanced at more often than the location
+  // card (user feedback).
+  const cards = (
+    <>
+      <ValuationPanel
+        vehicle={vehicle}
+        webPrice={webPrice}
+        onVehiclePatch={onVehiclePatch}
+      />
+      <OverviewPricingCard
+        vehicle={vehicle}
+        listing={listing ?? null}
+        onChanged={() => {
+          setListingToken((t) => t + 1);
+          onChanged?.();
+        }}
+      />
+      <VehicleLocationSection vehicle={vehicle} />
+      <SalesHighlightsCard vehicle={vehicle} />
+      {ADVERTS_ENABLED ? <MarketplacePanel listing={listing ?? null} /> : null}
+    </>
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -137,37 +154,23 @@ export function OverviewTab({
           icon={Coins}
           label="Net profit (live)"
           value={netProfit > 0 ? formatCurrency(Math.round(netProfit)) : "—"}
-          hint="Under HMRC margin scheme"
+          hint="After 20% VAT on the margin"
         />
       </div>
 
-      {/* Two-col: Advert Completeness + Valuation/Marketplace stack */}
-      <div className="grid gap-4 @3xl:grid-cols-[1.5fr_1fr]">
-        <AdvertCompletenessPanel
-          vehicle={vehicle}
-          listing={listing ?? null}
-          photoCount={vehicle.imagesCount}
-        />
-        <div className="flex flex-col gap-4">
-          {/* AutoTrader valuation leads the right column: it is glanced at
-              more often than the location card (user feedback). */}
-          <ValuationPanel
-            vehicle={vehicle}
-            webPrice={webPrice}
-            onVehiclePatch={onVehiclePatch}
-          />
-          <OverviewPricingCard
+      {ADVERTS_ENABLED ? (
+        // Two-col: Advert Completeness + Valuation/Marketplace stack
+        <div className="grid gap-4 @3xl:grid-cols-[1.5fr_1fr]">
+          <AdvertCompletenessPanel
             vehicle={vehicle}
             listing={listing ?? null}
-            onChanged={() => {
-              setListingToken((t) => t + 1);
-              onChanged?.();
-            }}
+            photoCount={vehicle.imagesCount}
           />
-          <VehicleLocationSection vehicle={vehicle} />
-          <MarketplacePanel listing={listing ?? null} />
+          <div className="flex flex-col gap-4">{cards}</div>
         </div>
-      </div>
+      ) : (
+        <div className="grid items-start gap-4 @3xl:grid-cols-2">{cards}</div>
+      )}
 
     </div>
   );
@@ -316,7 +319,7 @@ function AdvertCheckRow({
       </span>
       <div className="min-w-0">
         <div className="body-md-semibold">{check.name}</div>
-        <div className="mt-0.5 truncate body-sm text-(--text-secondary)">
+        <div className="mt-0.5 truncate body-md text-(--text-secondary)">
           {check.meta}
         </div>
       </div>
@@ -515,9 +518,9 @@ function PriceMeter({
           style={{ left: `${pos}%` }}
         />
       </div>
-      <div className="mt-2 flex justify-between body-xs tabular-nums text-(--text-secondary)">
+      <div className="mt-2 flex justify-between body-md tabular-nums text-(--text-secondary)">
         <span>Trade {formatCurrency(trade)}</span>
-        <span className="body-xs-semibold text-(--text)">
+        <span className="heading-sm text-(--text)">
           You {formatCurrency(webPrice)}
         </span>
         <span>Retail {formatCurrency(retail)}</span>
@@ -540,7 +543,7 @@ function ValuationCell({
       <div className="body-md text-(--text-secondary)">{label}</div>
       <div
         className={cn(
-          "mt-1 text-base font-semibold tabular-nums",
+          "mt-1 heading-sm tabular-nums",
           highlight && "text-(--text)",
         )}
       >
@@ -626,7 +629,7 @@ function MarketplacePanel({ listing }: { listing: Listing | null }) {
               </span>
               <div className="min-w-0">
                 <div className="body-md-semibold">{r.name}</div>
-                <div className="mt-0.5 body-sm text-(--text-secondary)">
+                <div className="mt-0.5 body-md text-(--text-secondary)">
 
                   {r.meta}
                 </div>

@@ -151,24 +151,24 @@ export default function CommandPaletteDialog({
         value={query}
         onValueChange={setQuery}
         placeholder="Search pages, actions, or a vehicle reg…"
-        className="w-full border-b bg-transparent px-4 py-3.5 text-sm outline-none placeholder:text-muted-foreground"
+        className="w-full border-b bg-transparent px-4 py-3.5 text-body outline-none placeholder:text-muted-foreground"
       />
       <Command.List className="max-h-96 overflow-y-auto p-2">
-        <Command.Empty className="px-3 py-6 text-center text-sm text-muted-foreground">
+        <Command.Empty className="px-3 py-6 text-center text-body text-muted-foreground">
           No results.
         </Command.Empty>
 
         {actions.length > 0 && (
           <Command.Group
             heading="Actions"
-            className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:text-muted-foreground"
+            className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-caption [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:text-muted-foreground"
           >
             {actions.map((a) => (
               <Command.Item
                 key={a.href}
                 value={`action ${a.label}`}
                 onSelect={() => go(a.href)}
-                className="flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-sm data-[selected=true]:bg-muted"
+                className="flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-body data-[selected=true]:bg-muted"
               >
                 <a.icon className="h-4 w-4 text-muted-foreground" />
                 {a.label}
@@ -179,19 +179,19 @@ export default function CommandPaletteDialog({
 
         <Command.Group
           heading="Navigate"
-          className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:text-muted-foreground"
+          className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-caption [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:text-muted-foreground"
         >
           {navItems.map((item) => (
             <Command.Item
               key={item.href}
               value={`${item.group ?? ""} ${item.label}`}
               onSelect={() => go(item.href)}
-              className="flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-sm data-[selected=true]:bg-muted"
+              className="flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-body data-[selected=true]:bg-muted"
             >
               <item.icon className="h-4 w-4 text-muted-foreground" />
               <span>{item.label}</span>
               {item.group && (
-                <span className="ml-auto text-xs text-muted-foreground">
+                <span className="ml-auto text-caption text-muted-foreground">
                   {item.group}
                 </span>
               )}
@@ -202,7 +202,7 @@ export default function CommandPaletteDialog({
         {vehicles.length > 0 && (
           <Command.Group
             heading="Vehicles"
-            className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:text-muted-foreground"
+            className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-caption [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:text-muted-foreground"
           >
             {vehicles.map((v) => (
               <Command.Item
@@ -211,10 +211,10 @@ export default function CommandPaletteDialog({
                 // filter — include the live query in the value so it matches.
                 value={`vehicle ${query} ${v.registration}`}
                 onSelect={() => go(vehicleDetailHref(v.id, pathname))}
-                className="flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-sm data-[selected=true]:bg-muted"
+                className="flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-body data-[selected=true]:bg-muted"
               >
                 <Car className="h-4 w-4 text-muted-foreground" />
-                <span className="font-mono text-xs font-semibold uppercase">
+                <span className="font-mono text-caption font-semibold uppercase">
                   {v.registration}
                 </span>
                 <span className="text-muted-foreground">

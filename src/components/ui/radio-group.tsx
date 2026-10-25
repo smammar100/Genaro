@@ -73,7 +73,7 @@ export function RadioItem({
   return (
     <label
       className={cn(
-        "flex cursor-pointer items-center gap-2 text-sm",
+        "flex cursor-pointer items-center gap-2 text-body",
         disabled && "cursor-not-allowed opacity-64",
         className,
       )}

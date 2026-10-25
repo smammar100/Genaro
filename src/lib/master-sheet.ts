@@ -307,6 +307,20 @@ export const SALE_STATUS_OPTIONS: { value: SaleStatus; label: string }[] = [
   { value: "duplicate_entry", label: "DUPLICATE ENTRY" },
 ];
 
+/**
+ * LOCATION — app-only, not on the Excel sheet. Where the car is, or SOLD once
+ * AVAILABLE / SOLD reads SOLD (set by migration 0051's trigger, not edited
+ * here: moves go through Locations so the history is kept).
+ */
+export const LOCATION_OPTIONS: SelectOption[] = [
+  { value: "forecourt", label: "FORECOURT" },
+  { value: "yard", label: "YARD" },
+  { value: "garage", label: "GARAGE" },
+  { value: "staff", label: "STAFF" },
+  { value: "courtesy_car", label: "COURTESY CAR" },
+  { value: "sold", label: "SOLD" },
+];
+
 /** Suggestions only — these cells stay free text, as on the sheet. */
 export const OWNED_BY_SUGGESTIONS = [
   "BCA",

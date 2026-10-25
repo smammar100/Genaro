@@ -170,7 +170,7 @@ export function InvoicePaymentsPanel({ invoice, onChanged }: Props) {
         </Button>
         <span
           className={cn(
-            "ml-auto text-sm font-semibold tabular-nums",
+            "ml-auto text-body font-semibold tabular-nums",
             balance.settled ? "text-(--text-success)" : "text-(--text)",
           )}
         >
@@ -183,7 +183,7 @@ export function InvoicePaymentsPanel({ invoice, onChanged }: Props) {
       {open ? (
         <div className="border-t border-(--border)">
           {entries.length === 0 ? (
-            <p className="px-3 py-2 text-xs text-(--text-secondary)">
+            <p className="px-3 py-2 text-caption text-(--text-secondary)">
               Nothing received yet.
             </p>
           ) : (
@@ -191,7 +191,7 @@ export function InvoicePaymentsPanel({ invoice, onChanged }: Props) {
               {entries.map((e) => (
                 <li
                   key={e.key}
-                  className="flex items-center gap-2 px-3 py-1.5 text-xs"
+                  className="flex items-center gap-2 px-3 py-1.5 text-caption"
                 >
                   <span className="font-medium">{e.label}</span>
                   <span className="text-(--text-secondary)">
@@ -220,7 +220,7 @@ export function InvoicePaymentsPanel({ invoice, onChanged }: Props) {
             </ul>
           )}
 
-          <div className="flex items-center justify-between border-t border-(--border) bg-(--bg-surface-secondary) px-3 py-2 text-xs">
+          <div className="flex items-center justify-between border-t border-(--border) bg-(--bg-surface-secondary) px-3 py-2 text-caption">
             <span className="text-(--text-secondary)">
               Total {formatCurrency(balance.grandTotal)} · paid{" "}
               {formatCurrency(balance.paid)}

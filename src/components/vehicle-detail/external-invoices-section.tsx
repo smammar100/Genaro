@@ -317,7 +317,7 @@ function InvoiceStat({
         <span className="body-sm text-(--text-secondary)">{label}</span>
         <Icon className="size-4 text-(--icon-secondary)" />
       </div>
-      <div className="mt-1 text-xl font-semibold tabular-nums">
+      <div className="mt-1 text-display font-semibold tabular-nums">
         {formatCurrency(total / 100)}
       </div>
       <div className="body-xs text-(--text-secondary)">
