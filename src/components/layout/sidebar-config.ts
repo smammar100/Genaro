@@ -23,6 +23,7 @@ import {
   ShieldAlert,
   MapPin,
   Building2,
+  Warehouse,
   type LucideIcon,
 } from "lucide-react";
 import type { Capability } from "@/lib/capabilities";
@@ -86,6 +87,21 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "Inventory",
     icon: Car,
     items: [
+      // The cars still for sale, as a table — what staff check when a
+      // customer calls. First, so the Inventory row opens it (call 2026-10-24).
+      {
+        label: "In stock",
+        href: "/inventory/in-stock",
+        icon: Warehouse,
+        requiredAnyOf: [
+          "inventory:add",
+          "inventory:edit",
+          "inspection:run",
+          "maintenance:create",
+          "photos:process",
+          "advert:create",
+        ],
+      },
       {
         label: "All vehicles",
         href: "/vehicles",

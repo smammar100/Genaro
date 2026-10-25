@@ -32,6 +32,7 @@ const TO_LOCATION_TONE: Record<CurrentLocation, TimelineTone> = {
   yard: "slate",
   garage: "rose",
   staff: "amber",
+  courtesy_car: "violet",
   sold: "sky",
 };
 

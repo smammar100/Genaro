@@ -28,11 +28,10 @@ interface LocationBadgeProps {
   className?: string;
 }
 
-const OFF_SITE_LOCATIONS: CurrentLocation[] = ["garage", "staff"];
-
-const OFF_SITE_DOT: Record<"garage" | "staff", string> = {
+const OFF_SITE_DOT: Partial<Record<CurrentLocation, string>> = {
   garage: "bg-(--bg-fill-critical)",
   staff: "bg-(--bg-fill-warning)",
+  courtesy_car: "bg-(--bg-fill-magic)",
 };
 
 function formatHm(iso: string | null | undefined): string | null {
@@ -67,7 +66,8 @@ export function LocationBadge({
   compact = false,
   className,
 }: LocationBadgeProps) {
-  const isOffSite = OFF_SITE_LOCATIONS.includes(location);
+  const offSiteDot = OFF_SITE_DOT[location];
+  const isOffSite = offSiteDot !== undefined;
   const offSiteTooltip =
     location === "garage"
       ? workshopName
@@ -77,7 +77,9 @@ export function LocationBadge({
         ? staffName
           ? `With ${staffName}${expectedReturnAt ? ` · back ${formatHm(expectedReturnAt)}` : ""}`
           : "With a staff member"
-        : null;
+        : location === "courtesy_car"
+          ? "Lent to a customer as a courtesy car"
+          : null;
   const testDriveTooltip = outForTestDrive
     ? testDriveExpectedBackAt
       ? `Out for test drive · back ${formatHm(testDriveExpectedBackAt)}`
@@ -104,10 +106,7 @@ export function LocationBadge({
                 )}
               >
                 <span
-                  className={cn(
-                    "block size-1.5 rounded-full",
-                    location === "garage" ? OFF_SITE_DOT.garage : OFF_SITE_DOT.staff,
-                  )}
+                  className={cn("block size-1.5 rounded-full", offSiteDot)}
                   aria-hidden
                 />
                 {!compact ? <span>Off-site</span> : null}

@@ -145,7 +145,7 @@ export type Transmission = "automatic" | "manual";
  * Exactly one of these at any time; movements between values are audited
  * via the `location_movements` table.
  */
-export type VehicleLocation = "forecourt" | "yard" | "garage" | "staff";
+export type VehicleLocation = "forecourt" | "yard" | "garage" | "staff" | "courtesy_car";
 
 /**
  * Where a vehicle is recorded: one of the places above, or "sold" once its
@@ -160,6 +160,7 @@ export const VEHICLE_LOCATIONS: VehicleLocation[] = [
   "yard",
   "garage",
   "staff",
+  "courtesy_car",
 ];
 
 export const VEHICLE_LOCATION_LABELS: Record<CurrentLocation, string> = {
@@ -167,6 +168,7 @@ export const VEHICLE_LOCATION_LABELS: Record<CurrentLocation, string> = {
   yard: "Yard",
   garage: "Garage",
   staff: "Staff",
+  courtesy_car: "Courtesy car",
   sold: "Sold",
 };
 

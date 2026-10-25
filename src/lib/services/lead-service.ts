@@ -152,12 +152,15 @@ export const leadService = {
         | "appointmentId"
         | "leadChannelId"
         | "vehicleId"
+        | "vehicleInterest"
       >
     >,
   ): Promise<Lead> {
     const supabase = createClient();
     const updates: TableUpdate<"leads"> = {};
     if (patch.status !== undefined) updates.status = patch.status;
+    if (patch.vehicleInterest !== undefined)
+      updates.vehicle_interest = patch.vehicleInterest;
     if (patch.notes !== undefined) updates.notes = patch.notes;
     if (patch.assignedTo !== undefined) updates.assigned_to = patch.assignedTo;
     if (patch.appointmentId !== undefined)

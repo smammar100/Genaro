@@ -192,6 +192,7 @@ export const locationService = {
         yard: 0,
         garage: 0,
         staff: 0,
+        courtesy_car: 0,
       };
       // Exclude terminal statuses (sold / returned) so the tab counts and the
       // "total active" header reflect vehicles still on the books, matching

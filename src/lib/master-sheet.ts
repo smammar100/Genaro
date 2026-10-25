@@ -317,6 +317,7 @@ export const LOCATION_OPTIONS: SelectOption[] = [
   { value: "yard", label: "YARD" },
   { value: "garage", label: "GARAGE" },
   { value: "staff", label: "STAFF" },
+  { value: "courtesy_car", label: "COURTESY CAR" },
   { value: "sold", label: "SOLD" },
 ];
 

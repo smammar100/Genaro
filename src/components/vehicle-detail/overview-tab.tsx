@@ -26,13 +26,13 @@ import {
   type BadgeTone,
 } from "@/components/polaris";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { carMargin } from "@/lib/car-margin";
 import { KpiCard, Panel, Pill } from "./primitives";
 import { VehicleLocationSection } from "@/components/locations/vehicle-location-section";
 import {
   computeAdvertChecks,
   type AdvertCheck,
 } from "@/lib/advert-completeness";
-import { computeCostTotals } from "@/lib/vehicle-costs";
 import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { OverviewPricingCard } from "./overview-pricing-card";
 
@@ -85,15 +85,8 @@ export function OverviewTab({
   }
   const floor = vehicle.minimumSalePrice ?? 0;
   const stockingBurn = vehicle.dailyChargeRate ?? 0;
-  /**
-   * Canonical cost, from the shared rollup (GEN-88), so the Net Profit shown
-   * here cannot drift from the Financials expense ledger.
-   */
-  const { baseCost } = computeCostTotals(vehicle);
-  const grossProfit =
-    webPrice && baseCost ? Math.max(0, webPrice - baseCost) : 0;
-  const marginVat = grossProfit > 0 ? grossProfit * (0.2 / 1.2) : 0;
-  const netProfit = grossProfit - marginVat;
+  // Same figure as the Financials tab: one calculation, car-margin.ts.
+  const netProfit = carMargin(vehicle, webPrice)?.profit ?? 0;
 
   const daysAccent =
     vehicle.daysInStock >= 90
@@ -137,7 +130,7 @@ export function OverviewTab({
           icon={Coins}
           label="Net profit (live)"
           value={netProfit > 0 ? formatCurrency(Math.round(netProfit)) : "—"}
-          hint="Under HMRC margin scheme"
+          hint="After 20% VAT on the margin"
         />
       </div>
 

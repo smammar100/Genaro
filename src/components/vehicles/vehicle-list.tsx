@@ -23,6 +23,7 @@ import { VehicleStatusBadge } from "@/components/shared/status-badge";
 import { DaysInStockChip } from "@/components/shared/days-in-stock-chip";
 import { capitalizeWords, cn, formatCurrency, titleCase } from "@/lib/utils";
 import { variantLabel } from "@/lib/vehicle-variant";
+import { byNewest, byText } from "@/lib/stock";
 
 /** Saved views: each is a set of lifecycle statuses (null = every car). */
 const VIEWS: { id: string; label: string; statuses: VehicleStatus[] | null }[] = [
@@ -34,10 +35,12 @@ const VIEWS: { id: string; label: string; statuses: VehicleStatus[] | null }[] =
   { id: "sold", label: "Sold", statuses: ["sold", "returned"] },
 ];
 
-type SortKey = "days" | "newest" | "priceHigh" | "priceLow";
+type SortKey = "newest" | "days" | "make" | "model" | "priceHigh" | "priceLow";
 const SORTS: { label: string; value: SortKey }[] = [
+  { label: "Newest", value: "newest" },
   { label: "Days in stock", value: "days" },
-  { label: "Newest arrivals", value: "newest" },
+  { label: "Make", value: "make" },
+  { label: "Model", value: "model" },
   { label: "Price: high to low", value: "priceHigh" },
   { label: "Price: low to high", value: "priceLow" },
 ];
@@ -54,10 +57,14 @@ function sortVehicles(list: Vehicle[], key: SortKey): Vehicle[] {
   const price = (v: Vehicle) => headlinePrice(v) ?? -1;
   const sorted = [...list];
   switch (key) {
+    case "newest":
+      return sorted.sort(byNewest);
     case "days":
       return sorted.sort((a, b) => b.daysInStock - a.daysInStock);
-    case "newest":
-      return sorted.sort((a, b) => a.daysInStock - b.daysInStock);
+    case "make":
+      return sorted.sort((a, b) => byText(a.make, b.make) || byText(a.model, b.model));
+    case "model":
+      return sorted.sort((a, b) => byText(a.model, b.model) || byText(a.make, b.make));
     case "priceHigh":
       return sorted.sort((a, b) => price(b) - price(a));
     case "priceLow":
@@ -163,7 +170,7 @@ export function VehicleList({ onAddVehicle }: { onAddVehicle: () => void }) {
   const [vehicles, setVehicles] = React.useState<Vehicle[] | null>(null);
   const [view, setView] = React.useState(0);
   const [query, setQuery] = React.useState("");
-  const [sort, setSort] = React.useState<SortKey>("days");
+  const [sort, setSort] = React.useState<SortKey>("newest");
   const [page, setPage] = React.useState(0);
 
   React.useEffect(() => {

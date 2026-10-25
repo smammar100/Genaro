@@ -5,8 +5,10 @@ import type {
   SalesStage,
   StageBehaviour,
   UUID,
+  Vehicle,
 } from "@/lib/types";
 import { activityService } from "./activity-service";
+import { leadService } from "./lead-service";
 import { vehicleService } from "./vehicle-service";
 import { listingService } from "./listing-service";
 import { pipelineStageService } from "./pipeline-stage-service";
@@ -228,35 +230,119 @@ export const salesService = {
           metadata: { dealId: id },
         });
       } else if (behaviour === "reserved") {
-        // Reserve the car so it stops showing as available everywhere.
-        if (v.status !== "reserved" && v.status !== "sold") {
-          await vehicleService.changeStatus(v.id, "reserved", actorId);
-        }
-        // Only flip a live/publishable advert to "reserved" — leave drafts
-        // and archived listings untouched (they were never publicly visible).
-        const reserveListing = await listingService.getForVehicle(v.id);
-        if (reserveListing && isPublishableStatus(reserveListing.status)) {
-          await listingService.setStatusForVehicle(v.id, "reserved");
-        }
+        await reserveVehicle(v, actorId);
       } else if (behaviour === "lost") {
         // Deal fell through — release the reservation back to the forecourt.
-        if (v.status === "reserved") {
-          await vehicleService.changeStatus(v.id, "listed", actorId);
-          // Revert the listing to what it was before the deal reserved it,
-          // without silently publishing. A "reserved" advert was live before
-          // the deal (reservation only stamps publishable listings), so it
-          // goes back live. Any non-reserved listing (e.g. a draft) reverts to
-          // draft rather than being promoted to live without a publish step.
-          const lostListing = await listingService.getForVehicle(v.id);
-          if (lostListing) {
-            await listingService.setStatusForVehicle(
-              v.id,
-              lostListing.status === "reserved" ? "live" : "draft",
-            );
-          }
-        }
+        await releaseVehicle(v, actorId);
       }
     }
     return deal;
   },
+
+  /**
+   * Point a deal (and its lead) at a different car — the customer came in
+   * for one and is buying another (call 2026-10-24). A reservation follows
+   * the deal: the old car goes back on sale and the new one is reserved. A
+   * completed sale can't be moved, and neither can a deal onto a car another
+   * open deal already holds.
+   */
+  async changeVehicle(
+    id: UUID,
+    vehicleId: UUID,
+    actorId: UUID,
+  ): Promise<SalesDeal> {
+    const supabase = createClient();
+    const deal = await salesService.getById(id);
+    if (!deal) throw new Error("Deal not found");
+    if (deal.vehicleId === vehicleId) return deal;
+
+    const configured = await pipelineStageService.getBySlug(deal.companyId, deal.stage);
+    const behaviour: StageBehaviour =
+      configured?.behaviour ?? FALLBACK_BEHAVIOUR[deal.stage] ?? "open";
+    if (behaviour === "won") {
+      throw new Error("This sale is complete, so its vehicle can't be changed.");
+    }
+
+    const { data: clash } = await supabase
+      .from("sales_deals")
+      .select("id, customerName:customer_name")
+      .eq("company_id", deal.companyId)
+      .eq("vehicle_id", vehicleId)
+      .neq("stage", "lost")
+      .neq("id", id)
+      .limit(1);
+    if (clash && clash.length > 0) {
+      throw new Error(
+        `That car is already on an open deal for ${clash[0].customerName}.`,
+      );
+    }
+
+    const [from, to] = await Promise.all([
+      vehicleService.getById(deal.vehicleId),
+      vehicleService.getById(vehicleId),
+    ]);
+    if (!to) throw new Error("Vehicle not found");
+
+    const { data, error } = await supabase
+      .from("sales_deals")
+      .update({ vehicle_id: vehicleId })
+      .eq("id", id)
+      .select(SELECT)
+      .single();
+    if (error) throw error;
+    const updated = data as unknown as SalesDeal;
+    invalidate(NS);
+
+    if (deal.leadId) {
+      await leadService.update(deal.leadId, {
+        vehicleId,
+        vehicleInterest: `${to.make} ${to.model} (${to.registration})`,
+      });
+    }
+    if (behaviour === "reserved") {
+      if (from) await releaseVehicle(from, actorId);
+      await reserveVehicle(to, actorId);
+    }
+
+    await activityService.log({
+      companyId: deal.companyId,
+      userId: actorId,
+      vehicleId,
+      actionType: "sale_stage_changed",
+      description: `${deal.customerName}'s deal moved from ${from?.registration ?? "another car"} to ${to.registration}`,
+      metadata: { dealId: id, fromVehicleId: deal.vehicleId, toVehicleId: vehicleId },
+    });
+    return updated;
+  },
 };
+
+/** Reserve the car so it stops showing as available everywhere. */
+async function reserveVehicle(v: Vehicle, actorId: UUID): Promise<void> {
+  if (v.status !== "reserved" && v.status !== "sold") {
+    await vehicleService.changeStatus(v.id, "reserved", actorId);
+  }
+  // Only flip a live/publishable advert to "reserved" — leave drafts
+  // and archived listings untouched (they were never publicly visible).
+  const listing = await listingService.getForVehicle(v.id);
+  if (listing && isPublishableStatus(listing.status)) {
+    await listingService.setStatusForVehicle(v.id, "reserved");
+  }
+}
+
+/** Undo a reservation: the car goes back on sale. */
+async function releaseVehicle(v: Vehicle, actorId: UUID): Promise<void> {
+  if (v.status !== "reserved") return;
+  await vehicleService.changeStatus(v.id, "listed", actorId);
+  // Revert the listing to what it was before the deal reserved it,
+  // without silently publishing. A "reserved" advert was live before
+  // the deal (reservation only stamps publishable listings), so it
+  // goes back live. Any non-reserved listing (e.g. a draft) reverts to
+  // draft rather than being promoted to live without a publish step.
+  const listing = await listingService.getForVehicle(v.id);
+  if (listing) {
+    await listingService.setStatusForVehicle(
+      v.id,
+      listing.status === "reserved" ? "live" : "draft",
+    );
+  }
+}

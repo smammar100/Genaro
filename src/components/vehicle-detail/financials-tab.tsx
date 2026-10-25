@@ -6,6 +6,7 @@ import type { Invoice, Listing, Vehicle } from "@/lib/types";
 import { listingService } from "@/lib/services/listing-service";
 import { invoiceService } from "@/lib/services/invoice-service";
 import { paidAddonsTotal } from "@/lib/invoice-calc";
+import { carMargin } from "@/lib/car-margin";
 import { Button, Card } from "@/components/polaris";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { Field, FieldGrid, Panel, Pill } from "./primitives";
@@ -108,8 +109,8 @@ interface LedgerEntry {
  * Financials tab — Variation B ("money-in vs money-out"). The full cost
  * ledger and the full revenue ledger sit side-by-side and meet at a
  * centred "= Net profit" result, followed by the AutoTrader market
- * position, purchase information, external invoices, and the HMRC
- * margin-scheme breakdown. HMRC margin-scheme aware throughout.
+ * position, purchase information, external invoices, and the VAT-on-margin
+ * breakdown (20% of the margin, car-margin.ts).
  */
 export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
   // Web price source aligned with the Overview tab: prefer the live listing
@@ -205,29 +206,31 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
     ? paidAddonsTotal(invoice.lineItems)
     : 0;
 
+  // The car's margin and VAT, from the one calculation the Overview uses too
+  // (car-margin.ts): what it sold for (web price until then) less the expense
+  // ledger and the point-of-sale expenses, with 20% VAT on what's left.
+  const margin = carMargin(vehicle, retail);
+  const sold = vehicle.sellingPrice != null;
+  const salePrice = margin?.salePrice ?? 0;
+
   const revenue: LedgerEntry[] = [
-    { name: "Retail (web price)", amount: retail },
+    { name: sold ? "Sale price" : "Retail (web price)", amount: salePrice },
     ...addons,
   ];
-  const revenueTotal = retail + addonTotal;
+  const revenueTotal = salePrice + addonTotal;
 
-  // Both halves of the screen must agree: net = money in − money out, using the
-  // SAME full-cost figure the expense ledger displays (which already includes
-  // stocking charges, prep/value-addition and warranty cost — the canonical
-  // baseCost that matches the Master Sheet). Gross is the pre-VAT margin.
-  const gross = revenueTotal > 0 ? Math.max(0, revenueTotal - expenseTotal) : 0;
-  const marginVat = gross * (0.2 / 1.2);
-  const net = gross - marginVat;
+  // Add-ons are sold on top of the car and carry their own VAT line on the
+  // sale invoice, so they join the profit once, after the car's VAT.
+  const net = (margin?.profit ?? 0) + addonTotal;
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-start gap-1.5 body-sm text-(--text-secondary)">
         <DollarSign className="mt-0.5 size-3.5 shrink-0" />
         <p>
-          Every cost and every add-on revenue for this car. VAT uses
-          HMRC&apos;s{" "}
-          <strong className="body-sm-semibold text-(--text)">Margin Scheme</strong>:
-          owed only on the profit margin, not the full sale price.
+          Every cost and every add-on revenue for this car.{" "}
+          <strong className="body-sm-semibold text-(--text)">VAT is 20% of the margin</strong>:
+          the sale price less every cost and expense on the car.
         </p>
       </div>
 
@@ -261,7 +264,7 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
         </div>
         <LedgerCard
           title="Money in · revenue"
-          subtitle={`Retail ${formatCurrency(retail)} + add-ons`}
+          subtitle={`${sold ? "Sold for" : "Retail"} ${formatCurrency(salePrice)} + add-ons`}
           rows={revenue}
           total={revenueTotal}
           tone="good"
@@ -271,14 +274,17 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
       {/* Net result */}
       <Card background="subdued" className="items-center gap-1 p-5 text-center">
         <div className="body-md text-(--text-secondary)">
-          Net profit after margin VAT
+          Net profit after VAT
         </div>
         <div className="text-3xl font-semibold tabular-nums text-(--text-success)">
-          {net > 0 ? formatCurrency(Math.round(net)) : "—"}
+          {net > 0 ? formatCurrency(net) : "—"}
         </div>
-        <div className="body-sm text-(--text-secondary)">
-          Gross {formatCurrency(gross)} − margin VAT {formatCurrency(marginVat)}
-        </div>
+        {margin ? (
+          <div className="body-sm text-(--text-secondary)">
+            Margin {formatCurrency(margin.margin)} − VAT {formatCurrency(margin.vat)}
+            {addonTotal ? ` + add-ons ${formatCurrency(addonTotal)}` : ""}
+          </div>
+        ) : null}
       </Card>
 
       {/* Master sheet BH–BN. Not part of the base cost — the sheet keeps
@@ -345,17 +351,21 @@ export function FinancialsTab({ vehicle, onChanged }: FinancialsTabProps) {
       {/* External invoices (Module D) — live data + add dialogs */}
       <ExternalInvoicesSection vehicleId={vehicle.id} />
 
-      {/* VAT margin scheme */}
+      {/* VAT on the margin (call 2026-10-24) */}
       <Panel
-        title="VAT margin scheme"
-        subtitle="Under HMRC margin scheme, VAT applies only to gross profit"
-        action={<Pill tone="info">Margin scheme</Pill>}
+        title="VAT on margin"
+        subtitle={
+          margin
+            ? `${sold ? "Sold for" : "Web price"} ${formatCurrency(margin.salePrice)} − total cost ${formatCurrency(margin.totalCost)} (expenses ${formatCurrency(expenseTotal)} + point of sale ${formatCurrency(pointOfSaleTotal)})`
+            : "Set a web price to see the margin and VAT"
+        }
+        action={<Pill tone="info">20% of margin</Pill>}
       >
         <FieldGrid cols={4}>
-          <VatStat label="Gross profit" value={gross} formula="revenue − total cost" tone="good" />
-          <VatStat label="Margin VAT" value={marginVat} formula="gross × 0.20 / 1.20" />
-          <VatStat label="Car margin" value={net} formula="gross − VAT" tone="good" />
-          <VatStat label="Net profit (SIV)" value={net + addonTotal} formula="+ add-on profit" tone="good" />
+          <VatStat label="Margin" value={margin?.margin ?? 0} formula="sale price − total cost" tone="good" />
+          <VatStat label="VAT" value={margin?.vat ?? 0} formula="margin × 20%" />
+          <VatStat label="Car profit" value={margin?.profit ?? 0} formula="margin − VAT" tone="good" />
+          <VatStat label="Net profit (SIV)" value={net} formula="+ add-on revenue" tone="good" />
         </FieldGrid>
       </Panel>
     </div>
