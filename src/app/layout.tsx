@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -14,21 +14,18 @@ import { SidebarPreference } from "@/components/layout/sidebar-preference";
 import { TitleTooltips } from "@/components/layout/title-tooltips";
 import { cookies } from "next/headers";
 
-// UI font is Inter — the Shopify admin's typeface (self-hosted by next/font,
-// exposed as --font-inter; the Polaris tokens make it --font-sans).
-// Geist Mono (--font-geist-mono) covers stock IDs, regs and other codes.
-// The optical-size axis lets Fluid Functionalism's weight changes (hovered
-// and selected labels) widen and pull back without moving their neighbours.
-const inter = Inter({
+// Type is Geist, and Geist Mono wherever a mono face is used (call
+// 2026-10-25). Both are self-hosted by next/font as --font-geist-sans and
+// --font-geist-mono; the Polaris tokens make them --font-sans / --font-mono.
+const geistSans = Geist({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-geist-sans",
   display: "swap",
-  axes: ["opsz"],
 });
 
-// Latin only, and not preloaded: codes are never what a page paints first,
-// and the sign-in pages show none, so it shouldn't compete with Inter and the
-// CSS for the first paint. It swaps in when a page first shows a code.
+// Latin only, and not preloaded: reg plates are never what a page paints
+// first, and the sign-in pages show none, so it shouldn't compete with Geist
+// and the CSS for the first paint. It swaps in when a page first shows one.
 const geistMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-geist-mono",
@@ -84,7 +81,7 @@ export default async function RootLayout({
       className={cn(
         "h-full",
         "antialiased",
-        inter.variable,
+        geistSans.variable,
         geistMono.variable,
         "font-sans",
       )}

@@ -98,7 +98,7 @@ export function PostcodeLookupField({
         </Button>
       </div>
       <div className="sm:col-span-3">
-        <p className="mb-1 text-body font-medium text-(--text)">Address</p>
+        <p className="mb-1 text-body text-(--text)">Address</p>
         <div className="flex flex-col gap-2">
           {lines.map((line, i) => (
             <Input

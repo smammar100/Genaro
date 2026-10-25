@@ -50,8 +50,9 @@ import {
  * and A (table). The summary figures and the totals row came off so more
  * rows fit (2026-10-25).
  *
- * Headers are the sheet's own, minus its "(1)" / "(2)" entry markers; the
- * order is the sheet's order. Formula columns (`value`) are computed, never
+ * Headers are the sheet's own words in sentence case, minus its "(1)" /
+ * "(2)" entry markers and with its two typos fixed (2026-10-25); the order is
+ * the sheet's order. Formula columns (`value`) are computed, never
  * stored or edited. Every other column edits in place. The mapping of each
  * column onto the vehicle record, and why, is docs/master-sheet-spec.md —
  * change the two together.
@@ -82,7 +83,7 @@ const COLS: ColDef[] = [
   // ── Common ────────────────────────────────────────────────────────────
   {
     key: "legacySerialNumber",
-    label: "LEGACY S/N",
+    label: "Legacy S/N",
     type: "number",
     width: 90,
     plain: true,
@@ -91,10 +92,10 @@ const COLS: ColDef[] = [
     editable: true,
     toPatch: (value) => ({ legacySerialNumber: toInt(value) }),
   },
-  { key: "stockId", label: "STOCK ID", type: "stockId", width: 100, sticky: true, section: COMMON, gridHidden: true },
+  { key: "stockId", label: "Stock ID", type: "stockId", width: 100, sticky: true, section: COMMON, gridHidden: true },
   {
     key: "registration",
-    label: "REG. NUMBER",
+    label: "Reg. number",
     type: "text",
     width: 200,
     sticky: true,
@@ -123,7 +124,7 @@ const COLS: ColDef[] = [
   // Locations, which keeps the movement history.
   {
     key: "currentLocation",
-    label: "LOCATION",
+    label: "Location",
     type: "location",
     width: 120,
     sticky: true,
@@ -133,13 +134,13 @@ const COLS: ColDef[] = [
   },
 
   // ── Buying (sheet B–AI) ───────────────────────────────────────────────
-  { key: "make", label: "MAKE", type: "text", width: 130, section: BUY, editable: true },
-  { key: "model", label: "MODEL", type: "text", width: 130, section: BUY, editable: true },
-  { key: "variantName", label: "VARIANT NAME", type: "text", width: 160, section: BUY, editable: true },
-  { key: "variantCode", label: "VARIANT CODE", type: "text", width: 120, section: BUY, editable: true },
+  { key: "make", label: "Make", type: "text", width: 130, section: BUY, editable: true },
+  { key: "model", label: "Model", type: "text", width: 130, section: BUY, editable: true },
+  { key: "variantName", label: "Variant name", type: "text", width: 160, section: BUY, editable: true },
+  { key: "variantCode", label: "Variant code", type: "text", width: 120, section: BUY, editable: true },
   {
     key: "vehicleType",
-    label: "VEHICLE TYPE",
+    label: "Vehicle type",
     type: "select",
     width: 110,
     section: BUY,
@@ -150,7 +151,7 @@ const COLS: ColDef[] = [
   },
   {
     key: "transmission",
-    label: "TRANSMISSION (AUTO/ MANUAL)",
+    label: "Transmission (auto / manual)",
     type: "select",
     width: 130,
     section: BUY,
@@ -161,10 +162,10 @@ const COLS: ColDef[] = [
       transmission: (value as Vehicle["transmission"]) ?? v.transmission,
     }),
   },
-  { key: "colour", label: "COLOR", type: "text", width: 100, section: BUY, editable: true },
+  { key: "colour", label: "Colour", type: "text", width: 100, section: BUY, editable: true },
   {
     key: "mileage",
-    label: "MILEAGE",
+    label: "Mileage",
     type: "number",
     width: 100,
     section: BUY,
@@ -173,7 +174,7 @@ const COLS: ColDef[] = [
   },
   {
     key: "localOrImport",
-    label: "LOCAL/ IMPORT",
+    label: "Local / import",
     type: "select",
     width: 110,
     section: BUY,
@@ -185,7 +186,7 @@ const COLS: ColDef[] = [
   },
   {
     key: "auctionHouse",
-    label: "AUCTION HOUSE",
+    label: "Auction house",
     type: "text",
     width: 140,
     section: BUY,
@@ -194,46 +195,46 @@ const COLS: ColDef[] = [
   },
   {
     key: "ownedBy",
-    label: "OWNED BY",
+    label: "Owned by",
     type: "text",
     width: 160,
     section: BUY,
     editable: true,
     suggestions: OWNED_BY_SUGGESTIONS,
   },
-  { key: "ownerDetails", label: "OWNER DETAILS", type: "text", width: 150, section: BUY, editable: true },
-  { key: "invoiceDate", label: "INVOICE DATE", type: "date", width: 120, section: BUY, editable: true },
-  { key: "creditNoteDate", label: "CREDIT NOTE DATE", type: "date", width: 130, section: BUY, editable: true },
-  { key: "invoiceDate", label: "PURCHASE MONTH", type: "text", width: 120, section: BUY, value: purchaseMonth },
-  { key: "invoiceDate", label: "PURCHASE YEAR", type: "text", width: 110, section: BUY, value: purchaseYear },
+  { key: "ownerDetails", label: "Owner details", type: "text", width: 150, section: BUY, editable: true },
+  { key: "invoiceDate", label: "Invoice date", type: "date", width: 120, section: BUY, editable: true },
+  { key: "creditNoteDate", label: "Credit note date", type: "date", width: 130, section: BUY, editable: true },
+  { key: "invoiceDate", label: "Purchase month", type: "text", width: 120, section: BUY, value: purchaseMonth },
+  { key: "invoiceDate", label: "Purchase year", type: "text", width: 110, section: BUY, value: purchaseYear },
   {
-    ...money("buyingPrice", "BUYING PRICE", BUY),
+    ...money("buyingPrice", "Buying price", BUY),
     sum: true,
     // NOT NULL — a cleared cell is £0, not "unknown".
     toPatch: (value) => ({ buyingPrice: typeof value === "number" ? value : 0 }),
   },
   {
-    ...money("vatOnBuyingPrice", "VAT ON BUYING PRICE 20%", BUY, 150),
+    ...money("vatOnBuyingPrice", "VAT on buying price 20%", BUY, 150),
     toPatch: (value) => ({ vatOnBuyingPrice: typeof value === "number" ? value : 0 }),
   },
-  money("buyersFee", "BCA BUYERS FEE - BUSINESS", BUY, 160),
-  money("vatOnBuyersFee", "VAT ON BUYERS FEE 20%", BUY, 150),
-  money("inspectionCharge", "BCA ESSENTIAL CHECK / BCA ASSURED CHARGE", BUY, 200),
-  money("vatOnInspectionCharge", "VAT ON ESSENTAIL CHECK 20%", BUY, 170),
-  money("evAssuredCharge", "BCA EV/ HYBRID ASSURED CHARGE", BUY, 180),
-  money("vatOnEvAssuredCharge", "VAT ON HYBRID ASSURED CHARGE", BUY, 180),
-  money("batteryReportFee", "BATTERY HEALTH REPORT", BUY, 150),
-  money("vatOnBatteryReportFee", "VAT ON BATTERY HEALTH REPORT", BUY, 180),
-  money("lateStorageFee", "LATE PAYMENT/ STORAGE FEE", BUY, 160),
-  money("vatOnLateStorageFee", "VAT ON LATE PAYMENT / STORAGE", BUY, 180),
-  money("collectionFee", "COLLECTION", BUY),
-  money("vatOnCollectionFee", "VAT ON COLLECTION", BUY, 130),
-  money("deliveryFee", "DELIVERY / TRANSPORT", BUY, 140),
-  money("vatOnDeliveryFee", "VAT ON DELIVERY 20%", BUY, 140),
+  money("buyersFee", "BCA buyers fee - business", BUY, 160),
+  money("vatOnBuyersFee", "VAT on buyers fee 20%", BUY, 150),
+  money("inspectionCharge", "BCA essential check / BCA assured charge", BUY, 200),
+  money("vatOnInspectionCharge", "VAT on essential check 20%", BUY, 170),
+  money("evAssuredCharge", "BCA EV / hybrid assured charge", BUY, 180),
+  money("vatOnEvAssuredCharge", "VAT on hybrid assured charge", BUY, 180),
+  money("batteryReportFee", "Battery health report", BUY, 150),
+  money("vatOnBatteryReportFee", "VAT on battery health report", BUY, 180),
+  money("lateStorageFee", "Late payment / storage fee", BUY, 160),
+  money("vatOnLateStorageFee", "VAT on late payment / storage", BUY, 180),
+  money("collectionFee", "Collection", BUY),
+  money("vatOnCollectionFee", "VAT on collection", BUY, 130),
+  money("deliveryFee", "Delivery / transport", BUY, 140),
+  money("vatOnDeliveryFee", "VAT on delivery 20%", BUY, 140),
   // AI = SUM(S:AH) — stored, re-derived on every cost edit.
   {
     key: "totalBuyingPrice",
-    label: "TOTAL BUYING PRICE/ BCA",
+    label: "Total buying price / BCA",
     type: "currency",
     width: 160,
     section: BUY,
@@ -244,7 +245,7 @@ const COLS: ColDef[] = [
   // ── Receiving (sheet AJ–BA) ───────────────────────────────────────────
   {
     key: "receivedDate",
-    label: "VEHICLE RECEIVING DATE",
+    label: "Vehicle receiving date",
     type: "date",
     width: 150,
     section: REC,
@@ -252,12 +253,12 @@ const COLS: ColDef[] = [
     // NOT NULL on the record — clearing it keeps the current date.
     toPatch: (value, v) => ({ receivedDate: (value as string) ?? v.receivedDate }),
   },
-  { key: "receivedDate", label: "RECEIVING CONFIRMATION", type: "text", width: 150, section: REC, value: receivingConfirmation },
-  { key: "receivedDate", label: "RECEIVING MONTH", type: "text", width: 120, section: REC, value: receivingMonth },
-  { key: "receivedDate", label: "RECEIVING YEAR", type: "text", width: 110, section: REC, value: receivingYear },
+  { key: "receivedDate", label: "Receiving confirmation", type: "text", width: 150, section: REC, value: receivingConfirmation },
+  { key: "receivedDate", label: "Receiving month", type: "text", width: 120, section: REC, value: receivingMonth },
+  { key: "receivedDate", label: "Receiving year", type: "text", width: 110, section: REC, value: receivingYear },
   {
     key: "logBook",
-    label: "LOG BOOK",
+    label: "Log book",
     type: "text",
     width: 130,
     section: REC,
@@ -265,10 +266,10 @@ const COLS: ColDef[] = [
     suggestions: LOG_BOOK_SUGGESTIONS,
     toPatch: (value) => logBookPatch((value as string) ?? null),
   },
-  { key: "euroStatus", label: "EURO STATUS", type: "text", width: 110, section: REC, editable: true },
+  { key: "euroStatus", label: "Euro status", type: "text", width: 110, section: REC, editable: true },
   {
     key: "fuelType",
-    label: "FUEL TYPE",
+    label: "Fuel type",
     type: "select",
     width: 110,
     section: REC,
@@ -276,17 +277,17 @@ const COLS: ColDef[] = [
     options: FUEL_OPTIONS,
     toPatch: (value, v) => ({ fuelType: (value as Vehicle["fuelType"]) ?? v.fuelType }),
   },
-  { key: "engineSizeCC", label: "ENGINE SIZE (CC)", type: "number", width: 120, plain: true, section: REC, editable: true, toPatch: (value) => ({ engineSizeCC: toInt(value) }) },
-  { key: "engineSizeKw", label: "ENGINE SIZE (KW)", type: "number", width: 120, plain: true, section: REC, editable: true, toPatch: (value) => ({ engineSizeKw: toInt(value) }) },
-  { key: "numSeats", label: "NUMBER OF SEATS", type: "number", width: 120, section: REC, editable: true, toPatch: (value) => ({ numSeats: toInt(value) }) },
-  { key: "formerKeepers", label: "FORMER KEEPERS", type: "number", width: 120, section: REC, editable: true, toPatch: (value) => ({ formerKeepers: toInt(value) }) },
-  { key: "numKeys", label: "NO. OF KEYS", type: "number", width: 100, section: REC, editable: true, toPatch: (value) => ({ numKeys: toInt(value) ?? 0 }) },
-  { key: "massInService", label: "MASS IN SERVICE", type: "number", width: 120, section: REC, editable: true, toPatch: (value) => ({ massInService: toInt(value) }) },
-  { key: "vin", label: "CHASSIS/ FRAME NO.", type: "text", width: 170, section: REC, editable: true },
-  { key: "engineNumber", label: "ENGINE NO.", type: "text", width: 130, section: REC, editable: true },
+  { key: "engineSizeCC", label: "Engine size (cc)", type: "number", width: 120, plain: true, section: REC, editable: true, toPatch: (value) => ({ engineSizeCC: toInt(value) }) },
+  { key: "engineSizeKw", label: "Engine size (kW)", type: "number", width: 120, plain: true, section: REC, editable: true, toPatch: (value) => ({ engineSizeKw: toInt(value) }) },
+  { key: "numSeats", label: "Number of seats", type: "number", width: 120, section: REC, editable: true, toPatch: (value) => ({ numSeats: toInt(value) }) },
+  { key: "formerKeepers", label: "Former keepers", type: "number", width: 120, section: REC, editable: true, toPatch: (value) => ({ formerKeepers: toInt(value) }) },
+  { key: "numKeys", label: "No. of keys", type: "number", width: 100, section: REC, editable: true, toPatch: (value) => ({ numKeys: toInt(value) ?? 0 }) },
+  { key: "massInService", label: "Mass in service", type: "number", width: 120, section: REC, editable: true, toPatch: (value) => ({ massInService: toInt(value) }) },
+  { key: "vin", label: "Chassis / frame no.", type: "text", width: 170, section: REC, editable: true },
+  { key: "engineNumber", label: "Engine no.", type: "text", width: 130, section: REC, editable: true },
   {
     key: "serviceHistory",
-    label: "SERVICE HISTORY",
+    label: "Service history",
     type: "select",
     width: 130,
     section: REC,
@@ -298,7 +299,7 @@ const COLS: ColDef[] = [
   },
   {
     key: "lockNut",
-    label: "LOCK NUT",
+    label: "Lock nut",
     type: "select",
     width: 100,
     section: REC,
@@ -306,13 +307,13 @@ const COLS: ColDef[] = [
     options: YES_NO_OPTIONS,
     toPatch: (value) => ({ lockNut: toBool(value) ?? false }),
   },
-  { key: "otherItemsReceived", label: "OTHER ITEMS RECEIVED", type: "text", width: 170, section: REC, editable: true },
+  { key: "otherItemsReceived", label: "Other items received", type: "text", width: 170, section: REC, editable: true },
 
   // ── Value Addition (sheet BB) ─────────────────────────────────────────
   // New cars: the Things to Do roll-up, read-only here. Legacy cars keep the
   // imported figure and stay editable (isValueAdditionLocked).
   {
-    ...money("valueAddition", "TOTAL VALUE ADDITION", VA, 160),
+    ...money("valueAddition", "Total value addition", VA, 160),
     sum: true,
     editableFor: isValueAdditionLocked,
     readOnlyHint: "Sum of this car's Things to Do costs. Edit the costs there.",
@@ -322,7 +323,7 @@ const COLS: ColDef[] = [
   // ── Sales Data (sheet BC–BS) ──────────────────────────────────────────
   {
     key: "saleStatus",
-    label: "AVAILABLE / SOLD",
+    label: "Available / sold",
     type: "select",
     width: 150,
     section: SALE,
@@ -330,11 +331,11 @@ const COLS: ColDef[] = [
     options: SALE_STATUS_OPTIONS,
     toPatch: (value) => ({ saleStatus: (value as Vehicle["saleStatus"]) ?? "available" }),
   },
-  { key: "dateSold", label: "DATE SOLD", type: "date", width: 120, section: SALE, editable: true },
-  { ...money("sellingPrice", "SELLING PRICE", SALE), sum: true },
+  { key: "dateSold", label: "Date sold", type: "date", width: 120, section: SALE, editable: true },
+  { ...money("sellingPrice", "Selling price", SALE), sum: true },
   {
     key: "financeCompanyDeal",
-    label: "FINANCE COMPANY DEAL",
+    label: "Finance company deal",
     type: "select",
     width: 150,
     section: SALE,
@@ -344,25 +345,25 @@ const COLS: ColDef[] = [
   },
   {
     key: "sellingAgent",
-    label: "SELLING AGENT / LEAD FROM",
+    label: "Selling agent / lead from",
     type: "text",
     width: 180,
     section: SALE,
     editable: true,
     suggestions: SELLING_AGENT_SUGGESTIONS,
   },
-  money("financeCompanyCharges", "FINANCE COMPANY CAHRGES / COMMISSION", SALE, 200),
-  money("partnerShare", "PARTNER'S SHARE", SALE),
-  money("extendedWarrantyCost", "EXTENDED WARRANTY", SALE, 140),
-  money("roadTaxCost", "ROAD TAX", SALE, 110),
-  money("insuranceCost", "INSURANCE", SALE, 110),
-  money("otherJobsCost", "OTHER JOBS", SALE, 110),
-  money("customerDeliveryCost", "CHARGES PAID BY CC FOR DELIVERY TO CUSTOMER", SALE, 220),
-  { key: "financeCompanyCharges", label: "EXPENSE AT POINT OF SALE", type: "currency", width: 170, section: SALE, value: expenseAtPointOfSale, sum: true },
+  money("financeCompanyCharges", "Finance company charges / commission", SALE, 200),
+  money("partnerShare", "Partner's share", SALE),
+  money("extendedWarrantyCost", "Extended warranty", SALE, 140),
+  money("roadTaxCost", "Road tax", SALE, 110),
+  money("insuranceCost", "Insurance", SALE, 110),
+  money("otherJobsCost", "Other jobs", SALE, 110),
+  money("customerDeliveryCost", "Charges paid by CC for delivery to customer", SALE, 220),
+  { key: "financeCompanyCharges", label: "Expense at point of sale", type: "currency", width: 170, section: SALE, value: expenseAtPointOfSale, sum: true },
   { key: "sellingPrice", label: "S - P", type: "currency", width: 120, section: SALE, value: sheetProfit, sum: true },
-  { key: "dateSold", label: "SOLD IN MONTH OF", type: "text", width: 130, section: SALE, value: soldMonth },
-  { key: "dateSold", label: "SOLD IN YEAR OF", type: "text", width: 120, section: SALE, value: soldYear },
-  { key: "remarks", label: "REMARKS", type: "text", width: 200, section: SALE, editable: true },
+  { key: "dateSold", label: "Sold in month of", type: "text", width: 130, section: SALE, value: soldMonth },
+  { key: "dateSold", label: "Sold in year of", type: "text", width: 120, section: SALE, value: soldYear },
+  { key: "remarks", label: "Remarks", type: "text", width: 200, section: SALE, editable: true },
 ];
 
 const FILTER_FIELDS: FilterField[] = [

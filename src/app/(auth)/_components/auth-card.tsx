@@ -32,7 +32,7 @@ export function AuthCard({
         <div className={centered ? "mb-6 text-center" : "mb-6"}>
           <div
             className={
-              "mb-6 grid size-9 place-items-center rounded-(--radius-200) bg-(--bg-fill-brand) text-caption font-bold text-(--text-brand-on-bg-fill)" +
+              "mb-6 grid size-9 place-items-center rounded-(--radius-200) bg-(--bg-fill-brand) text-caption font-semibold text-(--text-brand-on-bg-fill)" +
               (centered ? " mx-auto" : "")
             }
           >

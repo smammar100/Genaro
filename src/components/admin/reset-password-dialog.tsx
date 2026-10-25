@@ -109,7 +109,7 @@ export function ResetPasswordDialog({ user, open, onOpenChange }: Props) {
       {creds ? (
         <div data-testid="reset-password-creds">
           <Banner tone="success" title="New password set, relay these">
-            <div className="grid gap-1 font-mono text-caption">
+            <div className="grid gap-1 font-code text-caption">
               <div>
                 <span className="text-(--text-secondary)">{handleLabel}: </span>
                 {handle}

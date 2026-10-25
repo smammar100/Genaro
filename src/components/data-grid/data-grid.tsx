@@ -170,7 +170,7 @@ export function DataGridHeaderRow<T>({
   // Sticky cells need SOLID backgrounds — a translucent sticky cell lets
   // scrolled-out content show through, corrupting the cell text. `bg-card`
   // is both opaque and the white table surface (GEN-62); the header still
-  // reads as a band via its borders + font-medium.
+  // reads as a band via its borders and secondary fill.
   // The right-edge drop shadow marks the boundary between pinned and
   // scrollable content; only the rightmost sticky cell's shadow is
   // visually present at any moment (inner shadows are occluded by the
@@ -244,7 +244,7 @@ export function DataGridHeaderRow<T>({
                     : undefined
               }
               className={cn(
-                "border-b bg-(--bg-surface-secondary) px-3 text-left font-medium",
+                "border-b bg-(--bg-surface-secondary) px-3 text-left",
                 c.sticky &&
                   "sticky z-30 bg-(--bg-surface-secondary) shadow-[1px_0_0_0_var(--border-secondary)]",
               )}

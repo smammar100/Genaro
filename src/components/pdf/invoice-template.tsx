@@ -6,6 +6,7 @@ import {
   Image,
   StyleSheet,
 } from "@react-pdf/renderer";
+import { PDF_FONT, PDF_SEMIBOLD } from "./fonts";
 import { variantLabel } from "@/lib/vehicle-variant";
 import type { Invoice, InvoiceLineItem, Vehicle } from "@/lib/types";
 import { formatVatLabel, normalizeVatScheme } from "@/lib/vat";
@@ -45,11 +46,11 @@ const s = StyleSheet.create({
     paddingBottom: 22,
     paddingHorizontal: 30,
     fontSize: 9,
-    fontFamily: "Helvetica",
+    fontFamily: PDF_FONT,
     color: "#111",
   },
   headerRow: { flexDirection: "row", justifyContent: "space-between" },
-  brand: { fontSize: 17, fontFamily: "Helvetica-Bold" },
+  brand: { fontSize: 17, fontWeight: PDF_SEMIBOLD },
   brandSmall: { fontSize: 8.5, color: "#333", marginTop: 3, lineHeight: 1.4 },
   logoBox: {
     width: 60,
@@ -72,7 +73,7 @@ const s = StyleSheet.create({
   bannerText: {
     marginHorizontal: 12,
     fontSize: 12,
-    fontFamily: "Helvetica-Bold",
+    fontWeight: PDF_SEMIBOLD,
     letterSpacing: 1,
   },
   idGrid: { flexDirection: "row", gap: 14 },
@@ -83,14 +84,14 @@ const s = StyleSheet.create({
     paddingVertical: 2.5,
   },
   idLabel: { width: 78, fontSize: 7.5, color: LABEL },
-  idVal: { flex: 1, fontFamily: "Helvetica-Bold", fontSize: 8.5 },
+  idVal: { flex: 1, fontWeight: PDF_SEMIBOLD, fontSize: 8.5 },
   idChoiceWrap: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
   },
   idChoice: {
-    fontFamily: "Helvetica-Bold",
+    fontWeight: PDF_SEMIBOLD,
     fontSize: 7.5,
     marginRight: 3,
   },
@@ -101,14 +102,14 @@ const s = StyleSheet.create({
     flex: 1,
     padding: 4,
     backgroundColor: BOX,
-    fontFamily: "Helvetica-Bold",
+    fontWeight: PDF_SEMIBOLD,
     borderRight: `0.5pt solid ${RULE}`,
   },
   thVat: {
     width: 44,
     padding: 4,
     backgroundColor: BOX,
-    fontFamily: "Helvetica-Bold",
+    fontWeight: PDF_SEMIBOLD,
     textAlign: "center",
     borderRight: `0.5pt solid ${RULE}`,
   },
@@ -116,7 +117,7 @@ const s = StyleSheet.create({
     width: 88,
     padding: 4,
     backgroundColor: BOX,
-    fontFamily: "Helvetica-Bold",
+    fontWeight: PDF_SEMIBOLD,
     textAlign: "right",
   },
   tdDesc: { flex: 1, padding: 4, borderRight: `0.5pt solid ${RULE}` },
@@ -143,14 +144,14 @@ const s = StyleSheet.create({
   totLabel: {
     flex: 1,
     padding: 4,
-    fontFamily: "Helvetica-Bold",
+    fontWeight: PDF_SEMIBOLD,
     borderRight: `0.5pt solid ${RULE}`,
   },
   totVal: {
     width: 90,
     padding: 4,
     textAlign: "right",
-    fontFamily: "Helvetica-Bold",
+    fontWeight: PDF_SEMIBOLD,
   },
   sigRow: {
     flexDirection: "row",
@@ -181,12 +182,12 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  chkMark: { fontSize: 7, fontFamily: "Helvetica-Bold", lineHeight: 1 },
-  sectionTitle: { fontFamily: "Helvetica-Bold", fontSize: 9, marginBottom: 3 },
+  chkMark: { fontSize: 7, fontWeight: PDF_SEMIBOLD, lineHeight: 1 },
+  sectionTitle: { fontWeight: PDF_SEMIBOLD, fontSize: 9, marginBottom: 3 },
   specGrid: { flexDirection: "row", flexWrap: "wrap" },
   specCell: { width: "33.33%", flexDirection: "row", paddingVertical: 1.5 },
   specLabel: { fontSize: 7.5, color: LABEL, width: 64 },
-  specVal: { fontSize: 8, fontFamily: "Helvetica-Bold", flex: 1 },
+  specVal: { fontSize: 8, fontWeight: PDF_SEMIBOLD, flex: 1 },
   para: { fontSize: 7.5, lineHeight: 1.4, marginTop: 3, textAlign: "justify" },
   paraItalic: {
     fontSize: 7,
@@ -324,7 +325,7 @@ function LegacyInvoice({ invoice, companyName, companyAddress, vatNumber }: Prop
             ) : null}
           </View>
           <View>
-            <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>
+            <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>
               {invoice.type.toUpperCase()} INVOICE
             </Text>
             <Text style={s.brandSmall}>{invoice.invoiceNumber}</Text>
@@ -552,18 +553,18 @@ function SalesInvoice({ invoice, vehicle, logoUrl }: Props) {
 
         <View style={s.sigRow}>
           <View style={s.sigCell}>
-            <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>SELLER&apos;S SIGNATURE</Text>
+            <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>SELLER&apos;S SIGNATURE</Text>
             <View style={s.sigLine} />
           </View>
           <View style={s.sigCell}>
-            <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>BUYER&apos;S SIGNATURE</Text>
+            <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>BUYER&apos;S SIGNATURE</Text>
             <View style={s.sigLine} />
           </View>
         </View>
 
         <View style={s.declBox}>
           <Text>
-            <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>
+            <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>
               CUSTOMER DECLARATION:{" "}
             </Text>
             {CUSTOMER_DECLARATION_TEXT}
@@ -571,7 +572,7 @@ function SalesInvoice({ invoice, vehicle, logoUrl }: Props) {
         </View>
         <View style={s.declBox}>
           <Text>
-            <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>
+            <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>
               FINANCE DECLARATION:{" "}
             </Text>
             {FINANCE_DECLARATION_TEXT}
@@ -582,19 +583,19 @@ function SalesInvoice({ invoice, vehicle, logoUrl }: Props) {
           <View style={s.footerGrid}>
             <View style={s.footerCol}>
               <Text>
-                <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>
+                <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>
                   Bank Details:{" "}
                 </Text>
                 {CO.bankAccountName}, {CO.bankName}
               </Text>
               <Text>
-                <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>
+                <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>
                   Account No:{" "}
                 </Text>
                 {CO.bankAccountNumber}
               </Text>
               <Text>
-                <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>
+                <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>
                   Sort Code:{" "}
                 </Text>
                 {CO.bankSortCode}
@@ -602,19 +603,19 @@ function SalesInvoice({ invoice, vehicle, logoUrl }: Props) {
             </View>
             <View style={s.footerCol}>
               <Text>
-                <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>
+                <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>
                   Company Reg No:{" "}
                 </Text>
                 {CO.companyRegNumber}
               </Text>
               <Text>
-                <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>
+                <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>
                   VAT Reg No:{" "}
                 </Text>
                 {CO.vatRegNumber}
               </Text>
               <Text>
-                <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>FCA No: </Text>
+                <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>FCA No: </Text>
                 {CO.fcaNumber}
               </Text>
             </View>
@@ -673,7 +674,7 @@ function SalesInvoice({ invoice, vehicle, logoUrl }: Props) {
         </View>
 
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8 }}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>
+          <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>
             Non-Warranty Disclaimer
           </Text>
           <Chk on={invoice.nonWarrantyDisclaimerAccepted} />
@@ -684,48 +685,48 @@ function SalesInvoice({ invoice, vehicle, logoUrl }: Props) {
           Which parts are covered?
         </Text>
         <Text style={s.paraItalic}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>Engine: </Text>
+          <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>Engine: </Text>
           {WARRANTY_COVERAGE_PARTS.engine}
         </Text>
         <Text style={s.paraItalic}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>Manual Gearbox: </Text>
+          <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>Manual Gearbox: </Text>
           {WARRANTY_COVERAGE_PARTS.manualGearbox}
         </Text>
         <Text style={s.paraItalic}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>
+          <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>
             Fully Automatic Gearbox:{" "}
           </Text>
           {WARRANTY_COVERAGE_PARTS.automaticGearbox}
         </Text>
         <Text style={s.paraItalic}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>Clutch: </Text>
+          <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>Clutch: </Text>
           {WARRANTY_COVERAGE_PARTS.clutch}
         </Text>
         <Text style={s.paraItalic}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>Disclaimer: </Text>
+          <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>Disclaimer: </Text>
           {WARRANTY_DISCLAIMER_TEXT}
         </Text>
 
         <Banner title="PRE DELIVERY CHECK" />
 
         <Text style={{ fontSize: 8 }}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>Buyer&apos;s Name: </Text>
+          <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>Buyer&apos;s Name: </Text>
           {invoice.buyerName ?? "—"}
         </Text>
         <Text style={{ fontSize: 8 }}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>
+          <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>
             Vehicle Make & Model:{" "}
           </Text>
           {mm}
         </Text>
         <Text style={{ fontSize: 8 }}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>
+          <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>
             Vehicle Reg & Chassis No:{" "}
           </Text>
           {vrmVin}
         </Text>
         <Text style={{ fontSize: 8 }}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>
+          <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>
             Present Mileage:{" "}
           </Text>
           {mileageStr}
@@ -780,19 +781,19 @@ function SalesInvoice({ invoice, vehicle, logoUrl }: Props) {
 
         <Banner title="GENERAL DECLARATION" />
         <Text style={s.paraItalic}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>
+          <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>
             General Servicing & Other requirements:{" "}
           </Text>
           {GENERAL_SERVICING_TEXT}
         </Text>
         <Text style={s.paraItalic}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>
+          <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>
             Vehicles with a Diesel Particulate Filter:{" "}
           </Text>
           {DPF_NOTICE_TEXT}
         </Text>
         <Text style={s.paraItalic}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>
+          <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>
             Seller Declaration:{" "}
           </Text>
           {SELLER_DECLARATION_TEXT}
@@ -800,11 +801,11 @@ function SalesInvoice({ invoice, vehicle, logoUrl }: Props) {
 
         <View style={s.sigRow}>
           <View style={s.sigCell}>
-            <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>SELLER&apos;S SIGNATURE</Text>
+            <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>SELLER&apos;S SIGNATURE</Text>
             <View style={s.sigLine} />
           </View>
           <View style={s.sigCell}>
-            <Text style={{ fontFamily: "Helvetica-Bold", fontStyle: "normal" }}>BUYER&apos;S SIGNATURE</Text>
+            <Text style={{ fontWeight: PDF_SEMIBOLD, fontStyle: "normal" }}>BUYER&apos;S SIGNATURE</Text>
             <View style={s.sigLine} />
           </View>
         </View>

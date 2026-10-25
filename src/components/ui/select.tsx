@@ -171,7 +171,7 @@ export function SelectItem({
       className={cn(
         // Polaris OptionList rows: 13px medium, radius-200, the tick on the
         // right, the chosen row filled and semibold.
-        "flex min-h-8 shrink-0 cursor-default items-center justify-between gap-2 rounded-(--radius-200) p-1.5 text-body font-medium text-(--text) outline-none data-disabled:pointer-events-none data-disabled:text-(--text-disabled) data-highlighted:bg-(--bg-surface-secondary-hover) data-selected:bg-(--bg-surface-secondary-selected) data-selected:font-semibold [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "flex min-h-8 shrink-0 cursor-default items-center justify-between gap-2 rounded-(--radius-200) p-1.5 text-body text-(--text) outline-none data-disabled:pointer-events-none data-disabled:text-(--text-disabled) data-highlighted:bg-(--bg-surface-secondary-hover) data-selected:bg-(--bg-surface-secondary-selected) data-selected:font-semibold [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       data-slot="select-item"
@@ -213,7 +213,7 @@ export function SelectLabel({
   return (
     <SelectPrimitive.Label
       className={cn(
-        "not-in-data-[slot=field]:mb-2 inline-flex cursor-default items-center gap-2 font-medium text-body text-foreground",
+        "not-in-data-[slot=field]:mb-2 inline-flex cursor-default items-center gap-2 text-body text-foreground",
         className,
       )}
       data-slot="select-label"

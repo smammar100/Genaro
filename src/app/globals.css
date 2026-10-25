@@ -124,6 +124,15 @@
   --text-caption--line-height: var(--lh-caption);
   --text-micro: var(--fs-micro);
   --text-micro--line-height: var(--lh-micro);
+
+  /* Two weights (--fw-* below). Medium is regular, and anything heavier
+     than semibold is semibold until bold is approved. */
+  --font-weight-normal: var(--fw-regular);
+  --font-weight-medium: var(--fw-regular);
+  --font-weight-semibold: var(--fw-semibold);
+  --font-weight-bold: var(--fw-semibold);
+  --font-weight-extrabold: var(--fw-semibold);
+  --font-weight-black: var(--fw-semibold);
 }
 
 @layer base {
@@ -140,7 +149,7 @@
   }
 
   body {
-    /* A missing Inter weight should fail visibly, not ship a faked bold. */
+    /* A missing Geist weight should fail visibly, not ship a faked bold. */
     font-synthesis: none;
   }
 
@@ -153,6 +162,11 @@
     text-wrap: balance;
   }
 
+  /* No paragraph ends on a lone word. */
+  p {
+    text-wrap: pretty;
+  }
+
   code,
   kbd,
   samp,
@@ -162,8 +176,16 @@
 
   strong,
   b {
-    font-weight: 600;
+    font-weight: var(--fw-semibold);
   }
+}
+
+/* Codes (stock IDs, VINs, invoice numbers, usernames, temporary passwords)
+   are set in Geist with even figures (Geist has no slashed zero). Reg
+   plates keep their plate face in Geist Mono. */
+@utility font-code {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
 }
 
 @utility container {
@@ -198,6 +220,30 @@
   --lh-micro: 14px;
   --fs-micro-compact: 10px;
   --lh-micro-compact: 12px;
+
+  /* Two weights: regular for text, semibold for headings, page titles and
+     selected items. Semibold is the heaviest weight until bold is approved
+     (call 2026-10-25). fluid/lib/font-weight.ts has the same pair. */
+  --fw-regular: 400;
+  --fw-semibold: 550;
+}
+
+/* The scale's compact step, for dense screens such as the master sheet:
+   every role one step down (body 12/18, caption 11/14). Polaris classes and
+   the text-<role> utilities read these variables, so a subtree follows. */
+.type-compact {
+  --fs-display: var(--fs-display-compact);
+  --lh-display: var(--lh-display-compact);
+  --fs-title: var(--fs-title-compact);
+  --lh-title: var(--lh-title-compact);
+  --fs-subtitle: var(--fs-subtitle-compact);
+  --lh-subtitle: var(--lh-subtitle-compact);
+  --fs-body: var(--fs-body-compact);
+  --lh-body: var(--lh-body-compact);
+  --fs-caption: var(--fs-caption-compact);
+  --lh-caption: var(--lh-caption-compact);
+  --fs-micro: var(--fs-micro-compact);
+  --lh-micro: var(--lh-micro-compact);
 }
 
 @layer components {
@@ -280,12 +326,12 @@
   }
   :where(.typeset h1, .typeset h2, .typeset h3, .typeset h4, .typeset h5, .typeset h6):not(:where(.typeset .not-typeset, .typeset .not-typeset *)) {
     color: var(--foreground, currentColor);
-    font-variation-settings: 'wght' 550, 'opsz' 18;
+    font-variation-settings: 'wght' 550;
   }
   :where(.typeset h1):not(:where(.typeset .not-typeset, .typeset .not-typeset *)) {
     font-size: var(--typeset-display);
     line-height: var(--typeset-display-leading);
-    font-variation-settings: 'wght' 700, 'opsz' 25;
+    font-variation-settings: 'wght' 550;
   }
   :where(.typeset h2):not(:where(.typeset .not-typeset, .typeset .not-typeset *)) {
     font-size: var(--typeset-title);
@@ -296,7 +342,7 @@
     line-height: var(--typeset-subtitle-leading);
   }
   :where(.typeset strong, .typeset b):not(:where(.typeset .not-typeset, .typeset .not-typeset *)) {
-    font-variation-settings: 'wght' 550, 'opsz' 18;
+    font-variation-settings: 'wght' 550;
   }
   :where(.typeset a):not(:where(.typeset .not-typeset, .typeset .not-typeset *)) {
     color: var(--foreground, currentColor);
@@ -474,7 +520,7 @@
   }
   :where(.typeset th):not(:where(.typeset .not-typeset, .typeset .not-typeset *)) {
     color: var(--foreground, currentColor);
-    font-variation-settings: 'wght' 550, 'opsz' 18;
+    font-variation-settings: 'wght' 550;
   }
   :where(.typeset .typeset-scroll, .typeset .tableWrapper):not(:where(.typeset .not-typeset, .typeset .not-typeset *)) {
     overflow-x: auto;

@@ -79,7 +79,7 @@ export function DvlaSelect({ auto, ...props }: SelectProps & { auto?: boolean })
   return (
     <div className="flex flex-col gap-1">
       <div className="flex min-h-5 flex-wrap items-center gap-2" aria-hidden>
-        <span className="body-md font-medium">{props.label}</span>
+        <span className="body-md">{props.label}</span>
         <FromDvla />
       </div>
       <Select {...props} labelHidden />

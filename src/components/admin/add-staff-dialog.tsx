@@ -203,7 +203,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                   Send these to the staff member (WhatsApp / phone / in person).
                   They&apos;ll set their own password on first login.
                 </p>
-                <div className="mt-3 grid gap-1.5 font-mono text-caption">
+                <div className="mt-3 grid gap-1.5 font-code text-caption">
                   <div className="flex items-center gap-2">
                     <span className="text-(--text-secondary)">Username: </span>
                     <span className="min-w-0 flex-1 truncate">
@@ -261,7 +261,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
               {/* Identity column */}
               <div className="flex flex-col gap-4 border-b p-5 sm:overflow-y-auto sm:border-b-0 sm:border-r">
                 <div>
-                  <Label htmlFor={nameId} className="text-body font-medium">Name</Label>
+                  <Label htmlFor={nameId} className="text-body">Name</Label>
                   <Input
                     id={nameId}
                     className="mt-1.5"
@@ -274,10 +274,10 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                 </div>
 
                 <div>
-                  <Label htmlFor={usernameId} className="text-body font-medium">Username</Label>
+                  <Label htmlFor={usernameId} className="text-body">Username</Label>
                   <Input
                     id={usernameId}
-                    className="mt-1.5 font-mono"
+                    className="mt-1.5 font-code"
                     value={username}
                     onChange={(e) =>
                       setUsernameOverride(e.target.value.toLowerCase())
@@ -293,11 +293,11 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                 </div>
 
                 <div>
-                  <Label htmlFor={passwordId} className="text-body font-medium">Temporary password</Label>
+                  <Label htmlFor={passwordId} className="text-body">Temporary password</Label>
                   <div className="mt-1.5 flex gap-2">
                     <Input
                       id={passwordId}
-                      className="flex-1 font-mono"
+                      className="flex-1 font-code"
                       value={password}
                       readOnly
                       onFocusCapture={(e) => e.currentTarget.select()}
@@ -342,7 +342,7 @@ export function AddStaffDialog({ open, onOpenChange, onCreated }: Props) {
                     />
                   </div>
                   <span
-                    className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-micro font-medium tabular-nums text-(--text-secondary)"
+                    className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-micro tabular-nums text-(--text-secondary)"
                     data-testid="add-staff-selected-count"
                   >
                     {caps.size}/{ALL_CAPABILITIES.length}

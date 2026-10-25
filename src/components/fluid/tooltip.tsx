@@ -223,7 +223,7 @@ function Tooltip({
                       "[text-box:trim-both_cap_alphabetic] supports-[text-box:trim-both]:py-2",
                       className
                     )}
-                    style={{ fontVariationSettings: fontWeights.medium }}
+                    style={{ fontVariationSettings: fontWeights.normal }}
                     initial={{ opacity: 0, ...slideOffset }}
                     animate={
                       exiting

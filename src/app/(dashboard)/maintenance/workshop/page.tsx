@@ -273,7 +273,7 @@ export default function WorkshopPage() {
                 <Input
                   id={regId}
                   {...form.register("vehicleReg")}
-                  className="font-mono"
+                  className="font-code"
                   placeholder="AB12 CDE"
                 />
               </div>

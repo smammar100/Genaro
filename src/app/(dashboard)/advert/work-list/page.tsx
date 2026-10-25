@@ -641,7 +641,7 @@ export default function ListingsPage() {
                     <div className="flex min-w-0 flex-1 flex-col">
                       {/* Meta row — stock ID + status */}
                       <div className="flex items-center justify-between gap-2">
-                        <span className="truncate font-mono text-caption text-(--text-secondary)">
+                        <span className="truncate font-code text-caption text-(--text-secondary)">
                           {l.vehicle?.stockId ?? "—"}
                         </span>
                         <ListingStatusBadge status={l.status} />
@@ -699,7 +699,7 @@ export default function ListingsPage() {
                             size="sm"
                           />
                         ) : null}
-                        <span className="font-mono text-caption text-(--text-secondary)">
+                        <span className="font-code text-caption text-(--text-secondary)">
                           {selected.vehicle?.stockId ?? "—"}
                         </span>
                         <ListingStatusBadge status={selected.status} />

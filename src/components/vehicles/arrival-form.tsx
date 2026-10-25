@@ -831,7 +831,7 @@ export function ArrivalForm() {
                   <ul className="list-disc pl-5">
                     {Object.entries(errors).map(([field, err]) => (
                       <li key={field}>
-                        <span className="font-mono">{field}</span>:{" "}
+                        <span className="font-code">{field}</span>:{" "}
                         {(err as { message?: string })?.message ?? "invalid"}
                       </li>
                     ))}

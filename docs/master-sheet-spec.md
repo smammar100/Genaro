@@ -4,8 +4,10 @@
 > master sheet, 71 columns A–BS, 1,887 data rows from row 5).
 > **Owner of the logic:** `src/lib/master-sheet.ts` (columns, sections, derived
 > values) and `src/lib/vehicle-costs.ts` (the cost roll-up).
-> **Rule:** column names match the Excel headers exactly, minus the `(1)` / `(2)`
-> markers. When this doc and the code disagree, fix one of them — they must not drift.
+> **Rule:** column names are the Excel headers in sentence case, minus the `(1)` / `(2)`
+> markers, with the sheet’s two typos fixed (2026-10-25). The tables below keep the
+> Excel’s own spelling, which is what the import reads. When this doc and the code
+> disagree, fix one of them — they must not drift.
 
 ## How the Excel sheet is laid out
 
@@ -65,7 +67,7 @@ editable inline on the Master Sheet and on the vehicle page.
 | U | BCA BUYERS FEE - BUSINESS | in | `buyersFee` | `buyers_fee` | |
 | V | VAT ON BUYERS FEE 20% | in | `vatOnBuyersFee` | `vat_on_buyers_fee` | |
 | W | BCA ESSENTIAL CHECK / BCA ASSURED CHARGE | in | `inspectionCharge` | `inspection_charge` | |
-| X | VAT ON ESSENTAIL CHECK 20% | in | `vatOnInspectionCharge` | `vat_on_inspection_charge` | Header spelling kept from the sheet. |
+| X | VAT ON ESSENTAIL CHECK 20% | in | `vatOnInspectionCharge` | `vat_on_inspection_charge` | The sheet’s spelling; the app says “VAT on essential check 20%”. |
 | Y | BCA EV/ HYBRID ASSURED CHARGE | in | `evAssuredCharge` | `ev_assured_charge` | |
 | Z | VAT ON HYBRID ASSURED CHARGE | in | `vatOnEvAssuredCharge` | `vat_on_ev_assured_charge` | |
 | AA | BATTERY HEALTH REPORT | in | `batteryReportFee` | `battery_report_fee` | |
@@ -116,7 +118,7 @@ editable inline on the Master Sheet and on the vehicle page.
 | BE | SELLING PRICE | in | `sellingPrice` | `selling_price` | Stamped by a won deal; editable. |
 | BF | FINANCE COMPANY DEAL | in | `financeCompanyDeal` | `finance_company_deal` | YES / NO — a finance-company deal we owe commission on. |
 | BG | SELLING AGENT / LEAD FROM | in | `sellingAgent` | `selling_agent` | Free text with suggestions (AUTO TRADER, ZUTO, WALK IN, CAR GURUS…). |
-| BH | FINANCE COMPANY CAHRGES / COMMISSION | in | `financeCompanyCharges` | `finance_company_charges` | Header spelling kept from the sheet. |
+| BH | FINANCE COMPANY CAHRGES / COMMISSION | in | `financeCompanyCharges` | `finance_company_charges` | The sheet’s spelling; the app says “Finance company charges / commission”. |
 | BI | PARTNER'S SHARE | in | `partnerShare` | `partner_share` | Paid to a partner on a shared-ownership car. |
 | BJ | EXTENDED WARRANTY | in | `extendedWarrantyCost` | `extended_warranty_cost` | Paid for an extended warranty at sale. Not the same as `warrantyCost` (prep-time warranty cost in the cost ledger). |
 | BK | ROAD TAX | in | `roadTaxCost` | `road_tax_cost` | If paid by Car Capital. |

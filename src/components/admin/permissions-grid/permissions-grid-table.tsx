@@ -73,7 +73,7 @@ export function PermissionsGridTable({
               )}
             >
               <span
-                className="text-caption font-medium text-(--text-secondary)"
+                className="text-caption text-(--text-secondary)"
                 data-testid="member-count"
               >
                 {users.length} member{users.length === 1 ? "" : "s"}
@@ -85,7 +85,7 @@ export function PermissionsGridTable({
                 className="border-b border-l border-(--border) bg-(--bg-surface-secondary) px-1.5 py-1.5 text-center align-middle"
               >
                 <span
-                  className="line-clamp-2 text-center text-caption font-medium text-(--text-secondary)"
+                  className="line-clamp-2 text-center text-caption text-(--text-secondary)"
                   title={CAPABILITY_LABELS[cap]}
                 >
                   {CAPABILITY_LABELS[cap]}
@@ -126,7 +126,7 @@ export function PermissionsGridTable({
                     />
                     <div className="flex min-w-0 flex-1 flex-col">
                       <div className="flex items-center gap-1.5">
-                        <span className="truncate text-body font-medium text-(--text)">
+                        <span className="truncate text-body text-(--text)">
                           {u.name}
                         </span>
                         {isYou && <Badge>You</Badge>}

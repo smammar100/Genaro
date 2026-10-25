@@ -249,7 +249,6 @@ export function ExternalInvoiceList({ kind }: Props) {
                       url={vehicleDetailHref(veh.id, pathname)}
                       monochrome
                       removeUnderline
-                      className="font-medium"
                     >
                       {veh.stockId}
                     </Link>
@@ -260,7 +259,7 @@ export function ExternalInvoiceList({ kind }: Props) {
                 ) : (
                   "—"
                 ),
-                <span key="number" className="font-mono text-caption">
+                <span key="number" className="font-code text-caption">
                   {r.invoiceNumber ?? "—"}
                 </span>,
                 <div

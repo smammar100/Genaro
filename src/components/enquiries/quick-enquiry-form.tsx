@@ -148,7 +148,7 @@ export function QuickEnquiryForm({
           <div className="flex items-center justify-between rounded-(--radius-200) bg-(--bg-surface-secondary) px-3 py-2 text-body text-(--text)">
             <span>
               <span className="text-(--text-secondary)">Customer: </span>
-              <span className="font-medium">
+              <span>
                 {selectedCustomer.firstName} {selectedCustomer.lastName}
               </span>
             </span>
@@ -224,7 +224,7 @@ export function QuickEnquiryForm({
           {vehicleLabel && (
             <div className="rounded-(--radius-200) border border-dashed border-(--border) bg-(--bg-surface-secondary) px-3 py-2 text-body text-(--text)">
               <span className="text-(--text-secondary)">Vehicle: </span>
-              <span className="font-medium">{vehicleLabel}</span>
+              <span>{vehicleLabel}</span>
             </div>
           )}
           <div className="grid gap-3 sm:grid-cols-2">

@@ -79,10 +79,10 @@ export function ReceivingCard({
           <Input id={ids.mass} type="number" min={0} {...form.register("massInService")} />
         </Field>
         <Field label="Chassis / frame no." htmlFor={ids.vin}>
-          <Input id={ids.vin} className="font-mono uppercase" {...form.register("vin")} />
+          <Input id={ids.vin} className="font-code" {...form.register("vin")} />
         </Field>
         <Field label="Engine no." htmlFor={ids.engineNumber}>
-          <Input id={ids.engineNumber} className="font-mono uppercase" {...form.register("engineNumber")} />
+          <Input id={ids.engineNumber} className="font-code" {...form.register("engineNumber")} />
         </Field>
         <Controller
           control={form.control}

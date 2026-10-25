@@ -253,7 +253,7 @@ export function AddEventSheet({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Add title"
-            className="h-11 border-0 px-0 text-subtitle font-medium shadow-none focus-visible:ring-0"
+            className="h-11 border-0 px-0 text-subtitle shadow-none focus-visible:ring-0"
           />
 
           <div className="mt-1 divide-y">
@@ -266,7 +266,7 @@ export function AddEventSheet({
                       type="button"
                       onClick={() => setKind(k.key)}
                       className={cn(
-                        "flex min-w-0 items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-caption font-medium transition-colors",
+                        "flex min-w-0 items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-caption transition-colors",
                         kind === k.key
                           ? "border-foreground/20 bg-muted text-foreground"
                           : "border-transparent text-muted-foreground hover:bg-muted/60",

@@ -52,7 +52,7 @@ export function TourCard({
       </p>
 
       {awaitsAction && (
-        <p className="mt-3 flex items-center gap-2 rounded-(--radius-200) bg-(--bg-surface-emphasis) px-3 py-2 text-body font-medium text-(--text-emphasis)">
+        <p className="mt-3 flex items-center gap-2 rounded-(--radius-200) bg-(--bg-surface-emphasis) px-3 py-2 text-body text-(--text-emphasis)">
           <MousePointerClick className="size-4 shrink-0" />
           <span>
             Click <b>{guided.actionLabel}</b> to carry on

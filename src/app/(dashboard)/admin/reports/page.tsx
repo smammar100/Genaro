@@ -500,7 +500,7 @@ export default function ReportsPage() {
           ) : null}
         </div>
         <p className="text-caption text-(--text-secondary)">
-          Showing <span className="font-medium">{filterSummary}</span>. Year
+          Showing <span className="text-(--text)">{filterSummary}</span>. Year
           means the year of sale for a sold car, and the year of arrival for
           one still in stock.
         </p>
@@ -588,7 +588,7 @@ export default function ReportsPage() {
               <ChartCard
                 title={`Profit by ${gran}`}
                 right={
-                  <span className="text-caption font-medium tabular-nums text-(--text-secondary)">
+                  <span className="text-caption tabular-nums text-(--text-secondary)">
                     {formatCurrency(kpis.profit)}
                   </span>
                 }
@@ -607,7 +607,7 @@ export default function ReportsPage() {
               <ChartCard
                 title={`Revenue by ${gran}`}
                 right={
-                  <span className="text-caption font-medium tabular-nums text-(--text-secondary)">
+                  <span className="text-caption tabular-nums text-(--text-secondary)">
                     {formatCurrency(kpis.revenue)}
                   </span>
                 }
@@ -710,7 +710,7 @@ function Kpi({
 }) {
   return (
     <Card className="h-full gap-1">
-      <div className="text-body font-medium text-(--text-secondary)">{label}</div>
+      <div className="text-body text-(--text-secondary)">{label}</div>
       <div className="text-display font-semibold tabular-nums">{value}</div>
       {sub && <div className="text-caption text-(--text-secondary)">{sub}</div>}
     </Card>

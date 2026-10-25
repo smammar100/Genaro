@@ -18,7 +18,7 @@ export function RegPlate({ registration, size = "md", className }: Props) {
       className={cn(
         // UK plate yellow (bg-plate) is the one sanctioned non-token colour;
         // everything around it is a token.
-        "inline-block rounded-[3px] border border-(--border-caution) bg-plate font-mono font-bold uppercase text-(--text-caution-on-bg-fill) shadow-(--shadow-border-inset)",
+        "inline-block rounded-[3px] border border-(--border-caution) bg-plate font-mono font-semibold uppercase text-(--text-caution-on-bg-fill) shadow-(--shadow-border-inset)",
         sizeClasses,
         className,
       )}

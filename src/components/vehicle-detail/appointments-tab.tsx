@@ -250,7 +250,7 @@ function EnquiriesTable({
           const sp = userById.get(e.salespersonId);
           return (
             <TableRow key={e.id}>
-              <TableCell className="font-medium">
+              <TableCell className="font-semibold">
                 {cust ? `${cust.firstName} ${cust.lastName}` : "—"}
                 {cust?.mobilePhone && (
                   <div className="body-sm text-(--text-secondary)">
@@ -279,7 +279,7 @@ function EnquiriesTable({
         })}
         {appts.map((a) => (
           <TableRow key={`appt-${a.id}`}>
-            <TableCell className="font-medium">{a.customerName}</TableCell>
+            <TableCell className="font-semibold">{a.customerName}</TableCell>
             <TableCell className="text-muted-foreground">Appointment</TableCell>
             <TableCell>Viewing</TableCell>
             <TableCell className="text-muted-foreground">—</TableCell>

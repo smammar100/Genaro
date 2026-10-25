@@ -167,7 +167,7 @@ export function MoveDialog({
     >
       <div className="flex flex-col gap-4">
         <p className="body-md text-(--text-secondary)">
-          <span className="font-mono">{vehicle.registration}</span> · Currently
+          <span className="font-code">{vehicle.registration}</span> · Currently
           at{" "}
           <span className="font-semibold text-(--text)">
             {VEHICLE_LOCATION_LABELS[vehicle.currentLocation]}

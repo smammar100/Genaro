@@ -28,7 +28,7 @@ export function inputControlClassName(size: InputSize = "default", type?: string
     type === "search" &&
       "[&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none",
     type === "file" &&
-      "text-muted-foreground file:me-3 file:bg-transparent file:font-medium file:text-foreground file:text-body",
+      "text-muted-foreground file:me-3 file:bg-transparent file:text-foreground file:text-body",
   );
 }
 

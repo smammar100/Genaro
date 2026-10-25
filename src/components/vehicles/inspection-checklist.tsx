@@ -208,7 +208,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
           <div className="flex items-center gap-3">
             <ProgressRing percent={percent} />
             <div className="text-body">
-              <div className="flex flex-wrap items-center gap-2 font-medium">
+              <div className="flex flex-wrap items-center gap-2">
                 <span>{completed}/{total} completed</span>
                 {flagged > 0 && (
                   <Badge tone="critical" icon="AlertMinor">
@@ -297,7 +297,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
                   <span className="w-6 shrink-0 text-caption tabular-nums text-(--text-secondary)">
                     {item.number}
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-body font-medium sm:w-40 sm:flex-none sm:shrink-0">
+                  <span className="min-w-0 flex-1 truncate text-body sm:w-40 sm:flex-none sm:shrink-0">
                     {item.item}
                   </span>
                 </div>
@@ -375,7 +375,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
                   className="rounded-(--radius-200) bg-(--bg-surface-secondary) p-3 text-body"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-caption font-medium">
+                    <span className="text-caption">
                       {author?.name ?? "Unknown"}
                     </span>
                     <span className="text-caption text-(--text-secondary)">

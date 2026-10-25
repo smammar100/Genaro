@@ -101,7 +101,7 @@ export function LocationBadge({
             <TooltipTrigger asChild>
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full bg-(--bg-fill-secondary) px-1.5 py-0.5 text-caption font-medium text-(--text-secondary)",
+                  "inline-flex items-center gap-1 rounded-full bg-(--bg-fill-secondary) px-1.5 py-0.5 text-caption text-(--text-secondary)",
                   compact && "gap-0 px-0.5 py-0",
                 )}
               >
