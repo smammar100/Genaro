@@ -1,7 +1,7 @@
 import type { PrepCar } from "@/lib/services/prep-service";
 import type { TodoItem, TodoStatus } from "@/lib/types";
 
-type Counts = Pick<PrepCar, "done" | "inProgress" | "pending" | "cancelled" | "total">;
+type Counts = Pick<PrepCar, "done" | "inProgress" | "pending">;
 
 /**
  * A car's prep roll-up as one segmented bar — done, in progress, pending —

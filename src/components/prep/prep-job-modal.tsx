@@ -12,7 +12,7 @@ export interface PrepJobInput {
   status: TodoStatus;
 }
 
-export const JOB_STATUS_LABEL: Record<TodoStatus, string> = {
+const JOB_STATUS_LABEL: Record<TodoStatus, string> = {
   pending: "Not started",
   in_progress: "In progress",
   completed: "Done",
