@@ -94,6 +94,7 @@ export default function PrepAndRepairPage() {
         todos: car.todos,
         preparedBy: user?.name ?? "—",
         companyName: company.name,
+        logoUrl: company.logoUrl,
         vendorNames: Object.fromEntries(vendors.map((v) => [v.id, v.name])),
       });
       downloadBlob(blob, `job-card-${car.vehicle.stockId}.pdf`);
