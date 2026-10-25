@@ -27,8 +27,9 @@ const PrepTodoSheet = dynamic(
  * is submitted with outstanding items, starting Unassigned; clearing its last
  * Things to do item moves it to Ready and releases it to Sales.
  *
- * The page owns the data and the calls; the board, cards and sheet in
- * src/components/prep only render and report what the user did.
+ * The page owns the queue and the board's calls (assigning, ticking a job,
+ * the job card); the Things to do sheet saves its own job changes and asks
+ * the page to reload.
  */
 export default function PrepAndRepairPage() {
   const { company, user } = useAuth();
