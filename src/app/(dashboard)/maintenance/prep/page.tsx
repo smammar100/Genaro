@@ -5,11 +5,13 @@ import dynamic from "next/dynamic";
 import { useAuth } from "@/contexts/auth-context";
 import { prepService, type PrepCar } from "@/lib/services/prep-service";
 import { authService } from "@/lib/services/auth-service";
+import { todoService } from "@/lib/services/todo-service";
 import { vendorService } from "@/lib/services/vendor-service";
 import { downloadBlob, pdfService } from "@/lib/services/pdf-service";
-import type { User } from "@/lib/types";
+import type { TodoStatus, User } from "@/lib/types";
 import { Page } from "@/components/genaro";
 import { PrepBoard } from "@/components/prep/prep-board";
+import { withTodoStatus } from "@/components/prep/prep-progress";
 import { toast } from "@/lib/toast";
 
 // The Things to do sheet only opens from a card, so it loads in its own chunk
@@ -64,6 +66,24 @@ export default function PrepAndRepairPage() {
     }
   }
 
+  async function handleSetTodoStatus(car: PrepCar, todoId: string, status: TodoStatus) {
+    if (!user) return;
+    const before = cars;
+    // Optimistic: the tick lands on the card before the save comes back. The
+    // reload then moves the car on if that was its last job.
+    setCars((list) =>
+      list?.map((c) => (c.vehicle.id === car.vehicle.id ? withTodoStatus(c, todoId, status) : c)) ??
+      list,
+    );
+    try {
+      await todoService.update(todoId, { status }, user.id);
+      await refresh();
+    } catch (e) {
+      setCars(before);
+      toast.error(e instanceof Error ? e.message : "Couldn't save that change");
+    }
+  }
+
   async function handleExport(car: PrepCar) {
     if (!company) return;
     setExportingId(car.vehicle.id);
@@ -100,6 +120,7 @@ export default function PrepAndRepairPage() {
         onOpen={setOpenCarId}
         onAssign={(vehicleId, userId) => void handleAssign(vehicleId, userId)}
         onExport={(car) => void handleExport(car)}
+        onSetTodoStatus={(car, todoId, status) => void handleSetTodoStatus(car, todoId, status)}
       />
       <PrepTodoSheet
         car={openCar}

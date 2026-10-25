@@ -1,4 +1,5 @@
 import type { PrepCar } from "@/lib/services/prep-service";
+import type { TodoItem, TodoStatus } from "@/lib/types";
 
 type Counts = Pick<PrepCar, "done" | "inProgress" | "pending" | "cancelled" | "total">;
 
@@ -18,6 +19,7 @@ export function PrepProgressBar({ done, inProgress, pending }: Counts) {
       aria-valuemin={0}
       aria-valuemax={live}
       aria-valuenow={done}
+      aria-valuetext={prepBreakdown({ done, inProgress, pending, cancelled: 0 })}
       className="flex h-1.5 w-full gap-0.5 overflow-hidden rounded-full bg-(--bg-fill-tertiary)"
     >
       {segment(done, "bg-(--bg-fill-success)")}
@@ -27,12 +29,43 @@ export function PrepProgressBar({ done, inProgress, pending }: Counts) {
   );
 }
 
-/** "1 of 2 done · 1 in progress · 1 cancelled", or why there is nothing to count. */
-export function prepSummary({ done, inProgress, cancelled, total }: Counts): string {
-  const live = total - cancelled;
-  if (live === 0) return total === 0 ? "No items raised" : "All items cancelled";
-  const parts = [`${done} of ${live} done`];
-  if (inProgress) parts.push(`${inProgress} in progress`);
+/** "3 done · 1 in progress · 1 not started", plus any cancelled. */
+export function prepBreakdown({
+  done,
+  inProgress,
+  pending,
+  cancelled,
+}: Pick<PrepCar, "done" | "inProgress" | "pending" | "cancelled">): string {
+  const parts = [`${done} done`, `${inProgress} in progress`, `${pending} not started`];
   if (cancelled) parts.push(`${cancelled} cancelled`);
   return parts.join(" · ");
+}
+
+/** Items still to do, in the order work happens: started first, then not started. */
+export function openTodos(car: Pick<PrepCar, "todos">): TodoItem[] {
+  const rank = (t: TodoItem) => (t.status === "in_progress" ? 0 : 1);
+  return car.todos
+    .filter((t) => t.status === "in_progress" || t.status === "pending")
+    .sort((a, b) => rank(a) - rank(b));
+}
+
+/**
+ * The car as it will be once one item's status changes, with its counts
+ * rolled up again, so a tick shows before the save comes back. The column
+ * stays put until the queue reloads.
+ */
+export function withTodoStatus(car: PrepCar, todoId: string, status: TodoStatus): PrepCar {
+  const todos = car.todos.map((t) => (t.id === todoId ? { ...t, status } : t));
+  const count = (s: TodoStatus) => todos.filter((t) => t.status === s).length;
+  const pending = count("pending");
+  const inProgress = count("in_progress");
+  return {
+    ...car,
+    todos,
+    open: pending + inProgress,
+    pending,
+    inProgress,
+    cancelled: count("cancelled"),
+    done: count("completed"),
+  };
 }
