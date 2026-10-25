@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import { Page } from "@/components/polaris";
-import { VehicleList } from "@/components/vehicles/vehicle-list";
+import { VehicleIndex } from "@/components/vehicles/vehicle-index";
 import { AddVehicleModal } from "@/components/vehicles/add-vehicle-modal";
 import { usePermissions } from "@/hooks/use-permissions";
 
 /**
  * All vehicles — a Polaris index page: the one primary action (Add vehicle,
- * which opens the reg + mileage dialog), a secondary link to the full Master
- * sheet, and the wide-row vehicle list.
+ * which opens the reg + mileage dialog), a secondary link to the Master
+ * sheet, and the cars still in the business as a table or cards. Sold cars
+ * and cars returned to their owner live on the master sheet.
  */
 export default function VehiclesPage() {
   const [addOpen, setAddOpen] = useState(false);
@@ -20,7 +21,11 @@ export default function VehiclesPage() {
     <Page
       fullWidth
       title="All vehicles"
-      subtitle="Every car you have taken in, sold or unsold. Open one to manage it end to end."
+      subtitle={
+        canSeeMasterSheet
+          ? "Every car still for sale, including those in inspection or prep. Sold cars and cars returned to their owner are on the master sheet."
+          : "Every car still for sale, including those in inspection or prep."
+      }
       primaryAction={{ content: "Add vehicle", onAction: () => setAddOpen(true) }}
       secondaryActions={
         canSeeMasterSheet
@@ -28,7 +33,7 @@ export default function VehiclesPage() {
           : undefined
       }
     >
-      <VehicleList onAddVehicle={() => setAddOpen(true)} />
+      <VehicleIndex onAddVehicle={() => setAddOpen(true)} />
       <AddVehicleModal open={addOpen} onOpenChange={setAddOpen} />
     </Page>
   );

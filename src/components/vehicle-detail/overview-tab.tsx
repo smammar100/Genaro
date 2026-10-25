@@ -33,7 +33,7 @@ import {
   computeAdvertChecks,
   type AdvertCheck,
 } from "@/lib/advert-completeness";
-import { PHOTOS_ENABLED } from "@/lib/phase-one";
+import { ADVERT_COMPLETENESS_ENABLED, PHOTOS_ENABLED } from "@/lib/phase-one";
 import { OverviewPricingCard } from "./overview-pricing-card";
 
 interface OverviewTabProps {
@@ -95,6 +95,28 @@ export function OverviewTab({
         ? "amber"
         : undefined;
 
+  // AutoTrader valuation leads: it is glanced at more often than the location
+  // card (user feedback).
+  const cards = (
+    <>
+      <ValuationPanel
+        vehicle={vehicle}
+        webPrice={webPrice}
+        onVehiclePatch={onVehiclePatch}
+      />
+      <OverviewPricingCard
+        vehicle={vehicle}
+        listing={listing ?? null}
+        onChanged={() => {
+          setListingToken((t) => t + 1);
+          onChanged?.();
+        }}
+      />
+      <VehicleLocationSection vehicle={vehicle} />
+      <MarketplacePanel listing={listing ?? null} />
+    </>
+  );
+
   return (
     <div className="flex flex-col gap-4">
       {/* KPI strip */}
@@ -134,33 +156,19 @@ export function OverviewTab({
         />
       </div>
 
-      {/* Two-col: Advert Completeness + Valuation/Marketplace stack */}
-      <div className="grid gap-4 @3xl:grid-cols-[1.5fr_1fr]">
-        <AdvertCompletenessPanel
-          vehicle={vehicle}
-          listing={listing ?? null}
-          photoCount={vehicle.imagesCount}
-        />
-        <div className="flex flex-col gap-4">
-          {/* AutoTrader valuation leads the right column: it is glanced at
-              more often than the location card (user feedback). */}
-          <ValuationPanel
-            vehicle={vehicle}
-            webPrice={webPrice}
-            onVehiclePatch={onVehiclePatch}
-          />
-          <OverviewPricingCard
+      {ADVERT_COMPLETENESS_ENABLED ? (
+        // Two-col: Advert Completeness + Valuation/Marketplace stack
+        <div className="grid gap-4 @3xl:grid-cols-[1.5fr_1fr]">
+          <AdvertCompletenessPanel
             vehicle={vehicle}
             listing={listing ?? null}
-            onChanged={() => {
-              setListingToken((t) => t + 1);
-              onChanged?.();
-            }}
+            photoCount={vehicle.imagesCount}
           />
-          <VehicleLocationSection vehicle={vehicle} />
-          <MarketplacePanel listing={listing ?? null} />
+          <div className="flex flex-col gap-4">{cards}</div>
         </div>
-      </div>
+      ) : (
+        <div className="grid items-start gap-4 @3xl:grid-cols-2">{cards}</div>
+      )}
 
     </div>
   );

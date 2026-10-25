@@ -13,3 +13,10 @@
  * are not marked incomplete for having no photos.
  */
 export const PHOTOS_ENABLED = false;
+
+/**
+ * Advert completeness on the vehicle Overview. Hidden per Ammar (25 Oct
+ * 2026): Phase 1 doesn't run adverts, so a checklist of what an advert still
+ * needs is noise. The Listing tab and advert pages are unaffected.
+ */
+export const ADVERT_COMPLETENESS_ENABLED = false;

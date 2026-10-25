@@ -23,7 +23,6 @@ import {
   ShieldAlert,
   MapPin,
   Building2,
-  Warehouse,
   type LucideIcon,
 } from "lucide-react";
 import type { Capability } from "@/lib/capabilities";
@@ -48,6 +47,12 @@ export interface SidebarGroup {
    */
   icon?: LucideIcon;
   items: SidebarItem[];
+  /**
+   * Which of the nav's three sections the group sits in: home (Dashboard),
+   * the vehicle's lifecycle (the default), or oversight of it (admin). The
+   * sections are spaced apart in the rail.
+   */
+  section?: "home" | "admin";
 }
 
 /**
@@ -81,27 +86,13 @@ export interface SidebarGroup {
 export const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: null,
+    section: "home",
     items: [{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard }],
   },
   {
     label: "Inventory",
     icon: Car,
     items: [
-      // The cars still for sale, as a table — what staff check when a
-      // customer calls. First, so the Inventory row opens it (call 2026-10-24).
-      {
-        label: "In stock",
-        href: "/inventory/in-stock",
-        icon: Warehouse,
-        requiredAnyOf: [
-          "inventory:add",
-          "inventory:edit",
-          "inspection:run",
-          "maintenance:create",
-          "photos:process",
-          "advert:create",
-        ],
-      },
       {
         label: "All vehicles",
         href: "/vehicles",
@@ -295,6 +286,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     // Oversight of the lifecycle rather than a stage in it, so it sits last.
     label: "Administrative",
     icon: Building2,
+    section: "admin",
     items: [
       {
         label: "Master sheet",

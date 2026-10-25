@@ -6,6 +6,7 @@ import {
   Banknote,
   CalendarClock,
   CalendarDays,
+  CalendarPlus,
   CircleCheck,
   CircleX,
   Clock,
@@ -41,7 +42,7 @@ import {
 import { VehicleImage } from "@/components/shared/vehicle-image";
 import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { DealDetailSheet } from "@/components/sales/deal-detail-sheet";
-import { BookAppointmentModal } from "@/components/sales/book-appointment-modal";
+import { QuickBookModal } from "@/components/calendar/quick-book-modal";
 import { ChangeVehicleModal } from "@/components/sales/change-vehicle-modal";
 import { RowActionButton } from "@/components/ui/resource-list";
 import {
@@ -482,6 +483,18 @@ export default function SalesPipelinePage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 }
+                quickAction={
+                  open && v ? (
+                    <Button
+                      variant="tertiary"
+                      size="micro"
+                      icon={<CalendarPlus />}
+                      accessibilityLabel={`Book appointment for ${d.customerName}`}
+                      title="Book appointment"
+                      onClick={() => setBookDeal(d)}
+                    />
+                  ) : undefined
+                }
                 action={
                   showInvoiceCta ? (
                     <Button fullWidth icon="OrdersMinor" url={invoiceUrl}>
@@ -506,13 +519,11 @@ export default function SalesPipelinePage() {
         }}
       />
 
-      <BookAppointmentModal
-        deal={bookDeal}
-        vehicle={bookDeal ? (vehicleById.get(bookDeal.vehicleId) ?? null) : null}
-        appointments={appointments}
+      <QuickBookModal
+        booking={bookDeal ? { kind: "appt", deal: bookDeal } : null}
+        vehicles={swappable}
         onClose={() => setBookDeal(null)}
         onBooked={() => {
-          toast.success("Appointment booked and added to the calendar");
           if (company) void appointmentService.getAll(company.id).then(setAppointments);
         }}
       />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Vehicle } from "@/lib/types";
 import { Card, Layout, SkeletonBodyText, Tabs } from "@/components/polaris";
@@ -66,10 +66,6 @@ interface VehicleDetailShellProps {
   /** Job Card PDF export — surfaced on the Things to Do tab (the job sheet). */
   onExportPdf?: () => void;
   exporting?: boolean;
-  /** One-third sidebar beside the active panel (the Manage card). */
-  aside?: ReactNode;
-  /** Class names for the sidebar section (e.g. sticky positioning). */
-  asideClassName?: string;
 }
 
 /** The detail tabs, in order. Ids are the values the page and panels use. */
@@ -90,10 +86,9 @@ const ALL_TAB_IDS = [
 const TAB_IDS = ALL_TAB_IDS.filter((id) => PHOTOS_ENABLED || id !== "photos");
 
 /**
- * Vehicle-detail shell — Polaris Tabs (pill tabs with count badges) on their
- * own full-width row, then a Layout: the active tab's panel in the main
- * column and `aside` in the one-third sidebar. Only the active panel is
- * mounted. Counts on Things
+ * Vehicle-detail shell — Polaris Tabs (pill tabs with count badges) spread
+ * across their own row, then the active tab's panel at full width. Only the
+ * active panel is mounted. Counts on Things
  * to do / Photos / Appointments are fetched once on mount so the user sees
  * workload at a glance.
  */
@@ -105,8 +100,6 @@ export function VehicleDetailShell({
   onVehicleRefetch,
   onExportPdf,
   exporting,
-  aside,
-  asideClassName,
 }: VehicleDetailShellProps) {
   const [todoCount, setTodoCount] = useState<number | null>(null);
   const [enquiryCount, setEnquiryCount] = useState<number | null>(null);
@@ -165,9 +158,11 @@ export function VehicleDetailShell({
 
   return (
     <>
-      {/* Their own row under the header card, like every page's tabs. Ten
-          pills can outgrow the window; the row then scrolls sideways. */}
+      {/* Their own row under the header card, the pills sharing its width.
+          On a narrow window they keep their size and the row scrolls
+          sideways. */}
       <Tabs
+        fitted
         tabs={tabs}
         selected={selected}
         onSelect={(i) => setActiveTab(TAB_IDS[i])}
@@ -176,9 +171,8 @@ export function VehicleDetailShell({
       <Layout>
         <Layout.Section>
 
-          {/* @container: the tab panels size their columns to this panel (the
-              Layout main column), not the viewport — it is narrower than the
-              window once the one-third sidebar sits beside it. */}
+          {/* @container: the tab panels size their columns to this panel, not
+              the viewport — the nav rail takes part of the window. */}
           <div
             role="tabpanel"
             aria-label={tabs[selected].content}
@@ -228,11 +222,6 @@ export function VehicleDetailShell({
             {activeTab === "activity" && <ActivityTab vehicleId={vehicle.id} />}
           </div>
         </Layout.Section>
-        {aside ? (
-          <Layout.Section variant="oneThird" className={asideClassName}>
-            {aside}
-          </Layout.Section>
-        ) : null}
       </Layout>
     </>
   );

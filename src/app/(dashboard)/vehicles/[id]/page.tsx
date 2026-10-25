@@ -23,7 +23,6 @@ import {
   NEXT_STEP,
   VehicleHeaderCard,
   VehicleStatusMenu,
-  VehicleSummaryAside,
   vehicleTitle,
 } from "@/components/vehicle-detail/vehicle-header-card";
 import { VehicleDetailShell } from "@/components/vehicle-detail/vehicle-detail-shell";
@@ -256,8 +255,7 @@ export default function VehicleDetailPage({
       <VehicleHeaderCard vehicle={vehicle} />
 
       {/* Polaris product detail: the tab row under the header card, then the
-          active tab's cards in the main column and the Manage card in the
-          one-third sidebar. */}
+          active tab's cards across the full width. */}
       <VehicleDetailShell
         vehicle={vehicle}
         value={tab}
@@ -266,8 +264,6 @@ export default function VehicleDetailPage({
         onVehicleRefetch={() => void refetchVehicle()}
         exporting={exporting}
         onExportPdf={() => void handleExportPdf()}
-        aside={<VehicleSummaryAside vehicle={vehicle} onNavigate={setTab} />}
-        asideClassName="lg:sticky lg:top-4"
       />
 
       {confirmDialog}

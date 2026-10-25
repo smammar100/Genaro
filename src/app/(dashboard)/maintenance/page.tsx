@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
   CalendarDays,
+  CalendarPlus,
   CircleCheck,
   CirclePause,
   Clock,
@@ -29,7 +30,8 @@ import type {
   Vendor,
 } from "@/lib/types";
 import { MAINTENANCE_STATUSES } from "@/lib/constants";
-import { Card, EmptyState, Page } from "@/components/polaris";
+import { Button, Card, EmptyState, Page } from "@/components/polaris";
+import { QuickBookModal } from "@/components/calendar/quick-book-modal";
 import { RowActionButton } from "@/components/ui/resource-list";
 import {
   DropdownMenu,
@@ -162,6 +164,7 @@ export default function MaintenancePage() {
   const companyId = company?.id;
   const [jobs, setJobs] = useState<MaintenanceJob[] | null>(null);
   const [editJob, setEditJob] = useState<MaintenanceJob | null>(null);
+  const [bookJob, setBookJob] = useState<MaintenanceJob | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -343,6 +346,18 @@ export default function MaintenancePage() {
                       }
                     : undefined
                 }
+                quickAction={
+                  j.status !== "completed" ? (
+                    <Button
+                      variant="tertiary"
+                      size="micro"
+                      icon={<CalendarPlus />}
+                      accessibilityLabel={`Book appointment for ${j.description}`}
+                      title="Book appointment"
+                      onClick={() => setBookJob(j)}
+                    />
+                  ) : undefined
+                }
                 menu={
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -351,6 +366,12 @@ export default function MaintenancePage() {
                       </RowActionButton>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      {j.status !== "completed" ? (
+                        <DropdownMenuItem onClick={() => setBookJob(j)}>
+                          <CalendarPlus className="mr-2 size-3.5" />
+                          Book appointment
+                        </DropdownMenuItem>
+                      ) : null}
                       <DropdownMenuItem onClick={() => setEditJob(j)}>
                         <Pencil className="mr-2 size-3.5" />
                         Edit job
@@ -394,6 +415,13 @@ export default function MaintenancePage() {
         vendors={vendors}
         users={users}
         onSaved={refetch}
+      />
+
+      <QuickBookModal
+        booking={bookJob ? { kind: "maint", job: bookJob } : null}
+        vehicles={vehicles}
+        onClose={() => setBookJob(null)}
+        onBooked={refetch}
       />
 
       {confirmDialog}

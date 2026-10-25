@@ -22,7 +22,7 @@ Status legend: ✅ already works · 🔧 in this pass · ⏳ waiting on Car Capi
 | 5 | Available stock excludes sold and returned-to-owner cars | Inventory | 🔧 |
 | 6 | Margin VAT = 20% of margin | Financials | 🔧 vehicle tabs · ❓ invoices |
 | 7 | Change the vehicle on a lead or deal (customer buys a different car) | Sales | 🔧 |
-| 8 | In-stock table view, no photos, sort by newest / make / model, location column | Inventory | 🔧 |
+| 8 | All vehicles as a table of active cars: no photos, sort by newest / make / model, location column; Cards / Table switch | Inventory | 🔧 |
 | 9 | Forgot password goes to the super admin, who issues a temporary password | Auth / Admin | ✅ admin reset · 🔜 forgot-password request (next) |
 | 10 | Product name and domain | — | 🔜 stay on the Vercel URL internally, new domain at launch |
 | 11 | Link the maintenance calendar to the sales pipeline | Maintenance / Sales | 🔜 in a month or two |
@@ -46,6 +46,10 @@ Status legend: ✅ already works · 🔧 in this pass · ⏳ waiting on Car Capi
 - It should stay pinned while scrolling, the way Manage does now.
 - ⏳ Car Capital is sending the four fields on WhatsApp. Service history was
   mentioned, but there isn't much data for it yet.
+- Done 25 Oct, ahead of the card: the Manage card is gone and the tab panel
+  takes the full width; the tab row spreads across it; the header's specs
+  carry icons; Advert completeness is hidden while Phase 1 runs no adverts
+  (`ADVERT_COMPLETENESS_ENABLED` in `lib/phase-one.ts`).
 
 ### 2. Appointments from the card (3:25–8:20)
 - On a lead card's ⋯ menu add **Book appointment**.
@@ -56,8 +60,19 @@ Status legend: ✅ already works · 🔧 in this pass · ⏳ waiting on Car Capi
   and the customer's details.
 - ❓ "The time will be 9–9": either the default slot starts at 09:00, or
   bookable hours are 09:00–21:00. Confirm which.
-- Today: booking already works through *Update status → Appointment booked*
-  on the Leads page. This adds the shortcut.
+- Built: a calendar button on every open card in the **Sales pipeline** and
+  the **Maintenance pipeline** (and *Book appointment* in the card's ⋯ menu).
+  It opens the calendars' own booking form filled from the card and saves
+  through the calendars' own writes (`components/calendar/event-actions.ts`):
+  - Sales deal → a new appointment with the deal's customer and car, linked
+    to its lead. Shows on Appointments, the Master calendar, the vehicle's
+    Appointments tab and the dashboard; the card shows the next booking.
+  - Maintenance job → the job itself is booked into the slot (due date and
+    time), not duplicated. Shows on the Maintenance and Master calendars.
+  - Defaults to 09:00 (today, or the job's due date if still ahead), within
+    working hours.
+- Booking also still works through *Update status → Appointment booked* on
+  the Leads page.
 
 ### 3. V5 / DVLA (8:20–8:40)
 - Example on the call: a car whose V5 was sent to DVLA but never issued; the
@@ -124,15 +139,20 @@ follow the 20%-of-margin rule.
   deal card in the Pipeline.
 - Today a lead's vehicle can only be set when it has none.
 
-### 8. In-stock table (13:00–22:30)
+### 8. All vehicles as a table (13:00–22:30)
 - The card list on All vehicles is "not that nice". Wanted: a **table** like
   Click Dealer's *Adverts → Work list*, with no photos.
 - Columns: reg, make, model, fuel, days in stock, **location**. Drop the
   extras.
 - Sort by **newest**, **make**, **model**. "Newest arrivals" was sorting by
   days in stock; rename it and sort by arrival date.
-- Put it in the left nav **under Inventory, above All vehicles**.
-- It lists available cars only (see 5).
+- It lists active cars only (see 5).
+- Built: first as a separate *In stock* page; then, per Ammar (25 Oct), **All
+  vehicles itself** became that table, holding active cars only, and the In
+  stock page was removed. Sold and returned-to-owner cars live on the master
+  sheet. Location tabs, search, sort by heading, and a **Cards / Table**
+  switch (cards four to a row, with a sort menu; the choice is remembered per
+  browser).
 
 ### 9. Forgot password (22:40–24:30)
 - Three or four users are live now. If one forgets their password, the

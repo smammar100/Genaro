@@ -102,6 +102,8 @@ export interface NavRow {
   badge?: string;
   /** A section's pages, shown as sub-items while it is the open section. */
   pages?: NavLink[];
+  /** The first row of a new section (home, lifecycle, admin): spaced from the rows above. */
+  newSection?: boolean;
 }
 
 /**
@@ -123,7 +125,7 @@ export function navRows(groups: SidebarGroup[], state: NavState): NavRow[] {
     badge: badge(item.href),
   });
 
-  return groups.flatMap((group): NavRow[] => {
+  const rowsFor = (group: SidebarGroup): NavRow[] => {
     if (group.label === null) {
       return group.items.map((item) => ({ ...page(item), icon: item.icon }));
     }
@@ -143,6 +145,19 @@ export function navRows(groups: SidebarGroup[], state: NavState): NavRow[] {
         pages: group.items.map((item) => page(item)),
       },
     ];
+  };
+
+  // Flag the first row of each section after the first, among the groups
+  // this user can see, so the gap follows whichever group leads it.
+  let previous: string | null = null;
+  return groups.flatMap((group) => {
+    const rows = rowsFor(group);
+    const section = group.section ?? "lifecycle";
+    if (rows.length > 0 && previous !== null && section !== previous) {
+      rows[0] = { ...rows[0], newSection: true };
+    }
+    if (rows.length > 0) previous = section;
+    return rows;
   });
 }
 
