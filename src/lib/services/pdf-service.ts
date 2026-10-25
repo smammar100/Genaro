@@ -7,6 +7,8 @@ interface JobCardPdfInput {
   companyName: string;
   /** Vendor id → name, so the job card prints vendor names not raw UUIDs. */
   vendorNames?: Record<string, string>;
+  /** Company logo (public URL), printed top right when set. */
+  logoUrl?: string | null;
 }
 
 interface WarrantyPdfInput {

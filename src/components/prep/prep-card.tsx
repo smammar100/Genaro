@@ -1,19 +1,21 @@
 "use client";
 
-import { useContext } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AlertTriangle, CheckCircle2, Download } from "lucide-react";
 import type { PrepCar } from "@/lib/services/prep-service";
-import type { User } from "@/lib/types";
-import { Badge, Button, Tooltip, type BadgeTone } from "@/components/genaro";
-import { KANBAN_CARD_SURFACE, KanbanCardContext } from "@/components/kanban/kanban-card";
-import { StageIcon } from "@/components/kanban/stage-icon";
+import type { TodoStatus, User } from "@/lib/types";
+import { Badge, Button, Checkbox, Tooltip, type BadgeTone } from "@/components/genaro";
+import { KANBAN_CARD_SURFACE } from "@/components/kanban/kanban-card";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";
-import { formatCurrency, getDaysInStockColor, titleCase } from "@/lib/utils";
+import { getDaysInStockColor, titleCase } from "@/lib/utils";
 import { PrepAssignee } from "./prep-assignee";
-import { PrepProgressBar, prepSummary } from "./prep-progress";
+import { openTodos, prepBreakdown, PrepProgressBar } from "./prep-progress";
+
+/** Jobs listed on a card; the rest are a click away in Things to do. */
+const SHOWN = 3;
 
 const AGE_TONE: Record<ReturnType<typeof getDaysInStockColor>, BadgeTone> = {
   green: "neutral",
@@ -21,7 +23,11 @@ const AGE_TONE: Record<ReturnType<typeof getDaysInStockColor>, BadgeTone> = {
   red: "critical",
 };
 
-/** Days in stock, on the same thresholds as every other stock-age chip. */
+/**
+ * Days in stock, on the same thresholds as every other stock-age chip. Just
+ * "23d" so the header keeps room for the car's name; screen readers hear it
+ * in full.
+ */
 function AgeBadge({ days }: { days: number }) {
   const tone = AGE_TONE[getDaysInStockColor(days)];
   return (
@@ -29,16 +35,19 @@ function AgeBadge({ days }: { days: number }) {
       tone={tone}
       icon={tone === "critical" ? <AlertTriangle className="size-3" /> : undefined}
     >
-      {`${days}d in stock`}
+      <span title={`${days} days in stock`}>
+        <span aria-hidden>{days}d</span>
+        <span className="sr-only">{days} days in stock</span>
+      </span>
     </Badge>
   );
 }
 
 /**
- * One car on the prep board, on the shared Kanban card surface: plate and
- * stock age, the car (after its column's status glyph), its work roll-up and
- * prep cost, then a footer with who has it and its job card. The middle opens
- * the car's Things to do list.
+ * One car on the prep board, on the shared Kanban card surface: plate, car
+ * and stock age, its work roll-up, then the jobs still to do as a checklist,
+ * so work is ticked off where it's seen. Ticking the last one sends the car
+ * to Ready for sales. The footer has who has it and its job card.
  */
 export function PrepCard({
   car,
@@ -47,6 +56,7 @@ export function PrepCard({
   onOpen,
   onAssign,
   onExport,
+  onSetTodoStatus,
 }: {
   car: PrepCar;
   users: User[];
@@ -54,69 +64,121 @@ export function PrepCard({
   onOpen: () => void;
   onAssign: (userId: string | null) => void;
   onExport: () => void;
+  onSetTodoStatus: (todoId: string, status: TodoStatus) => void;
 }) {
   const pathname = usePathname();
-  const { vehicle, cost, daysWaiting, status } = car;
+  const { vehicle } = car;
   const assignee = users.find((u) => u.id === vehicle.prepAssignedTo) ?? null;
-  const place = useContext(KanbanCardContext);
+
+  // Jobs ticked here stay on the card, struck through, so a mis-tap can be unticked.
+  const [ticked, setTicked] = useState<string[]>([]);
+  const open = openTodos(car);
+  const shown = car.todos
+    .filter((t) => open.includes(t) || ticked.includes(t.id))
+    .slice(0, SHOWN);
+  const remaining = open.filter((t) => !shown.includes(t)).length;
+  const live = car.total - car.cancelled;
+  const allDone = live > 0 && open.length === 0;
+
+  function toggle(todoId: string, done: boolean) {
+    if (!ticked.includes(todoId)) setTicked([...ticked, todoId]);
+    onSetTodoStatus(todoId, done ? "completed" : "pending");
+  }
+
+  const openLabel =
+    live === 0
+      ? "Add the first job"
+      : allDone
+        ? `Show all ${live} jobs`
+        : remaining > 1
+          ? `Show all ${remaining} remaining`
+          : remaining === 1
+            ? "Show 1 remaining"
+            : "Open things to do";
 
   return (
     <article className={KANBAN_CARD_SURFACE}>
-      <header className="flex items-center justify-between gap-2 px-4 pt-4">
+      <header className="flex items-center gap-2 px-4 pt-4">
         <Link
           href={vehicleDetailHref(vehicle.id, pathname)}
-          className="min-w-0"
+          className="shrink-0 whitespace-nowrap"
           title="Open the vehicle record"
         >
           <RegPlate registration={vehicle.registration} size="sm" />
         </Link>
-        <AgeBadge days={daysWaiting} />
+        <span className="min-w-0 flex-1 truncate body-md-semibold">
+          {titleCase(`${vehicle.make} ${vehicle.model}`)}
+        </span>
+        <AgeBadge days={car.daysWaiting} />
       </header>
 
-      <button
-        type="button"
-        onClick={onOpen}
-        aria-label={`Open things to do for ${vehicle.registration}`}
-        className="flex flex-col gap-3 px-4 pb-4 pt-3 text-left transition-colors hover:bg-(--bg-surface-hover)"
-      >
-        <span className="flex min-w-0 items-start gap-1.5">
-          {place ? (
-            <StageIcon column={place.column} columns={place.columns} className="mt-[3px]" />
-          ) : null}
-          <span className="min-w-0 flex-1">
-            <span className="block truncate body-md-semibold">
-              {titleCase(`${vehicle.make} ${vehicle.model}`)}
-            </span>
-            <span className="block body-sm text-(--text-secondary)">{vehicle.stockId}</span>
-          </span>
-        </span>
-        <span className="flex flex-col gap-1.5">
-          <PrepProgressBar {...car} />
-          <span className="flex items-center justify-between gap-2">
-            <span className="body-sm text-(--text-secondary)">{prepSummary(car)}</span>
-            {cost > 0 ? (
-              <span className="body-md-numeric">{formatCurrency(cost)}</span>
-            ) : null}
-          </span>
-        </span>
-      </button>
+      <div className="flex flex-col gap-2 px-4 pt-3">
+        {live > 0 ? (
+          // The counts are on hover. Below: the card clips anything above
+          // its top edge.
+          <Tooltip
+            content={prepBreakdown(car)}
+            preferredPosition="below"
+            className="flex w-full py-1"
+          >
+            <PrepProgressBar {...car} />
+          </Tooltip>
+        ) : null}
+        {live === 0 ? (
+          <p className="body-sm text-(--text-secondary)">Nothing raised yet.</p>
+        ) : allDone ? (
+          <p className="flex items-center gap-2 body-md text-(--text-success)">
+            <CheckCircle2 aria-hidden className="size-4" />
+            All {live} jobs done
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-1">
+            {shown.map((t) => (
+              <li key={t.id}>
+                <Checkbox
+                  label={
+                    <span
+                      className={
+                        t.status === "completed"
+                          ? "text-(--text-secondary) line-through decoration-(--text-secondary)"
+                          : undefined
+                      }
+                    >
+                      {t.description}
+                      {t.status === "in_progress" ? (
+                        <span className="ml-1.5 body-xs text-(--text-info)">In progress</span>
+                      ) : null}
+                    </span>
+                  }
+                  checked={t.status === "completed"}
+                  onChange={(done) => toggle(t.id, done)}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+        <div>
+          <Button variant="plain" onClick={onOpen}>
+            {openLabel}
+          </Button>
+        </div>
+      </div>
 
-      {status === "ready" ? (
-        <p className="mx-4 mb-4 flex items-center gap-1.5 rounded-(--radius-300) bg-(--bg-surface-success) px-2.5 py-2 body-sm text-(--text-success)">
-          <CheckCircle2 aria-hidden className="size-4" />
-          Ready to move to sales
-        </p>
-      ) : null}
-
-      <footer className="flex items-center gap-2 border-t border-(--border-secondary) px-4 py-3">
-        <PrepAssignee
-          registration={vehicle.registration}
-          users={users}
-          assignee={assignee}
-          onAssign={onAssign}
-        />
-        <Tooltip content="Download job card PDF">
+      <footer className="mt-3 flex items-center gap-2 border-t border-(--border-secondary) px-3 py-2">
+        <div className="min-w-0 flex-1">
+          <PrepAssignee
+            registration={vehicle.registration}
+            users={users}
+            assignee={assignee}
+            onAssign={onAssign}
+          />
+        </div>
+        {/* To the left: the button sits on the card's right edge, and the
+            lane clips anything past it. */}
+        <Tooltip content="Download job card PDF" preferredPosition="left">
           <Button
+            variant="tertiary"
+            size="micro"
             icon={<Download className="size-4" />}
             loading={exporting}
             onClick={onExport}

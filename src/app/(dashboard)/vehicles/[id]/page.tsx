@@ -164,6 +164,7 @@ export default function VehicleDetailPage({
         todos,
         preparedBy: user?.name ?? "—",
         companyName: company.name,
+        logoUrl: company.logoUrl,
         vendorNames,
       });
       downloadBlob(blob, `job-card-${vehicle.stockId}.pdf`);

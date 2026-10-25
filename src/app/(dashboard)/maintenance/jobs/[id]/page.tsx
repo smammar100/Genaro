@@ -29,11 +29,11 @@ import {
   Page,
   PageActions,
   Select,
+  SkeletonBox,
   TextField,
+  useConfirm,
   type BadgeTone,
 } from "@/components/genaro";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useConfirm } from "@/components/ui/confirm-dialog";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { EditJobDialog } from "@/components/maintenance/edit-job-dialog";
 import {
@@ -162,7 +162,7 @@ export default function MaintenanceJobDetailPage({
   if (job === undefined) {
     return (
       <Page fullWidth title="Maintenance job" backAction={backAction}>
-        <Skeleton className="h-96" />
+        <SkeletonBox height={384} />
       </Page>
     );
   }

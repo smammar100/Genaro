@@ -6,10 +6,9 @@ import {
   type PrepCar,
   type PrepStatus,
 } from "@/lib/services/prep-service";
-import type { User } from "@/lib/types";
+import type { TodoStatus, User } from "@/lib/types";
 import { Card, EmptyState } from "@/components/genaro";
 import { KanbanEmpty, KanbanFrame, KanbanLane, KanbanSkeleton } from "@/components/kanban/kanban-board";
-import { KanbanCardContext } from "@/components/kanban/kanban-card";
 import type { KanbanColumn } from "@/components/kanban/stage-icon";
 import { PrepCard } from "./prep-card";
 
@@ -33,6 +32,7 @@ interface PrepBoardActions {
   onOpen: (vehicleId: string) => void;
   onAssign: (vehicleId: string, userId: string | null) => void;
   onExport: (car: PrepCar) => void;
+  onSetTodoStatus: (car: PrepCar, todoId: string, status: TodoStatus) => void;
 }
 
 function PrepColumn({
@@ -51,16 +51,16 @@ function PrepColumn({
         <KanbanEmpty>Nothing here</KanbanEmpty>
       ) : (
         cars.map((car) => (
-          <KanbanCardContext.Provider key={car.vehicle.id} value={{ column, columns: COLUMNS }}>
-            <PrepCard
-              car={car}
-              users={actions.users}
-              exporting={actions.exportingId === car.vehicle.id}
-              onOpen={() => actions.onOpen(car.vehicle.id)}
-              onAssign={(userId) => actions.onAssign(car.vehicle.id, userId)}
-              onExport={() => actions.onExport(car)}
-            />
-          </KanbanCardContext.Provider>
+          <PrepCard
+            key={car.vehicle.id}
+            car={car}
+            users={actions.users}
+            exporting={actions.exportingId === car.vehicle.id}
+            onOpen={() => actions.onOpen(car.vehicle.id)}
+            onAssign={(userId) => actions.onAssign(car.vehicle.id, userId)}
+            onExport={() => actions.onExport(car)}
+            onSetTodoStatus={(todoId, status) => actions.onSetTodoStatus(car, todoId, status)}
+          />
         ))
       )}
     </KanbanLane>

@@ -17,20 +17,13 @@ import {
   Button,
   Card,
   EmptyState,
+  IndexTable,
   Page,
   ProgressBar,
+  SkeletonBox,
   Tabs,
   type BadgeTone,
 } from "@/components/genaro";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -163,32 +156,31 @@ export default function MaintenanceInspectionListPage() {
       />
 
       {!rows ? (
-        <Skeleton className="h-72" />
-      ) : (
+        <SkeletonBox height={288} />
+      ) : tabRows.length === 0 ? (
         <Card padding="0">
-          {tabRows.length === 0 ? (
-            <EmptyState
-              heading={
-                mode === "pending"
-                  ? "No vehicles awaiting inspection"
-                  : "No completed inspections yet"
-              }
-              icon={<ClipboardCheck className="fill-none" />}
-            >
-              {mode === "pending"
-                ? "All current stock has cleared the inspection step."
-                : "Inspected vehicles will appear here."}
-            </EmptyState>
-          ) : (
-            <QueueTable
-              rows={tabRows}
-              users={users}
-              items={items}
-              mode={mode}
-              onOpen={setSelected}
-            />
-          )}
+          <EmptyState
+            heading={
+              mode === "pending"
+                ? "No vehicles awaiting inspection"
+                : "No completed inspections yet"
+            }
+            icon={<ClipboardCheck className="fill-none" />}
+          >
+            {mode === "pending"
+              ? "All current stock has cleared the inspection step."
+              : "Inspected vehicles will appear here."}
+          </EmptyState>
         </Card>
+      ) : (
+        // IndexTable is a flush card of its own.
+        <QueueTable
+          rows={tabRows}
+          users={users}
+          items={items}
+          mode={mode}
+          onOpen={setSelected}
+        />
       )}
 
       <InspectionSidePanel
@@ -312,123 +304,79 @@ function QueueTable({
   mode: "pending" | "completed";
   onOpen: (v: Vehicle) => void;
 }) {
+  // TODO(genaro): IndexTable has no per-breakpoint columns, so the secondary
+  // columns no longer drop out on narrow screens (GEN-93): the table scrolls
+  // sideways instead, and stacks each row once it is narrower than 490px.
   return (
-    <div className="overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {/*
-              Responsive columns (GEN-93). On a phone this table is 896px of
-              content in a ~326px window, so the secondary columns are hidden
-              rather than left behind a long horizontal drag. Reg, Vehicle and
-              Action — identify the car and act on it — are always present, and
-              the hidden signals (waiting time, progress, flags) fold into the
-              Vehicle cell so nothing is actually lost.
-            */}
-            <TableHead className="hidden sm:table-cell">Reg</TableHead>
-            <TableHead>Vehicle</TableHead>
-            <TableHead className="hidden sm:table-cell">Waiting</TableHead>
-            <TableHead className="hidden lg:table-cell">MOT</TableHead>
-            <TableHead className="hidden lg:table-cell">Inspector</TableHead>
-            <TableHead className="hidden lg:table-cell">Progress</TableHead>
-            <TableHead className="hidden md:table-cell">Flagged</TableHead>
-            <TableHead className="text-right">Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map(({ vehicle, checks, progress, total }) => {
-            const wait = waitInfo(vehicle.receivedDate);
-            const squares = buildSquares(checks, items);
-            const flagged = flaggedCount(checks);
-            // The actual person who recorded the checks for THIS vehicle, not a
-            // single global inspector applied to every row.
-            const inspectorId = checks.find((c) => c.carriedOutBy)?.carriedOutBy;
-            const inspector = inspectorId
-              ? users.find((u) => u.id === inspectorId)
-              : undefined;
-            return (
-              <TableRow key={vehicle.id}>
-                <TableCell className="hidden sm:table-cell">
-                  <RegPlate registration={vehicle.registration} size="sm" />
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col">
-                    {/* Below sm the Reg column is dropped entirely — three
-                        columns will not fit 326px without clipping the action
-                        button — so the plate rides in this cell instead. */}
-                    <span className="mb-1 sm:hidden">
-                      <RegPlate registration={vehicle.registration} size="sm" />
-                    </span>
-                    <span>
-                      {vehicle.make} {vehicle.model}
-                    </span>
-                    <span className="body-sm text-(--text-secondary)">
-                      {vehicle.stockId} · {formatDate(vehicle.receivedDate)}
-                    </span>
-                    {/* Carries the hidden columns' signal on small screens so
-                        nothing is lost when they drop out. */}
-                    <span className="body-sm mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-(--text-secondary) lg:hidden">
-                      <span className="tabular-nums">
-                        {progress}/{total} checked
-                      </span>
-                      <span className={cn("sm:hidden", wait.urgent && "text-(--text-critical)")}>
-                        · {wait.days}d waiting
-                      </span>
-                      {flagged > 0 && (
-                        <span className="text-(--text-critical) md:hidden">
-                          · {flagged} flagged
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell className="hidden sm:table-cell">
-                  <Badge
-                    tone={wait.tone}
-                    icon={wait.urgent ? "AlertMinor" : undefined}
-                  >
-                    {`${wait.days}d waiting`}
-                  </Badge>
-                </TableCell>
-                <TableCell className="hidden lg:table-cell">
-                  <MotBadge motExpiry={vehicle.motExpiry} />
-                </TableCell>
-                <TableCell className="hidden lg:table-cell">
-                  {inspector ? (
-                    <span className="inline-flex items-center gap-2 text-(--text-secondary)">
-                      <Avatar size="sm" name={inspector.name} />
-                      {inspector.name}
-                    </span>
-                  ) : (
-                    <span className="text-(--text-secondary)">—</span>
-                  )}
-                </TableCell>
-                <TableCell className="hidden lg:table-cell">
-                  <ProgressSquares squares={squares} progress={progress} total={total} />
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  {flagged > 0 ? (
-                    <Badge tone="critical" icon="AlertMinor">
-                      {String(flagged)}
-                    </Badge>
-                  ) : (
-                    <Badge>0</Badge>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button onClick={() => onOpen(vehicle)}>
-                    {mode === "completed"
-                      ? "View"
-                      : progress > 0
-                        ? "Continue"
-                        : "Start"}
-                  </Button>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+    <IndexTable
+      selectable={false}
+      primaryColumn={1}
+      headings={[
+        { title: "Reg" },
+        { title: "Vehicle" },
+        { title: "Waiting" },
+        { title: "MOT" },
+        { title: "Inspector" },
+        { title: "Progress" },
+        { title: "Flagged" },
+        { title: "Action", alignment: "end" },
+      ]}
+      rows={rows.map(({ vehicle, checks, progress, total }) => {
+        const wait = waitInfo(vehicle.receivedDate);
+        const squares = buildSquares(checks, items);
+        const flagged = flaggedCount(checks);
+        // The actual person who recorded the checks for THIS vehicle, not a
+        // single global inspector applied to every row.
+        const inspectorId = checks.find((c) => c.carriedOutBy)?.carriedOutBy;
+        const inspector = inspectorId
+          ? users.find((u) => u.id === inspectorId)
+          : undefined;
+        return {
+          id: vehicle.id,
+          cells: [
+            <RegPlate key="reg" registration={vehicle.registration} size="sm" />,
+            <span key="vehicle" className="flex flex-col">
+              <span>
+                {vehicle.make} {vehicle.model}
+              </span>
+              <span className="body-sm text-(--text-secondary)">
+                {vehicle.stockId} · {formatDate(vehicle.receivedDate)}
+              </span>
+            </span>,
+            <Badge
+              key="waiting"
+              tone={wait.tone}
+              icon={wait.urgent ? "AlertMinor" : undefined}
+            >
+              {`${wait.days}d waiting`}
+            </Badge>,
+            <MotBadge key="mot" motExpiry={vehicle.motExpiry} />,
+            inspector ? (
+              <span key="inspector" className="inline-flex items-center gap-2 text-(--text-secondary)">
+                <Avatar size="sm" name={inspector.name} />
+                {inspector.name}
+              </span>
+            ) : (
+              <span key="inspector" className="text-(--text-secondary)">—</span>
+            ),
+            <ProgressSquares key="progress" squares={squares} progress={progress} total={total} />,
+            flagged > 0 ? (
+              <Badge key="flagged" tone="critical" icon="AlertMinor">
+                {String(flagged)}
+              </Badge>
+            ) : (
+              <Badge key="flagged">0</Badge>
+            ),
+            <Button key="action" onClick={() => onOpen(vehicle)}>
+              {mode === "completed"
+                ? "View"
+                : progress > 0
+                  ? "Continue"
+                  : "Start"}
+            </Button>,
+          ],
+        };
+      })}
+    />
   );
 }
