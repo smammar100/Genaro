@@ -6,6 +6,10 @@ interface Props {
   className?: string;
 }
 
+/**
+ * A UK registration plate in plate yellow, formatted with its space ("OY70 TZG").
+ * @import import { RegPlate } from "@/components/shared/reg-plate";
+ */
 export function RegPlate({ registration, size = "md", className }: Props) {
   const sizeClasses =
     size === "sm"

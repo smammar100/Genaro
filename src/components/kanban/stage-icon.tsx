@@ -76,6 +76,7 @@ function progress(column: KanbanColumn, columns: KanbanColumn[]) {
  * `glyph` (the default) is the bare mark in the column's tone, for cards and
  * the hidden-columns rail. `badge` sets the same mark in a small filled tile,
  * for the column header (the reference board's status badge).
+ * @import import { StageIcon } from "@/components/kanban/stage-icon";
  */
 export function StageIcon({
   column,

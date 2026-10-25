@@ -38,15 +38,27 @@ import { cn, formatCurrency, formatDate, getInitials } from "@/lib/utils";
 // Generic value-shaped cells
 // ────────────────────────────────────────────────────────────────────────────
 
+/**
+ * The dash a grid cell shows when it has no value.
+ * @import import { EmptyCell } from "@/components/data-grid/cells";
+ */
 export function EmptyCell() {
   return <span className="text-muted-foreground">—</span>;
 }
 
+/**
+ * Any value as plain text, cut to the column's width; a dash when it's empty.
+ * @import import { TextCell } from "@/components/data-grid/cells";
+ */
 export function TextCell({ value }: { value: unknown }) {
   if (value === null || value === undefined || value === "") return <EmptyCell />;
   return <span className="truncate">{String(value)}</span>;
 }
 
+/**
+ * A phone number that dials when tapped, without opening the row.
+ * @import import { PhoneCell } from "@/components/data-grid/cells";
+ */
 export function PhoneCell({ value }: { value: string | null | undefined }) {
   if (!value) return <EmptyCell />;
   const stripped = value.replace(/\s+/g, "");
@@ -61,6 +73,10 @@ export function PhoneCell({ value }: { value: string | null | undefined }) {
   );
 }
 
+/**
+ * A number with UK thousands separators, in tabular figures.
+ * @import import { NumberCell } from "@/components/data-grid/cells";
+ */
 export function NumberCell({ value }: { value: number | null | undefined }) {
   if (value === null || value === undefined || Number.isNaN(value))
     return <EmptyCell />;
@@ -71,6 +87,10 @@ export function NumberCell({ value }: { value: number | null | undefined }) {
   );
 }
 
+/**
+ * An amount in pounds (£16,419.00), in tabular figures.
+ * @import import { CurrencyCell } from "@/components/data-grid/cells";
+ */
 export function CurrencyCell({ value }: { value: number | null | undefined }) {
   if (value === null || value === undefined) return <EmptyCell />;
   return (
@@ -78,11 +98,19 @@ export function CurrencyCell({ value }: { value: number | null | undefined }) {
   );
 }
 
+/**
+ * A date as "21 Oct 2026", in tabular figures.
+ * @import import { DateCell } from "@/components/data-grid/cells";
+ */
 export function DateCell({ value }: { value: string | null | undefined }) {
   if (!value) return <EmptyCell />;
   return <span className="tabular-nums">{formatDate(value)}</span>;
 }
 
+/**
+ * A start and an end date joined by an arrow, such as a warranty's cover.
+ * @import import { DateRangeCell } from "@/components/data-grid/cells";
+ */
 export function DateRangeCell({
   start,
   end,
@@ -100,6 +128,10 @@ export function DateRangeCell({
   );
 }
 
+/**
+ * A yes or no as a small tick (yes) or cross (no and empty).
+ * @import import { BooleanCell } from "@/components/data-grid/cells";
+ */
 export function BooleanCell({ value }: { value: boolean | null | undefined }) {
   if (value === true) {
     return (
@@ -115,6 +147,10 @@ export function BooleanCell({ value }: { value: boolean | null | undefined }) {
   );
 }
 
+/**
+ * A value picked from a list as a grey chip, with underscores read as spaces.
+ * @import import { SelectCell } from "@/components/data-grid/cells";
+ */
 export function SelectCell({ value }: { value: unknown }) {
   if (value === null || value === undefined || value === "") return <EmptyCell />;
   return (
@@ -128,6 +164,10 @@ export function SelectCell({ value }: { value: unknown }) {
 // Domain-specific cells
 // ────────────────────────────────────────────────────────────────────────────
 
+/**
+ * A vehicle as its reg plate over its stock ID, with a thumbnail when photos are on.
+ * @import import { VehicleCell } from "@/components/data-grid/cells";
+ */
 export function VehicleCell({ vehicle }: { vehicle: Vehicle | null | undefined }) {
   if (!vehicle) return <EmptyCell />;
   return (
@@ -149,6 +189,10 @@ export function VehicleCell({ vehicle }: { vehicle: Vehicle | null | undefined }
   );
 }
 
+/**
+ * A person as an initials avatar and their name.
+ * @import import { UserCell } from "@/components/data-grid/cells";
+ */
 export function UserCell({ name }: { name: string | null | undefined }) {
   if (!name) return <EmptyCell />;
   return (
@@ -165,6 +209,10 @@ export function UserCell({ name }: { name: string | null | undefined }) {
   );
 }
 
+/**
+ * The advert channels a listing can go to, filled when it's on and grey when it's off.
+ * @import import { ChannelsCell } from "@/components/data-grid/cells";
+ */
 export function ChannelsCell({
   channels,
 }: {
@@ -193,6 +241,10 @@ export function ChannelsCell({
 // Pill cells — wrap existing badges where possible
 // ────────────────────────────────────────────────────────────────────────────
 
+/**
+ * A vehicle's stock status as its VehicleStatusBadge.
+ * @import import { VehicleStatusCell } from "@/components/data-grid/cells";
+ */
 export function VehicleStatusCell({
   status,
 }: {
@@ -202,6 +254,10 @@ export function VehicleStatusCell({
   return <VehicleStatusBadge status={status} />;
 }
 
+/**
+ * A deal's pipeline stage as its SalesStageBadge.
+ * @import import { SalesStageCell } from "@/components/data-grid/cells";
+ */
 export function SalesStageCell({
   stage,
 }: {
@@ -226,6 +282,10 @@ const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
   lost: "Lost",
 };
 
+/**
+ * A lead's status (New, Contacted, Appointment, Lost) as a coloured pill.
+ * @import import { LeadStatusCell } from "@/components/data-grid/cells";
+ */
 export function LeadStatusCell({
   status,
 }: {
@@ -242,6 +302,10 @@ const APPOINTMENT_STATUS_LABEL: Record<AppointmentStatus, string> = {
   no_show: "No-show",
 };
 
+/**
+ * An appointment's status (Upcoming, Completed, Cancelled, No-show) as a coloured pill.
+ * @import import { AppointmentStatusCell } from "@/components/data-grid/cells";
+ */
 export function AppointmentStatusCell({
   status,
 }: {
@@ -263,6 +327,10 @@ const APPOINTMENT_OUTCOME_LABEL: Record<AppointmentOutcome, string> = {
   lost: "Lost",
 };
 
+/**
+ * What came of an appointment (Test drive, Offer made, Sold…) as a coloured pill.
+ * @import import { AppointmentOutcomeCell } from "@/components/data-grid/cells";
+ */
 export function AppointmentOutcomeCell({
   outcome,
 }: {
@@ -281,6 +349,10 @@ const WARRANTY_STATUS_LABEL: Record<WarrantyStatus, string> = {
   cancelled: "Cancelled",
 };
 
+/**
+ * A warranty's status (Active, Expired, Cancelled) as a coloured pill.
+ * @import import { WarrantyStatusCell } from "@/components/data-grid/cells";
+ */
 export function WarrantyStatusCell({
   status,
 }: {
@@ -302,6 +374,10 @@ const INVOICE_STATUS_LABEL: Record<InvoiceStatus, string> = {
   cancelled: "Cancelled",
 };
 
+/**
+ * An invoice's status (Draft, Sent, Paid, Overdue…) as a coloured pill.
+ * @import import { InvoiceStatusCell } from "@/components/data-grid/cells";
+ */
 export function InvoiceStatusCell({
   status,
 }: {
@@ -321,6 +397,10 @@ const RETURN_STATUS_LABEL: Record<ReturnStatus, string> = {
   rejected: "Rejected",
 };
 
+/**
+ * A vehicle return's status (Pending, In review, Resolved, Rejected) as a coloured pill.
+ * @import import { ReturnStatusCell } from "@/components/data-grid/cells";
+ */
 export function ReturnStatusCell({
   status,
 }: {
@@ -340,6 +420,10 @@ const RETURN_RESOLUTION_LABEL: Record<ReturnResolutionPath, string> = {
   other: "Other",
 };
 
+/**
+ * Who a vehicle return is settled through (Vendor, Supplier, G-Trader, Other) as a coloured pill.
+ * @import import { ReturnResolutionCell } from "@/components/data-grid/cells";
+ */
 export function ReturnResolutionCell({
   resolution,
 }: {
@@ -360,6 +444,10 @@ const AT_INDICATOR_LABEL: Record<string, string> = {
   unrated: "Unrated",
 };
 
+/**
+ * AutoTrader's price indicator (Great price to Overpriced) as a coloured pill.
+ * @import import { AtIndicatorCell } from "@/components/data-grid/cells";
+ */
 export function AtIndicatorCell({
   indicator,
 }: {

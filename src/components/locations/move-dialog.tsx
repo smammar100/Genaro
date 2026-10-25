@@ -63,6 +63,7 @@ function shortDate(iso: string): string {
  *      logs activity) — DB-level CHECKs guard the vendor/staff invariants.
  *   2. Toast.
  *   3. `onSuccess` callback so the page can refresh its list.
+ * @import import { MoveDialog } from "@/components/locations/move-dialog";
  */
 export function MoveDialog({
   open,

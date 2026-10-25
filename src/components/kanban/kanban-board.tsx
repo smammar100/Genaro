@@ -102,6 +102,7 @@ function useFillHeight(ref: React.RefObject<HTMLElement | null>, min: number): n
  * The board's frame: one surface the columns sit on, divided by hairlines,
  * running to the foot of the window so each column scrolls on its own. It
  * scrolls sideways, a column at a time on a phone.
+ * @import import { KanbanFrame } from "@/components/kanban/kanban-board";
  */
 export function KanbanFrame({ children, className }: { children: React.ReactNode; className?: string }) {
   const ref = React.useRef<HTMLDivElement>(null);
@@ -141,6 +142,7 @@ type LaneProps = Omit<React.ComponentProps<typeof motion.section>, "children"> &
  * put while the cards scroll under it (they fade out beneath it), then the
  * cards. Also used by boards that don't drag (prep), so every board shares
  * the anatomy.
+ * @import import { KanbanLane } from "@/components/kanban/kanban-board";
  */
 export function KanbanLane({
   column,
@@ -197,7 +199,10 @@ export function KanbanLane({
   );
 }
 
-/** A column with no cards: a dashed well that says so, with the add button when the board has one. */
+/**
+ * A column with no cards: a dashed well that says so, with the add button when the board has one.
+ * @import import { KanbanEmpty } from "@/components/kanban/kanban-board";
+ */
 export function KanbanEmpty({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
     <div className="flex min-h-[8.125rem] flex-col items-center justify-center gap-2 rounded-(--radius-400) border border-dashed border-(--border) bg-(--bg-surface-secondary) px-4 py-6 text-center">

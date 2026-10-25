@@ -52,6 +52,10 @@ interface VehicleStatusBadgeProps {
   withChevron?: boolean;
 }
 
+/**
+ * A vehicle's stock status (Received, Listed, Sold…) as a Badge in that status's tone.
+ * @import import { VehicleStatusBadge } from "@/components/shared/status-badge";
+ */
 export function VehicleStatusBadge({
   status,
   className,
@@ -85,6 +89,10 @@ interface SalesStageBadgeProps {
   className?: string;
 }
 
+/**
+ * A deal's sales pipeline stage as a Badge; custom stages fall back to neutral.
+ * @import import { SalesStageBadge } from "@/components/shared/status-badge";
+ */
 export function SalesStageBadge({ stage, className }: SalesStageBadgeProps) {
   return (
     <ToneBadge color={STAGE_COLORS[stage]} className={className}>

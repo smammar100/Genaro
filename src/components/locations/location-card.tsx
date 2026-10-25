@@ -69,6 +69,7 @@ function describeMovement(
  * the 3 most recent movements. Mirrors the ASCII mockup in
  * `Module_A_Vehicle_Locations.md`. Move + history actions are wired by
  * the parent (it owns the MoveDialog state).
+ * @import import { LocationCard } from "@/components/locations/location-card";
  */
 export function LocationCard({
   vehicle,

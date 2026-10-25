@@ -95,6 +95,10 @@ async function fetchOrGenerate(
   }
 }
 
+/**
+ * A vehicle's photo as a thumbnail, card or hero image, or a striped placeholder with its plate when it has none.
+ * @import import { VehicleImage } from "@/components/shared/vehicle-image";
+ */
 export function VehicleImage({
   vehicle,
   angle = "hero",

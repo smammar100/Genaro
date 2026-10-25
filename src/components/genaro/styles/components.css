@@ -939,3 +939,89 @@ a.p-toast__action { text-decoration:none; }
 
 /* Type scale (25 Oct 2026): a tab's counter is a counter, so micro. */
 .p-tab .p-tab__badge { font-size:var(--fs-micro); line-height:var(--lh-micro); }
+
+/* Sheet: a panel that slides in from the right, the same surface, radius and shadow as Modal. Enter 250ms, exit 180ms, on one ease-out curve; panel and backdrop share timing. */
+.p-sheet-root { position:fixed; inset:0; z-index:500; }
+.p-sheet-backdrop { position:absolute; inset:0; background:var(--backdrop-bg); opacity:0; transition:opacity 180ms cubic-bezier(0.32, 0.72, 0, 1); }
+.p-sheet { position:absolute; top:var(--space-200); right:var(--space-200); bottom:var(--space-200); width:calc(100% - var(--space-1200)); max-width:480px;
+  display:flex; flex-direction:column; overflow:hidden; background:var(--bg-surface); border-radius:var(--radius-500); box-shadow:var(--shadow-600);
+  font-family:var(--font-sans); font-size:var(--fs-body); line-height:var(--lh-body); font-weight:var(--fw-regular); color:var(--text);
+  transform:translateX(calc(100% + var(--space-200))); transition:transform 180ms cubic-bezier(0.32, 0.72, 0, 1); }
+.p-sheet:focus { outline:none; }
+.p-sheet--small { max-width:380px; }
+.p-sheet--large { max-width:672px; }
+.p-sheet-root[data-open] .p-sheet-backdrop { opacity:1; transition-duration:250ms; }
+.p-sheet-root[data-open] .p-sheet { transform:none; transition-duration:250ms; }
+.p-sheet__header { flex:none; display:grid; grid-template-columns:minmax(0, 1fr) auto; column-gap:var(--space-200); align-items:start;
+  padding:var(--space-300) var(--space-300) var(--space-300) var(--space-400); background:var(--bg-surface-tertiary); border-bottom:var(--border-width-025) solid var(--border); }
+/* min-height is the close button's 28px, so a one-line title centres on it and a longer one wraps below it. */
+.p-sheet__heading { grid-column:1; grid-row:1; min-width:0; min-height:28px; display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-100) var(--space-200); }
+.p-sheet__title { margin:0; min-width:0; font-size:var(--fs-title); line-height:var(--lh-title); font-weight:var(--fw-semibold); overflow-wrap:anywhere; }
+.p-sheet__subtitle { grid-column:1; grid-row:2; min-width:0; font-size:var(--fs-caption); line-height:var(--lh-caption); color:var(--text-secondary); }
+.p-sheet__actions { grid-column:2; grid-row:1; display:flex; align-items:center; gap:var(--space-100); }
+.p-sheet__body { flex:1; min-height:0; display:flex; flex-direction:column; gap:var(--space-400); padding:var(--space-400); overflow:auto; overscroll-behavior:contain; }
+.p-sheet__body--flush { padding:0; gap:0; }
+.p-sheet--subdued .p-sheet__body { background:var(--bg-surface-secondary); }
+.p-sheet__footer { flex:none; display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:var(--space-200); padding:var(--space-400); border-top:var(--border-width-025) solid var(--border); }
+.p-sheet__footer-start { margin-right:auto; }
+@media (prefers-reduced-motion: reduce) { .p-sheet, .p-sheet-backdrop { transition:none; } }
+
+/* ActionMenu: the menu takes focus when opened by pointer, without a ring; its items keep theirs. */
+.p-actionmenu:focus { outline:none; }
+
+/* Combobox, Switch, SkeletonBox and the form bridges' field wrapper */
+.p-combobox-popover { display:block; }
+.p-combobox { cursor:text; }
+.p-combobox--multiple { flex-wrap:wrap; row-gap:var(--space-100); padding-top:var(--space-050); padding-bottom:var(--space-050); }
+.p-combobox--multiple .p-field__input { min-width:var(--space-1600); padding:var(--space-100) 0; }
+.p-combobox .p-tag { flex:none; }
+.p-combobox__toggle { display:inline-flex; align-items:center; justify-content:center; flex:none; margin-right:calc(-1 * var(--space-100)); padding:0; border:0; border-radius:var(--radius-100); background:none; cursor:pointer; }
+.p-combobox__toggle .p-icon { color:var(--icon-secondary); }
+.p-combobox__toggle:disabled { cursor:default; }
+.p-combobox__toggle:disabled .p-icon { color:var(--icon-disabled); }
+.p-combobox__list:empty { display:none; }
+.p-combobox__option { justify-content:flex-start; }
+.p-combobox__text { display:flex; flex:1; flex-direction:column; min-width:0; }
+.p-combobox__label { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.p-combobox__description { font-size:var(--fs-caption); line-height:var(--lh-caption); font-weight:var(--fw-regular); color:var(--text-secondary); }
+.p-combobox__suffix { display:inline-flex; flex:none; align-items:center; font-weight:var(--fw-regular); color:var(--text-secondary); }
+.p-combobox__status { display:flex; align-items:center; justify-content:center; gap:var(--space-200); padding:var(--space-300); color:var(--text-secondary); text-align:center; }
+.p-combobox__box { display:inline-flex; flex:none; align-items:center; justify-content:center; width:var(--space-400); height:var(--space-400); border-radius:var(--radius-100);
+  background:var(--bg-surface); box-shadow:inset 0 0 0 var(--border-width-input) var(--input-border); box-sizing:border-box; }
+.p-combobox__box .p-icon { color:var(--text-brand-on-bg-fill); opacity:0; }
+.p-combobox__box--on { background:var(--bg-fill-brand-selected); box-shadow:none; }
+.p-combobox__box--on .p-icon { opacity:1; }
+
+.p-switch { display:flex; align-items:flex-start; gap:var(--space-200); padding:var(--space-100) 0; font-family:var(--font-sans); font-size:var(--fs-body); line-height:var(--lh-body); font-weight:var(--fw-regular); color:var(--text); }
+.p-switch--start { flex-direction:row-reverse; }
+.p-switch__control { position:relative; display:inline-flex; flex:none; width:var(--space-800); height:var(--space-500); }
+.p-switch__input { position:absolute; inset:0; z-index:1; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
+.p-switch__track { position:relative; width:100%; height:100%; border-radius:var(--radius-full); background:var(--input-bg-surface);
+  box-shadow:inset 0 0 0 var(--border-width-input) var(--input-border); box-sizing:border-box; transition:background-color 150ms ease-out, box-shadow 150ms ease-out; }
+.p-switch__thumb { position:absolute; top:var(--space-050); left:var(--space-050); width:var(--space-400); height:var(--space-400); border-radius:var(--radius-full);
+  background:var(--icon-secondary); transition:transform 150ms cubic-bezier(0.25, 0.1, 0.25, 1), background-color 150ms ease-out; }
+.p-switch__input:hover + .p-switch__track { background:var(--input-bg-surface-hover); box-shadow:inset 0 0 0 var(--border-width-input) var(--input-border-hover); }
+.p-switch__input:checked + .p-switch__track { background:var(--bg-fill-brand-selected); box-shadow:none; }
+.p-switch__input:checked:hover + .p-switch__track { background:var(--bg-fill-brand-hover); }
+.p-switch__input:checked + .p-switch__track .p-switch__thumb { transform:translateX(var(--space-300)); background:var(--text-brand-on-bg-fill); }
+.p-switch__input:focus-visible + .p-switch__track { outline:var(--border-width-050) solid var(--border-focus); outline-offset:var(--border-width-025); }
+.p-switch__text { display:flex; flex:1; flex-direction:column; min-width:0; }
+.p-switch__label { cursor:pointer; }
+.p-switch__help { color:var(--text-secondary); }
+.p-switch--error .p-switch__track { background:var(--bg-surface-critical); box-shadow:inset 0 0 0 var(--border-width-input) var(--border-critical-secondary); }
+.p-switch--error .p-switch__input:checked + .p-switch__track { background:var(--bg-fill-critical-selected); box-shadow:none; }
+.p-switch--disabled { color:var(--text-disabled); }
+.p-switch--disabled .p-switch__input, .p-switch--disabled .p-switch__label { cursor:default; }
+.p-switch--disabled .p-switch__track, .p-switch--disabled .p-switch__input:hover + .p-switch__track { background:var(--bg-fill-disabled); box-shadow:none; }
+.p-switch--disabled .p-switch__thumb { background:var(--icon-disabled); }
+.p-switch--disabled .p-switch__input:checked + .p-switch__track { background:var(--bg-fill-brand-disabled); }
+.p-switch--disabled .p-switch__input:checked + .p-switch__track .p-switch__thumb { background:var(--text-brand-on-bg-fill-disabled); }
+/* A finger-sized hit area on touch screens, without moving anything. */
+@media (pointer: coarse) { .p-switch__input { inset:calc(-1 * var(--space-300)); width:auto; height:auto; } }
+@media (prefers-reduced-motion: reduce) { .p-switch__track, .p-switch__thumb { transition:none; } }
+
+.p-skel-box { width:100%; height:var(--space-500); border-radius:var(--radius-200); background:var(--bg-fill-tertiary); animation:p-pulse 2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .p-skel-box { animation:none; } }
+
+/* Form bridges wrap each field to catch its blur; the wrapper takes no part in layout. */
+.p-form-field { display:contents; }

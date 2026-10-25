@@ -1,17 +1,19 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Card, SkeletonBodyText, SkeletonDisplayText, SkeletonThumbnail } from "@/components/genaro";
+import { SkeletonBox } from "@/components/genaro";
 import guidelines from "../docs/Skeleton.md?raw";
 
 /**
  * Skeletons hold the shape of content while it loads, in `loading.tsx` files
  * and Suspense fallbacks: `SkeletonBodyText` for text, `SkeletonDisplayText`
- * for headings, `SkeletonThumbnail` for images. Use `Spinner` when you don't
- * know the shape of what's coming.
+ * for headings, `SkeletonThumbnail` for images and `SkeletonBox` for any
+ * other shape, such as a chart. Use `Spinner` when you don't know the shape
+ * of what's coming.
  */
 const meta = {
   title: "Components/Feedback and status/Skeleton",
   component: SkeletonBodyText,
-  subcomponents: { SkeletonDisplayText, SkeletonThumbnail },
+  subcomponents: { SkeletonDisplayText, SkeletonThumbnail, SkeletonBox },
   tags: ["autodocs"],
   parameters: { guidelines },
 } satisfies Meta<typeof SkeletonBodyText>;
@@ -58,6 +60,38 @@ export const Thumbnail: StoryObj<typeof SkeletonThumbnail> = {
     size: { control: "select", options: ["extraSmall", "small", "medium", "large"] },
   },
   render: (args) => <SkeletonThumbnail {...args} />,
+};
+
+/**
+ * Stands in for a shape the text and image skeletons don't cover, such as a
+ * chart in a report card. Give it the height and radius of what it replaces.
+ * @summary any-size placeholder, such as a chart
+ */
+export const Box: StoryObj<typeof SkeletonBox> = {
+  args: { height: 288, radius: "300" },
+  argTypes: {
+    radius: { control: "select", options: ["0", "050", "100", "150", "200", "300", "400", "500", "750", "full"] },
+    width: { control: "text" },
+    height: { control: "text" },
+    aspectRatio: { control: "text" },
+  },
+  render: (args) => <SkeletonBox {...args} />,
+};
+
+/**
+ * Vehicle photos, whose height follows their width: set `aspectRatio`
+ * instead of a height, so the tiles keep their shape at any width.
+ * @summary photo tiles that keep their shape
+ */
+export const PhotoGrid: StoryObj<typeof SkeletonBox> = {
+  args: { aspectRatio: "4 / 3" },
+  render: (args) => (
+    <div aria-busy="true" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--space-300)" }}>
+      {[1, 2, 3, 4, 5, 6].map((tile) => (
+        <SkeletonBox key={tile} {...args} />
+      ))}
+    </div>
+  ),
 };
 
 /**

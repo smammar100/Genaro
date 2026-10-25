@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
  * card, so a grip that cannot be activated would be a promise to keyboard users
  * that nothing keeps. Keyboard reordering is real work and belongs in its own
  * ticket, not a fake control here.
+ * @import import { DragHandle } from "@/components/shared/drag-handle";
  */
 export function DragHandle({ className }: { className?: string }) {
   return (
