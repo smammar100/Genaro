@@ -27,7 +27,7 @@ export { Tooltip, type TooltipProps } from './Tooltip';
 export { Spinner, type SpinnerProps } from './Spinner';
 export { ProgressBar, type ProgressBarProps } from './ProgressBar';
 export { ExceptionList, type ExceptionListProps, type ExceptionListItem } from './ExceptionList';
-export { SkeletonBodyText, SkeletonDisplayText, SkeletonThumbnail, type SkeletonBodyTextProps, type SkeletonDisplayTextProps, type SkeletonThumbnailProps } from './Skeleton';
+export { SkeletonBodyText, SkeletonBox, SkeletonDisplayText, SkeletonThumbnail, type SkeletonBodyTextProps, type SkeletonBoxProps, type SkeletonDisplayTextProps, type SkeletonRadius, type SkeletonThumbnailProps } from './Skeleton';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 
 // Images & icons
@@ -52,6 +52,9 @@ export { InlineError, type InlineErrorProps } from './InlineError';
 export { Labelled, type LabelledProps } from './Labelled';
 export { SettingToggle, type SettingToggleProps } from './SettingToggle';
 export { Filters, FilterPill, type FiltersProps, type FilterPillProps, type FilterDefinition, type AppliedFilter } from './Filters';
+export { Combobox, type ComboboxProps, type ComboboxOption, type ComboboxSingleProps, type ComboboxMultipleProps } from './Combobox';
+export { Switch, type SwitchProps } from './Switch';
+export { FormTextField, FormSelect, FormCombobox, FormCheckbox, FormSwitch, type FormFieldProps, type FormTextFieldProps, type FormSelectProps, type FormComboboxProps, type FormCheckboxProps, type FormSwitchProps } from './Form';
 
 // Navigation & app chrome
 export { Frame, type FrameProps } from './Frame';
@@ -68,6 +71,9 @@ export { Modal, type ModalProps } from './Modal';
 export { Popover, type PopoverProps } from './Popover';
 export { ActionList, type ActionListProps, type ActionListSection } from './ActionList';
 export { OptionList, type OptionListProps, type OptionDescriptor } from './OptionList';
+export { Sheet, type SheetProps, type SheetAction, type SheetHeaderAction } from './Sheet';
+export { ActionMenu, type ActionMenuProps, type ActionMenuActivatorProps } from './ActionMenu';
+export { ConfirmModal, useConfirm, type ConfirmModalProps, type ConfirmOptions, type UseConfirm } from './ConfirmModal';
 
 // Layout & structure
 export { Page, type PageProps, type PageSecondaryAction } from './Page';

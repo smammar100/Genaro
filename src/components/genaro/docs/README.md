@@ -54,6 +54,9 @@ One file per component: when to use it, examples, every prop, Server Component n
 | [SettingToggle](./SettingToggle.md) | A card that shows whether a setting is on or off — title, an On/Off badge and one toggle button. | server-safe |
 | [InlineError](./InlineError.md) | A one-line validation message with the `AlertMinor` icon, in `text-critical` / `icon-critical`. | server-safe |
 | [Labelled](./Labelled.md) | The label, help text and error wrapper that TextField and Select use. Wrap your own controls in it so they match the kit's fields. | server-safe |
+| [Combobox](./Combobox.md) | A searchable select: type to filter a list of options, pick one or several (shown as Tags), with remote search, an empty state and a clear button. | client |
+| [Switch](./Switch.md) | An on/off toggle that applies at once, such as a setting or a channel; for choices saved with a form, use Checkbox. | client |
+| [Form fields](./Form.md) | react-hook-form bridges — `FormTextField`, `FormSelect`, `FormCombobox`, `FormCheckbox`, `FormSwitch` — that wire a field to `control` and `name` and show its validation error. | client |
 
 ## Feedback and status
 
@@ -65,7 +68,7 @@ One file per component: when to use it, examples, every prop, Server Component n
 | [Tooltip](./Tooltip.md) | A small floating label (white `bg-surface`, `shadow-300`, 8px corners, with a tail) shown while its trigger is hovered or focused. | client |
 | [Spinner](./Spinner.md) | An indeterminate loading indicator in `bg-fill-brand`. | server-safe |
 | [ProgressBar](./ProgressBar.md) | Shows the progress of a determinate task as a filled track (`bg-fill-tertiary` track, toned fill). | server-safe |
-| [Skeleton](./Skeleton.md) | Pulsing placeholders shown while content loads: `SkeletonDisplayText` for headings, `SkeletonBodyText` for paragraphs, `SkeletonThumbnail` for images. | server-safe |
+| [Skeleton](./Skeleton.md) | Pulsing placeholders shown while content loads: `SkeletonDisplayText` for headings, `SkeletonBodyText` for paragraphs, `SkeletonThumbnail` for images, `SkeletonBox` for any other shape. | server-safe |
 | [EmptyState](./EmptyState.md) | Explains why a page or section is empty and what to do next: a centered illustration or icon tile, heading, body and actions on its own card surface. | server-safe |
 | [ExceptionList](./ExceptionList.md) | A compact list of notable exceptions about an order or customer: a dot or icon, an optional bold title and a description. | server-safe |
 
@@ -100,6 +103,9 @@ One file per component: when to use it, examples, every prop, Server Component n
 | [Popover](./Popover.md) | A floating panel (`shadow-300`, 12px `border-radius-popover`) anchored below or above its activator. It holds an ActionList, an OptionList or a short form. | client |
 | [ActionList](./ActionList.md) | A menu of actions, usually shown inside a Popover. Each row is 32px, with an optional icon, help text and suffix. | client |
 | [OptionList](./OptionList.md) | A list of options to pick from. A tick (`TickMinor`) marks the chosen item, and `allowMultiple` switches to checkboxes. | client |
+| [Sheet](./Sheet.md) | A side drawer from the right for a record's details or a longer form beside the page: title, optional subtitle and header actions, scrolling body, and footer actions like Modal's. | client |
+| [ActionMenu](./ActionMenu.md) | A button that opens a menu of actions (Popover + ActionList): a labelled disclosure button, or an icon-only "more actions" button for rows and cards. | client |
+| [ConfirmModal](./ConfirmModal.md) | Asks the user to confirm an action, usually a destructive one, in a Modal. `useConfirm()` returns `confirm(options)`, a promise of the answer. | client |
 
 ## App setup
 

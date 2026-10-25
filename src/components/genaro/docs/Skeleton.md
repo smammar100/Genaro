@@ -1,9 +1,9 @@
 # Skeleton
 
-Pulsing placeholders shown while content loads: `SkeletonDisplayText` for headings, `SkeletonBodyText` for paragraphs, `SkeletonThumbnail` for images.
+Pulsing placeholders shown while content loads: `SkeletonDisplayText` for headings, `SkeletonBodyText` for paragraphs, `SkeletonThumbnail` for images, and `SkeletonBox` for any other shape.
 
 ```tsx
-import { SkeletonBodyText, SkeletonDisplayText, SkeletonThumbnail } from '@/components/genaro';
+import { SkeletonBodyText, SkeletonBox, SkeletonDisplayText, SkeletonThumbnail } from '@/components/genaro';
 ```
 
 ## Use it for
@@ -11,6 +11,8 @@ import { SkeletonBodyText, SkeletonDisplayText, SkeletonThumbnail } from '@/comp
 - Mirror the real layout: same cards, same order, similar line counts, so nothing jumps when content arrives.
 - Match `SkeletonDisplayText` `size` to the heading it replaces, and `SkeletonThumbnail` `size` to the `Thumbnail` that follows.
 - `SkeletonBodyText` shortens its last line (80%) so it reads as the end of a paragraph.
+- `SkeletonBox` for the rest: a chart, a map, a photo, a kanban card, a short label. Reach for the text and thumbnail skeletons first; they already match the kit's type and image sizes.
+- Give a `SkeletonBox` the size and `radius` of what it replaces: `height={288} radius="300"` for a chart in a card, `aspectRatio="4 / 3"` for a photo tile, `width={96} height={12}` for a short label. It fills the width unless you set `width`; numbers are pixels, strings any CSS length. Tailwind sizes in `className` (`h-72`, `w-24`) work too.
 
 ## Examples
 
@@ -54,6 +56,20 @@ List rows as a `Suspense` fallback — `ProductList` is an async Server Componen
 </Suspense>
 ```
 
+Shapes the text skeletons don't cover, with `SkeletonBox` — a chart card and a grid of photo tiles:
+
+```tsx
+<Card title="Sales by month">
+  <SkeletonBox height={288} radius="300" />
+</Card>
+
+<div className="grid grid-cols-3 gap-3" aria-busy="true">
+  {Array.from({ length: 6 }, (_, i) => (
+    <SkeletonBox key={i} aspectRatio="4 / 3" />
+  ))}
+</div>
+```
+
 ## Props
 
 | Component | Prop | Type | Default | Notes |
@@ -61,7 +77,11 @@ List rows as a `Suspense` fallback — `ProductList` is an async Server Componen
 | `SkeletonDisplayText` | `size` | `'small' \| 'medium' \| 'large' \| 'extraLarge'` | `'medium'` | 24 / 28 / 28 / 36px tall, max 120–240px wide. |
 | `SkeletonBodyText` | `lines` | `number` | `3` | 8px bars, 12px apart. |
 | `SkeletonThumbnail` | `size` | `'extraSmall' \| 'small' \| 'medium' \| 'large'` | `'medium'` | 24 / 40 / 60 / 80px, same as `Thumbnail`. |
-| all three | `className` | `string` | — | Extra classes on the root (layout only). |
+| `SkeletonBox` | `width` | `number \| string` | full width | Pixels, or any CSS length (`'50%'`, `'var(--space-1600)'`). |
+| `SkeletonBox` | `height` | `number \| string` | `20` | Pixels, or any CSS length. Ignored with `aspectRatio`. |
+| `SkeletonBox` | `radius` | `'0' \| '050' \| '100' \| '150' \| '200' \| '300' \| '400' \| '500' \| '750' \| 'full'`, or a length | `'200'` | A step names a `--radius-*` token. |
+| `SkeletonBox` | `aspectRatio` | `number \| string` | — | `'4 / 3'`, `1`… The height follows the width. |
+| all four | `className` | `string` | — | Extra classes on the root (layout only; Tailwind sizes work on `SkeletonBox`). |
 
 ## Server Components
 None of them is a client component: use them directly in `loading.tsx`, `Suspense` fallbacks and Server Components.

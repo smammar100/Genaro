@@ -5,6 +5,10 @@ interface Props {
   className?: string;
 }
 
+/**
+ * A vehicle's days in stock as a chip: green under 30 days, amber under 60, red after.
+ * @import import { DaysInStockChip } from "@/components/shared/days-in-stock-chip";
+ */
 export function DaysInStockChip({ days, className }: Props) {
   const tone = getDaysInStockColor(days);
   return (

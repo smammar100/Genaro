@@ -67,6 +67,7 @@ interface VehiclePickerProps {
  * Stock can run past a hundred cars, and a plain dropdown of that is a scroll
  * hunt for a plate you already know (GEN-79). Type the reg — with or without
  * its space — or the stock ID, make or model.
+ * @import import { VehiclePicker } from "@/components/shared/vehicle-picker";
  */
 export function VehiclePicker({
   vehicles,

@@ -56,6 +56,7 @@ function fromLocalInput(value: string): string | null {
  * or on the wrong day stayed wrong forever. Editing is chronology-checked —
  * a movement cannot be dragged past its neighbours, because the order of the
  * timeline *is* the vehicle's history.
+ * @import import { MovementEditDialog } from "@/components/locations/movement-edit-dialog";
  */
 export function MovementEditDialog({
   movement,

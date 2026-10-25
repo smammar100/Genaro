@@ -34,12 +34,13 @@ const GAP = 4;
 export function Popover({ activator, active, onClose, children, preferredAlignment, preferredPosition, sectioned, fullWidth, className }: PopoverProps) {
   const ref = React.useRef<HTMLDivElement>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
-  // Inside a Genaro Modal the panel is portalled into the modal (aria-modal
-  // hides everything outside it from assistive tech); elsewhere into <body>.
+  // Inside a Genaro Modal or Sheet the panel is portalled into the dialog
+  // (aria-modal hides everything outside it from assistive tech); elsewhere
+  // into <body>.
   const [modal, setModal] = React.useState<HTMLElement | null>(null);
   const setAnchor = React.useCallback((el: HTMLDivElement | null) => {
     ref.current = el;
-    setModal(el?.closest<HTMLElement>('.p-modal') ?? null);
+    setModal(el?.closest<HTMLElement>('.p-modal, .p-sheet') ?? null);
   }, []);
   React.useEffect(() => {
     if (!active || !onClose) return;

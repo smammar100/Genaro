@@ -55,6 +55,7 @@ function formatHm(iso: string | null | undefined): string | null {
  * the customer has it out for a test drive (Decision D-A1). Tooltip on
  * either side-affordance shows the relevant context (workshop / staff /
  * expected return).
+ * @import import { LocationBadge } from "@/components/locations/location-badge";
  */
 export function LocationBadge({
   location,

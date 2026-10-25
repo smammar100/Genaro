@@ -58,6 +58,47 @@ const eslintConfig = defineConfig([
       "react-hooks/immutability": "off",
     },
   },
+  {
+    // Every screen takes its UI from the Genaro design system, which Storybook
+    // documents. These flag anything that doesn't: warnings while the app
+    // migrates area by area, errors once it's done (call 2026-10-25).
+    files: ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}", "src/contexts/**/*.{ts,tsx}"],
+    ignores: [
+      // The kit itself, and the layers it replaces.
+      "src/components/genaro/**",
+      "src/components/ui/**",
+      "src/components/fluid/**",
+      // Printed documents are drawn with @react-pdf, not HTML controls.
+      "src/components/pdf/**",
+      "**/*.stories.tsx",
+      "**/*.test.tsx",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "warn",
+        {
+          patterns: [
+            {
+              group: ["@/components/ui/*"],
+              message: "Use the Genaro component from @/components/genaro instead (see it in Storybook).",
+            },
+          ],
+        },
+      ],
+      "react/forbid-elements": [
+        "warn",
+        {
+          forbid: [
+            { element: "button", message: "Use Button from @/components/genaro (Storybook: Components/Actions/Button)." },
+            { element: "input", message: "Use TextField, Checkbox, RadioButton or Switch from @/components/genaro." },
+            { element: "select", message: "Use Select or Combobox from @/components/genaro." },
+            { element: "textarea", message: "Use TextField with multiline from @/components/genaro." },
+            { element: "table", message: "Use IndexTable or DataTable from @/components/genaro." },
+          ],
+        },
+      ],
+    },
+  },
   ...storybook.configs["flat/recommended"]
 ]);
 
