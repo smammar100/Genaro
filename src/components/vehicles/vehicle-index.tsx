@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LayoutGrid, Rows3 } from "lucide-react";
 import {
   Button,
@@ -115,6 +115,7 @@ const MODE_KEY = "cc-all-vehicles-view";
 export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
   const { company } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
   const [vehicles, setVehicles] = React.useState<Vehicle[] | null>(null);
   const [view, setView] = React.useState(0);
   const [query, setQuery] = React.useState("");
@@ -303,6 +304,7 @@ export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
               setPage(0);
             }}
             pagination={pagination}
+            onRowClick={(id) => router.push(vehicleDetailHref(id, pathname))}
             rows={shown.map((v) => ({
               id: v.id,
               url: vehicleDetailHref(v.id, pathname),
@@ -353,51 +355,64 @@ export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
   );
 }
 
-/** One car in the card view: the same facts as a table row. */
+/**
+ * One car in the card view: the same facts as a table row. A click anywhere on
+ * it opens the car, like a row; the title stays a link for keyboards and new
+ * tabs.
+ */
 function VehicleCard({ v, href }: { v: Vehicle; href: string }) {
+  const router = useRouter();
   const variant = variantLabel(v, "");
   return (
-    <Card padding="0" className="overflow-hidden">
-      {PHOTOS_ENABLED ? (
-        <Link href={href} tabIndex={-1} aria-hidden className="block">
-          <VehicleImage
-            vehicle={v}
-            variant="card"
-            sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 100vw"
-            className="h-40 w-full rounded-none"
-          />
-        </Link>
-      ) : null}
-      <div className="flex flex-col gap-3 p-4">
-        <div className="flex items-center justify-between gap-2">
-          <RegPlate registration={v.registration} size="sm" />
-          <VehicleStatusBadge status={v.status} />
-        </div>
-        <div className="min-w-0">
-          <Link href={href} className="heading-sm text-(--text) hover:underline">
-            {titleCase(`${v.make} ${v.model}`)}
-          </Link>
-          <p className="truncate body-sm text-(--text-secondary)">
-            {variant ? `${variant} · ${v.stockId}` : v.stockId}
-          </p>
-        </div>
-        <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-(--border-secondary) pt-3">
-          <Fact label="Fuel">{capitalizeWords(v.fuelType) ?? "—"}</Fact>
-          <Fact label="Location">
-            <LocationBadge
-              location={v.currentLocation}
-              outForTestDrive={v.outForTestDrive}
-              testDriveExpectedBackAt={v.testDriveExpectedBackAt}
-              compact
+    <div
+      className="group h-full cursor-pointer"
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("a, button")) return;
+        router.push(href);
+      }}
+    >
+      <Card padding="0" className="h-full overflow-hidden group-hover:bg-(--bg-surface-hover)">
+        {PHOTOS_ENABLED ? (
+          <Link href={href} tabIndex={-1} aria-hidden className="block">
+            <VehicleImage
+              vehicle={v}
+              variant="card"
+              sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 100vw"
+              className="h-40 w-full rounded-none"
             />
-          </Fact>
-          <Fact label="Arrived">{formatDate(v.receivedDate)}</Fact>
-          <Fact label="In stock">
-            <DaysInStockChip days={v.daysInStock} />
-          </Fact>
-        </dl>
-      </div>
-    </Card>
+          </Link>
+        ) : null}
+        <div className="flex flex-col gap-3 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <RegPlate registration={v.registration} size="sm" />
+            <VehicleStatusBadge status={v.status} />
+          </div>
+          <div className="min-w-0">
+            <Link href={href} className="heading-sm text-(--text) hover:underline">
+              {titleCase(`${v.make} ${v.model}`)}
+            </Link>
+            <p className="truncate body-sm text-(--text-secondary)">
+              {variant ? `${variant} · ${v.stockId}` : v.stockId}
+            </p>
+          </div>
+          <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-(--border-secondary) pt-3">
+            <Fact label="Fuel">{capitalizeWords(v.fuelType) ?? "—"}</Fact>
+            <Fact label="Location">
+              <LocationBadge
+                location={v.currentLocation}
+                outForTestDrive={v.outForTestDrive}
+                testDriveExpectedBackAt={v.testDriveExpectedBackAt}
+                compact
+              />
+            </Fact>
+            <Fact label="Arrived">{formatDate(v.receivedDate)}</Fact>
+            <Fact label="In stock">
+              <DaysInStockChip days={v.daysInStock} />
+            </Fact>
+          </dl>
+        </div>
+      </Card>
+    </div>
   );
 }
 
