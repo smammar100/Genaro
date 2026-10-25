@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { toast } from "@/lib/toast";
 import { useAutoFocus } from "@/hooks/use-auto-focus";
-import { Button, Select, TextField } from "@/components/polaris";
+import { Button, Select, TextField } from "@/components/genaro";
 // Stays on the app Dialog: it opens on top of the external-invoice form,
 // which is itself an app Dialog, so it has to share that overlay stack.
 import {

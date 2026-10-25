@@ -9,8 +9,8 @@ import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
 
 /**
- * Button — the Polaris Button, drawn with the kit's own `p-btn` classes
- * (src/components/polaris/styles/components.css) so it matches the Polaris
+ * Button — the Genaro Button, drawn with the kit's own `p-btn` classes
+ * (src/components/genaro/styles/components.css) so it matches the Genaro
  * component exactly: 28px tall, radius-200, 12px medium text, bevelled
  * shadows, 2px focus outline, and every colour from the theme tokens.
  *
@@ -93,13 +93,26 @@ export function Button(props: ButtonProps): React.ReactElement {
       type={type ?? "button"}
       data-slot="button"
       data-variant={variant}
-      disabled={Boolean(loading || disabled)}
+      disabled={Boolean(disabled)}
       aria-busy={loading || undefined}
-      className={cn(buttonVariants({ size, variant }), expand && "w-full", className)}
+      aria-disabled={loading || undefined}
+      className={cn(buttonVariants({ size, variant }), expand && "w-full", loading && "p-btn--loading", className)}
       {...rest}
+      // While loading the button ignores clicks but keeps its colours, as
+      // the design system's Button does.
+      onClick={loading ? (event) => event.preventDefault() : rest.onClick}
     >
-      {loading && <Loader2 aria-hidden className="size-4 animate-spin" />}
-      {children}
+      {loading ? (
+        <>
+          <span className="invisible contents">{children}</span>
+          <Loader2
+            aria-hidden
+            className="absolute top-1/2 left-1/2 size-4 -translate-x-1/2 -translate-y-1/2 animate-spin"
+          />
+        </>
+      ) : (
+        children
+      )}
     </button>
   );
 }

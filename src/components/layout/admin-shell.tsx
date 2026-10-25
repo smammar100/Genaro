@@ -2,20 +2,20 @@
 
 import * as React from "react";
 import { PanelLeftOpen } from "lucide-react";
-import { Button, Frame } from "@/components/polaris";
+import { Button, Frame } from "@/components/genaro";
 import { SidebarProvider, useSidebar } from "@/components/fluid/sidebar";
 import { AdminTopBar } from "./admin-top-bar";
 import { useSidebarDefaultOpen } from "./sidebar-preference";
 
 /**
- * The app shell: the Polaris top bar across the top, Fluid Functionalism's
+ * The app shell: the Genaro top bar across the top, Fluid Functionalism's
  * Sidebar down the left, and the page in the scrolling <main>. The shell keeps
- * the Polaris Frame's classes (p-frame, p-frame__main) so the container
+ * the Genaro Frame's classes (p-frame, p-frame__main) so the container
  * queries, the reserved scrollbar gutter and the Kanban board's fill-height
  * measurement behave as before. The sidebar docks from 1024px and is a drawer
  * below that, opened from the top bar's menu button; its open state persists.
  *
- * A route built on the Polaris <Page> brings its own gutters. The few that
+ * A route built on the Genaro <Page> brings its own gutters. The few that
  * don't (the Master sheet grid) get the same 24px here, so nothing is ever
  * double-padded or flush to the edges.
  */
@@ -39,7 +39,7 @@ export function AdminShell({
   }
 
   return (
-    // 14rem: narrower than the library's 16rem default (and Polaris's 240px).
+    // 14rem: narrower than the library's 16rem default (and Genaro's 240px).
     <SidebarProvider
       defaultOpen={defaultOpen}
       width="14rem"

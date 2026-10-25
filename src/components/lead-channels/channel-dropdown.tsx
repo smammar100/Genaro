@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { LeadChannel, UUID } from "@/lib/types";
-import { Badge } from "@/components/polaris";
+import { Badge } from "@/components/genaro";
 import { cn } from "@/lib/utils";
 
 interface Props {

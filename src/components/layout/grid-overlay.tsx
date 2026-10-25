@@ -13,7 +13,7 @@ import { useSearchParams } from "next/navigation";
  * stays clickable while the overlay is up.
  *
  * Fixed over the viewport, aligned to a centred 1152px content cap
- * with 24px gutters — the page padding the shell and Polaris <Page>
+ * with 24px gutters — the page padding the shell and Genaro <Page>
  * use.
  */
 export function GridOverlay() {

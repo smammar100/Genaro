@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { rulesResolver, emailIssue, type FormRules } from "@/lib/auth/form-resolver";
 import { toast } from "@/lib/toast";
 import { useAutoFocusField } from "@/hooks/use-auto-focus";
-import { Button, Link } from "@/components/polaris";
+import { Button, Link } from "@/components/genaro";
 import { AuthCard, RhfTextField } from "../_components/auth-card";
 
 // Loaded on submit, not with the page: the Supabase client is the largest

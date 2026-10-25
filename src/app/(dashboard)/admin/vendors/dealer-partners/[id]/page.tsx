@@ -24,7 +24,7 @@ import {
   Page,
   SkeletonBodyText,
   TextField,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { AddVehicleModal } from "@/components/vehicles/add-vehicle-modal";
 import {
   type ColumnDef,
@@ -295,7 +295,7 @@ export default function DealerPartnerDetailPage({
           <Card padding="0">
             <div className="px-4 pb-2 pt-4">
               <Button
-                variant="monochromePlain"
+                variant="tertiary"
                 disclosure={showHistory ? "up" : "down"}
                 ariaExpanded={showHistory}
                 onClick={() => setShowHistory((s) => !s)}

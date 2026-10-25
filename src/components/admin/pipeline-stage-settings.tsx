@@ -13,7 +13,7 @@ import {
   Select,
   SkeletonBodyText,
   TextField,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { CommitTextField } from "@/components/admin/commit-text-field";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";

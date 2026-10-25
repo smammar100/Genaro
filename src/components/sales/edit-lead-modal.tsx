@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Banner, Labelled, Modal, Select, TextField } from "@/components/polaris";
+import { Banner, Labelled, Modal, Select, TextField } from "@/components/genaro";
 import { VehiclePicker } from "@/components/shared/vehicle-picker";
 import { isValidUkPhone } from "@/lib/formatters";
 import type { Lead, LeadChannel, User, Vehicle } from "@/lib/types";

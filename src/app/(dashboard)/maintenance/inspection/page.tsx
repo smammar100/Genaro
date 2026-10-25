@@ -21,7 +21,7 @@ import {
   ProgressBar,
   Tabs,
   type BadgeTone,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,

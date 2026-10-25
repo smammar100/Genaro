@@ -34,11 +34,11 @@ import {
   Avatar,
   Button,
   EmptyState,
-  Link as PolarisLink,
+  Link as GenaroLink,
   Page,
   Select,
   type SelectOption,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { VehicleImage } from "@/components/shared/vehicle-image";
 import { PHOTOS_ENABLED } from "@/lib/phase-one";
 import { DealDetailSheet } from "@/components/sales/deal-detail-sheet";
@@ -385,14 +385,14 @@ export default function SalesPipelinePage() {
                 reference={v?.stockId}
                 vehicle={v ? `${v.make} ${v.model}` : undefined}
                 title={
-                  <PolarisLink
+                  <GenaroLink
                     monochrome
                     removeUnderline
                     className="text-left hover:underline"
                     onClick={() => setViewDeal(d)}
                   >
                     {d.customerName}
-                  </PolarisLink>
+                  </GenaroLink>
                 }
                 titleText={d.customerName}
                 facts={[

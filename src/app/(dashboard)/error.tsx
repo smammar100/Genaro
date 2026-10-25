@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { Button, EmptyState } from "@/components/polaris";
+import { Button, EmptyState } from "@/components/genaro";
 
 export default function DashboardError({
   error,

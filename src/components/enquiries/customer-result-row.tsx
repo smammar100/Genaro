@@ -1,7 +1,7 @@
 "use client";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge, type BadgeTone } from "@/components/polaris";
+import { Badge, type BadgeTone } from "@/components/genaro";
 import { getInitials, cn } from "@/lib/utils";
 import type { CustomerSearchResult } from "@/lib/services/customer-service";
 
@@ -54,8 +54,8 @@ export function CustomerResultRow({
     .join(" · ");
 
   // A full-row selectable list item (radio indicator, avatar, two text
-  // lines, badge) — richer than a Polaris Button can hold, so it stays a
-  // native <button> styled with Polaris tokens.
+  // lines, badge) — richer than a Genaro Button can hold, so it stays a
+  // native <button> styled with Genaro tokens.
   return (
     <button
       type="button"

@@ -4,11 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
-import { Button, Card, SkeletonBodyText } from "@/components/polaris";
+import { Button, Card, SkeletonBodyText } from "@/components/genaro";
 import { PHOTOS_ENABLED } from "@/lib/phase-one";
 
 /**
- * Active stock broken into pipeline buckets, drawn in Polaris fill tokens.
+ * Active stock broken into pipeline buckets, drawn in Genaro fill tokens.
  * With photos off (Phase 1, see phase-one) there is no Photography stage; a
  * car still in a photo status counts as in preparation.
  */

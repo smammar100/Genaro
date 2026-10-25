@@ -15,7 +15,7 @@ import {
   Thumbnail,
   TextField,
   type SelectOption,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import {
@@ -431,7 +431,7 @@ function LogoField({
           Replace
         </Button>
         <Button
-          variant="plain"
+          variant="tertiary"
           tone="critical"
           onClick={onClear}
           disabled={uploading}

@@ -16,7 +16,7 @@ import {
   EmptyState,
   Page,
   ProgressBar,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { AtIndicatorCell } from "@/components/data-grid";

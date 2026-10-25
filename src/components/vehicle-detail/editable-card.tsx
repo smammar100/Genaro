@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { type LucideIcon } from "lucide-react";
-import { Banner, Button, Card } from "@/components/polaris";
+import { Banner, Button, Card } from "@/components/genaro";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -200,7 +200,7 @@ export function EditableCard<T extends object>({
   }, [buildTyped, cancel, fields, onSave, record]);
 
   return (
-    // The wrapper carries the test id and any grid placement; the Polaris
+    // The wrapper carries the test id and any grid placement; the Genaro
     // Card inside stretches to the grid row's height.
     <div className={className} data-testid={`editable-card-${slug(title)}`}>
       <Card

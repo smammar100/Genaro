@@ -9,6 +9,12 @@
       "autoPort": true
     },
     {
+      "name": "Storybook",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["storybook", "--no-open"],
+      "port": 6006
+    },
+    {
       "name": "Next.js production server",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["start", "-p", "3100"],

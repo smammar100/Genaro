@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import { DragHandle } from "@/components/shared/drag-handle";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge, Button, EmptyState } from "@/components/polaris";
+import { Badge, Button, EmptyState } from "@/components/genaro";
 import {
   Dialog,
   DialogContent,

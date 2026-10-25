@@ -218,7 +218,7 @@ function Tooltip({
                       // Trim recenters the label; the padding bump only applies
                       // where text-box is supported, keeping the same overall
                       // height (~26px) as untrimmed browsers.
-                      // The Polaris tooltip surface (.p-tooltip).
+                      // The Genaro tooltip surface (.p-tooltip).
                       "rounded-(--radius-200) bg-(--bg-surface) px-2 py-1 text-body text-(--text) shadow-(--shadow-300)",
                       "[text-box:trim-both_cap_alphabetic] supports-[text-box:trim-both]:py-2",
                       className

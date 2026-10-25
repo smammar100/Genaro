@@ -1,7 +1,7 @@
 "use client";
 
 import type { User } from "@/lib/types";
-import { Avatar } from "@/components/polaris";
+import { Avatar } from "@/components/genaro";
 import {
   Combobox,
   ComboboxEmpty,

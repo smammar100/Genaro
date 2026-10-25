@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, ButtonGroup } from "@/components/polaris";
+import { Button, ButtonGroup } from "@/components/genaro";
 import { useAuth } from "@/contexts/auth-context";
 import { AddVehicleModal } from "@/components/vehicles/add-vehicle-modal";
 
@@ -12,13 +12,13 @@ function salutation(hour: number): string {
 }
 
 /**
- * The dashboard's page header, in the Polaris Page-header anatomy: the
+ * The dashboard's page header, in the Genaro Page-header anatomy: the
  * greeting as the title (heading-lg), Export as the secondary action and Add
  * vehicle as the page's one primary action.
  *
  * It is drawn here rather than through `Page title/primaryAction` because the
  * onboarding tour anchors on `#tour-add-vehicle`, and Page's actions take no
- * id — the span below carries it around the Polaris Button instead.
+ * id — the span below carries it around the Genaro Button instead.
  */
 export function DashboardGreeting() {
   const { user } = useAuth();

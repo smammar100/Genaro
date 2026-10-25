@@ -1,0 +1,277 @@
+/* App-specific bridge onto the Genaro tokens (src/components/genaro/styles).
+   shadcn.css maps shadcn's core variables; this adds the status variables the
+   app's own components use, and gives plain <table>s Genaro anatomy. (Cards,
+   fields, badges and buttons get theirs in their src/components/ui wrappers.)
+   Tokens only — every value follows the theme, including a subtree themed with
+   data-theme="dark" (tokens.css and shadcn.css re-declare under that selector,
+   so the dark nav rail needs nothing here). */
+
+:root,
+[data-theme="light"],
+.light,
+[data-theme="dark"],
+.dark {
+  --success: var(--bg-fill-success);
+  --success-foreground: var(--text-success);
+  --warning: var(--bg-fill-warning);
+  --warning-foreground: var(--text-warning);
+  --info: var(--bg-fill-info);
+  --info-foreground: var(--text-info);
+}
+
+/* Kanban boards (src/components/kanban). Genaro's bevelled shadows suit
+   buttons and cards on a grey page, not white cards on a white board, so the
+   board's cards get the soft lift of the reference board instead: a faint
+   drop, a 3px halo, more of both on hover, and a focus-tinted ring while one
+   is carried. In dark the board drops a step so the cards sit above it.
+   One declaration per line: the audit reads these as token definitions. */
+:root,
+[data-theme="light"],
+.light {
+  --kanban-board: var(--bg-surface);
+  --kanban-lane-target: var(--bg-surface-secondary);
+  --kanban-card-shadow: 0 2px 4px 0 rgb(35 35 35 / 0.03), 0 1px 2px 0 rgb(35 35 35 / 0.04), 0 0 0 3px rgb(205 205 205 / 0.12), 0 0 0 1px color-mix(in srgb, var(--border-secondary) 70%, transparent);
+  --kanban-card-shadow-hover: 0 2px 4px 0 rgb(35 35 35 / 0.04), 0 1px 2px 0 rgb(35 35 35 / 0.05), 0 4px 12px 0 rgb(35 35 35 / 0.06), 0 0 0 3px rgb(205 205 205 / 0.18), 0 0 0 1px var(--border-secondary);
+  --kanban-card-shadow-lift: 0 0 0 1px color-mix(in srgb, var(--border-focus) 24%, transparent), 0 0 0 4px color-mix(in srgb, var(--border-focus) 16%, transparent), 0 2px 12px 0 rgb(35 35 35 / 0.08), 0 6px 16px 0 rgb(35 35 35 / 0.12);
+}
+[data-theme="dark"],
+.dark {
+  --kanban-board: var(--bg-surface-secondary);
+  --kanban-lane-target: var(--bg-surface-hover);
+  --kanban-card-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 0 0 1px rgb(255 255 255 / 0.06), inset 0 1px 0 0 rgb(255 255 255 / 0.04);
+  --kanban-card-shadow-hover: 0 4px 12px 0 rgb(0 0 0 / 0.45), 0 0 0 1px rgb(255 255 255 / 0.1), inset 0 1px 0 0 rgb(255 255 255 / 0.06);
+  --kanban-card-shadow-lift: 0 0 0 1px color-mix(in srgb, var(--border-focus) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--border-focus) 20%, transparent), 0 6px 16px 0 rgb(0 0 0 / 0.5);
+}
+
+/* Genaro labels are sentence case; never shout. */
+.uppercase {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* The Frame's main area is the app's one scroller. Reserve the scrollbar's
+   width whether or not a page scrolls, so a page's width never depends on its
+   length: without this, a long page at a 768px window drops ~15px below
+   Page's 768px container breakpoint and gets 16px gutters while a short page
+   keeps 24px. */
+.p-frame__main {
+  scrollbar-gutter: stable;
+}
+
+/* Tables: Genaro IndexTable / DataTable anatomy for every <table> — a
+   secondary-surface header row, hairline row dividers, no zebra, no vertical
+   rules, hover and selected surfaces. */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+table thead th {
+  background-color: var(--bg-surface-secondary);
+  color: var(--text-secondary);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  font-weight: var(--fw-regular);
+  padding-block: var(--space-200);
+  border-width: 0;
+}
+table thead th button,
+table thead th span {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+table tbody td {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--text);
+  padding-block: var(--space-150);
+  border-width: 1px 0 0 0;
+  border-style: solid;
+  border-color: var(--border-secondary);
+}
+table th:first-child,
+table td:first-child {
+  padding-inline-start: var(--space-300);
+}
+table tbody tr[class*="even:"]:nth-child(even),
+table tbody tr[class*="odd:"]:nth-child(odd) {
+  background-color: transparent;
+}
+table tbody tr:hover > td {
+  background-color: var(--bg-surface-hover);
+}
+table tbody tr[data-state="selected"] > td,
+table tbody tr[aria-selected="true"] > td {
+  background-color: var(--bg-surface-selected);
+}
+
+/* Lucide icons passed to Genaro icon props. The kit fills its own glyphs
+   (`.p-icon svg { fill: currentColor }`); lucide draws with strokes, so a
+   filled lucide icon turns into a solid blob. Keep them stroke-only. */
+.p-icon svg.lucide {
+  fill: none;
+}
+
+/* Nav rows grow to the 44px a finger needs on a coarse pointer (GEN-93);
+   the kit's 28px rows are sized for a mouse. */
+@media (pointer: coarse) {
+  .p-nav__item,
+  .p-nav__subitem {
+    min-height: calc(var(--space-1000) + var(--space-100));
+  }
+}
+
+/* Nav rhythm (Shopify admin): a 2px breath between rows, sub-pages tucked
+   under their section with the same gap, labels on one line. The kit's 32px
+   right padding on sub-items wrapped longer labels ("Returns and
+   cancellations") in the 240px rail; the badge keeps its own inset instead. */
+.p-nav__list > li + li {
+  margin-top: var(--space-100);
+}
+.p-nav__sub > li + li {
+  margin-top: var(--space-050);
+}
+.p-nav__sub {
+  margin-top: var(--space-050);
+  margin-bottom: var(--space-100);
+}
+.p-nav__subitem {
+  min-height: 28px;
+  padding-right: var(--space-200);
+  white-space: nowrap;
+}
+.p-nav__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.p-nav__subitem .p-badge,
+.p-nav__item .p-badge {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* A Page with no title has no header, and the kit only spaces the top
+   through that header — so a title-less page (the dashboard, which leads
+   with its greeting) sat flush against the top bar. Give its content the
+   header's top padding instead. */
+.p-page > .p-page__content:first-child {
+  padding-top: var(--space-600);
+}
+
+/* Breathing room for list tables — the app's ui Table and the Genaro
+   IndexTable / DataTable. Cells keep their natural width (one line each)
+   and a table wider than its card scrolls sideways inside the card rather
+   than squeezing its columns. The spreadsheet grids (data-grid, Master sheet,
+   permissions) keep their own dense rows. */
+[data-slot="table"],
+.p-indextable table,
+.p-datatable table {
+  min-width: 100%;
+  width: max-content;
+}
+[data-slot="table"] th,
+.p-indextable th,
+.p-datatable th {
+  padding-inline: var(--space-400);
+}
+[data-slot="table"] td,
+.p-indextable td,
+.p-datatable td {
+  padding: var(--space-300) var(--space-400);
+}
+[data-slot="table"] th:first-child,
+[data-slot="table"] td:first-child {
+  padding-inline-start: var(--space-400);
+}
+/* Scroll affordance: the scrollbar sits at the table's foot, which can be a
+   screen away, so let a trackpad or shift+wheel reveal it without surprise. */
+[data-slot="table-container"],
+.p-indextable__scroll,
+.p-datatable {
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+/* Long tables scroll inside their card, capped to the viewport, so the
+   header row stays pinned while the rows move and the sideways scrollbar is
+   always on screen instead of a page below. Short tables are unaffected. */
+[data-slot="table-container"],
+.p-indextable__scroll,
+.p-datatable {
+  max-height: calc(100dvh - 12rem);
+  overflow: auto;
+}
+[data-slot="table"] thead th,
+.p-indextable thead th,
+.p-datatable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: var(--bg-surface-secondary);
+}
+
+/* A flush card (padding="0") holds edge-to-edge parts — a toolbar, a table,
+   a list — that bring their own padding and dividers. The card's 8px stack
+   gap between them showed as an empty band (e.g. between a tab row and the
+   table header), so flush cards stack their parts with no gap. */
+.p-card--flush {
+  gap: 0;
+}
+
+/* A flush card's title row would otherwise touch the card edge: give it the
+   card's usual inset, with a divider above the edge-to-edge content. */
+.p-card--flush > .p-card__header {
+  padding: var(--space-300) var(--space-400);
+  border-bottom: var(--border-width-025) solid var(--border-secondary);
+}
+
+/* Rail width: 15% narrower than the kit's 240px (204px), so the page gets
+   the room. The nav fills whatever the frame column gives it. */
+.p-frame__nav {
+  width: 204px;
+}
+.p-frame__nav .p-nav {
+  width: 100%;
+}
+
+/* Section chevron (right when closed, down when open) sits at the row's end,
+   after any badge, in the secondary icon colour. */
+.p-nav__chevron {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--icon-secondary);
+}
+.p-nav__item .p-badge + .p-nav__chevron {
+  margin-left: var(--space-100);
+}
+
+/* Top bar: search centred in the bar with equal space either side, and 25%
+   narrower than the kit's 580px (435px). Logo left, actions right, each in
+   an equal outer column so the middle is the true centre. Below 1040px the
+   kit's own layout (with the menu button) takes over. */
+@media (min-width: 1040px) {
+  .p-topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 435px) minmax(0, 1fr);
+    padding-inline: var(--space-400);
+  }
+  .p-topbar__logo {
+    width: auto;
+    min-width: 0;
+  }
+  .p-topbar__search {
+    width: 100%;
+    max-width: none;
+  }
+  .p-topbar__right {
+    justify-self: end;
+    margin-left: 0;
+  }
+  /* The unsaved-changes bar replaces search and actions: give it both. */
+  .p-topbar__csb {
+    grid-column: 2 / -1;
+  }
+}

@@ -1,4 +1,4 @@
-import { Badge } from "@/components/polaris";
+import { Badge } from "@/components/genaro";
 
 interface ProviderBadgeProps {
   provider: string | null;

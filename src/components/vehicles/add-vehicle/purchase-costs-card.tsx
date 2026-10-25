@@ -1,7 +1,7 @@
 "use client";
 
 import type * as React from "react";
-import { Button, Card, InlineError } from "@/components/polaris";
+import { Button, Card, InlineError } from "@/components/genaro";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { VAT_RATE } from "@/lib/constants";

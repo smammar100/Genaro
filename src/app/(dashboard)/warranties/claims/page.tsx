@@ -9,7 +9,7 @@ import { vehicleService } from "@/lib/services/vehicle-service";
 import { warrantyService } from "@/lib/services/warranty-service";
 import type { Vehicle, Warranty, WarrantyClaim } from "@/lib/types";
 import { useRealtimeTable } from "@/hooks/use-realtime-table";
-import { EmptyState, Page } from "@/components/polaris";
+import { EmptyState, Page } from "@/components/genaro";
 import { KpiStrip } from "@/components/warranties/kpi-strip";
 import {
   FilterChips,

@@ -2,15 +2,15 @@
 
 import * as React from "react";
 import { Calendar, Clock } from "lucide-react";
-import { DatePicker, Popover } from "@/components/polaris";
+import { DatePicker, Popover } from "@/components/genaro";
 import { cn } from "@/lib/utils";
 import { forwardBoxClick, inputBoxClassName, inputControlClassName } from "./input-styles";
 import { watchValue, writeValue } from "./input-value";
 
 /**
- * Date, time and date-time fields drawn by Polaris instead of the browser:
+ * Date, time and date-time fields drawn by Genaro instead of the browser:
  * a text field you can type into (2026-09-25, 25/09/2026, 9:30, 930, 9pm…)
- * that opens Polaris's calendar or a list of times. `<Input type="date">`,
+ * that opens Genaro's calendar or a list of times. `<Input type="date">`,
  * `type="time"` and `type="datetime-local"` render this, so every date field
  * in the app gets it.
  *
@@ -365,7 +365,7 @@ const DATE_MESSAGE = "Enter a valid date, like 25/09/2026.";
 const TIME_MESSAGE = "Enter a valid time, like 09:30.";
 
 /**
- * A date you type (the accessible way in), with Polaris's calendar as a
+ * A date you type (the accessible way in), with Genaro's calendar as a
  * pointer shortcut. Focus stays in the field, so the calendar is hidden from
  * assistive tech and kept out of the tab order.
  */

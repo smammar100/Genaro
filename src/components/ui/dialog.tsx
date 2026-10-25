@@ -11,7 +11,7 @@ import { resolveRender } from "@/lib/as-child";
 import { XIcon } from "lucide-react";
 import type React from "react";
 
-/** Stays open while a Polaris popover inside it takes Escape or a click (see layers.ts). */
+/** Stays open while a Genaro popover inside it takes Escape or a click (see layers.ts). */
 export function Dialog({ onOpenChange, ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root {...props} onOpenChange={innermostFirst(onOpenChange)} />;
 }

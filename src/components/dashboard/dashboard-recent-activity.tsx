@@ -17,7 +17,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { activityService } from "@/lib/services/activity-service";
 import type { ActivityActionType, ActivityLogEntry } from "@/lib/types";
-import { Button, Card, SkeletonBodyText } from "@/components/polaris";
+import { Button, Card, SkeletonBodyText } from "@/components/genaro";
 import { cn } from "@/lib/utils";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";
 

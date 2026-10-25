@@ -18,7 +18,7 @@ function useIsDark() {
 }
 
 /**
- * The top bar's light/dark switch. Both themes are Polaris's own token sets
+ * The top bar's light/dark switch. Both themes are Genaro's own token sets
  * (tokens.css declares the dark one under `.dark`); next-themes puts the class
  * on <html> and remembers the choice.
  */

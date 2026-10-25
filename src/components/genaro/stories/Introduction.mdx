@@ -1,0 +1,78 @@
+import { Meta, Source, Unstyled } from "@storybook/addon-docs/blocks";
+import { AgentPanel, DoDont, Hero, HeroActions, Rule, Rules, Stats, Tile, Tiles, TypeLadder, WeightsExample } from "./intro/IntroBlocks";
+import { RegPlate } from "../../shared/reg-plate";
+
+<Meta
+  title="Introduction"
+  summary="Genaro, the design system behind the Car Capital app: what it is, the rules every screen follows (Genaro components, semantic tokens, six type roles, Geist, three weights, two text colours, sentence case) and how this Storybook is organised."
+/>
+
+<Unstyled>
+
+<Hero>
+  <span className="body-sm" style={{ color: "var(--text-secondary)" }}>Car Capital · Design system</span>
+  <h1 className="heading-lg" style={{ margin: 0 }}>Genaro design system</h1>
+  <p className="body-lg" style={{ margin: 0, color: "var(--text-secondary)", maxWidth: 440 }}>
+    The components, tokens and rules behind the Car Capital app, from the forecourt to the master sheet. People browse them here; coding agents read the same stories, props and rules through Storybook's manifest and MCP server.
+  </p>
+  <Stats />
+  <HeroActions />
+</Hero>
+
+<h2 className="heading-md" style={{ margin: 0 }}>What's inside</h2>
+
+<Tiles>
+  <Tile title="Foundations">Colour, typography, spacing, radius and elevation, and icons: every token with its value and what it's for.</Tile>
+  <Tile title="Components">The kit in eight groups, from actions to overlays. Each page has its stories, a props table and the full guidelines.</Tile>
+  <Tile title="Patterns">App patterns built from the kit, such as the kanban boards behind the sales pipeline and maintenance.</Tile>
+  <Tile title="Guides">How stories here are written, so new ones work for people and for agents alike.</Tile>
+</Tiles>
+
+<h2 className="heading-md" style={{ margin: 0 }}>The rules</h2>
+
+<Rules>
+  <Rule kind="components" title="Components first" example={<DoDont good={<code>{"<Button variant=\"primary\">"}</code>} bad={<code>{"<button className=…>"}</code>} />}>
+    Build every control and layout block from Genaro components: Page, Layout, Card, IndexTable, TextField, Button and the rest. Tailwind is only layout glue around them. Read a component's page here before using it.
+  </Rule>
+  <Rule kind="tokens" title="Tokens only" example={<DoDont good={<code>bg-(--bg-surface)</code>} bad={<code>bg-[#ffffff]</code>} />}>
+    Style with semantic tokens: var(--bg-surface), bg-(--bg-surface), text-(--text-secondary), rounded-(--radius-300). Spacing uses Tailwind's scale (p-4 is --space-400). No hex, no Tailwind palette colours, no dark: overrides. The one exception is reg-plate yellow (bg-plate).
+  </Rule>
+  <Rule kind="type" title="Six type roles" example={<TypeLadder />}>
+    Display 24/30, title 16/22, subtitle 14/20, body 13/20, caption 12/16, micro 11/14. 24px is the largest size anywhere. Dense screens use the compact step (.type-compact). Set type with a class (heading-lg, heading-sm, body-md, body-sm, body-xs) or a role token, never a pixel size.
+  </Rule>
+  <Rule kind="weights" title="Three weights" example={<WeightsExample />}>
+    Regular 400 for text, medium 500 for component labels (buttons, tabs, badges, tags), semibold 550 for headings, page titles, big figures, names in a row and selected items. Semibold is the heaviest weight; there is no bold.
+  </Rule>
+  <Rule kind="typefaces" title="Geist and Geist Mono" example={<div style={{ display: "flex", alignItems: "center", gap: "var(--space-300)" }}><span className="body-md">Geist for every word</span><RegPlate registration="OY70 TZG" size="sm" /></div>}>
+    Geist for all text; Geist Mono only where a mono face is needed, such as reg plates. Codes like stock IDs and VINs use font-code: Geist with even-width figures. Never Helvetica or Inter.
+  </Rule>
+  <Rule kind="colour" title="Two text colours" example={<div><div className="body-md">Primary text, --text</div><div className="body-md" style={{ color: "var(--text-secondary)" }}>Secondary text, --text-secondary</div></div>}>
+    Text is --text or --text-secondary, never faded with opacity. Tone colours (critical, success, warning, caution, info) mark status only.
+  </Rule>
+  <Rule kind="words" title="Sentence case, verb and noun" example={<DoDont good={<span className="body-md">Add vehicle</span>} bad={<span className="body-md">ADD VEHICLE</span>} />}>
+    Sentence case everywhere. No uppercase, no letter-spacing, no eyebrow labels above titles. Buttons are a verb and a noun ("Add vehicle", "Book appointment"). One primary action per page; tone="critical" for destructive actions, confirmed in a Modal.
+  </Rule>
+  <Rule kind="server" title="Server Components where possible">
+    Pages are Server Components: navigate with url props and keep callbacks and state in small 'use client' components. Run node src/components/genaro/tools/audit.mjs src/app src/components before finishing UI work and fix what it reports.
+  </Rule>
+</Rules>
+
+<h2 className="heading-md" style={{ margin: 0 }}>Quick start</h2>
+
+<Source language="tsx" dark code={`import { Button, Card, Page } from "@/components/genaro";
+
+export default function VehiclePage() {
+  return (
+    <Page title="2014 Audi A4" primaryAction={{ content: "Book appointment", url: "/appointments/new" }}>
+      <Card>…</Card>
+    </Page>
+  );
+}`} />
+
+<p className="body-md" style={{ color: "var(--text-secondary)" }}>The toolbar has a <strong>Theme</strong> switch (light and dark) and a <strong>Type step</strong> switch (default and compact), so any story can be checked in both.</p>
+
+<AgentPanel>
+  Storybook serves an MCP server at /mcp while pnpm storybook runs (http://localhost:6006/mcp), and a build writes the manifests to /manifests/components.json and /manifests/docs.json. Each component entry carries its import line, its props with their descriptions, and every story as a code snippet with a one-line summary of when to use it. Prefer the patterns those stories show over inventing new ones.
+</AgentPanel>
+
+</Unstyled>

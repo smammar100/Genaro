@@ -1,10 +1,10 @@
 @import "tailwindcss";
-@import "../components/polaris/styles/tokens.css";
-@import "../components/polaris/styles/base.css";
-@import "../components/polaris/styles/components.css" layer(components);
-@import "../components/polaris/styles/tailwind.css";
-@import "../components/polaris/styles/shadcn.css";
-@import "./polaris-bridge.css";
+@import "../components/genaro/styles/tokens.css";
+@import "../components/genaro/styles/base.css";
+@import "../components/genaro/styles/components.css" layer(components);
+@import "../components/genaro/styles/tailwind.css";
+@import "../components/genaro/styles/shadcn.css";
+@import "./genaro-bridge.css";
 @import "../components/fluid/fluid-theme.css";
 
 /* `dark:` follows the app's theme (the .dark class next-themes sets, or a
@@ -35,7 +35,7 @@
 }
 
 /* shadcn/ui colour utilities (bg-card, text-muted-foreground…) → the shadcn
-   variables, which shadcn.css points at Polaris tokens. */
+   variables, which shadcn.css points at Genaro tokens. */
 @theme inline {
   --breakpoint-3xl: 1600px;
 
@@ -78,11 +78,11 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Registration plates are the one brand colour outside Polaris: UK plate
+  /* Registration plates are the one brand colour outside Genaro: UK plate
      yellow, used by RegPlate and nowhere else. */
   --color-plate: #f6cd5a; /* audit-ignore: UK plate yellow, the one sanctioned non-token colour */
 
-  /* Polaris radius scale under Tailwind's names. */
+  /* Genaro radius scale under Tailwind's names. */
   --radius-sm: var(--radius-100);
   --radius-md: var(--radius-200);
   --radius-lg: var(--radius-200);
@@ -91,7 +91,7 @@
 
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Tailwind's type scale re-pointed at Polaris's: text-sm is body-md (13/20),
+  /* Tailwind's type scale re-pointed at Genaro's: text-sm is body-md (13/20),
      text-xs body-sm (12/16), text-base/lg heading-sm (14/20), text-xl/2xl
      heading-lg (20/24). */
   /* The Tailwind sizes are the type scale roles (lib/type-scale.ts), so a stray
@@ -125,10 +125,10 @@
   --text-micro: var(--fs-micro);
   --text-micro--line-height: var(--lh-micro);
 
-  /* Two weights (--fw-* below). Medium is regular, and anything heavier
-     than semibold is semibold until bold is approved. */
+  /* Three weights (--fw-* below). Anything heavier than semibold is
+     semibold until bold is approved. */
   --font-weight-normal: var(--fw-regular);
-  --font-weight-medium: var(--fw-regular);
+  --font-weight-medium: var(--fw-medium);
   --font-weight-semibold: var(--fw-semibold);
   --font-weight-bold: var(--fw-semibold);
   --font-weight-extrabold: var(--fw-semibold);
@@ -221,15 +221,18 @@
   --fs-micro-compact: 10px;
   --lh-micro-compact: 12px;
 
-  /* Two weights: regular for text, semibold for headings, page titles and
-     selected items. Semibold is the heaviest weight until bold is approved
-     (call 2026-10-25). fluid/lib/font-weight.ts has the same pair. */
+  /* Three weights: regular for text; medium for component labels (buttons,
+     tabs, badges, tags, filter pills, pagination); semibold for headings,
+     page titles and selected items. Semibold is the heaviest weight until
+     bold is approved (call 2026-10-25). fluid/lib/font-weight.ts has the
+     same values. */
   --fw-regular: 400;
+  --fw-medium: 500;
   --fw-semibold: 550;
 }
 
 /* The scale's compact step, for dense screens such as the master sheet:
-   every role one step down (body 12/18, caption 11/14). Polaris classes and
+   every role one step down (body 12/18, caption 11/14). Genaro classes and
    the text-<role> utilities read these variables, so a subtree follows. */
 .type-compact {
   --fs-display: var(--fs-display-compact);

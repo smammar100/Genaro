@@ -11,7 +11,7 @@ import {
   Modal,
   SkeletonBodyText,
   TextField,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { CommitTextField } from "@/components/admin/commit-text-field";
 import { toast } from "@/lib/toast";
 

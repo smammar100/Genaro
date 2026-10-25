@@ -11,7 +11,7 @@ import {
 import { toast } from "@/lib/toast";
 import { useAutoFocusField } from "@/hooks/use-auto-focus";
 import { useAuth } from "@/contexts/auth-context";
-import { Button } from "@/components/polaris";
+import { Button } from "@/components/genaro";
 import { AuthCard, RhfTextField } from "../_components/auth-card";
 
 // Loaded on submit, not with the page: the Supabase client is the largest

@@ -7,14 +7,14 @@ import { cva, type VariantProps } from "class-variance-authority";
 import type React from "react";
 
 /**
- * Badge — the Polaris Badge, drawn with the kit's `p-badge` classes
- * (src/components/polaris/styles/components.css): 20px tall, radius-200,
+ * Badge — the Genaro Badge, drawn with the kit's `p-badge` classes
+ * (src/components/genaro/styles/components.css): 20px tall, radius-200,
  * 12px medium text, tone colours from the theme tokens.
  *
- * The Polaris tones are variants of their own (neutral, info, success,
+ * The Genaro tones are variants of their own (neutral, info, success,
  * attention, warning, critical, magic); the older names map onto them:
  *   default / secondary → neutral · error / destructive → critical ·
- *   outline → a surface chip with a hairline (Polaris has no outline badge).
+ *   outline → a surface chip with a hairline (Genaro has no outline badge).
  */
 const badgeVariants = cva(
   "p-badge relative min-w-5 shrink-0 justify-center gap-1 outline-none focus-visible:outline-2 focus-visible:outline-(--border-focus) [&_svg:not([class*='size-'])]:size-3 [&_svg]:pointer-events-none [&_svg]:shrink-0 [button&,a&]:cursor-pointer",

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, Page, TextField } from "@/components/polaris";
+import { Button, Card, Page, TextField } from "@/components/genaro";
 import { useAuth } from "@/contexts/auth-context";
 
 /** The four stages a car passes through, in the order the sidebar lists them. */
@@ -52,7 +52,7 @@ export function DashboardWelcome() {
   }
 
   return (
-    // Polaris empty-state anatomy: a centred card, heading-sm title, body-md
+    // Genaro empty-state anatomy: a centred card, heading-sm title, body-md
     // secondary copy, one primary action.
     <Page fullWidth>
       <div className="mx-auto flex w-full max-w-[784px] flex-col gap-4">
@@ -87,7 +87,7 @@ export function DashboardWelcome() {
               }}
             >
               {/* The plate is the control: a UK number plate (plate yellow is
-                  the one colour outside Polaris), not a generic field. */}
+                  the one colour outside Genaro), not a generic field. */}
               <div className="flex h-8 items-stretch overflow-hidden rounded-(--radius-200) border border-(--input-border) bg-plate focus-within:outline-2 focus-within:outline-offset-1 focus-within:outline-(--border-focus)">
                 <span
                   aria-hidden

@@ -14,7 +14,7 @@ import {
   EmptyState,
   Page,
   TextField,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";

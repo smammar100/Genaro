@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "@/lib/toast";
-import { Banner } from "@/components/polaris";
+import { Banner } from "@/components/genaro";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

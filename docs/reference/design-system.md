@@ -47,7 +47,7 @@ The page-level grid is modelled on MongoDB's LeafyGreen design system, adapted f
 | Cap | Width | When to use | How to set |
 |---|---|---|---|
 | Default | 1152px | Forms, dashboards, anything with paragraphs or single-column reading | Wrapped automatically by the dashboard layout |
-| Wide | 1400px | Master Sheet, wide data tables, side-by-side comparisons | Polaris `<Page fullWidth>` |
+| Wide | 1400px | Master Sheet, wide data tables, side-by-side comparisons | Genaro `<Page fullWidth>` |
 
 ### Breakpoint regimes
 
@@ -64,7 +64,7 @@ The page-level grid is modelled on MongoDB's LeafyGreen design system, adapted f
 |---|---|
 | `src/components/layout/grid-overlay.tsx` | `<GridOverlay>` — dev-only column + 4px baseline overlay gated on `?grid=1` |
 | `src/app/globals.css` | Design tokens: `--container-content`, `--container-page`, `--grid-*-cols`, `--grid-*-gutter`, `--grid-*-margin`, `--spacing-22` (88px) |
-| `src/app/(dashboard)/layout.tsx` | Renders the Polaris shell (`NextAdminShell`: Frame + TopBar + Navigation) and the overlay; a route without a Polaris `Page` gets 24px padding from the shell |
+| `src/app/(dashboard)/layout.tsx` | Renders the Genaro shell (`NextAdminShell`: Frame + TopBar + Navigation) and the overlay; a route without a Genaro `Page` gets 24px padding from the shell |
 
 ### Column-span patterns
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, TextField } from "@/components/polaris";
+import { Button, Card, TextField } from "@/components/genaro";
 import { formatCurrency } from "@/lib/utils";
 
 export type ArrivalTodo = { description: string; cost: number };

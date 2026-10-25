@@ -1,7 +1,7 @@
 "use client";
 
 import { Controller } from "react-hook-form";
-import { Card, Select } from "@/components/polaris";
+import { Card, Select } from "@/components/genaro";
 import { Input } from "@/components/ui/input";
 import { BODY_TYPES, FUEL_TYPES } from "@/lib/constants";
 import {

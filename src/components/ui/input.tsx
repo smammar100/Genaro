@@ -13,7 +13,7 @@ type InputProps = Omit<
   size?: "sm" | "default" | "lg" | number;
   unstyled?: boolean;
   nativeInput?: boolean;
-  /** Values to offer as you type, in a Polaris list (in place of a <datalist>). */
+  /** Values to offer as you type, in a Genaro list (in place of a <datalist>). */
   suggestions?: readonly string[];
 };
 
@@ -28,7 +28,7 @@ export function Input({
 }: InputProps): React.ReactElement {
   // base-ui also accepts a function of its state; the box only takes classes.
   const boxClass = typeof className === "function" ? undefined : className;
-  // Dates and times get Polaris's calendar and time list, never the
+  // Dates and times get Genaro's calendar and time list, never the
   // browser's own pickers.
   if (isDateTimeType(props.type)) {
     return (

@@ -17,7 +17,7 @@ import {
   TextField,
   type IndexTableHeading,
   type SortDirection,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { useAuth } from "@/contexts/auth-context";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import {

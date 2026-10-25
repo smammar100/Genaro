@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Page } from "@/components/polaris";
+import { Page } from "@/components/genaro";
 import { VehicleIndex } from "@/components/vehicles/vehicle-index";
 import { AddVehicleModal } from "@/components/vehicles/add-vehicle-modal";
 import { usePermissions } from "@/hooks/use-permissions";
 
 /**
- * All vehicles — a Polaris index page: the one primary action (Add vehicle,
+ * All vehicles — a Genaro index page: the one primary action (Add vehicle,
  * which opens the reg + mileage dialog), a secondary link to the Master
  * sheet, and the cars still in the business as a table or cards. Sold cars
  * and cars returned to their owner live on the master sheet.

@@ -6,7 +6,7 @@ import {
   Modal,
   Select,
   TextField,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { Input } from "@/components/ui/input";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { useAuth } from "@/contexts/auth-context";
@@ -172,7 +172,7 @@ export function EditJobDialog({
             value={vendorId}
             onChange={setVendorId}
           />
-          {/* Polaris TextField has no date type; the app's date input keeps
+          {/* Genaro TextField has no date type; the app's date input keeps
               the native picker. */}
           <Labelled id={dueDateId} label="Due date">
             <Input

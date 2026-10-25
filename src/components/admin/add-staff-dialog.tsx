@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useState } from "react";
 import { RefreshCw, Copy, Search, UserPlus } from "lucide-react";
-import { Banner } from "@/components/polaris";
+import { Banner } from "@/components/genaro";
 import {
   Dialog,
   DialogContent,

@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Modal, TextField } from "@/components/polaris";
+import { Modal, TextField } from "@/components/genaro";
 
 interface Props {
   open: boolean;

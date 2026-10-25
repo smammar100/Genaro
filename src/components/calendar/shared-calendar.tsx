@@ -7,7 +7,7 @@ import { workshopService } from "@/lib/services/workshop-service";
 import { maintenanceService } from "@/lib/services/maintenance-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import type { Appointment, MaintenanceJob, UUID, Vehicle, WorkshopJob } from "@/lib/types";
-import { Card, SkeletonBodyText, SkeletonDisplayText } from "@/components/polaris";
+import { Card, SkeletonBodyText, SkeletonDisplayText } from "@/components/genaro";
 import {
   ALL_KINDS,
   buildEvents,

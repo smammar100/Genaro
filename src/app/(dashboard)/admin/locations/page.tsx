@@ -17,7 +17,7 @@ import { locationService } from "@/lib/services/location-service";
 import { vendorService } from "@/lib/services/vendor-service";
 import { teamService } from "@/lib/services/team-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
-import { Page, Tabs } from "@/components/polaris";
+import { Page, Tabs } from "@/components/genaro";
 import { LocationTab } from "@/components/locations/location-tab";
 import { MoveDialog } from "@/components/locations/move-dialog";
 

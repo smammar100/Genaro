@@ -8,7 +8,7 @@ import {
 } from "@/lib/capabilities";
 import { capabilitiesForRoles } from "@/lib/roles";
 import { Trash2, SlidersHorizontal, KeyRound } from "lucide-react";
-import { Avatar, Badge } from "@/components/polaris";
+import { Avatar, Badge } from "@/components/genaro";
 import { Button } from "@/components/ui/button";
 import { cn, getInitials } from "@/lib/utils";
 import { accountHandle } from "@/lib/auth/username";
@@ -37,7 +37,7 @@ const CAP_COL_W = 92;
 // bleed through (same fix as the Master Sheet). Shadow marks the frozen edge.
 const STICKY_SHADOW = "shadow-[2px_0_4px_-2px_var(--border-secondary)]";
 
-// Row actions stay on the app Button: the Polaris Button has no
+// Row actions stay on the app Button: the Genaro Button has no
 // data-testid / title props, which these rely on.
 const ROW_ACTION =
   "text-(--icon-secondary) hover:bg-(--bg-surface-hover) hover:text-(--icon)";

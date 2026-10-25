@@ -54,12 +54,12 @@ import { DataGridPagination } from "@/components/data-grid";
 import { LocationBadge } from "@/components/locations/location-badge";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import {
-  Card as PolarisCard,
-  Checkbox as PolarisCheckbox,
-  EmptyState as PolarisEmptyState,
+  Card as GenaroCard,
+  Checkbox as GenaroCheckbox,
+  EmptyState as GenaroEmptyState,
   Page,
   Select,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { SuggestInput } from "@/components/ui/suggest-input";
 import { SheetToolbar } from "@/components/master-sheet/sheet-toolbar";
 import { TotalsRow } from "@/components/master-sheet/totals-row";
@@ -169,8 +169,8 @@ function colKey(c: ColDef): string {
  * The in-place editor for a text, number or date cell, flush with the cell
  * (text-caption, the same inset, a tint rather than a border the cell's
  * overflow-hidden would clip) so the value doesn't jump when editing starts
- * (GEN-39). Dates get the Polaris date field; free-text cells with suggestions
- * offer them in a Polaris list. Enter or leaving the cell saves, Escape cancels.
+ * (GEN-39). Dates get the Genaro date field; free-text cells with suggestions
+ * offer them in a Genaro list. Enter or leaving the cell saves, Escape cancels.
  */
 function CellInput({
   column: c,
@@ -583,7 +583,7 @@ const EMPTY_QUICK_ADD: QuickAdd = {
 
 interface VehicleSheetProps {
   /** Page title shown in the header. Omit when the route renders its own
-   *  Polaris `Page` header (title + actions) around the sheet. */
+   *  Genaro `Page` header (title + actions) around the sheet. */
   title?: string;
   /** Optional clarifier line rendered under the title. */
   helper?: ReactNode;
@@ -606,7 +606,7 @@ interface VehicleSheetProps {
   headerActions?: ReactNode;
   /** Optional footer rendered after the table (e.g. an add-vehicle modal). */
   children?: ReactNode;
-  /** Replaces the built-in "No vehicles" empty state (e.g. a Polaris
+  /** Replaces the built-in "No vehicles" empty state (e.g. a Genaro
    *  EmptyState whose action opens the Add vehicle dialog). */
   emptyState?: ReactNode;
   /** Extra classes on the sheet's outer column, e.g. a shorter viewport
@@ -619,7 +619,7 @@ interface VehicleSheetProps {
    */
   sections?: { value: string; label: string }[];
   /**
-   * "workbook" (Master sheet): a Polaris Page header with Export CSV, one
+   * "workbook" (Master sheet): a Genaro Page header with Export CSV, one
    * toolbar row inside the grid's card (columns · filter · search), computed
    * columns marked ƒ on a subdued fill, and the edited cell outlined.
    * Defaults to "classic", the original layout.
@@ -651,7 +651,7 @@ const sectionKey = (csvName: string): string =>
  * Header-band tint per section, echoing the colour coding of the client's
  * Excel sheet so a wide "All" view still reads as blocks.
  */
-// Important (`!`): polaris-bridge.css gives every `thead th` the secondary
+// Important (`!`): genaro-bridge.css gives every `thead th` the secondary
 // surface outside any cascade layer, which beats a plain utility.
 const SECTION_TONE: Record<string, string> = {
   common: "bg-(--bg-surface-secondary)! text-(--text-secondary)!",
@@ -1374,12 +1374,12 @@ export function VehicleSheet({
       <div className="grid grid-cols-2 gap-2">
         {gridCols.map((c) => {
           const k = colKey(c);
-          // Workbook: the Polaris checkbox carries its own label. (A base-ui
+          // Workbook: the Genaro checkbox carries its own label. (A base-ui
           // checkbox inside a <label> toggles twice when the box itself is
           // clicked — the label re-fires the click.)
           if (workbook) {
             return (
-              <PolarisCheckbox
+              <GenaroCheckbox
                 key={k}
                 label={c.label}
                 checked={visible.has(k)}
@@ -1901,7 +1901,7 @@ export function VehicleSheet({
     const bOps = opsFor(kindOf(filterFields, bField));
     return (
       <>
-        {/* A Polaris Page bounded to the viewport under the top bar: the
+        {/* A Genaro Page bounded to the viewport under the top bar: the
             header, section header and toolbar stay put while the grid's own
             container scrolls (so its sticky header sticks). The header
             (first child) keeps its size; the content column (last child)
@@ -1930,7 +1930,7 @@ export function VehicleSheet({
         >
           {helper}
           {SectionHeader && <SectionHeader {...sectionContext} />}
-          <PolarisCard padding="0" className="type-compact min-h-96 flex-1 gap-0">
+          <GenaroCard padding="0" className="type-compact min-h-96 flex-1 gap-0">
             <SheetToolbar
               columnsLabel={`${cols.length} of ${gridCols.length} shown`}
               columnsPanel={<div className="w-80">{columnsPanel}</div>}
@@ -1979,7 +1979,7 @@ export function VehicleSheet({
               <div className="flex min-h-0 flex-1 items-center justify-center py-10">
                 {emptyState ??
                   (filters.length > 0 || search.trim() !== "" ? (
-                    <PolarisEmptyState
+                    <GenaroEmptyState
                       icon="SearchMinor"
                       heading="No cars match these filters"
                       action={{
@@ -1992,11 +1992,11 @@ export function VehicleSheet({
                       }}
                     >
                       Remove a filter or change the search to see more cars.
-                    </PolarisEmptyState>
+                    </GenaroEmptyState>
                   ) : (
-                    <PolarisEmptyState icon="ProductsMinor" heading="No vehicles yet">
+                    <GenaroEmptyState icon="ProductsMinor" heading="No vehicles yet">
                       Cars appear here as soon as they are added.
-                    </PolarisEmptyState>
+                    </GenaroEmptyState>
                   ))}
               </div>
             ) : (
@@ -2015,7 +2015,7 @@ export function VehicleSheet({
                 />
               </div>
             )}
-          </PolarisCard>
+          </GenaroCard>
         </Page>
         {children}
       </>
@@ -2024,7 +2024,7 @@ export function VehicleSheet({
 
   return (
     // No padding here — the dashboard shell (AdminShell) already pads a route
-    // without a Polaris Page, and adding more doubled it (GEN-61).
+    // without a Genaro Page, and adding more doubled it (GEN-61).
     <>
       {/* Bounded viewport height so the table's own container scrolls (and the
           sticky <thead> sticks) instead of the whole page scrolling. */}

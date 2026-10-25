@@ -38,7 +38,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { activityService } from "@/lib/services/activity-service";
 import { teamService } from "@/lib/services/team-service";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge, Button, EmptyState, type BadgeTone } from "@/components/polaris";
+import { Badge, Button, EmptyState, type BadgeTone } from "@/components/genaro";
 import { cn, formatDateTime } from "@/lib/utils";
 import { Panel } from "./primitives";
 

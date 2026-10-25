@@ -11,7 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "@/lib/toast";
-import { Badge, Button } from "@/components/polaris";
+import { Badge, Button } from "@/components/genaro";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useAuth } from "@/contexts/auth-context";

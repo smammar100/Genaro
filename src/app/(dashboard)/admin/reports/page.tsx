@@ -24,7 +24,7 @@ import {
   EmptyState,
   Grid,
   Page,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { Label } from "@/components/ui/label";
 import {
   Combobox,

@@ -45,10 +45,10 @@ import {
   EmptyState,
   InlineError,
   Page,
-  Select as PolarisSelect,
+  Select as GenaroSelect,
   SkeletonBodyText,
   TextField,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -732,7 +732,7 @@ export default function LeadsPage() {
                   />
                 ) : null}
               </div>
-              <PolarisSelect
+              <GenaroSelect
                 label="Assign to"
                 id={assignId}
                 placeholder="Pick a user"
@@ -795,7 +795,7 @@ export default function LeadsPage() {
               <div className="grid grid-cols-2 gap-2">
                 {/* Label inside the control ("Status All"), the sales-crm
                     filter shape: the bar reads as what it filters by. */}
-                <PolarisSelect
+                <GenaroSelect
                   label="Status"
                   labelInline
                   options={[
@@ -808,7 +808,7 @@ export default function LeadsPage() {
                   value={statusFilter}
                   onChange={(v) => setStatusFilter(v as LeadStatus | "all")}
                 />
-                <PolarisSelect
+                <GenaroSelect
                   label="Source"
                   labelInline
                   options={[
@@ -847,7 +847,7 @@ export default function LeadsPage() {
                     : null;
                   return (
                     // A rich, selectable list row (avatar, two lines, channel
-                    // chip) — more than a Polaris Button can hold. It sits on
+                    // chip) — more than a Genaro Button can hold. It sits on
                     // the Kanban card surface; the selected one is lifted with
                     // the focus-tinted ring rather than greyed.
                     <button
@@ -1219,7 +1219,7 @@ function Field({
   );
 }
 
-/** The checks still to sign off, behind a Polaris disclosure button. */
+/** The checks still to sign off, behind a Genaro disclosure button. */
 function OutstandingChecks({ items }: { items: string[] }) {
   const [open, setOpen] = useState(false);
   const listId = useId();

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Vehicle } from "@/lib/types";
-import { Card, Layout, SkeletonBodyText, Tabs } from "@/components/polaris";
+import { Card, Layout, SkeletonBodyText, Tabs } from "@/components/genaro";
 import { todoService } from "@/lib/services/todo-service";
 import { enquiryService } from "@/lib/services/enquiry-service";
 import { vehiclePhotoService } from "@/lib/services/vehicle-photo-service";
@@ -86,7 +86,7 @@ const ALL_TAB_IDS = [
 const TAB_IDS = ALL_TAB_IDS.filter((id) => PHOTOS_ENABLED || id !== "photos");
 
 /**
- * Vehicle-detail shell — Polaris Tabs (pill tabs with count badges) spread
+ * Vehicle-detail shell — Genaro Tabs (pill tabs with count badges) spread
  * across their own row, then the active tab's panel at full width. Only the
  * active panel is mounted. Counts on Things
  * to do / Photos / Appointments are fetched once on mount so the user sees

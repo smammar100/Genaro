@@ -24,7 +24,7 @@ import {
   EmptyState,
   ProgressBar,
   type BadgeTone,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { carMargin } from "@/lib/car-margin";
 import { KpiCard, Panel, Pill } from "./primitives";

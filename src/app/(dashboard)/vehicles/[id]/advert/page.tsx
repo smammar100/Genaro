@@ -12,7 +12,7 @@ import {
   Page,
   SkeletonBodyText,
   SkeletonDisplayText,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { AdvertEditor } from "@/components/advert/advert-editor";
 
 /**

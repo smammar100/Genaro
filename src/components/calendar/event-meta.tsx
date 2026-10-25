@@ -8,7 +8,7 @@ import {
   UserX,
   type LucideIcon,
 } from "lucide-react";
-import type { BadgeTone } from "@/components/polaris";
+import type { BadgeTone } from "@/components/genaro";
 import { JOB_STATUS_BADGE, jobStatusLabel } from "@/components/maintenance/job-status";
 import { fmtHour, type CalEvent, type Kind } from "@/lib/calendar-model";
 import type { AppointmentStatus } from "@/lib/types";

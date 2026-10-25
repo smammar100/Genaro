@@ -1,6 +1,6 @@
 "use client";
 
-import { Tabs } from "@/components/polaris";
+import { Tabs } from "@/components/genaro";
 
 /**
  * One tab per section of the client's sheet, each badged with its column

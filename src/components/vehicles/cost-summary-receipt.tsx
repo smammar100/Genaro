@@ -1,7 +1,7 @@
 "use client";
 
 import type * as React from "react";
-import { Card, Divider } from "@/components/polaris";
+import { Card, Divider } from "@/components/genaro";
 import { cn, formatCurrency } from "@/lib/utils";
 
 interface Props {

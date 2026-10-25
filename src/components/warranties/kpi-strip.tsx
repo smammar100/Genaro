@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { warrantyService } from "@/lib/services/warranty-service";
 import { claimService } from "@/lib/services/claim-service";
-import { Card, SkeletonBodyText, SkeletonDisplayText } from "@/components/polaris";
+import { Card, SkeletonBodyText, SkeletonDisplayText } from "@/components/genaro";
 
 interface KpiState {
   activeInHouse: number;
@@ -15,7 +15,7 @@ interface KpiState {
 }
 
 /**
- * Four-tile summary shared across the three warranty views — the Polaris
+ * Four-tile summary shared across the three warranty views — the Genaro
  * stat-tiles pattern: one flush card, tiles split by hairlines, 2 × 2 on
  * narrow screens. Hints call out when action is needed.
  */

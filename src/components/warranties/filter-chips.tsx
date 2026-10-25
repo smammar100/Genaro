@@ -1,6 +1,6 @@
 "use client";
 
-import { Tabs } from "@/components/polaris";
+import { Tabs } from "@/components/genaro";
 
 export interface FilterOption<T extends string> {
   value: T;
@@ -16,7 +16,7 @@ interface FilterChipsProps<T extends string> {
 }
 
 /**
- * Saved-view tabs for the warranty and claim pages — Polaris Tabs on their
+ * Saved-view tabs for the warranty and claim pages — Genaro Tabs on their
  * own row under the page header, with each view's row count as the badge.
  */
 export function FilterChips<T extends string>({

@@ -104,7 +104,7 @@ function SidebarSheet({ side, open, onClose, children }: SidebarSheetProps) {
       }}
     >
       <DialogPrimitive.Portal>
-        {/* Scrim: Polaris's backdrop colour, like the app's sheets. */}
+        {/* Scrim: Genaro's backdrop colour, like the app's sheets. */}
         <DialogPrimitive.Backdrop
           render={(backdropProps) => {
             const { style: _style, ...rest } =

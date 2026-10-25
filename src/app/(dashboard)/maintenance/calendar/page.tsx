@@ -1,4 +1,4 @@
-import { Page } from "@/components/polaris";
+import { Page } from "@/components/genaro";
 import { SharedCalendar } from "@/components/calendar/shared-calendar";
 
 /**

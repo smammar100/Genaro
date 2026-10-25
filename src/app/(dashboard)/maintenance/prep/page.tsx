@@ -8,7 +8,7 @@ import { authService } from "@/lib/services/auth-service";
 import { vendorService } from "@/lib/services/vendor-service";
 import { downloadBlob, pdfService } from "@/lib/services/pdf-service";
 import type { User } from "@/lib/types";
-import { Page } from "@/components/polaris";
+import { Page } from "@/components/genaro";
 import { PrepBoard } from "@/components/prep/prep-board";
 import { toast } from "@/lib/toast";
 

@@ -10,7 +10,7 @@ import {
 } from "@/lib/auth/form-resolver";
 import { toast } from "@/lib/toast";
 import { useAutoFocusField } from "@/hooks/use-auto-focus";
-import { Banner, Button } from "@/components/polaris";
+import { Banner, Button } from "@/components/genaro";
 import { AuthCard, RhfTextField } from "../_components/auth-card";
 
 // Loaded once the page has painted, not with it: the Supabase client is the

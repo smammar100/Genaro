@@ -31,7 +31,7 @@ import {
   Select,
   TextField,
   type BadgeTone,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { RegPlate } from "@/components/shared/reg-plate";

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useHasVehicles } from "@/hooks/use-has-vehicles";
-import { Grid, Page } from "@/components/polaris";
+import { Grid, Page } from "@/components/genaro";
 import { DashboardGreeting } from "@/components/dashboard/dashboard-greeting";
 import { DashboardWelcome } from "@/components/dashboard/dashboard-welcome";
 import { DashboardKpiRow } from "@/components/dashboard/dashboard-kpi-row";
@@ -70,7 +70,7 @@ export default function DashboardPage() {
   // product looks broken. Show them what to do instead.
   if (!hasVehicles) return <DashboardWelcome />;
 
-  // Polaris analytics/home pattern: a full-width Page, the greeting header,
+  // Genaro analytics/home pattern: a full-width Page, the greeting header,
   // the stat-tile card, then a Grid of cards (12 columns at lg, 6 below).
   const row3Span = 12 / row3;
 

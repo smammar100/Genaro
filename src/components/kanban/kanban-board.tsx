@@ -3,7 +3,7 @@
 import * as React from "react";
 import { motion, type Transition } from "framer-motion";
 import { Ellipsis, EyeOff } from "lucide-react";
-import { Button } from "@/components/polaris";
+import { Button } from "@/components/genaro";
 import { RowActionButton } from "@/components/ui/resource-list";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -207,7 +207,10 @@ export function KanbanEmpty({ children, action }: { children: React.ReactNode; a
   );
 }
 
-/** The board while its data loads: the frame and lanes, with pulsing card shapes. */
+/**
+ * The board while its data loads: the frame and lanes, with pulsing card shapes.
+ * @import import { KanbanSkeleton } from "@/components/kanban/kanban-board";
+ */
 export function KanbanSkeleton({ columns = 4 }: { columns?: number }) {
   return (
     <KanbanFrame>
@@ -279,6 +282,7 @@ function liftedDragImage(e: React.DragEvent<HTMLElement>) {
  * "…" menu (Lost starts there); the choice persists. The board fills the
  * window's height and scrolls sideways, a column at a time on a phone. Pages
  * own the data and the saving; the board owns the layout.
+ * @import import { KanbanBoard } from "@/components/kanban/kanban-board";
  */
 export function KanbanBoard<T>({
   id,

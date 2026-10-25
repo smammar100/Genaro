@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Modal } from "@/components/polaris";
+import { Modal } from "@/components/genaro";
 import { teamService } from "@/lib/services/team-service";
 import type { User } from "@/lib/types";
 import { useAuth } from "@/contexts/auth-context";

@@ -3,15 +3,15 @@
 import type { CardComponentProps } from "onborda";
 import { X, MousePointerClick } from "lucide-react";
 import { useOnborda } from "./tour-context";
-import { Button } from "@/components/polaris";
+import { Button } from "@/components/genaro";
 import type { GuidedStep } from "@/lib/onboarding/tour-steps";
 
 /**
  * The tour tooltip.
  *
  * Onborda ships its own card, but it is unstyled Tailwind that inherits none
- * of the Polaris tokens. This one is a Polaris surface (bg-surface,
- * radius-300, the modal shadow) with Polaris Buttons: a light card is the only
+ * of the Genaro tokens. This one is a Genaro surface (bg-surface,
+ * radius-300, the modal shadow) with Genaro Buttons: a light card is the only
  * value that stays legible against the dimmed screen whatever is underneath.
  */
 export function TourCard({
@@ -84,11 +84,9 @@ export function TourCard({
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-2">
-        <span className="text-(--text-secondary)">
-          <Button variant="monochromePlain" onClick={closeOnborda}>
-            Skip tour
-          </Button>
-        </span>
+        <Button variant="tertiary" onClick={closeOnborda}>
+          Skip tour
+        </Button>
 
         <div className="flex items-center gap-2">
           {!isFirst && (

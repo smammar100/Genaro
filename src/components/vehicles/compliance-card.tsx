@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
-import { Badge, Button, Card, type BadgeTone } from "@/components/polaris";
+import { Badge, Button, Card, type BadgeTone } from "@/components/genaro";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatDate } from "@/lib/utils";

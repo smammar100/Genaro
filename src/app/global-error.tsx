@@ -2,13 +2,13 @@
 
 import { useEffect } from "react";
 import "./globals.css";
-import { Button } from "@/components/polaris";
+import { Button } from "@/components/genaro";
 
 /**
  * Last-resort boundary for errors thrown in the root layout itself (which
  * `(dashboard)/error.tsx` cannot catch). It replaces the root layout when
  * active, so it renders its own <html>/<body> and imports the global
- * stylesheet itself — the Polaris tokens and components then apply as usual.
+ * stylesheet itself — the Genaro tokens and components then apply as usual.
  */
 export default function GlobalError({
   error,

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { TextField } from "@/components/polaris";
+import { TextField } from "@/components/genaro";
 import { cn } from "@/lib/utils";
 
 /**
  * Inline text field that commits on blur/Enter so it isn't a write per
- * keystroke; Escape restores the stored value. Polaris TextField has no
+ * keystroke; Escape restores the stored value. Genaro TextField has no
  * blur/key handlers, so they sit on the wrapper (focus events bubble in React).
  */
 export function CommitTextField({

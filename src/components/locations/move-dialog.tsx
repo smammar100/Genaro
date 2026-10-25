@@ -8,7 +8,7 @@ import {
   Modal,
   Select,
   TextField,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { Input } from "@/components/ui/input";
 import {
   VEHICLE_LOCATION_LABELS,

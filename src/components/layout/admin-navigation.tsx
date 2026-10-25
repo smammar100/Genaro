@@ -3,7 +3,7 @@
 import type * as React from "react";
 import Link from "next/link";
 import { PanelLeftClose } from "lucide-react";
-import { Button } from "@/components/polaris";
+import { Button } from "@/components/genaro";
 import {
   Sidebar,
   SidebarContent,
@@ -27,7 +27,7 @@ import { navRows, settingsNavRow, type NavRow, type NavState } from "./nav";
  * The admin sidebar, built on Fluid Functionalism's Sidebar: one hover
  * highlight that glides between rows, labels that get heavier without
  * shifting, an edge you can drag to resize or collapse (or press "["), and a
- * drawer below 1024px. Colours are Polaris's nav colours. The rows come from
+ * drawer below 1024px. Colours are Genaro's nav colours. The rows come from
  * nav.ts: every section the user may see, the open one showing its pages,
  * Settings at the foot. Clicking a section opens it rather than navigating.
  * `id="tour-nav"` is the onboarding tour's anchor for the whole nav; each
@@ -52,7 +52,7 @@ export function AdminNavigation({
   // rather than on <Sidebar>, whose own props reach the docked rail only.
   const region = {
     className: NAV_SKIN,
-    // In the drawer, choosing a page closes it, as the Polaris nav did.
+    // In the drawer, choosing a page closes it, as the Genaro nav did.
     onClick: (e: React.MouseEvent) => {
       if (isMobile && (e.target as HTMLElement).closest("a")) setOpenMobile(false);
     },
@@ -93,8 +93,8 @@ export function AdminNavigation({
 
 /**
  * Shopify's nav on Fluid Functionalism's behaviour: the library's hover,
- * selected and label tokens pointed at Polaris's nav colours, the selected
- * row given Polaris's bevel, rows at Polaris's 13px.
+ * selected and label tokens pointed at Genaro's nav colours, the selected
+ * row given Genaro's bevel, rows at Genaro's 13px.
  *
  * Spacing follows one set of measures (25 Oct 2026): 12px around the rail
  * (the group and footer's p-3), 8px inside a row before its icon (the

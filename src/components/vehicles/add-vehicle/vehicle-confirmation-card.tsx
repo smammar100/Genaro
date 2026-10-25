@@ -1,7 +1,7 @@
 "use client";
 
 import { Car } from "lucide-react";
-import { Badge, Button, Card, Thumbnail } from "@/components/polaris";
+import { Badge, Button, Card, Thumbnail } from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { formatDate } from "@/lib/utils";
 import { optionLabel } from "./fields";

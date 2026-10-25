@@ -46,7 +46,7 @@ import {
   Page,
   TextField,
   type BadgeTone,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

@@ -11,7 +11,7 @@ import {
   Popover,
   TopBar,
   type ActionListSection,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { useAuth } from "@/contexts/auth-context";
 import { useNotifications } from "@/contexts/notifications-context";
 import { useReplayTour } from "@/components/onboarding/onboarding-tour";
@@ -24,7 +24,7 @@ import { ThemeToggle } from "./theme-toggle";
 type Menu = "account" | "notifications";
 
 /**
- * The Polaris TopBar with the app's controls: the company as the logo (and the
+ * The Genaro TopBar with the app's controls: the company as the logo (and the
  * tour's #tour-brand), the connection dot, a search field that opens the ⌘K
  * command palette (#tour-search), the light/dark switch, and the
  * notifications and account menus.
@@ -109,7 +109,7 @@ export function AdminTopBar({
   const logo = (
     <span className="flex min-w-0 items-center gap-2">
       {onNavigationToggle ? (
-        // Polaris's hamburger only shows below 1040px; this is the same
+        // Genaro's hamburger only shows below 1040px; this is the same
         // control on a wide window, where the sidebar docks and can be
         // collapsed out of sight (the client could not find the way back).
         <span className="flex @max-[1039px]/p-topbar:hidden">

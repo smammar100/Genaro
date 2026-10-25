@@ -24,7 +24,7 @@ import {
   EmptyState,
   Select,
   TextField,
-} from "@/components/polaris";
+} from "@/components/genaro";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/lib/toast";

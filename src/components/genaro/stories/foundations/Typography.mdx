@@ -1,0 +1,77 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta
+  title="Foundations/Typography"
+  summary="The six-role type scale (display 24/30, title 16/22, subtitle 14/20, body 13/20, caption 12/16, micro 11/14; compact step one down), the Genaro classes and Tailwind tokens for each, Geist and Geist Mono, three weights (regular 400, medium 500 for component labels, semibold 550), and the type rules."
+/>
+
+# Typography
+
+Type follows the **Fluid Functionalism** scale (`src/lib/type-scale.ts`): six roles, each one size and one line height. Nothing is larger than 24px. Set type with a role, never with a hard-coded size, line height or letter-spacing.
+
+## Roles
+
+<table className="body-md" style={{ width: "100%", borderCollapse: "collapse" }}>
+  <thead className="body-sm" style={{ color: "var(--text-secondary)", textAlign: "left" }}>
+    <tr><th>Role</th><th>Default</th><th>Compact</th><th>Genaro class</th><th>Tailwind</th><th>Use it for</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><span className="heading-lg">Display</span></td><td>24/30</td><td>24/30</td><td><code>heading-lg</code></td><td><code>text-display</code></td><td>Page titles and big figures (KPI values).</td></tr>
+    <tr><td><span style={{ fontSize: "var(--fs-title)", lineHeight: "var(--lh-title)", fontWeight: "var(--fw-semibold)" }}>Title</span></td><td>16/22</td><td>15/20</td><td>—</td><td><code>text-title</code></td><td>Dialog and drawer titles, empty-state headings.</td></tr>
+    <tr><td><span className="heading-sm">Subtitle</span></td><td>14/20</td><td>13/18</td><td><code>heading-sm</code>, <code>heading-md</code></td><td><code>text-subtitle</code></td><td>Card titles and section headings.</td></tr>
+    <tr><td><span className="body-md">Body</span></td><td>13/20</td><td>12/18</td><td><code>body-md</code></td><td><code>text-body</code></td><td>Control labels, buttons, menu items, table cells and paragraphs.</td></tr>
+    <tr><td><span className="body-sm">Caption</span></td><td>12/16</td><td>11/14</td><td><code>body-sm</code></td><td><code>text-caption</code></td><td>Descriptions, help text, badges, errors, table headers, meta rows.</td></tr>
+    <tr><td><span className="body-xs">Micro</span></td><td>11/14</td><td>10/12</td><td><code>body-xs</code></td><td><code>text-micro</code></td><td>Counters and keyboard keys. Single line only.</td></tr>
+  </tbody>
+</table>
+
+Sizes and line heights are CSS variables: `--fs-body` and `--lh-body`, and the same for every role. In CSS, write `font-size: var(--fs-caption); line-height: var(--lh-caption)`, never pixels.
+
+## Specimens
+
+<div style={{ display: "grid", gap: "var(--space-400)", margin: "var(--space-400) 0" }}>
+  <div><p className="body-sm" style={{ color: "var(--text-secondary)", margin: 0 }}>Display · heading-lg</p><p className="heading-lg" style={{ margin: 0 }}>2020 BMW 3 Series</p></div>
+  <div><p className="body-sm" style={{ color: "var(--text-secondary)", margin: 0 }}>Title · text-title</p><p className="text-title" style={{ margin: 0, fontWeight: "var(--fw-semibold)" }}>Book an appointment</p></div>
+  <div><p className="body-sm" style={{ color: "var(--text-secondary)", margin: 0 }}>Subtitle · heading-sm</p><p className="heading-sm" style={{ margin: 0 }}>Sales highlights</p></div>
+  <div><p className="body-sm" style={{ color: "var(--text-secondary)", margin: 0 }}>Body · body-md</p><p className="body-md" style={{ margin: 0, maxWidth: 560 }}>Every car still for sale, including those in inspection or prep. Sold cars and cars returned to their owner are on the master sheet.</p></div>
+  <div><p className="body-sm" style={{ color: "var(--text-secondary)", margin: 0 }}>Caption · body-sm</p><p className="body-sm" style={{ margin: 0, color: "var(--text-secondary)" }}>Updated 23 Oct 2026 · live feed</p></div>
+  <div><p className="body-sm" style={{ color: "var(--text-secondary)", margin: 0 }}>Micro · body-xs</p><p className="body-xs" style={{ margin: 0 }}>210</p></div>
+</div>
+
+Switch **Type step** to Compact in the toolbar to see the compact step. Dense screens set it with the `type-compact` class: today, the master sheet grid.
+
+## Typefaces
+
+- **Geist** for all text (`font-sans`, `var(--font-sans)`), loaded by `next/font` in `app/layout.tsx`.
+- **Geist Mono** wherever a mono face is used (`font-mono`, `var(--font-mono)`): registration plates.
+- **Codes** such as stock IDs, VINs, invoice numbers and usernames use `font-code`: Geist with tabular (even-width) figures.
+- Never Helvetica or Inter, in the app, emails or PDFs. PDFs register Geist themselves (`src/components/pdf/fonts.ts`).
+
+<div style={{ display: "grid", gap: "var(--space-200)", margin: "var(--space-300) 0" }}>
+  <p className="body-md" style={{ margin: 0 }}>Geist — The quick brown fox jumps over the lazy dog 0123456789</p>
+  <p className="body-md" style={{ margin: 0, fontFamily: "var(--font-mono)" }}>Geist Mono — OY70 TZG · AV11 NLZ</p>
+  <p className="body-md font-code" style={{ margin: 0 }}>font-code — CC-0124 · WBA8E9G50GNT12345 · INV-0001</p>
+</div>
+
+## Weights
+
+Three weights. Semibold is the heaviest weight anywhere; there is no bold.
+
+<table className="body-md" style={{ width: "100%", borderCollapse: "collapse" }}>
+  <thead className="body-sm" style={{ color: "var(--text-secondary)", textAlign: "left" }}>
+    <tr><th>Weight</th><th>Token</th><th>Class</th><th>Use it for</th></tr>
+  </thead>
+  <tbody>
+    <tr><td style={{ fontWeight: "var(--fw-regular)" }}>Regular 400</td><td><code>--fw-regular</code></td><td><code>font-normal</code></td><td>Text: body copy, field labels, table cells, menu items.</td></tr>
+    <tr><td style={{ fontWeight: "var(--fw-medium)" }}>Medium 500</td><td><code>--fw-medium</code></td><td><code>font-medium</code></td><td>Component labels: buttons, tabs, badges, tags, filter pills, pagination. The components set it themselves.</td></tr>
+    <tr><td style={{ fontWeight: "var(--fw-semibold)" }}>Semibold 550</td><td><code>--fw-semibold</code></td><td><code>font-semibold</code>, the Genaro <code>{"heading-*"}</code> and <code>{"*-semibold"}</code> classes (<code>font-bold</code> renders semibold too)</td><td>Headings, page titles, big figures, names in a row, selected items.</td></tr>
+  </tbody>
+</table>
+
+## Rules
+
+- **Two text colours.** `--text` for primary text, `--text-secondary` for secondary text. Never opacity. Tones (critical, success…) only for status.
+- **Sentence case.** No uppercase, no letter-spacing, no eyebrow labels above titles: a section starts with its title.
+- **Wrapping.** Headings balance (`text-wrap: balance`) and paragraphs wrap pretty (`text-wrap: pretty`), both set globally.
+- **Numbers that change** (counts, money, days) use `tabular-nums`, so the words after them don't move.
+- **Exceptions:** reg plates, avatar initials and printed PDFs keep their own sizes.
