@@ -54,7 +54,7 @@ function ValuationRow({
       <dd
         className={cn(
           "text-body tabular-nums",
-          highlight ? "font-semibold" : "font-medium",
+          highlight && "font-semibold",
         )}
       >
         {value != null ? formatCurrency(value) : "—"}

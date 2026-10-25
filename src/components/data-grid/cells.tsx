@@ -39,7 +39,7 @@ import { cn, formatCurrency, formatDate, getInitials } from "@/lib/utils";
 // ────────────────────────────────────────────────────────────────────────────
 
 export function EmptyCell() {
-  return <span className="text-muted-foreground/40">—</span>;
+  return <span className="text-muted-foreground">—</span>;
 }
 
 export function TextCell({ value }: { value: unknown }) {
@@ -74,7 +74,7 @@ export function NumberCell({ value }: { value: number | null | undefined }) {
 export function CurrencyCell({ value }: { value: number | null | undefined }) {
   if (value === null || value === undefined) return <EmptyCell />;
   return (
-    <span className="tabular-nums font-medium">{formatCurrency(value)}</span>
+    <span className="tabular-nums">{formatCurrency(value)}</span>
   );
 }
 
@@ -118,7 +118,7 @@ export function BooleanCell({ value }: { value: boolean | null | undefined }) {
 export function SelectCell({ value }: { value: unknown }) {
   if (value === null || value === undefined || value === "") return <EmptyCell />;
   return (
-    <span className="inline-flex max-w-full items-center rounded-md bg-muted px-1.5 py-0.5 text-caption font-medium uppercase tracking-wide text-foreground/80">
+    <span className="inline-flex max-w-full items-center rounded-md bg-muted px-1.5 py-0.5 text-caption text-foreground">
       <span className="truncate">{String(value).replace(/_/g, " ")}</span>
     </span>
   );
@@ -141,7 +141,7 @@ export function VehicleCell({ vehicle }: { vehicle: Vehicle | null | undefined }
       ) : null}
       <div className="flex min-w-0 flex-col gap-0.5">
         <RegPlate registration={vehicle.registration} size="sm" />
-        <span className="font-mono text-caption text-muted-foreground">
+        <span className="font-code text-caption text-muted-foreground">
           {vehicle.stockId}
         </span>
       </div>
@@ -159,7 +159,7 @@ export function UserCell({ name }: { name: string | null | undefined }) {
         </AvatarFallback>
       </Avatar>
       <div className="flex min-w-0 flex-col">
-        <span className="truncate text-caption font-medium">{name}</span>
+        <span className="truncate text-caption">{name}</span>
       </div>
     </div>
   );
@@ -176,7 +176,7 @@ export function ChannelsCell({
         <span
           key={channel}
           className={cn(
-            "rounded-md px-1.5 py-0.5 text-micro font-medium capitalize",
+            "rounded-md px-1.5 py-0.5 text-micro capitalize",
             enabled
               ? "bg-foreground text-background"
               : "bg-muted text-muted-foreground",

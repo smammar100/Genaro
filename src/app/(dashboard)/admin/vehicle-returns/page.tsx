@@ -95,7 +95,7 @@ function Field({ k, v }: { k: string; v: string }) {
   return (
     <div>
       <div className="text-caption text-(--text-secondary)">{k}</div>
-      <div className="text-body font-medium">{v}</div>
+      <div className="text-body">{v}</div>
     </div>
   );
 }
@@ -587,7 +587,7 @@ export default function ReturnsPage() {
                     <Car className="h-6 w-6" />
                   </div>
                   <div>
-                    <div className="font-mono text-body font-semibold">
+                    <div className="font-code text-body font-semibold">
                       {formatRegPlate(form.watch("registration") ?? "")}
                     </div>
                     <div className="text-body text-(--text-secondary)">
@@ -728,7 +728,7 @@ export default function ReturnsPage() {
                   />
                 </div>
                 <div className="rounded-lg border border-(--border-secondary) bg-(--bg-surface-secondary) p-3">
-                  <p className="mb-2 text-caption font-medium text-(--text-secondary)">
+                  <p className="mb-2 text-caption text-(--text-secondary)">
                     Refund bank details (where the refund is paid back)
                   </p>
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -821,7 +821,7 @@ export default function ReturnsPage() {
                       )}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="flex min-w-0 items-center gap-1.5 text-body font-medium">
+                        <span className="flex min-w-0 items-center gap-1.5 text-body">
                           <span
                             aria-hidden
                             className={cn(
@@ -844,7 +844,7 @@ export default function ReturnsPage() {
                               ? RETURN_REASON_LABELS[r.reasonCode]
                               : "—")}
                         </span>
-                        <span className="shrink-0 text-caption font-medium tabular-nums">
+                        <span className="shrink-0 text-caption tabular-nums">
                           {formatCurrency(r.refundAmount)}
                         </span>
                       </div>
@@ -901,7 +901,7 @@ export default function ReturnsPage() {
                       )}
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-body font-semibold">
+                          <span className="font-code text-body font-semibold">
                             {selected.vehicle?.registration ?? "—"}
                           </span>
                           <Badge tone={meta.tone}>{meta.label}</Badge>
@@ -1037,7 +1037,7 @@ export default function ReturnsPage() {
           <div className="grid gap-3">
             <p className="text-body text-(--text-secondary)">
               Resolving generates a{" "}
-              <span className="font-medium text-(--text)">
+              <span className="text-(--text)">
                 refund / cancellation invoice
               </span>{" "}
               for {resolving.customerName}, links it to the original sale

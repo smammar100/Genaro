@@ -70,7 +70,7 @@ table thead th {
   color: var(--text-secondary);
   font-size: var(--fs-caption);
   line-height: var(--lh-caption);
-  font-weight: 500;
+  font-weight: var(--fw-regular);
   padding-block: var(--space-200);
   border-width: 0;
 }

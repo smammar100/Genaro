@@ -900,7 +900,7 @@ function InvoiceGenerationForm() {
                 >
                   <div className="w-28">
                     <p className="text-caption text-(--text-secondary)">Type</p>
-                    <div className="text-body font-medium">
+                    <div className="text-body">
                       {LINE_TYPE_LABEL[l.type]}
                     </div>
                   </div>

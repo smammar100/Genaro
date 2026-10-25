@@ -1,8 +1,9 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { PDF_FONT, PDF_SEMIBOLD } from "./fonts";
 import type { Vehicle, Warranty } from "@/lib/types";
 
 const s = StyleSheet.create({
-  page: { padding: 40, fontSize: 10, fontFamily: "Helvetica" },
+  page: { padding: 40, fontSize: 10, fontFamily: PDF_FONT },
   border: {
     border: "2pt solid #1f2937",
     padding: 28,
@@ -10,7 +11,7 @@ const s = StyleSheet.create({
   },
   brand: {
     fontSize: 24,
-    fontWeight: 700,
+    fontWeight: PDF_SEMIBOLD,
     textAlign: "center",
     letterSpacing: 1.2,
   },
@@ -22,7 +23,7 @@ const s = StyleSheet.create({
   },
   title: {
     fontSize: 26,
-    fontWeight: 700,
+    fontWeight: PDF_SEMIBOLD,
     textAlign: "center",
     marginTop: 50,
     textTransform: "uppercase",
@@ -36,7 +37,7 @@ const s = StyleSheet.create({
   section: { marginTop: 24 },
   row: { flexDirection: "row", marginBottom: 5 },
   label: { width: 130, color: "#666" },
-  value: { flex: 1, fontWeight: 500 },
+  value: { flex: 1, fontWeight: 400 },
   footer: {
     position: "absolute",
     bottom: 30,

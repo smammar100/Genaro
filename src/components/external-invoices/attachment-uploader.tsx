@@ -111,7 +111,7 @@ export function AttachmentUploader({
             )}
           </span>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-body font-medium">{value.filename}</div>
+            <div className="truncate text-body">{value.filename}</div>
             <div className="text-caption text-(--text-secondary)">
               {prettyBytes(value.sizeBytes)} · {value.mimeType}
             </div>

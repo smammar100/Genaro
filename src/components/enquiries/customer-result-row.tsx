@@ -85,7 +85,7 @@ export function CustomerResultRow({
       </Avatar>
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center gap-2">
-          <span className="truncate text-body font-medium">
+          <span className="truncate text-body">
             <Highlight text={fullName} query={query} />
           </span>
           {company && (

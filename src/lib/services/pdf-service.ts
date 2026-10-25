@@ -65,28 +65,34 @@ export function companyInvoiceFields(company: Company): {
  */
 export const pdfService = {
   async generateJobCard(input: JobCardPdfInput): Promise<Blob> {
-    const [{ pdf }, { JobCardTemplate }] = await Promise.all([
+    const [{ pdf }, { JobCardTemplate }, { loadPdfFonts }] = await Promise.all([
       import("@react-pdf/renderer"),
       import("@/components/pdf/job-card-template"),
+      import("@/components/pdf/fonts"),
     ]);
+    await loadPdfFonts();
     const doc = pdf(JobCardTemplate(input));
     return doc.toBlob();
   },
 
   async generateWarrantyCertificate(input: WarrantyPdfInput): Promise<Blob> {
-    const [{ pdf }, { WarrantyCertificateTemplate }] = await Promise.all([
+    const [{ pdf }, { WarrantyCertificateTemplate }, { loadPdfFonts }] = await Promise.all([
       import("@react-pdf/renderer"),
       import("@/components/pdf/warranty-certificate-template"),
+      import("@/components/pdf/fonts"),
     ]);
+    await loadPdfFonts();
     const doc = pdf(WarrantyCertificateTemplate(input));
     return doc.toBlob();
   },
 
   async generateInvoice(input: InvoicePdfInput): Promise<Blob> {
-    const [{ pdf }, { InvoiceTemplate }] = await Promise.all([
+    const [{ pdf }, { InvoiceTemplate }, { loadPdfFonts }] = await Promise.all([
       import("@react-pdf/renderer"),
       import("@/components/pdf/invoice-template"),
+      import("@/components/pdf/fonts"),
     ]);
+    await loadPdfFonts();
     const doc = pdf(InvoiceTemplate(input));
     return doc.toBlob();
   },

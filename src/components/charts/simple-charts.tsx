@@ -261,7 +261,7 @@ export function DonutChart({
             x={cx}
             y={cx + 14}
             textAnchor="middle"
-            className="fill-muted-foreground text-[length:var(--fs-micro-compact)] uppercase tracking-wide"
+            className="fill-muted-foreground text-[length:var(--fs-micro-compact)]"
           >
             {centerLabel}
           </text>
@@ -282,7 +282,7 @@ export function DonutChart({
             <span className="tabular-nums text-muted-foreground">
               {format(d.value)}
             </span>
-            <span className="w-11 text-right font-medium tabular-nums text-foreground">
+            <span className="w-11 text-right tabular-nums text-foreground">
               {Math.round((d.value / total) * 100)}%
             </span>
           </li>

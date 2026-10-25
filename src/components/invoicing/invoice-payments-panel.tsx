@@ -193,7 +193,7 @@ export function InvoicePaymentsPanel({ invoice, onChanged }: Props) {
                   key={e.key}
                   className="flex items-center gap-2 px-3 py-1.5 text-caption"
                 >
-                  <span className="font-medium">{e.label}</span>
+                  <span>{e.label}</span>
                   <span className="text-(--text-secondary)">
                     {e.date ? formatDate(e.date) : "—"}
                   </span>

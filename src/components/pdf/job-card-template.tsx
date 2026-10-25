@@ -1,15 +1,16 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { PDF_FONT, PDF_SEMIBOLD } from "./fonts";
 import { variantLabel } from "@/lib/vehicle-variant";
 import type { TodoItem, TodoStatus, Vehicle } from "@/lib/types";
 
 const styles = StyleSheet.create({
-  page: { padding: 32, fontSize: 10, fontFamily: "Helvetica" },
-  h1: { fontSize: 18, fontWeight: 700, marginBottom: 4 },
+  page: { padding: 32, fontSize: 10, fontFamily: PDF_FONT },
+  h1: { fontSize: 18, fontWeight: PDF_SEMIBOLD, marginBottom: 4 },
   meta: { fontSize: 9, color: "#666", marginBottom: 12 },
   hr: { borderBottom: "1pt solid #ccc", marginVertical: 8 },
   sectionTitle: {
     fontSize: 11,
-    fontWeight: 700,
+    fontWeight: PDF_SEMIBOLD,
     marginTop: 10,
     marginBottom: 6,
     textTransform: "uppercase",
@@ -23,7 +24,7 @@ const styles = StyleSheet.create({
   th: {
     flex: 1,
     padding: 5,
-    fontWeight: 700,
+    fontWeight: PDF_SEMIBOLD,
     backgroundColor: "#eee",
     borderRight: "1pt solid #ccc",
     borderBottom: "1pt solid #ccc",
@@ -50,7 +51,7 @@ const styles = StyleSheet.create({
     borderBottom: "1pt solid #ccc",
     textAlign: "right",
   },
-  total: { marginTop: 10, textAlign: "right", fontSize: 11, fontWeight: 700 },
+  total: { marginTop: 10, textAlign: "right", fontSize: 11, fontWeight: PDF_SEMIBOLD },
   footer: {
     position: "absolute",
     bottom: 20,

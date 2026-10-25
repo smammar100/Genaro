@@ -173,7 +173,7 @@ export function ComplianceCard({
           </p>
         )}
         {sources ? (
-          <p className="font-medium">
+          <p>
             DVLA {sources.dvla === "ok" ? "✓" : "✗"} · DVSA{" "}
             {sources.dvsa === "ok" ? "✓" : sources.dvsa === "missing_credentials" ? "—" : "✗"}{" "}
             · AT{" "}
@@ -238,7 +238,7 @@ function StatusTile({
   return (
     <div className="flex items-center justify-between gap-3 rounded-(--radius-200) border border-(--border) px-3 py-2">
       <div>
-        <div className="text-body font-medium text-(--text-secondary)">{label}</div>
+        <div className="text-body text-(--text-secondary)">{label}</div>
         <div className="mt-0.5 text-caption text-(--text-secondary)">{subtitle}</div>
       </div>
       <Badge tone={badgeTone}>{status ?? "—"}</Badge>

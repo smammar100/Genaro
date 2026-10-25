@@ -325,11 +325,11 @@ export default function ActivityLogPage() {
                       >
                         <div>
                           <div className="flex flex-wrap items-center gap-2 text-body">
-                            <span className="font-medium">{e.description}</span>
+                            <span>{e.description}</span>
                             {vehicle && (
                               <Link
                                 href={vehicleDetailHref(vehicle.id, pathname)}
-                                className="rounded bg-(--bg-fill-secondary) px-1.5 py-0.5 font-mono text-caption text-(--text) hover:text-(--text-link)"
+                                className="rounded bg-(--bg-fill-secondary) px-1.5 py-0.5 font-code text-caption text-(--text) hover:text-(--text-link)"
                               >
                                 {vehicle.registration}
                               </Link>

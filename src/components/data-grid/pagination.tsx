@@ -69,8 +69,8 @@ export function DataGridPagination({
 
       <div className="flex items-center gap-2">
         <span className="tabular-nums text-(--text-secondary)">
-          Page <span className="font-medium text-foreground">{page}</span> of{" "}
-          <span className="font-medium text-foreground">{totalPages}</span>
+          Page <span className="text-foreground">{page}</span> of{" "}
+          <span className="text-foreground">{totalPages}</span>
         </span>
         {/* Shopify index-table pager: a joined pair of small arrow buttons. */}
         <div className="flex items-center overflow-hidden rounded-(--radius-200) border border-(--border) bg-(--bg-surface)">

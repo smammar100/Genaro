@@ -32,7 +32,7 @@ export function StepActions({
         {selectedCustomer ? (
           <>
             <span className="text-(--text-secondary)">Continuing for: </span>
-            <span className="font-medium">
+            <span>
               {selectedCustomer.firstName} {selectedCustomer.lastName}
             </span>
             {selectedCustomer.mobilePhone && (
@@ -44,7 +44,7 @@ export function StepActions({
         ) : (
           <>
             <span className="text-(--text-secondary)">Continuing as: </span>
-            <span className="font-medium">New customer</span>
+            <span>New customer</span>
           </>
         )}
       </div>

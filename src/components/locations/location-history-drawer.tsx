@@ -148,7 +148,7 @@ export function LocationHistoryDrawer({
           <SheetTitle>Location history</SheetTitle>
           <SheetDescription>
             {vehicle.stockId} · {vehicle.make} {vehicle.model}{" "}
-            <span className="font-mono">{vehicle.registration}</span>
+            <span className="font-code">{vehicle.registration}</span>
           </SheetDescription>
         </SheetHeader>
 
@@ -218,7 +218,7 @@ export function LocationHistoryDrawer({
                       ) : undefined
                     }
                   >
-                    <span className="font-medium">
+                    <span>
                       {fromLabel}{" "}
                       <ArrowRight className="inline size-3 align-baseline text-(--icon-secondary)" />{" "}
                       {toLabel}

@@ -110,7 +110,7 @@ for (const file of files) {
       if (/--[\w-]+\s*:/.test(code)) continue;
       add(file, ln, 'warn', 'hardcoded-spacing', `${m[1]}: ${m[2]}${m[3] || ''} is hard-coded.`, /radius/i.test(m[1]) ? 'Use var(--radius-200) / var(--radius-300)…' : `Use ${pxToken(m[2])} (or the Tailwind scale: p-4 = space-400).`);
     }
-    for (const m of code.matchAll(reFontFamily)) add(file, ln, 'warn', 'font-family', 'Custom font-family.', 'Polaris uses Inter via var(--font-sans); use the type classes (body-md, heading-sm…).');
+    for (const m of code.matchAll(reFontFamily)) add(file, ln, 'warn', 'font-family', 'Custom font-family.', 'This app uses Geist via var(--font-sans) (Geist Mono via var(--font-mono)); use the type classes (body-md, heading-sm…).');
     if (isTsx) {
       for (const m of code.matchAll(reRawControl)) add(file, ln, 'warn', 'raw-control', `Raw <${m[1] || 'input'}> element.`, 'Use the Polaris component (Button, TextField, Select, Checkbox, IndexTable/DataTable…) so states, focus and theming come for free.');
       if (/variant=["']primary["']/.test(code)) primaries += (code.match(/variant=["']primary["']/g) || []).length;

@@ -63,7 +63,7 @@ export function RegistrationLookupCard({
                 {...form.register("registration")}
                 onBlur={onLookup}
                 placeholder="GK66 6NX"
-                className="pl-9 font-mono uppercase tracking-wider"
+                className="pl-9 font-code"
               />
             </div>
             <Button

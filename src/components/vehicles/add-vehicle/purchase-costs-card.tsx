@@ -31,9 +31,9 @@ export function PurchaseCostsCard({
         <table className="w-full min-w-88 text-body">
           <thead>
             <tr className="border-b border-(--border-secondary) text-left text-caption text-(--text-secondary)">
-              <th className="py-1.5 pr-2 font-medium">Cost item</th>
-              <th className="whitespace-nowrap py-1.5 pr-2 text-right font-medium">Amount £</th>
-              <th className="whitespace-nowrap py-1.5 pr-2 text-right font-medium">VAT paid £</th>
+              <th className="py-1.5 pr-2">Cost item</th>
+              <th className="whitespace-nowrap py-1.5 pr-2 text-right">Amount £</th>
+              <th className="whitespace-nowrap py-1.5 pr-2 text-right">VAT paid £</th>
             </tr>
           </thead>
           <tbody>

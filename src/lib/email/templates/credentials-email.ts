@@ -11,14 +11,15 @@ export function renderCredentialsEmail(p: CredentialsEmailProps): string {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="color-scheme" content="light" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&display=swap" />
   <title>Your Car Capital account for ${esc(p.companyName)} is ready</title>
 </head>
-<body style="margin:0;padding:40px 16px;background:#f9fafb;font-family:Figtree,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+<body style="margin:0;padding:40px 16px;background:#f9fafb;font-family:Geist,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
   <div style="max-width:560px;margin:0 auto;">
 
     <!-- Wordmark -->
     <div style="text-align:center;margin-bottom:24px;">
-      <span style="font-size:18px;font-weight:700;color:#111827;letter-spacing:-0.02em;">Car Capital</span>
+      <span style="font-size:18px;font-weight:600;color:#111827;letter-spacing:-0.02em;">Car Capital</span>
     </div>
 
     <!-- Card -->

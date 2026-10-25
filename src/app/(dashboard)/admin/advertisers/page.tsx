@@ -205,7 +205,7 @@ export default function AdvertisersPage() {
             "Updated",
           ]}
           rows={advertisers.map((a) => [
-            <span key="id" className="body-sm font-mono">
+            <span key="id" className="body-sm font-code">
               {a.advertiserId}
             </span>,
             a.name ?? "—",

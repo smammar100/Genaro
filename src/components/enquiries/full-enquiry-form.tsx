@@ -203,7 +203,7 @@ export function FullEnquiryForm({
           <div className="flex items-center justify-between rounded-(--radius-200) bg-(--bg-surface-secondary) px-3 py-2 text-body text-(--text)">
             <span>
               <span className="text-(--text-secondary)">Customer: </span>
-              <span className="font-medium">
+              <span>
                 {selectedCustomer.firstName} {selectedCustomer.lastName}
               </span>
             </span>

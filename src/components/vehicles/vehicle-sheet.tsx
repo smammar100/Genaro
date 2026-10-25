@@ -475,13 +475,13 @@ function CellContent({ col, v }: { col: ColDef; v: Vehicle }) {
   const raw = displayValue(col, v);
 
   if (raw === null || raw === undefined || raw === "") {
-    return <span className="text-muted-foreground/40">—</span>;
+    return <span className="text-muted-foreground">—</span>;
   }
 
   switch (col.type) {
     case "stockId":
       return (
-        <span className="font-mono text-caption font-medium">{v.stockId}</span>
+        <span className="font-code text-caption">{v.stockId}</span>
       );
     case "vehicle":
       return (
@@ -498,7 +498,7 @@ function CellContent({ col, v }: { col: ColDef; v: Vehicle }) {
       );
     case "currency":
       return (
-        <span className="font-medium tabular-nums">
+        <span className="tabular-nums">
           {formatCurrency(typeof raw === "number" ? raw : null)}
         </span>
       );
@@ -525,7 +525,7 @@ function CellContent({ col, v }: { col: ColDef; v: Vehicle }) {
       );
     case "select":
       return (
-        <span className="inline-flex max-w-full items-center rounded-md bg-muted px-1.5 py-0.5 text-caption font-medium uppercase tracking-wide text-foreground/80">
+        <span className="inline-flex max-w-full items-center rounded-md bg-muted px-1.5 py-0.5 text-caption text-foreground">
           <span className="truncate">{String(raw)}</span>
         </span>
       );
@@ -535,7 +535,7 @@ function CellContent({ col, v }: { col: ColDef; v: Vehicle }) {
       return (
         <span
           className={cn(
-            "inline-flex items-center rounded-full px-2 py-0.5 text-caption font-medium",
+            "inline-flex items-center rounded-full px-2 py-0.5 text-caption",
             STATUS_TONE[status],
           )}
         >
@@ -1455,7 +1455,7 @@ export function VehicleSheet({
           {/* Surfaces are card-white (GEN-62). The sticky header/column
               still need an OPAQUE fill so rows don't show through while
               scrolling — bg-card is opaque, and the header keeps its
-              borders + font-medium to read as a band without a tint. */}
+              borders and secondary fill to read as a band. */}
           <thead className="sticky top-0 z-20 bg-card">
             {bands.length > 0 && (
               <tr aria-hidden>
@@ -1465,7 +1465,7 @@ export function VehicleSheet({
                     key={`${b.section}-${i}`}
                     colSpan={b.span}
                     className={cn(
-                      "h-5 border-b px-2 text-left text-micro font-semibold uppercase tracking-wide",
+                      "h-5 border-b px-2 text-left text-caption font-semibold",
                       SECTION_TONE[b.section] ?? SECTION_TONE.common,
                       // Workbook: the identity band pins with the columns
                       // under it, rather than scrolling off above them.
@@ -1516,7 +1516,7 @@ export function VehicleSheet({
                 <th
                   key={colKey(c)}
                   className={cn(
-                    "relative border-b bg-(--bg-surface-secondary) px-2 text-left font-medium",
+                    "relative border-b bg-(--bg-surface-secondary) px-2 text-left",
                     c.sticky &&
                       "sticky z-30 bg-(--bg-surface-secondary) shadow-[1px_0_0_var(--border)]",
                   )}
@@ -1555,7 +1555,7 @@ export function VehicleSheet({
                   >
                     <span
                       className={cn(
-                        "min-w-0 font-medium text-foreground",
+                        "min-w-0 text-foreground",
                         sections ? "line-clamp-2" : "truncate",
                       )}
                     >
@@ -1785,7 +1785,7 @@ export function VehicleSheet({
                   className="border-b px-2 py-2"
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="flex items-center gap-1 text-caption font-medium text-muted-foreground">
+                    <span className="flex items-center gap-1 text-caption text-muted-foreground">
                       <Plus className="h-3.5 w-3.5" /> Quick add
                     </span>
                     <Input
@@ -1797,7 +1797,7 @@ export function VehicleSheet({
                         })
                       }
                       placeholder="Reg *"
-                      className="h-8 w-28 text-caption uppercase"
+                      className="h-8 w-28 text-caption"
                     />
                     <Input
                       value={quick.make}
@@ -1903,9 +1903,10 @@ export function VehicleSheet({
       <>
         {/* A Polaris Page bounded to the viewport under the top bar: the
             header, section header and toolbar stay put while the grid's own
-            container scrolls (so its sticky header and totals row stick).
-            The header (first child) keeps its size; the content column
-            (last child) takes the rest. */}
+            container scrolls (so its sticky header sticks). The header
+            (first child) keeps its size; the content column (last child)
+            takes the rest. The grid is a dense screen, so its card sets type
+            on the scale's compact step. */}
         <Page
           title={title}
           subtitle={typeof summaryLine === "string" ? summaryLine : undefined}
@@ -1929,7 +1930,7 @@ export function VehicleSheet({
         >
           {helper}
           {SectionHeader && <SectionHeader {...sectionContext} />}
-          <PolarisCard padding="0" className="min-h-96 flex-1 gap-0">
+          <PolarisCard padding="0" className="type-compact min-h-96 flex-1 gap-0">
             <SheetToolbar
               columnsLabel={`${cols.length} of ${gridCols.length} shown`}
               columnsPanel={<div className="w-80">{columnsPanel}</div>}
@@ -2066,7 +2067,7 @@ export function VehicleSheet({
         {/* Variation C — filter-chip bar: applied chips + add-condition builder */}
         <div className="flex flex-col gap-2 rounded-xl border border-(--border) bg-card px-3 py-2 shadow-(--shadow-100)">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-body font-medium text-(--text-secondary)">
+            <span className="text-body text-(--text-secondary)">
               Filters
             </span>
             {filters.length === 0 && (
@@ -2077,11 +2078,11 @@ export function VehicleSheet({
             {filters.map((f) => (
               <span
                 key={f.id}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-(--bg-fill-transparent-secondary) px-2 py-0.5 text-caption font-medium text-(--text)"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-(--bg-fill-transparent-secondary) px-2 py-0.5 text-caption text-(--text)"
               >
                 <span className="text-muted-foreground">{f.label}</span>
                 <span className="text-muted-foreground">{opLabel(f.op)}</span>
-                <span className="font-medium">{f.value}</span>
+                <span>{f.value}</span>
                 <button
                   type="button"
                   onClick={() => removeFilter(f.id)}
@@ -2112,7 +2113,7 @@ export function VehicleSheet({
               <button
                 type="button"
                 onClick={() => setBuilderOpen((o) => !o)}
-                className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-body font-medium text-(--text) hover:bg-(--bg-fill-transparent-hover)"
+                className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-body text-(--text) hover:bg-(--bg-fill-transparent-hover)"
               >
                 <Plus className="h-3.5 w-3.5" /> Add filter
               </button>
@@ -2139,7 +2140,7 @@ export function VehicleSheet({
                         className={cn(
                           "h-7 rounded-lg px-3 text-body transition-colors",
                           on
-                            ? "bg-(--bg-fill-transparent-selected) font-medium text-(--text)"
+                            ? "bg-(--bg-fill-transparent-selected) font-semibold text-(--text)"
                             : "text-(--text-secondary) hover:bg-(--bg-fill-transparent-hover)",
                         )}
                       >
@@ -2153,7 +2154,7 @@ export function VehicleSheet({
           </div>
           {builderOpen && (
             <div className="flex flex-wrap items-center gap-2 rounded-lg bg-(--bg-surface-secondary) p-2">
-              <span className="text-body font-medium text-(--text-secondary)">
+              <span className="text-body text-(--text-secondary)">
                 Add condition
               </span>
               <div className="w-44">

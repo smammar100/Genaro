@@ -359,7 +359,7 @@ function QueueTable({
                     <span className="mb-1 sm:hidden">
                       <RegPlate registration={vehicle.registration} size="sm" />
                     </span>
-                    <span className="font-medium">
+                    <span>
                       {vehicle.make} {vehicle.model}
                     </span>
                     <span className="body-sm text-(--text-secondary)">

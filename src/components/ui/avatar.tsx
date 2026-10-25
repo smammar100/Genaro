@@ -25,7 +25,7 @@ export function Avatar({
   return (
     <AvatarPrimitive.Root
       className={cn(
-        "inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full bg-background align-middle font-medium",
+        "inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full bg-background align-middle",
         size ? AVATAR_SIZE_CLASS[size] : "size-8 text-caption",
         className,
       )}

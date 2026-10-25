@@ -42,7 +42,7 @@ export function EnquiryDetailsFields({ vehicleLabel }: EnquiryDetailsFieldsProps
       {vehicleLabel && (
         <div className="rounded-(--radius-200) border border-dashed border-(--border) bg-(--bg-surface-secondary) px-3 py-2 text-body text-(--text)">
           <span className="text-(--text-secondary)">Vehicle of interest: </span>
-          <span className="font-medium">{vehicleLabel}</span>
+          <span>{vehicleLabel}</span>
         </div>
       )}
 
