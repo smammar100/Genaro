@@ -37,7 +37,7 @@ This folder is the single source of truth for what the app **does today**. It is
 | `reference/data-model.md` | Entities, relationships, ERD |
 | `reference/services.md` | Indexed catalogue of all 24 services in `src/lib/services/` |
 | `reference/auth-and-permissions.md` | Supabase auth, middleware, the 38 capabilities, `useCan()` |
-| `reference/api-routes.md` | `/api/dvla/lookup`, `/api/photo/generate`, `/api/photo/vehicle` |
+| `reference/api-routes.md` | `/api/dvla/lookup`, `/api/photo/vehicle` |
 | `reference/design-system.md` | Surface elevation ladder, Card primitive, design tokens |
 | `reference/pdfs.md` | Invoice, Job Card, Warranty Certificate templates |
 | `for-ai-agents/codebase-map.md` | One row per source file → role mapping. Machine-readable. |

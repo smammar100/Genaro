@@ -39,7 +39,7 @@
 | Service file | Purpose |
 |---|---|
 | `pdf-service.ts` | Generate Invoice / Job Card / Warranty Certificate PDFs via `@react-pdf/renderer`. Helper: `downloadBlob()`. |
-| `photo-service.ts` | Build prompts for AI image generation; calls `/api/photo/generate` |
+| `photo-service.ts` | Build prompts for AI image generation; calls `/api/photo/vehicle` |
 | `photo-storage.ts` | Read / write vehicle photos in Supabase Storage |
 | `_base.ts` | Shared helpers: `newId(prefix)`, keyset pagination (`toPage`, cursors) |
 

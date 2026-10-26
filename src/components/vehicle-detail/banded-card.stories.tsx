@@ -4,10 +4,10 @@ import { Button } from "@/components/genaro";
 import { BandedCard } from "./banded-card";
 
 /**
- * A card with a header band: an icon tile, the title, a one-line summary and
- * the card's actions as plain links on the right; the detail sits below. The
- * vehicle Overview sets Pricing, Location and Sales highlights in a row of
- * these so their summaries line up. Leave out `actions` for a read-only card.
+ * A card with a header band: an icon tile, the title and the card's actions
+ * as plain links on the right; the detail sits below. The vehicle Overview
+ * sets Pricing, Location and Sales highlights in a row of these so their
+ * headers line up. Leave out `actions` for a read-only card.
  */
 const meta = {
   title: "App components/Vehicle detail/BandedCard",
@@ -23,7 +23,6 @@ const meta = {
   args: {
     icon: PoundSterling,
     title: "Pricing",
-    summary: "£16,995.00 web · £15,950.00 floor",
     children: (
       <>
         <div className="flex justify-between body-md">
@@ -49,22 +48,21 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Pricing: the summary repeats the two prices so the row can be read from
- * its headers alone, and Edit is a link in the header.
- * @summary a card with a summary and a header link
+ * Pricing: the prices sit in the body, one per row, and Edit is a link in
+ * the header.
+ * @summary a card with a header link
  */
 export const Default: Story = {};
 
 /**
- * Location's header link moves the car; the summary says where it is and for
- * how long.
+ * Location's header link moves the car; the body says where it is and since
+ * when.
  * @summary a header link that starts a task
  */
 export const MoveLink: Story = {
   args: {
     icon: MapPin,
     title: "Location",
-    summary: "Garage · 4 days",
     children: <p className="body-md">Currently at Garage, since 22 Oct.</p>,
     actions: (
       <Button variant="plain" icon="ArrowRightMinor">
@@ -83,7 +81,6 @@ export const ReadOnly: Story = {
   args: {
     icon: ListChecks,
     title: "Sales highlights",
-    summary: "70,624 mi · full history",
     children: <p className="body-md">Mileage, service history, MOT and owners.</p>,
     actions: undefined,
   },

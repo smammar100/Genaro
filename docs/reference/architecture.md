@@ -44,8 +44,7 @@ src/app/
 │   └── admin/
 └── api/                             # Server-side API routes
     ├── dvla/lookup/route.ts         # DVLA proxy + LRU cache
-    ├── photo/generate/route.ts      # OpenAI image proxy
-    └── photo/vehicle/route.ts       # Supabase Storage helper
+    └── photo/vehicle/route.ts       # OpenAI image gen + Supabase Storage (photos:process)
 ```
 
 The `(auth)` and `(dashboard)` parens are Next.js route groups — they organise files without affecting URLs.
@@ -92,7 +91,7 @@ sequenceDiagram
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | one of these two | browser + server | Legacy anon JWT key (accepted for compatibility) |
 | `SUPABASE_SERVICE_ROLE_KEY` | seeding only | server-only | Privileged Postgres ops — never reaches browser |
 | `DVLA_API_KEY` | yes | server-only (`/api/dvla/lookup`) | DVLA Vehicle Enquiry Service v1 |
-| `OPENAI_API_KEY` | yes | server-only (`/api/photo/generate`) | Image generation for photo processing |
+| `OPENAI_API_KEY` | yes | server-only (`/api/photo/vehicle`) | Image generation for photo processing |
 
 Local: `.env.local` (gitignored via `.env*`). Production: Vercel project Environment Variables (set all the above in Vercel → Project Settings → Environment Variables, or push them with `vercel env`).
 

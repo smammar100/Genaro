@@ -11,7 +11,7 @@
 
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { ROLE_DEFS, type RoleValue } from "@/lib/roles";
+import { ROLE_DEFS, areValidRoles, type RoleValue } from "@/lib/roles";
 import { sendStaffInviteEmail } from "@/lib/email/send-invite";
 import {
   requireUser,
@@ -87,6 +87,18 @@ export async function POST(request: Request) {
   if (roles.length === 0)
     return NextResponse.json(
       { error: "Select at least one role" },
+      { status: 400 },
+    );
+  // The stored default_roles are granted verbatim when the invite is redeemed,
+  // so validate them here and never let an invitation carry Owner / super-user.
+  if (!areValidRoles(roles))
+    return NextResponse.json(
+      { error: "One or more roles are not recognised" },
+      { status: 400 },
+    );
+  if (roles.includes("owner"))
+    return NextResponse.json(
+      { error: "The Owner / Super Administrator role can't be granted by invitation." },
       { status: 400 },
     );
 

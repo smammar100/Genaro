@@ -16,7 +16,7 @@
 
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { legacyRoleForRoles, type RoleValue } from "@/lib/roles";
+import { VALID_ROLE_VALUES, legacyRoleForRoles, type RoleValue } from "@/lib/roles";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -261,6 +261,21 @@ export async function POST(request: Request) {
     joinLinkUsedCount = (shared.used_count ?? 0) + 1;
     companyId = shared.company_id;
     defaultRoles = [shared.default_role || "view_only"];
+  }
+
+  // Harden the roles actually granted, regardless of what the token row stored.
+  // A redeemed token must never create an Owner / super-user or carry an unknown
+  // role. The shared reusable join link always lands as view_only by design (an
+  // admin elevates later in the permissions grid); only a targeted, admin-issued
+  // invitation carries higher roles, and send-invite validates those on the way
+  // in. This is the last trusted decision point for the role grant.
+  if (joinLinkToken) {
+    defaultRoles = ["view_only"];
+  } else {
+    defaultRoles = defaultRoles.filter(
+      (r) => VALID_ROLE_VALUES.has(r as RoleValue) && r !== "owner",
+    );
+    if (defaultRoles.length === 0) defaultRoles = ["view_only"];
   }
 
   // Guard: don't create a duplicate within the same company.

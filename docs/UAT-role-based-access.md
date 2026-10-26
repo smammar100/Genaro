@@ -7,7 +7,7 @@ Comprehensive acceptance tests for the role-based view system, per-role dashboar
 1. **Seed the 12 test accounts** (one per role). The seeding script was
    removed from the repo; recover it with
    `git show 23ff6b3:scripts/seed-test-users.mjs`.
-   All accounts share the password **`CarCapUAT!2026`** and live in **Car Capital UK**.
+   All accounts share the password **`SET_IN_LOCAL_UAT_ENV`** and live in **Car Capital UK**.
 2. Start the app: `pnpm dev` (note the port it prints).
 3. Work each section below. Tick `[x]` on pass; record failures in **Notes**.
 4. When done: remove the demo accounts (`git show 23ff6b3:scripts/delete-test-users.mjs`).
@@ -16,18 +16,18 @@ Comprehensive acceptance tests for the role-based view system, per-role dashboar
 
 | Role | Email | Password |
 |---|---|---|
-| Owner / Super | abbas@carcapital.uk | CarCapUAT!2026 |
-| Administrator | administrator@carcapital.uk | CarCapUAT!2026 |
-| IAM Admin | iam.admin@carcapital.uk | CarCapUAT!2026 |
-| Inventory Manager | amjad@carcapital.uk | CarCapUAT!2026 |
-| Workshop Lead | shan@carcapital.uk | CarCapUAT!2026 |
-| Inspector | kami@carcapital.uk | CarCapUAT!2026 |
-| Driver | raza@carcapital.uk | CarCapUAT!2026 |
-| Sales Specialist | sales.specialist@carcapital.uk | CarCapUAT!2026 |
-| Sales Manager | sikander@carcapital.uk | CarCapUAT!2026 |
-| Finance Admin | finance.admin@carcapital.uk | CarCapUAT!2026 |
-| Aftercare Specialist | aftercare@carcapital.uk | CarCapUAT!2026 |
-| View Only | viewonly@carcapital.uk | CarCapUAT!2026 |
+| Owner / Super | abbas@carcapital.uk | SET_IN_LOCAL_UAT_ENV |
+| Administrator | administrator@carcapital.uk | SET_IN_LOCAL_UAT_ENV |
+| IAM Admin | iam.admin@carcapital.uk | SET_IN_LOCAL_UAT_ENV |
+| Inventory Manager | amjad@carcapital.uk | SET_IN_LOCAL_UAT_ENV |
+| Workshop Lead | shan@carcapital.uk | SET_IN_LOCAL_UAT_ENV |
+| Inspector | kami@carcapital.uk | SET_IN_LOCAL_UAT_ENV |
+| Driver | raza@carcapital.uk | SET_IN_LOCAL_UAT_ENV |
+| Sales Specialist | sales.specialist@carcapital.uk | SET_IN_LOCAL_UAT_ENV |
+| Sales Manager | sikander@carcapital.uk | SET_IN_LOCAL_UAT_ENV |
+| Finance Admin | finance.admin@carcapital.uk | SET_IN_LOCAL_UAT_ENV |
+| Aftercare Specialist | aftercare@carcapital.uk | SET_IN_LOCAL_UAT_ENV |
+| View Only | viewonly@carcapital.uk | SET_IN_LOCAL_UAT_ENV |
 
 ---
 

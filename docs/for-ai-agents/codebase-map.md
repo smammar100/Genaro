@@ -77,7 +77,6 @@ Dynamic detail routes: `/vehicles/[id]/inspection/page.tsx`, `/warranties/[id]/p
 | File | Endpoint | Owns |
 |---|---|---|
 | `src/app/api/dvla/lookup/route.ts` | POST `/api/dvla/lookup` | DVLA VES proxy + 60-min LRU cache |
-| `src/app/api/photo/generate/route.ts` | POST `/api/photo/generate` | OpenAI Images proxy |
 | `src/app/api/photo/vehicle/route.ts` | GET / POST `/api/photo/vehicle` | Supabase Storage upload/read helper |
 
 ---

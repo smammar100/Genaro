@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireUser, authErrorResponse } from "@/lib/auth/require-user";
+import {
+  requireUser,
+  requireAnyCapability,
+  authErrorResponse,
+} from "@/lib/auth/require-user";
+import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/listing/generate-description
@@ -73,13 +79,28 @@ function templateDescription(b: GenerateBody): string {
 }
 
 export async function POST(request: Request) {
-  // AuthZ: must be a signed-in, active user (any role).
+  // AuthZ: only advert-capable staff may spend the operator's LLM credits.
+  // Previously this route accepted any signed-in user with no rate limit, so a
+  // low-privilege account could drive unbounded operator-paid generation.
+  let actor;
   try {
-    await requireUser();
+    actor = await requireUser();
+    requireAnyCapability(actor, ["advert:create", "advert:edit"]);
   } catch (e) {
     const r = authErrorResponse(e);
     if (r) return r;
     throw e;
+  }
+
+  const limit = rateLimit(`listing-desc:${actor.id}`, {
+    max: 20,
+    windowMs: 60_000,
+  });
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Too many description requests, try again shortly." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
   }
 
   let body: GenerateBody;
@@ -107,22 +128,38 @@ export async function POST(request: Request) {
     });
   }
 
-  const name = [body.year, body.make, body.model, body.derivative]
+  // Cap every caller-supplied string before it enters the prompt so one
+  // request cannot send an oversized, token-costly body.
+  const cap = (v: unknown, n: number): string =>
+    typeof v === "string" ? v.slice(0, n) : "";
+  const name = [
+    body.year,
+    cap(body.make, 40),
+    cap(body.model, 40),
+    cap(body.derivative, 60),
+  ]
     .filter(Boolean)
     .join(" ");
   const facts = [
     fmtMiles(body.mileage),
-    body.colour,
-    body.fuelType,
-    body.transmission,
-    body.bodyType,
+    cap(body.colour, 40),
+    cap(body.fuelType, 40),
+    cap(body.transmission, 40),
+    cap(body.bodyType, 40),
     body.doors ? `${body.doors} doors` : "",
     fmtPrice(body.price),
   ]
     .filter(Boolean)
     .join(", ");
-  const features = (body.features ?? []).join(", ");
-  const tone = body.tone ?? "professional";
+  const features = (Array.isArray(body.features) ? body.features : [])
+    .filter((f): f is string => typeof f === "string")
+    .slice(0, 40)
+    .map((f) => f.slice(0, 80))
+    .join(", ");
+  const tone =
+    body.tone === "friendly" || body.tone === "premium"
+      ? body.tone
+      : "professional";
 
   const prompt = [
     `Write a compelling UK used-car advert description for a ${name}.`,
@@ -157,13 +194,18 @@ export async function POST(request: Request) {
     });
 
     if (!res.ok) {
+      // Log the upstream body server-side; never echo it to the browser (a
+      // custom LLM_BASE_URL gateway may include sensitive detail in errors).
       const detail = await res.text().catch(() => "");
+      logger.error("listing-desc", "LLM request failed", {
+        status: res.status,
+        detail: detail.slice(0, 500),
+      });
       // Graceful degradation — still hand back a usable description.
       return NextResponse.json({
         description: templateDescription(body),
         source: "template",
         warning: `LLM request failed (${res.status})`,
-        detail: detail.slice(0, 300),
       });
     }
 
@@ -177,10 +219,13 @@ export async function POST(request: Request) {
       source: text ? "openai" : "template",
     });
   } catch (err) {
+    logger.error("listing-desc", "LLM request error", {
+      error: err instanceof Error ? err : String(err),
+    });
     return NextResponse.json({
       description: templateDescription(body),
       source: "template",
-      warning: err instanceof Error ? err.message : "LLM request error",
+      warning: "LLM request error",
     });
   }
 }

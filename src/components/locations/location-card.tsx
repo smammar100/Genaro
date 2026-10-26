@@ -66,9 +66,8 @@ function describeMovement(
 
 /**
  * Vehicle Detail Overview card showing physical location state and the 3
- * most recent movements, as a `BandedCard`: the place and days there in the
- * header with Move vehicle as a link, then where it is and since when, and
- * its recent moves. The full history lives on the vehicle's Location tab.
+ * most recent movements, as a `BandedCard`: Move vehicle as a link in the
+ * header, then where it is and since when, and its recent moves. The full history lives on the vehicle's Location tab.
  * The parent wires `onMove` (it owns the MoveDialog state); without it the
  * card is read-only.
  * @import import { LocationCard } from "@/components/locations/location-card";
@@ -107,7 +106,6 @@ export function LocationCard({
     <BandedCard
       icon={MapPin}
       title="Location"
-      summary={`${place} · ${dayCount}`}
       actions={
         onMove ? (
           <Button variant="plain" icon="ArrowRightMinor" onClick={onMove}>

@@ -80,12 +80,9 @@ interface EditableCardProps<T extends object> {
   /** Notified whenever this card enters or leaves edit mode. */
   onDirtyChange?: (dirty: boolean) => void;
   className?: string;
-  /** Render as a `BandedCard` (icon header with `summary` and the Edit /
-   *  Cancel + Save links, one field per row) — the Overview's card row.
-   *  Needs `icon`. */
+  /** Render as a `BandedCard` (icon header with the Edit / Cancel + Save
+   *  links, one field per row) — the Overview's card row. Needs `icon`. */
   banded?: boolean;
-  /** The banded header's one-line summary. */
-  summary?: ReactNode;
 }
 
 export function EditableCard<T extends object>({
@@ -98,7 +95,6 @@ export function EditableCard<T extends object>({
   onDirtyChange,
   className,
   banded = false,
-  summary,
 }: EditableCardProps<T>) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -283,7 +279,7 @@ export function EditableCard<T extends object>({
   if (banded && Icon) {
     return (
       <div className={className} data-testid={`editable-card-${slug(title)}`}>
-        <BandedCard icon={Icon} title={title} summary={summary} actions={actions}>
+        <BandedCard icon={Icon} title={title} actions={actions}>
           {banner}
           {rows}
         </BandedCard>

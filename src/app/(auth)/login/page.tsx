@@ -46,10 +46,17 @@ function LoginInner() {
   const search = useSearchParams();
   const { user, loading: authLoading, signIn, signOut } = useAuth();
   // Only a path inside the app: a crafted ?next=https://… or //host would
-  // otherwise send someone off-site the moment they signed in.
+  // otherwise send someone off-site the moment they signed in. We also reject
+  // any control character (tab/newline/CR) and backslash — the URL parser the
+  // router uses strips those, so `/<tab>/host` would otherwise resolve to the
+  // scheme-relative //host and defeat the leading-slash check.
   const requestedNext = search.get("next");
   const explicitNext =
-    requestedNext && /^\/(?![/\\])/.test(requestedNext) ? requestedNext : null;
+    requestedNext &&
+    /^\/(?![/\\])/.test(requestedNext) &&
+    !/[\u0000-\u001f\u007f\\]/.test(requestedNext)
+      ? requestedNext
+      : null;
   // Set when hydrate() signs out an inactive profile, so the bounce back here
   // carries an explanation instead of looking like a failed password.
   const signedOutReason = search.get("reason");
@@ -163,16 +170,6 @@ function LoginInner() {
           </Link>
         </div>
       </form>
-
-      {process.env.NODE_ENV !== "production" && (
-        <p className="body-sm mt-8 text-(--text-secondary)">
-          Dev seed users: shared password{" "}
-          <code className="rounded-(--radius-100) bg-(--bg-surface-secondary) px-1.5 py-0.5 text-(--text)">
-            CarCapUAT!2026
-          </code>
-          .
-        </p>
-      )}
     </AuthCard>
   );
 }
