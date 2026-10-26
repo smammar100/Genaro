@@ -9,6 +9,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { dealerPartnerService } from "@/lib/services/dealer-partner-service";
 import type { DealerPartner, Vehicle } from "@/lib/types";
@@ -71,6 +72,8 @@ export default function DealerPartnerDetailPage({
   const [edit, setEdit] = useState<DraftPartner | null>(null);
   const [busy, setBusy] = useState(false);
   const [addVehicleOpen, setAddVehicleOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const router = useRouter();
   const notesId = useId();
   const editIdBase = useId();
   const editNameId = `${editIdBase}-name`;
@@ -201,6 +204,19 @@ export default function DealerPartnerDetailPage({
     }
   }
 
+  async function deletePartner() {
+    if (!partner) return;
+    setBusy(true);
+    try {
+      await dealerPartnerService.remove(partner.id);
+      toast.success("Dealer partner deleted");
+      router.push(BACK_ACTION.url);
+    } catch {
+      toast.error("Couldn't delete the dealer partner. Try again.");
+      setBusy(false);
+    }
+  }
+
   if (loaded && !partner) {
     return (
       <Page fullWidth title="Dealer partner" backAction={BACK_ACTION}>
@@ -248,6 +264,11 @@ export default function DealerPartnerDetailPage({
               vatNumber: partner.vatNumber ?? "",
               active: partner.active,
             }),
+        },
+        {
+          content: "Delete dealer partner",
+          destructive: true,
+          onAction: () => setConfirmDelete(true),
         },
       ]}
       primaryAction={{
@@ -429,6 +450,31 @@ export default function DealerPartnerDetailPage({
             />
           </div>
         )}
+      </Modal>
+      <Modal
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        title={`Delete ${partner.companyName ?? partner.name}?`}
+        size="small"
+        primaryAction={{
+          content: "Delete dealer partner",
+          destructive: true,
+          loading: busy,
+          onAction: () => void deletePartner(),
+        }}
+        secondaryActions={[
+          { content: "Cancel", onAction: () => setConfirmDelete(false) },
+        ]}
+      >
+        <p className="body-md text-(--text)">
+          {partner.companyName ?? partner.name} comes off your list of dealer
+          partners for good, with their contact details and notes.
+          {historical && historical.length > 0
+            ? ` The ${historical.length} ${historical.length === 1 ? "car" : "cars"} you bought from them stay${historical.length === 1 ? "s" : ""} on record, but no longer show${historical.length === 1 ? "s" : ""} a supplier.`
+            : ""}{" "}
+          To stop buying from them but keep the record, mark them inactive
+          instead.
+        </p>
       </Modal>
     </Page>
   );

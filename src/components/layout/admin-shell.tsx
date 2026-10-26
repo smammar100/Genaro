@@ -59,7 +59,7 @@ export function AdminShell({
 
 /**
  * While the sidebar is collapsed on a wide window, the way back: a button in
- * the same corner as the sidebar's own collapse button.
+ * the bottom-left corner (the top bar's menu button and "[" work too).
  */
 function ShowSidebarButton() {
   const { open, isMobile, toggleSidebar } = useSidebar();

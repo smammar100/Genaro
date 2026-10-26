@@ -126,7 +126,10 @@ export const locationService = {
            testDriveExpectedBackAt:test_drive_expected_back_at`,
         )
         .eq("company_id", companyId)
-        .eq("current_location", location);
+        .eq("current_location", location)
+        // A returned car has gone back to its supplier; it isn't anywhere on
+        // site, and getCounts leaves it out of the tab badges too.
+        .neq("status", "returned");
       if (error) throw error;
       const rows = (data ?? []) as VehicleAtLocationRow[];
       // For garage / staff we also want the latest movement's vendor /

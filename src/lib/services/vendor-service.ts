@@ -82,4 +82,27 @@ export const vendorService = {
     invalidate(NS);
     return data as unknown as Vendor;
   },
+
+  /**
+   * Delete one garage. Returns false (and deletes nothing) when its jobs,
+   * invoices, to-dos or location history still point at it: those records
+   * keep their garage, so the caller should offer "mark inactive" instead.
+   */
+  async remove(id: UUID): Promise<boolean> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("vendors")
+      .delete()
+      .eq("id", id)
+      .select("id");
+    if (error) {
+      // 23503 foreign_key_violation
+      if (error.code === "23503") return false;
+      throw error;
+    }
+    // RLS turns a forbidden delete into "0 rows", not an error.
+    if (!data?.length) throw new Error("Garage not deleted");
+    invalidate(NS);
+    return true;
+  },
 };

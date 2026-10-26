@@ -114,7 +114,8 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         icon: MapPin,
         requiredAnyOf: ["locations:move"],
       },
-      // "Add vehicle" is the dashboard's primary action (and in ⌘K), not a nav row.
+      // "Add vehicle" is the button at the top of the rail (AdminNavigation),
+      // not a nav row.
     ],
   },
   {

@@ -14,10 +14,9 @@ import type {
   VendorSpeciality,
 } from "@/lib/types";
 import {
-  Avatar,
+  ActionMenu,
   Badge,
   Banner,
-  Button,
   Card,
   Checkbox,
   EmptyState,
@@ -57,9 +56,14 @@ export default function VendorsPage() {
   // The "Add" action lives on the page header; each tab opens its own modal.
   const [garageAdd, setGarageAdd] = useState(false);
   const [partnerAdd, setPartnerAdd] = useState(false);
+  // "Delete all …" also lives on the header; the tab owns the rows and the
+  // confirmation, so the header only asks and learns how many rows there are.
+  const [deleteAllRequest, setDeleteAllRequest] = useState(0);
+  const [rowCount, setRowCount] = useState(0);
 
   function selectTab(v: VendorTab) {
     setTab(v);
+    setRowCount(0);
     window.history.replaceState(
       null,
       "",
@@ -80,6 +84,20 @@ export default function VendorsPage() {
               onAction: () => setPartnerAdd(true),
             }
       }
+      secondaryActions={
+        rowCount > 0
+          ? [
+              {
+                content:
+                  tab === "garages"
+                    ? "Delete all garages"
+                    : "Delete all dealer partners",
+                destructive: true,
+                onAction: () => setDeleteAllRequest((n) => n + 1),
+              },
+            ]
+          : undefined
+      }
     >
       <Tabs
         tabs={TABS}
@@ -87,9 +105,19 @@ export default function VendorsPage() {
         onSelect={(i) => selectTab(TABS[i]?.id ?? "garages")}
       />
       {tab === "garages" ? (
-        <GaragesTab addOpen={garageAdd} setAddOpen={setGarageAdd} />
+        <GaragesTab
+          addOpen={garageAdd}
+          setAddOpen={setGarageAdd}
+          deleteAllRequest={deleteAllRequest}
+          onRowCount={setRowCount}
+        />
       ) : (
-        <DealerPartnersTab addOpen={partnerAdd} setAddOpen={setPartnerAdd} />
+        <DealerPartnersTab
+          addOpen={partnerAdd}
+          setAddOpen={setPartnerAdd}
+          deleteAllRequest={deleteAllRequest}
+          onRowCount={setRowCount}
+        />
       )}
     </Page>
   );
@@ -152,13 +180,21 @@ interface VendorRow extends Vendor {
   totalSpent: number;
 }
 
+interface TabProps {
+  addOpen: boolean;
+  setAddOpen: (v: boolean) => void;
+  /** Goes up by one each time the header's "Delete all …" is pressed. */
+  deleteAllRequest: number;
+  /** Tells the header how many rows there are (it hides "Delete all" at 0). */
+  onRowCount: (n: number) => void;
+}
+
 function GaragesTab({
   addOpen,
   setAddOpen,
-}: {
-  addOpen: boolean;
-  setAddOpen: (v: boolean) => void;
-}) {
+  deleteAllRequest,
+  onRowCount,
+}: TabProps) {
   const baseId = useId();
   const nameId = `${baseId}-name`;
   const phoneId = `${baseId}-phone`;
@@ -169,6 +205,8 @@ function GaragesTab({
   const [draft, setDraft] = useState<DraftVendor | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [confirmIds, setConfirmIds] = useState<string[] | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // The "Add garage" action lives on the page header; open a blank draft
   // when it's pressed.
@@ -177,6 +215,17 @@ function GaragesTab({
     setPrevAddOpen(addOpen);
     if (addOpen) setDraft({ ...EMPTY_VENDOR });
   }
+
+  // So is "Delete all garages": each press bumps the request, and we confirm
+  // every row.
+  const [seenDeleteAll, setSeenDeleteAll] = useState(deleteAllRequest);
+  if (deleteAllRequest !== seenDeleteAll) {
+    setSeenDeleteAll(deleteAllRequest);
+    if (vendors?.length) setConfirmIds(vendors.map((v) => v.id));
+  }
+
+  const vendorCount = vendors?.length ?? 0;
+  useEffect(() => onRowCount(vendorCount), [vendorCount, onRowCount]);
 
   function closeDraft() {
     setDraft(null);
@@ -258,6 +307,56 @@ function GaragesTab({
     }
   }
 
+  async function handleDelete(ids: string[]) {
+    if (!company) return;
+    setDeleting(true);
+    const blocked: string[] = [];
+    let deleted = 0;
+    try {
+      for (const id of ids) {
+        if (await vendorService.remove(id)) deleted++;
+        else blocked.push(vendors?.find((v) => v.id === id)?.name ?? "A garage");
+      }
+    } catch {
+      toast.error(
+        ids.length === 1
+          ? "Couldn't delete the garage. Try again."
+          : "Couldn't delete all the garages. Try again.",
+      );
+    } finally {
+      setDeleting(false);
+      setConfirmIds(null);
+      setVendors(await vendorService.getAll(company.id).catch(() => vendors));
+    }
+    if (deleted > 0) {
+      toast.success(deleted === 1 ? "Garage deleted" : `${deleted} garages deleted`);
+    }
+    if (blocked.length > 0) {
+      toast.error(
+        blocked.length === 1
+          ? `${blocked[0]} wasn't deleted because jobs, invoices or car moves point to it. Mark it inactive instead.`
+          : `${blocked.join(", ")} weren't deleted because jobs, invoices or car moves point to them. Mark them inactive instead.`,
+      );
+    }
+  }
+
+  function editGarage(row: Vendor) {
+    setDraft({
+      id: row.id,
+      name: row.name,
+      phone: row.phone,
+      speciality: row.speciality,
+      active: row.active,
+    });
+  }
+
+  const confirmName =
+    confirmIds?.length === 1
+      ? vendors?.find((v) => v.id === confirmIds[0])?.name
+      : undefined;
+  const confirmCount = confirmIds?.length ?? 0;
+  const confirmingAll = confirmCount > 1 && confirmCount === vendorCount;
+
   return (
     <>
       <KpiStrip
@@ -296,7 +395,20 @@ function GaragesTab({
           loading: saving,
           onAction: () => void handleSave(),
         }}
-        secondaryActions={[{ content: "Cancel", onAction: closeDraft }]}
+        secondaryActions={[
+          ...(draft?.id
+            ? [
+                {
+                  content: "Delete garage",
+                  onAction: () => {
+                    setConfirmIds([draft.id as string]);
+                    closeDraft();
+                  },
+                },
+              ]
+            : []),
+          { content: "Cancel", onAction: closeDraft },
+        ]}
       >
         {draft && (
           <div className="flex flex-col gap-3">
@@ -331,6 +443,32 @@ function GaragesTab({
         )}
       </Modal>
 
+      <Modal
+        open={confirmIds !== null}
+        onClose={() => setConfirmIds(null)}
+        title={
+          confirmName
+            ? `Delete ${confirmName}?`
+            : `Delete ${confirmingAll ? "all " : ""}${confirmCount} garages?`
+        }
+        size="small"
+        primaryAction={{
+          content: confirmCount === 1 ? "Delete garage" : "Delete garages",
+          destructive: true,
+          loading: deleting,
+          onAction: () => void handleDelete(confirmIds ?? []),
+        }}
+        secondaryActions={[
+          { content: "Cancel", onAction: () => setConfirmIds(null) },
+        ]}
+      >
+        <p className="body-md text-(--text)">
+          {confirmName
+            ? `${confirmName} comes off your list of garages for good. If jobs, invoices or car moves point to it, it can't be deleted. Mark it inactive instead.`
+            : `They come off your list of garages for good. Any that jobs, invoices or car moves point to can't be deleted and will stay. Mark those inactive instead.`}
+        </p>
+      </Modal>
+
       {loadError && !rows ? (
         <Banner
           tone="critical"
@@ -353,51 +491,61 @@ function GaragesTab({
       ) : (
         <IndexTable
           selectable={false}
+          onRowClick={(id) => {
+            const row = rows.find((r) => r.id === id);
+            if (row) editGarage(row);
+          }}
           headings={[
             { title: "Name" },
             { title: "Phone" },
             { title: "Speciality" },
             { title: "Active jobs", alignment: "end" },
             { title: "Total spent", alignment: "end" },
-            { title: "Status" },
+            { title: "Actions", alignment: "end" },
           ]}
           rows={rows.map((row) => ({
             id: row.id,
             cells: [
-              <Avatar
-                key="name"
-                name={row.name}
-                size="sm"
-                label={
-                  <Button
-                    variant="plain"
-                    onClick={() =>
-                      setDraft({
-                        id: row.id,
-                        name: row.name,
-                        phone: row.phone,
-                        speciality: row.speciality,
-                        active: row.active,
-                      })
-                    }
-                  >
-                    {row.name}
-                  </Button>
-                }
-              />,
+              <NameCell key="name" name={row.name} active={row.active} />,
               <span key="phone" className="text-(--text-secondary)">
                 {row.phone || "—"}
               </span>,
               <Badge key="speciality" tone={SPECIALITY_TONE[row.speciality]}>
                 {SPECIALITY_LABEL[row.speciality] ?? row.speciality}
               </Badge>,
-              <span key="jobs" className="tabular-nums">
-                {row.activeCount}
-              </span>,
-              <span key="spent" className="tabular-nums">
-                {formatCurrency(row.totalSpent)}
-              </span>,
-              <ActiveBadge key="status" active={row.active} />,
+              <Figure key="jobs" value={row.activeCount} />,
+              <Figure
+                key="spent"
+                value={row.totalSpent}
+                format={formatCurrency}
+              />,
+              <ActionMenu
+                key="actions"
+                accessibilityLabel={`Actions for ${row.name}`}
+                size="micro"
+                preferredAlignment="right"
+                sections={[
+                  {
+                    items: [
+                      {
+                        content: "Edit garage",
+                        icon: "EditMinor",
+                        onAction: () => editGarage(row),
+                      },
+                    ],
+                  },
+                  {
+                    items: [
+                      {
+                        content: "Delete garage",
+                        icon: "DeleteMinor",
+                        destructive: true,
+                        onAction: () => setConfirmIds([row.id]),
+                      },
+                    ],
+                  },
+                ]}
+              />,
             ],
           }))}
         />
@@ -439,10 +587,9 @@ interface PartnerRow extends DealerPartner {
 function DealerPartnersTab({
   addOpen,
   setAddOpen,
-}: {
-  addOpen: boolean;
-  setAddOpen: (v: boolean) => void;
-}) {
+  deleteAllRequest,
+  onRowCount,
+}: TabProps) {
   const baseId = useId();
   const contactNameId = `${baseId}-contact-name`;
   const phoneId = `${baseId}-phone`;
@@ -456,12 +603,37 @@ function DealerPartnersTab({
   const [draft, setDraft] = useState<DraftPartner | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [confirmIds, setConfirmIds] = useState<string[] | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // The "Add dealer partner" action lives on the page header.
   const [prevAddOpen, setPrevAddOpen] = useState(false);
   if (addOpen !== prevAddOpen) {
     setPrevAddOpen(addOpen);
     if (addOpen) setDraft({ ...EMPTY_PARTNER });
+  }
+
+  // So does "Delete all dealer partners" (see GaragesTab).
+  const [seenDeleteAll, setSeenDeleteAll] = useState(deleteAllRequest);
+  if (deleteAllRequest !== seenDeleteAll) {
+    setSeenDeleteAll(deleteAllRequest);
+    if (partners?.length) setConfirmIds(partners.map((p) => p.id));
+  }
+
+  const partnerCount = partners?.length ?? 0;
+  useEffect(() => onRowCount(partnerCount), [partnerCount, onRowCount]);
+
+  function editPartner(p: DealerPartner) {
+    setDraft({
+      id: p.id,
+      name: p.name,
+      phone: p.phone ?? "",
+      companyName: p.companyName ?? "",
+      email: p.email ?? "",
+      companyAddress: p.companyAddress ?? "",
+      vatNumber: p.vatNumber ?? "",
+      active: p.active,
+    });
   }
 
   function closeDraft() {
@@ -541,6 +713,52 @@ function DealerPartnersTab({
       setSaving(false);
     }
   }
+
+  async function handleDelete(ids: string[]) {
+    setDeleting(true);
+    let deleted = 0;
+    try {
+      for (const id of ids) {
+        await dealerPartnerService.remove(id);
+        deleted++;
+      }
+    } catch {
+      toast.error(
+        ids.length === 1
+          ? "Couldn't delete the dealer partner. Try again."
+          : "Couldn't delete all the dealer partners. Try again.",
+      );
+    } finally {
+      setDeleting(false);
+      setConfirmIds(null);
+      await reload();
+    }
+    if (deleted > 0) {
+      toast.success(
+        deleted === 1 ? "Dealer partner deleted" : `${deleted} dealer partners deleted`,
+      );
+    }
+  }
+
+  const confirmName =
+    confirmIds?.length === 1
+      ? (() => {
+          const p = partners?.find((x) => x.id === confirmIds[0]);
+          return p ? (p.companyName ?? p.name) : undefined;
+        })()
+      : undefined;
+  // Cars in stock that lose their supplier link (sold ones lose it too, but
+  // nobody is working those).
+  const linkedCars = (confirmIds ?? []).reduce(
+    (n, id) => n + (counts.get(id) ?? 0),
+    0,
+  );
+  const confirmCount = confirmIds?.length ?? 0;
+  const confirmingAll = confirmCount > 1 && confirmCount === partnerCount;
+  const carsLine =
+    linkedCars === 0
+      ? "Any cars you bought from them stay on record but no longer show a supplier."
+      : `The ${linkedCars} ${linkedCars === 1 ? "car" : "cars"} in stock from them stay${linkedCars === 1 ? "s" : ""}, but no longer show${linkedCars === 1 ? "s" : ""} a supplier.`;
 
   return (
     <>
@@ -632,6 +850,38 @@ function DealerPartnersTab({
         )}
       </Modal>
 
+      <Modal
+        open={confirmIds !== null}
+        onClose={() => setConfirmIds(null)}
+        title={
+          confirmName
+            ? `Delete ${confirmName}?`
+            : `Delete ${confirmingAll ? "all " : ""}${confirmCount} dealer partners?`
+        }
+        size="small"
+        primaryAction={{
+          content:
+            confirmCount === 1
+              ? "Delete dealer partner"
+              : "Delete dealer partners",
+          destructive: true,
+          loading: deleting,
+          onAction: () => void handleDelete(confirmIds ?? []),
+        }}
+        secondaryActions={[
+          { content: "Cancel", onAction: () => setConfirmIds(null) },
+        ]}
+      >
+        <p className="body-md text-(--text)">
+          {confirmName
+            ? `${confirmName} comes off your list of dealer partners for good, with their contact details and notes.`
+            : "They come off your list of dealer partners for good, with their contact details and notes."}{" "}
+          {carsLine} To stop buying from{" "}
+          {confirmCount === 1 ? "them" : "any of them"} but keep the record,
+          mark {confirmCount === 1 ? "them" : "those"} inactive instead.
+        </p>
+      </Modal>
+
       {loadError && !rows ? (
         <Banner
           tone="critical"
@@ -660,21 +910,50 @@ function DealerPartnersTab({
             { title: "Phone" },
             { title: "Company" },
             { title: "Active stock", alignment: "end" },
-            { title: "Status" },
+            { title: "Actions", alignment: "end" },
           ]}
           rows={rows.map((row) => ({
             id: row.id,
             url: `/admin/vendors/dealer-partners/${row.id}`,
             cells: [
-              row.name,
+              <NameCell key="name" name={row.name} active={row.active} />,
               <span key="phone" className="text-(--text-secondary)">
                 {row.phone || "—"}
               </span>,
               row.companyName || "—",
-              <span key="stock" className="tabular-nums">
-                {row.activeStock}
-              </span>,
-              <ActiveBadge key="status" active={row.active} />,
+              <Figure key="stock" value={row.activeStock} />,
+              <ActionMenu
+                key="actions"
+                accessibilityLabel={`Actions for ${row.name}`}
+                size="micro"
+                preferredAlignment="right"
+                sections={[
+                  {
+                    items: [
+                      {
+                        content: "View dealer partner",
+                        icon: "ViewMinor",
+                        url: `/admin/vendors/dealer-partners/${row.id}`,
+                      },
+                      {
+                        content: "Edit dealer partner",
+                        icon: "EditMinor",
+                        onAction: () => editPartner(row),
+                      },
+                    ],
+                  },
+                  {
+                    items: [
+                      {
+                        content: "Delete dealer partner",
+                        icon: "DeleteMinor",
+                        destructive: true,
+                        onAction: () => setConfirmIds([row.id]),
+                      },
+                    ],
+                  },
+                ]}
+              />,
             ],
           }))}
         />
@@ -727,10 +1006,27 @@ function TableSkeleton() {
   );
 }
 
-function ActiveBadge({ active }: { active: boolean }) {
-  return active ? (
-    <Badge tone="success">Active</Badge>
+/** A row's name, flagged only when it's inactive (active is the norm). */
+function NameCell({ name, active }: { name: string; active: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      {name}
+      {active ? null : <Badge>Inactive</Badge>}
+    </span>
+  );
+}
+
+/** A count or amount; nothing yet reads as a dash rather than a column of zeros. */
+function Figure({
+  value,
+  format = String,
+}: {
+  value: number;
+  format?: (n: number) => string;
+}) {
+  return value === 0 ? (
+    <span className="text-(--text-secondary)">—</span>
   ) : (
-    <Badge>Inactive</Badge>
+    <span className="tabular-nums">{format(value)}</span>
   );
 }

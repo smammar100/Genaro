@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Capability } from "@/lib/capabilities";
-import { navRows, navGroupForHref, settingsNavRow, visibleNavGroups } from "./nav";
+import { navRows, navGroupForHref, visibleNavGroups } from "./nav";
 import { MVP_HIDDEN_HREFS, navTourId } from "./sidebar-config";
 
 const everything = () => true;
@@ -96,16 +96,10 @@ describe("navRows", () => {
   });
 });
 
-describe("navGroupForHref / settingsNavRow", () => {
+describe("navGroupForHref", () => {
   it("finds the group a route lives in", () => {
     expect(navGroupForHref("/admin/locations")).toBe("Inventory");
     expect(navGroupForHref("/dashboard")).toBeNull();
     expect(navGroupForHref(undefined)).toBeNull();
-  });
-
-  it("selects Settings on its sub-routes", () => {
-    expect(settingsNavRow("/admin/settings").selected).toBe(true);
-    expect(settingsNavRow("/admin/settings/profile").selected).toBe(true);
-    expect(settingsNavRow("/admin/users-and-permissions").selected).toBe(false);
   });
 });

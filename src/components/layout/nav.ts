@@ -1,4 +1,4 @@
-import { Settings, type LucideIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { Capability } from "@/lib/capabilities";
 import {
   SIDEBAR_GROUPS,
@@ -13,8 +13,6 @@ import {
  * Turns SIDEBAR_GROUPS (the one nav source) into the sidebar's rows.
  * Pure, so the rules below are unit-tested (nav.test.tsx) apart from the shell.
  */
-
-const SETTINGS_HREF = "/admin/settings";
 
 /**
  * The groups this user may see. MVP-hidden routes go first, so a super-user
@@ -161,13 +159,3 @@ export function navRows(groups: SidebarGroup[], state: NavState): NavRow[] {
   });
 }
 
-/** Settings, pinned to the foot of the nav. Open to every signed-in user. */
-export function settingsNavRow(pathname: string): NavRow {
-  return {
-    id: navTourId(SETTINGS_HREF),
-    label: "Settings",
-    icon: Settings,
-    href: SETTINGS_HREF,
-    selected: pathname === SETTINGS_HREF || pathname.startsWith(`${SETTINGS_HREF}/`),
-  };
-}

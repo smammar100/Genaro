@@ -55,6 +55,7 @@ export function NextAdminShell({
         navigation ? (
           <AdminNavigation
             groups={groups}
+            canAddVehicle={isSuperUser || can("inventory:add")}
             pathname={pathname}
             tourGroup={tourGroup}
             openGroup={openGroup}

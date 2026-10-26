@@ -231,6 +231,30 @@ export const dealerPartnerService = {
     return true;
   },
 
+  /**
+   * Delete a partner. The cars they supplied stay in stock; they just lose
+   * their supplier link (vehicles.supplier_id is cleared first, or the
+   * foreign key would refuse the delete).
+   */
+  async remove(id: UUID): Promise<void> {
+    const sb = looseClient();
+    const { error: unlinkError } = await sb
+      .from("vehicles")
+      .update({ supplier_id: null })
+      .eq("supplier_id", id);
+    if (unlinkError && !isMigrationMissing(unlinkError)) throw unlinkError;
+    const { data, error } = await sb
+      .from("dealer_partners")
+      .delete()
+      .eq("id", id)
+      .select("id");
+    if (error) throw error;
+    // RLS turns a forbidden delete into "0 rows", not an error.
+    if (!data?.length) throw new Error("Dealer partner not deleted");
+    invalidate(NS);
+    invalidate("vehicles:");
+  },
+
   /** One partner by id. Null if not found / migration 0002 absent. */
   async getById(id: UUID): Promise<DealerPartner | null> {
     const sb = looseClient();

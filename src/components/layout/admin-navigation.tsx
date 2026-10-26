@@ -2,12 +2,11 @@
 
 import type * as React from "react";
 import Link from "next/link";
-import { PanelLeftClose } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/genaro";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarMenu,
   SidebarMenuBadge,
@@ -21,7 +20,7 @@ import {
 import { SizeProvider } from "@/components/fluid/lib/size-context";
 import { cn } from "@/lib/utils";
 import type { SidebarGroup as NavGroup } from "./sidebar-config";
-import { navRows, settingsNavRow, type NavRow, type NavState } from "./nav";
+import { navRows, type NavRow, type NavState } from "./nav";
 
 /**
  * The admin sidebar, built on Fluid Functionalism's Sidebar: one hover
@@ -29,23 +28,26 @@ import { navRows, settingsNavRow, type NavRow, type NavState } from "./nav";
  * shifting, an edge you can drag to resize or collapse (or press "["), and a
  * drawer below 1024px. Colours are Genaro's nav colours. The rows come from
  * nav.ts: every section the user may see, the open one showing its pages,
- * Settings at the foot. Clicking a section opens it rather than navigating.
+ * an Add vehicle button above them. Clicking a section opens it rather than
+ * navigating.
  * `id="tour-nav"` is the onboarding tour's anchor for the whole nav; each
  * page's link carries its own (navTourId).
  */
 export function AdminNavigation({
   groups,
   onToggleGroup,
+  canAddVehicle = false,
   ...state
 }: NavState & {
   /** From visibleNavGroups: already filtered to what this user may see. */
   groups: NavGroup[];
+  /** Shows the Add vehicle button at the top (the `inventory:add` capability). */
+  canAddVehicle?: boolean;
   /** A section row was clicked: open it, or close it if it is the open one. */
   onToggleGroup: (group: string) => void;
 }) {
-  const { isMobile, setOpenMobile, toggleSidebar } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
   const rows = navRows(groups, state);
-  const settings = settingsNavRow(state.pathname);
 
   // The library renders these regions twice (the docked rail, and the drawer
   // below 1024px), so the skin and the drawer's close-on-pick live on them
@@ -63,6 +65,21 @@ export function AdminNavigation({
     <SizeProvider size="default">
       <Sidebar id="tour-nav" bordered={false} className="h-full bg-(--nav-bg)">
         <SidebarContent {...region}>
+          {canAddVehicle ? (
+            // Adding a car is the most frequent job in the app, so it heads the
+            // rail as a button rather than sitting among Inventory's pages.
+            <div className="px-3 pt-3">
+              <Button
+                variant="primary"
+                fullWidth
+                icon={<Plus className="size-4" />}
+                url="/inventory/add-vehicle"
+                id="tour-nav-add-vehicle"
+              >
+                Add vehicle
+              </Button>
+            </div>
+          ) : null}
           <SidebarGroup className="p-3">
             <SidebarMenu>
               {rows.map((row) => (
@@ -71,21 +88,8 @@ export function AdminNavigation({
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter {...region} className={cn(region.className, "p-3")}>
-          <div className="flex items-center gap-1">
-            <SidebarMenu className="min-w-0 flex-1">
-              <Row row={settings} />
-            </SidebarMenu>
-            <Button
-              variant="tertiary"
-              size="micro"
-              icon={<PanelLeftClose className="size-4" />}
-              accessibilityLabel={isMobile ? "Close menu" : "Collapse sidebar"}
-              title={isMobile ? "Close menu" : "Collapse sidebar ([)"}
-              onClick={toggleSidebar}
-            />
-          </div>
-        </SidebarFooter>
+        {/* No footer: Settings is in the account menu, and the top bar's menu
+            button (or "[") hides and shows the rail. */}
       </Sidebar>
     </SizeProvider>
   );
