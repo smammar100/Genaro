@@ -12,6 +12,24 @@ import {
 import { toast } from "@/lib/toast";
 import { invalidateAll } from "@/lib/cache";
 
+/**
+ * Remove per-user localStorage drafts (invoice + lead) on an account change.
+ * They can hold customer PII, and `invalidateAll()` only clears the in-memory
+ * cache, so without this a shared browser would carry one user's unsaved draft
+ * into the next account's session.
+ */
+function clearLocalDrafts(): void {
+  try {
+    for (const k of Object.keys(localStorage)) {
+      if (k.startsWith("cc-invoice-draft:") || k.startsWith("cc-lead-draft:")) {
+        localStorage.removeItem(k);
+      }
+    }
+  } catch {
+    /* storage unavailable (private window, disabled) — nothing to clear */
+  }
+}
+
 /*
  * The provider wraps every route, the sign-in pages included, so it loads the
  * Supabase client and the dashboard cache warm-up (eight services) on demand
@@ -330,6 +348,7 @@ export function AuthProvider({
     // "logged in as someone else but still see the old user" bug).
     await supabase.auth.signOut().catch(() => {});
     invalidateAll();
+    clearLocalDrafts();
     setUser(null);
     setCompany(null);
     const { error } = await supabase.auth.signInWithPassword({
@@ -345,6 +364,7 @@ export function AuthProvider({
     await supabase.auth.signOut();
     // Clear the cache so the next user doesn't see the previous user's rows.
     invalidateAll();
+    clearLocalDrafts();
     setUser(null);
     setCompany(null);
   }

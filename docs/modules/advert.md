@@ -45,10 +45,10 @@ Module-specific advert components are sparse — most logic is inline in the pag
 |---|---|
 | `listing-service.ts` | Listing CRUD + publish state |
 | `photo-storage.ts` | Read / write photo records in Supabase Storage |
-| `photo-service.ts` | Build OpenAI prompts + call `/api/photo/generate` |
+| `photo-service.ts` | Build OpenAI prompts + call `/api/photo/vehicle` |
 | `vehicle-service.ts` | Look up vehicles for the Work List |
 
-API routes used: `/api/photo/generate` (OpenAI proxy) and `/api/photo/vehicle` (storage helper). See [`reference/api-routes.md`](../reference/api-routes.md).
+API route used: `/api/photo/vehicle` (OpenAI image gen + storage helper). See [`reference/api-routes.md`](../reference/api-routes.md).
 
 Entities: `Listing`, `VehiclePhoto`.
 
@@ -75,4 +75,3 @@ flowchart LR
 - **No image cropping** — the OpenAI flow returns a square image. If the source photo is letterboxed or oddly cropped, the result inherits that. Manual touch-up not supported in v1.
 - **Performance page is a stub** — `ComingSoon` placeholder. No analytics integration today.
 - **Photo Processing queue is in-memory** — closing the tab loses pending uploads. Plan: persist queue state.
-- **`/api/photo/generate` data URL** — returns base64 in the response. Large; do not store the data URL itself, upload to Storage and reference the URL.

@@ -58,40 +58,28 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
 export async function requireUser(): Promise<AuthedActor> {
   const supabase = await createClient();
 
-  // getUser() validates the access token against Supabase. If the token has
-  // expired, API routes (excluded from the proxy, which is what refreshes
-  // tokens for page navigations) have nothing to refresh it — so getUser()
-  // 401s even though the browser still holds a valid refresh token. Fall back
-  // to getSession(), which uses the refresh token to mint a fresh access
-  // token, then re-validate. This was the production "every lookup 401s while
-  // the dashboard shows logged-in" bug.
-  const getUserResult = await withTimeout(
+  // Authenticate the caller with getUser(), whose result is the ONLY source of
+  // identity here. getUser() validates the access token against the Auth server
+  // and, when it has expired, first refreshes it from the refresh-token cookie
+  // (writing the rotated cookies back through this route handler's cookie store)
+  // and then validates — so a still-valid session is not rejected merely because
+  // its access token aged out.
+  //
+  // We deliberately do NOT fall back to getSession(): on the server its session
+  // is read straight from the request cookie and is not signature-verified, so
+  // trusting session.user would let a forged cookie be accepted as any user id.
+  // getUser() already covers the expired-access-token case the old fallback was
+  // added for.
+  const { data: getUserData, error: authError } = await withTimeout(
     supabase.auth.getUser(),
     8_000,
     "auth check",
   );
-  let user = getUserResult.data.user;
-  let authError: unknown = getUserResult.error;
+  const user = getUserData.user;
 
   if (!user) {
-    // Try a refresh via the session (uses the refresh-token cookie).
-    const { data: sessionData } = await withTimeout(
-      supabase.auth.getSession(),
-      8_000,
-      "session refresh",
-    );
-    if (sessionData?.session?.user) {
-      user = sessionData.session.user;
-      authError = null;
-    }
-  }
-
-  if (!user) {
-    const msg =
-      authError instanceof Error ? authError.message : "no user";
-    console.warn(
-      `[require-user] 401 — no valid session (getUser+getSession both failed): ${msg}`,
-    );
+    const msg = authError instanceof Error ? authError.message : "no user";
+    console.warn(`[require-user] 401 — no valid session: ${msg}`);
     throw new AuthError(401, "Authentication required");
   }
 

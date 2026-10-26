@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { variantLabel } from "@/lib/vehicle-variant";
-import { requireUser, authErrorResponse } from "@/lib/auth/require-user";
-import { vehicleService } from "@/lib/services/vehicle-service";
+import {
+  requireUser,
+  requireCapability,
+  authErrorResponse,
+} from "@/lib/auth/require-user";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { rateLimit } from "@/lib/rate-limit";
 import { CAR_ANGLES, carPhotoPrompt, type CarAngle } from "@/lib/services/photo-service";
 import {
   readCarImageUrl,
@@ -23,19 +28,23 @@ function fileBase(angle: CarAngle, backdropKey?: string): string {
 // ---- In-flight dedupe ----------------------------------------------------
 const inFlight = new Map<string, Promise<string>>();
 
-// ---- Rate limit: 30 generations / 60s rolling window ---------------------
-const WINDOW_MS = 60_000;
-const MAX_PER_WINDOW = 30;
-const recentTimestamps: number[] = [];
-
-function rateLimitOk(): boolean {
-  const now = Date.now();
-  while (recentTimestamps.length && now - recentTimestamps[0] > WINDOW_MS) {
-    recentTimestamps.shift();
-  }
-  if (recentTimestamps.length >= MAX_PER_WINDOW) return false;
-  recentTimestamps.push(now);
-  return true;
+/**
+ * Set the vehicle's hero image with the service-role client, scoped to the
+ * caller's own company. The browser-client service method runs as the anon
+ * role here (no cookies server-side) and would silently update zero rows.
+ */
+async function setHeroImageUrl(
+  admin: ReturnType<typeof createAdminClient>,
+  vehicleId: string,
+  companyId: string,
+  url: string,
+): Promise<void> {
+  const { error } = await admin
+    .from("vehicles")
+    .update({ hero_image_url: url } as never)
+    .eq("id", vehicleId)
+    .eq("company_id", companyId);
+  if (error) throw error;
 }
 
 async function callOpenAI(prompt: string, apiKey: string): Promise<string> {
@@ -63,6 +72,7 @@ async function callOpenAI(prompt: string, apiKey: string): Promise<string> {
 }
 
 async function generateAndPersist(
+  admin: ReturnType<typeof createAdminClient>,
   companyId: string,
   vehicleId: string,
   angle: CarAngle,
@@ -75,20 +85,46 @@ async function generateAndPersist(
   const base = fileBase(angle, backdropKey);
   const url = await writeCarImage(companyId, vehicleId, base, buf);
   if (angle === "hero") {
-    await vehicleService.setHeroImageUrl(vehicleId, url);
+    await setHeroImageUrl(admin, vehicleId, companyId, url);
   }
   logger.info("photo", "generated vehicle image", { companyId, vehicleId, base, url });
   return url;
 }
 
 export async function POST(request: Request) {
-  // AuthZ: must be a signed-in, active user (any role).
+  // AuthZ: only staff who can process photos may spend the operator's image
+  // credits and write into storage. The actor scopes the vehicle read and the
+  // storage path — never the request body or an unauthenticated row read.
+  let actor;
   try {
-    await requireUser();
+    actor = await requireUser();
+    requireCapability(actor, "photos:process");
   } catch (e) {
     const r = authErrorResponse(e);
     if (r) return r;
     throw e;
+  }
+
+  let admin: ReturnType<typeof createAdminClient>;
+  try {
+    admin = createAdminClient();
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Server auth is misconfigured" },
+      { status: 500 },
+    );
+  }
+
+  // Per-user limit so one account cannot starve everyone's photo generation.
+  const limit = rateLimit(`photo-vehicle:${actor.id}`, {
+    max: 30,
+    windowMs: 60_000,
+  });
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Too many image generations, try again shortly." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
@@ -156,15 +192,38 @@ export async function POST(request: Request) {
         : undefined;
   }
 
-  // Look up vehicle (we need company_id for the storage path).
-  const vehicle = await vehicleService.getById(vehicleId);
-  if (!vehicle) {
+  // Load the vehicle with the service-role client, scoped to the caller's own
+  // company. Reading through the browser-client service would run as the anon
+  // role here (no cookies server-side), so tenancy would hinge on the live anon
+  // SELECT policy; binding to actor.companyId keeps the write cross-tenant-safe.
+  const companyId = actor.companyId;
+  const { data: vehicleRow, error: vErr } = await admin
+    .from("vehicles")
+    .select("year, make, model, colour, derivative, variant_name, variant_code")
+    .eq("id", vehicleId)
+    .eq("company_id", companyId)
+    .maybeSingle();
+  if (vErr) {
+    return NextResponse.json(
+      { error: "Could not load the vehicle." },
+      { status: 502 },
+    );
+  }
+  if (!vehicleRow) {
     return NextResponse.json(
       { error: `Vehicle ${vehicleId} not found.` },
       { status: 404 },
     );
   }
-  const companyId = vehicle.companyId;
+  const vehicle = vehicleRow as {
+    year: number | null;
+    make: string | null;
+    model: string | null;
+    colour: string | null;
+    derivative: string | null;
+    variant_name: string | null;
+    variant_code: string | null;
+  };
 
   const base = fileBase(angle, backdropKey);
 
@@ -172,7 +231,7 @@ export async function POST(request: Request) {
   const existingUrl = await readCarImageUrl(companyId, vehicleId, base);
   if (existingUrl) {
     if (angle === "hero") {
-      await vehicleService.setHeroImageUrl(vehicleId, existingUrl);
+      await setHeroImageUrl(admin, vehicleId, companyId, existingUrl);
     }
     return NextResponse.json({ url: existingUrl, cached: true });
   }
@@ -195,30 +254,29 @@ export async function POST(request: Request) {
     }
   }
 
-  // 3. Rate limit.
-  if (!rateLimitOk()) {
-    return NextResponse.json(
-      {
-        error: `Rate limit hit (${MAX_PER_WINDOW} generations / ${WINDOW_MS / 1000}s). Try again in a minute.`,
-      },
-      { status: 429 },
-    );
-  }
-
   const prompt = carPhotoPrompt({
-    year: vehicle.year,
-    make: vehicle.make,
-    model: vehicle.model,
-    colour: vehicle.colour,
+    year: vehicle.year ?? 0,
+    make: vehicle.make ?? "",
+    model: vehicle.model ?? "",
+    colour: vehicle.colour ?? "",
     // GEN-91: feed the readable derivative, never the opaque AutoTrader GUID —
     // a 32-char hex string in an image prompt is noise at best.
-    variant: variantLabel(vehicle, "") || null,
+    variant:
+      variantLabel(
+        {
+          derivative: vehicle.derivative,
+          variantName: vehicle.variant_name,
+          variantCode: vehicle.variant_code,
+        },
+        "",
+      ) || null,
     angle,
     backdrop: angle === "composed" ? backdropHint : undefined,
   });
 
-  // 4. Kick off generation, register the in-flight promise.
+  // 3. Kick off generation, register the in-flight promise.
   const promise = generateAndPersist(
+    admin,
     companyId,
     vehicleId,
     angle,

@@ -346,9 +346,14 @@ function InvoiceGenerationForm() {
   const [customNote, setCustomNote] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
-  const draftKey = company
-    ? `cc-invoice-draft:${company.id}:${invoiceIdParam ?? vehicleIdParam ?? "new"}`
-    : null;
+  // Scope the draft to the user as well as the company: the draft holds buyer
+  // PII, and on a shared machine a company-only key let the next person to sign
+  // in restore the previous user's unsaved details (the leads page keys per
+  // user for the same reason).
+  const draftKey =
+    company && user
+      ? `cc-invoice-draft:${company.id}:${user.id}:${invoiceIdParam ?? vehicleIdParam ?? "new"}`
+      : null;
   const restoredRef = useRef(false);
 
   function restoreDraft(key: string) {

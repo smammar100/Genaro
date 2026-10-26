@@ -42,9 +42,8 @@ function motHighlight(expiry: string | null): Highlight {
 /**
  * The four facts a buyer asks for first when they phone about a car — mileage,
  * service history, MOT and previous owners — as a `BandedCard` beside Pricing
- * and Location: mileage and service history in the header's summary, then one
- * fact per row, label left and value right, with the MOT flagged once it's
- * close or gone.
+ * and Location: one fact per row, label left and value right, with the MOT
+ * flagged once it's close or gone.
  */
 export function SalesHighlightsCard({ vehicle }: { vehicle: Vehicle }) {
   const highlights: Highlight[] = [
@@ -69,17 +68,8 @@ export function SalesHighlightsCard({ vehicle }: { vehicle: Vehicle }) {
     },
   ];
 
-  const [mileage, service] = highlights;
-  const summary =
-    [
-      mileage.tone === "muted" ? null : mileage.value,
-      service.tone === "muted" ? null : `${service.value.toLowerCase()} history`,
-    ]
-      .filter(Boolean)
-      .join(" · ") || "Nothing recorded yet";
-
   return (
-    <BandedCard icon={ListChecks} title="Sales highlights" summary={summary}>
+    <BandedCard icon={ListChecks} title="Sales highlights">
       <dl className="flex flex-col gap-2.5">
         {highlights.map(({ icon: Icon, label, value, note, tone }) => (
           // Label left; value right with any note under it.

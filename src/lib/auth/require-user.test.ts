@@ -151,7 +151,7 @@ describe("requireUser (mocked supabase)", () => {
     ]);
   });
 
-  it("401s when neither getUser nor getSession yields a user", async () => {
+  it("401s when getUser yields no user", async () => {
     state.user = null;
     state.sessionUser = null;
     await expect(requireUser()).rejects.toMatchObject({
@@ -160,11 +160,16 @@ describe("requireUser (mocked supabase)", () => {
     });
   });
 
-  it("falls back to getSession when getUser fails (expired access token)", async () => {
+  it("does not trust getSession: 401s when getUser fails even if a session carries a user", async () => {
+    // Forged-cookie guard: getSession()'s server-side user is read from the
+    // request cookie and is not signature-verified, so it must never become the
+    // authenticated actor. getUser() is the only source of identity.
     state.user = null;
     state.sessionUser = { id: "user-1" };
-    const a = await requireUser();
-    expect(a.id).toBe("user-1");
+    await expect(requireUser()).rejects.toMatchObject({
+      name: "AuthError",
+      status: 401,
+    });
   });
 
   it("403s when there is no profile row", async () => {

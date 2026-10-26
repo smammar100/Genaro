@@ -272,6 +272,16 @@ export function roleByValue(value: RoleValue): RoleDef | undefined {
   return ROLE_DEFS.find((r) => r.value === value);
 }
 
+/** Every known role value, for validating untrusted role input from a request. */
+export const VALID_ROLE_VALUES = new Set<RoleValue>(
+  ROLE_DEFS.map((r) => r.value),
+);
+
+/** True only when every entry is a known role value. */
+export function areValidRoles(roles: readonly string[]): roles is RoleValue[] {
+  return roles.every((r) => VALID_ROLE_VALUES.has(r as RoleValue));
+}
+
 /**
  * Compute the union of capabilities for the given list of roles.
  * Owner / Super Administrator returns an empty set — its access is granted

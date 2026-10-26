@@ -69,42 +69,21 @@ If the upstream returns 5xx and a `DVLA_MOCK` seed exists for the registration (
 
 ---
 
-## `POST /api/photo/generate`
+## `POST /api/photo/vehicle`
 
-Proxies the OpenAI Images API for vehicle photo processing (background removal, backdrop generation).
+Generates a vehicle image with the OpenAI Images API and persists it to Supabase
+Storage, then returns the stored URL. Reads the vehicle and writes the object
+with the service-role client, scoped to the **caller's own company**. Requires the
+`photos:process` capability and is rate-limited per user.
 
-**File:** `src/app/api/photo/generate/route.ts`
-**Service caller:** `src/lib/services/photo-service.ts`
-**Secret:** `OPENAI_API_KEY` (server-only)
-
-### Request
-
-```json
-POST /api/photo/generate
-Content-Type: application/json
-
-{ "prompt": "…", "size": "1024x1024" }
-```
-
-### Response
-
-```json
-{ "dataUrl": "data:image/png;base64,…" }
-```
-
-`size` defaults to `1024x1024` if omitted. The route returns a data URL the client renders directly or uploads to Supabase Storage.
-
----
-
-## `GET / POST /api/photo/vehicle`
-
-Helper for uploading and reading vehicle photos in Supabase Storage. Avoids exposing the storage signing logic to the browser.
+(The former `POST /api/photo/generate` data-URL proxy was removed in the
+2026-10-26 security audit — it was unused and ungated.)
 
 **File:** `src/app/api/photo/vehicle/route.ts`
-**Service caller:** `src/lib/services/photo-storage.ts`
-**Secret:** Supabase service-role key (server-only — `SUPABASE_SERVICE_ROLE_KEY` if needed for privileged upload)
+**Service callers:** `src/lib/services/photo-service.ts` (prompts) + `photo-storage.ts` (storage)
+**Secrets:** `OPENAI_API_KEY` + Supabase service-role key (server-only)
 
-Used by the Photo Processing page (`/advert/photo-processing`) for batch uploads.
+Used by the Photo Processing page (`/advert/photo-processing`).
 
 ---
 

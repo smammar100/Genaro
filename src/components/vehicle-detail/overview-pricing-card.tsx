@@ -103,15 +103,6 @@ export function OverviewPricingCard({
     [listing, onChanged, user, vehicle],
   );
 
-  // The header's one line: the two prices, readable without the body.
-  const summary = vehicle.listingPrice
-    ? `${formatCurrency(vehicle.listingPrice)} web${
-        vehicle.minimumSalePrice
-          ? ` · ${formatCurrency(vehicle.minimumSalePrice)} floor`
-          : ""
-      }`
-    : "Not priced yet";
-
   return (
     <EditableCard
       title="Pricing"
@@ -121,7 +112,6 @@ export function OverviewPricingCard({
       onSave={save}
       canEdit={canEdit}
       banded
-      summary={summary}
     />
   );
 }

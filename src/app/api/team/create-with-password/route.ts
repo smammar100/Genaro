@@ -23,7 +23,7 @@
 
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { legacyRoleForRoles, type RoleValue } from "@/lib/roles";
+import { areValidRoles, legacyRoleForRoles, type RoleValue } from "@/lib/roles";
 import { ALL_CAPABILITIES, type Capability } from "@/lib/capabilities";
 import { sendCredentialsEmail } from "@/lib/email/send-invite";
 import {
@@ -99,6 +99,27 @@ export async function POST(request: Request) {
   const password = body.password ?? "";
   const roles = Array.isArray(body.roles) ? body.roles : [];
   const sendEmail = body.sendEmail === true;
+
+  // Validate any supplied roles against the known set, and never let a caller
+  // who is not already a super-user create an Owner / super-user account. The
+  // sibling set-roles route enforces the same rule; this route previously
+  // trusted body.roles, so `roles: ["owner"]` minted a super-user (an
+  // `admin:manage_users` holder could escalate past their own authority).
+  if (roles.length > 0 && !areValidRoles(roles)) {
+    return NextResponse.json(
+      { error: "One or more roles are not recognised" },
+      { status: 400 },
+    );
+  }
+  if (roles.includes("owner") && !actor.isSuperUser) {
+    return NextResponse.json(
+      {
+        error:
+          "Only a super administrator can create an Owner / Super Administrator account.",
+      },
+      { status: 403 },
+    );
+  }
   const username = body.username ? normalizeUsername(body.username) : null;
   const bodyEmail = body.email?.trim().toLowerCase() || null;
 
