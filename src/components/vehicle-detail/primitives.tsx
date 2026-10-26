@@ -52,46 +52,6 @@ export function Pill({ tone = "neutral", dot = false, className, children }: Pil
 }
 
 // ============================================================
-// KPI CARD — Genaro metric card: label, value, optional hint.
-// ============================================================
-
-interface KpiCardProps {
-  icon?: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: ReactNode;
-  hint?: ReactNode;
-  /** Tone of the hint text for "needs attention" / "problem" KPIs. */
-  accent?: "amber" | "destructive";
-}
-
-export function KpiCard({ icon: Icon, label, value, hint, accent }: KpiCardProps) {
-  return (
-    // "Needs attention" is carried by the hint text tone, never by
-    // coloured borders or tinted surfaces.
-    <Card className="gap-1">
-      <div className="flex items-center justify-between">
-        <span className="body-md text-(--text-secondary) underline decoration-(--border) decoration-dotted underline-offset-4">
-          {label}
-        </span>
-        {Icon && <Icon className="h-4 w-4 text-(--icon-secondary)" />}
-      </div>
-      <div className="heading-lg tabular-nums">{value}</div>
-      {hint && (
-        <div
-          className={cn(
-            "body-md text-(--text-secondary)",
-            accent === "amber" && "text-(--text-caution)",
-            accent === "destructive" && "text-(--text-critical)",
-          )}
-        >
-          {hint}
-        </div>
-      )}
-    </Card>
-  );
-}
-
-// ============================================================
 // SECTION DIVIDER — labelled hairline used between sub-sections
 // in a single tab.
 // ============================================================

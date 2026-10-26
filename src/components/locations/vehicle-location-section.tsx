@@ -9,22 +9,21 @@ import { teamService } from "@/lib/services/team-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import { LocationCard } from "./location-card";
 import { MoveDialog } from "./move-dialog";
-import { LocationHistoryDrawer } from "./location-history-drawer";
 
 interface Props {
   vehicle: Vehicle;
 }
 
 /**
- * Right-column Location section for Vehicle Detail Overview tab.
- * Self-contained: owns the MoveDialog + LocationHistoryDrawer state,
- * loads vendors / users for the move-dialog lookups, and re-fetches the
- * recent-movements preview after a successful move.
+ * The Location card on the Vehicle Detail Overview tab. Self-contained: owns
+ * the MoveDialog state, loads vendors / users for the move-dialog lookups,
+ * and re-fetches the recent-movements preview after a successful move. The
+ * full history (with Mark returned) is on the vehicle's Location tab.
  */
 export function VehicleLocationSection({ vehicle: vehicleProp }: Props) {
   const { company, user } = useAuth();
   // Same pattern as LocationTab: hold the vehicle locally and re-fetch
-  // after each move / mark-returned so the card stays in sync without
+  // after each move so the card stays in sync without
   // waiting on a parent re-render.
   const [vehicle, setVehicle] = useState<Vehicle>(vehicleProp);
   const [prevVehicleProp, setPrevVehicleProp] = useState(vehicleProp);
@@ -38,7 +37,6 @@ export function VehicleLocationSection({ vehicle: vehicleProp }: Props) {
     undefined,
   );
   const [moveOpen, setMoveOpen] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
 
   useEffect(() => {
@@ -84,7 +82,6 @@ export function VehicleLocationSection({ vehicle: vehicleProp }: Props) {
         vendorNames={vendorNames}
         staffNames={staffNames}
         onMove={() => setMoveOpen(true)}
-        onViewHistory={() => setHistoryOpen(true)}
       />
 
       <MoveDialog
@@ -96,16 +93,6 @@ export function VehicleLocationSection({ vehicle: vehicleProp }: Props) {
         actorId={user.id}
         companyId={company.id}
         onSuccess={() => setRefreshToken((t) => t + 1)}
-      />
-
-      <LocationHistoryDrawer
-        open={historyOpen}
-        onOpenChange={setHistoryOpen}
-        vehicle={vehicle}
-        actorId={user.id}
-        vendorNames={vendorNames}
-        staffNames={staffNames}
-        onChanged={() => setRefreshToken((t) => t + 1)}
       />
     </>
   );

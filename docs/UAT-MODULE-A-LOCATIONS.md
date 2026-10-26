@@ -108,7 +108,7 @@
 | A-V1 | Location card present | Open any vehicle detail → Overview tab. | Right column shows a "Location" card with current location, since-date, days. | B | N |
 | A-V2 | Recent moves preview | Vehicle with 3+ movements. | Card lists the 3 most recent moves with date + "From → To" + workshop/staff context. | M | N |
 | A-V3 | Move from detail | Click **Move →** on the card. | The same MoveDialog opens, populated with the current vehicle. | B | N |
-| A-V4 | View full history | Click **View full history**. | Right-side Sheet opens with chronological timeline of every movement, oldest at the bottom. | M | N |
+| A-V4 | View full history | Open the vehicle's **Location** tab (the Overview card no longer links to the history). | Right-side Sheet opens with chronological timeline of every movement, oldest at the bottom. | M | N |
 | A-V5 | Mark returned | In the history drawer, find an open garage/staff entry → **Mark returned**. | `actual_return_at` set to now; button hides on re-render; toast "Marked returned". | M | N |
 | A-V6 | History permission | As Inventory Manager, the **Mark returned** button is visible. | Visible. As a role with no `locations:move`, button hidden. | M | N |
 
@@ -183,7 +183,7 @@ Verify the table in `Module_A_Vehicle_Locations.md` § Permissions.
 1. Open `/admin/locations`. Show the 4 tabs and what's where (3 min).
 2. Click on a Yard car → Move → Forecourt. Watch the counts update live (5 min).
 3. Click another car → Move → Garage → pick Ali's Garage → expected back tomorrow 17:00 (5 min).
-4. Click that same car → View full history → Mark returned (5 min).
+4. Click that same car → Full history → Mark returned (5 min).
 5. Open `/admin/master-sheet` → point at the off-site dot + tooltip (5 min).
 6. Open `/dashboard` → click the Yard count → lands on the Yard tab (3 min).
 7. Confirm sign-off in writing or async video.
@@ -344,7 +344,7 @@ bar. Component path:
 | A-O1 | Stack order | Open any vehicle Overview tab. | Right column (top → bottom): **AutoTrader Valuation**, then **Location card**, then **Marketplace card**. | B | N |
 | A-O2 | Spacing | Same. | The three cards use the existing `flex flex-col gap-4` spacing; no extra dividers. | L | N |
 | A-O3 | Responsive | Resize to mobile width. | At narrow widths the right column stacks under the Advert Completeness panel; the same internal order is preserved. | L | N |
-| A-O4 | Move ↔ View history still wired | From the (now second) LocationCard click **Move →** and then **View full history**. | Both dialogs open as before — no regression after the reorder. | M | N |
+| A-O4 | Move ↔ View history still wired | From the (now second) LocationCard click **Move vehicle** and then **Full history**. | Both dialogs open as before — no regression after the reorder. | M | N |
 | A-O5 | LocationCard still loads recent moves | Card on Overview shows "Recent moves" section with up to 3 entries. | Same content as before the reorder. | L | N |
 
 ### 8.4 · Negative / regression

@@ -1,33 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  AlertCircle,
-  Check,
-  Clock,
-  Coins,
-  Globe,
-  PoundSterling,
-  RefreshCw,
-  Rocket,
-  TrendingUp,
-  X,
-} from "lucide-react";
+import { AlertCircle, Check, Globe, Rocket, X } from "lucide-react";
 import { toast } from "@/lib/toast";
 import type { Listing, Vehicle } from "@/lib/types";
 import { listingService } from "@/lib/services/listing-service";
 import { dvlaService } from "@/lib/services/dvla-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
-import {
-  Badge,
-  Button,
-  EmptyState,
-  ProgressBar,
-  type BadgeTone,
-} from "@/components/genaro";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
-import { carMargin } from "@/lib/car-margin";
-import { KpiCard, Panel, Pill } from "./primitives";
+import { Button, EmptyState, ProgressBar } from "@/components/genaro";
+import { cn, formatCurrency } from "@/lib/utils";
+import { Panel, Pill } from "./primitives";
+import { OverviewStats } from "./overview-stats";
 import { VehicleLocationSection } from "@/components/locations/vehicle-location-section";
 import {
   computeAdvertChecks,
@@ -50,8 +33,10 @@ interface OverviewTabProps {
 
 /**
  * Overview tab — the dealership's "at-a-glance everything I need" surface.
- * Four KPIs up top, advert completeness on the left, and valuation, pricing,
- * location and marketplace on the right.
+ * One card of figures up top (web price, profit, days in stock, AutoTrader
+ * retail and its valuation), then pricing, location and sales highlights;
+ * with adverts on, advert completeness on the left and marketplace joins
+ * the stack on the right.
  */
 export function OverviewTab({
   vehicle,
@@ -73,6 +58,10 @@ export function OverviewTab({
   }, [vehicle.id, listingToken]);
 
   const webPrice = listing?.price ?? vehicle.listingPrice ?? 0;
+  const { refreshing, refreshValuation } = useValuationRefresh(
+    vehicle,
+    onVehiclePatch,
+  );
 
   // A brand-new vehicle has nothing to glance at yet (no valuation, no price,
   // no photos). Rather than a wall of "—" cards, guide the first action.
@@ -84,27 +73,8 @@ export function OverviewTab({
   if (isNew) {
     return <EmptyOverview vehicleId={vehicle.id} onNavigate={onNavigate} />;
   }
-  const floor = vehicle.minimumSalePrice ?? 0;
-  const stockingBurn = vehicle.dailyChargeRate ?? 0;
-  // Same figure as the Financials tab: one calculation, car-margin.ts.
-  const netProfit = carMargin(vehicle, webPrice)?.profit ?? 0;
-
-  const daysAccent =
-    vehicle.daysInStock >= 90
-      ? "destructive"
-      : vehicle.daysInStock >= 60
-        ? "amber"
-        : undefined;
-
-  // AutoTrader valuation leads: it is glanced at more often than the location
-  // card (user feedback).
   const cards = (
     <>
-      <ValuationPanel
-        vehicle={vehicle}
-        webPrice={webPrice}
-        onVehiclePatch={onVehiclePatch}
-      />
       <OverviewPricingCard
         vehicle={vehicle}
         listing={listing ?? null}
@@ -121,42 +91,13 @@ export function OverviewTab({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* KPI strip */}
-      <div className="grid gap-3 @md:grid-cols-2 @3xl:grid-cols-4">
-        <KpiCard
-          icon={PoundSterling}
-          label="Web price"
-          value={webPrice ? formatCurrency(webPrice) : "—"}
-          hint={floor ? `Floor: ${formatCurrency(floor)}` : undefined}
-        />
-        <KpiCard
-          icon={Clock}
-          label="Days in stock"
-          value={vehicle.daysInStock}
-          hint={
-            stockingBurn
-              ? `Stocking burn: ${formatCurrency(stockingBurn)} / day`
-              : undefined
-          }
-          accent={daysAccent}
-        />
-        <KpiCard
-          icon={TrendingUp}
-          label="AT retail avg"
-          value={
-            vehicle.atRetailValuation != null
-              ? formatCurrency(vehicle.atRetailValuation)
-              : "—"
-          }
-          hint={atRetailHint(webPrice, vehicle.atRetailValuation)}
-        />
-        <KpiCard
-          icon={Coins}
-          label="Net profit (live)"
-          value={netProfit > 0 ? formatCurrency(Math.round(netProfit)) : "—"}
-          hint="After 20% VAT on the margin"
-        />
-      </div>
+      {/* The four figures and AutoTrader's valuation in one card. */}
+      <OverviewStats
+        vehicle={vehicle}
+        webPrice={webPrice}
+        refreshing={refreshing}
+        onRefresh={() => void refreshValuation()}
+      />
 
       {ADVERTS_ENABLED ? (
         // Two-col: Advert Completeness + Valuation/Marketplace stack
@@ -169,7 +110,7 @@ export function OverviewTab({
           <div className="flex flex-col gap-4">{cards}</div>
         </div>
       ) : (
-        <div className="grid items-start gap-4 @3xl:grid-cols-2">{cards}</div>
+        <div className="grid items-stretch gap-4 @3xl:grid-cols-3">{cards}</div>
       )}
 
     </div>
@@ -340,53 +281,22 @@ function AdvertCheckRow({
 }
 
 // ============================================================
-// Valuation panel
+// Valuation refresh
 // ============================================================
 
-/** Hint under the AT Retail Avg KPI: how our web price sits vs market. */
-function atRetailHint(
-  webPrice: number,
-  retail: number | null | undefined,
-): string | undefined {
-  if (retail == null) return undefined;
-  if (!webPrice) return "Live market retail";
-  const ratio = webPrice / retail;
-  if (ratio <= 0.97) return "Priced below market";
-  if (ratio <= 1.03) return "Within market range";
-  return "Above market";
-}
-
-/** Relative "Updated …" label from an ISO timestamp. */
-function updatedLabel(iso: string | null | undefined): string {
-  if (!iso) return "Not yet valued";
-  const then = new Date(iso).getTime();
-  const mins = Math.round((Date.now() - then) / 60000);
-  if (mins < 1) return "Updated just now";
-  if (mins < 60) return `Updated ${mins}m ago`;
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `Updated ${hrs}h ago`;
-  return `Updated ${formatDate(iso)}`;
-}
-
-function ValuationPanel({
-  vehicle,
-  webPrice,
-  onVehiclePatch,
-}: {
-  vehicle: Vehicle;
-  webPrice: number;
-  onVehiclePatch?: (patch: Partial<Vehicle>) => void;
-}) {
+/**
+ * Pull a live AutoTrader valuation for this vehicle and persist it.
+ * Client-orchestrated: /api/vehicle/lookup returns valuations server-side
+ * (creds stay there), then we persist via the RLS-scoped vehicle service
+ * — no admin/service-role key needed.
+ */
+function useValuationRefresh(
+  vehicle: Vehicle,
+  onVehiclePatch?: (patch: Partial<Vehicle>) => void,
+) {
   const [refreshing, setRefreshing] = useState(false);
-  const hasValuation = vehicle.atRetailValuation != null;
 
-  /**
-   * Pull a live AutoTrader valuation for this vehicle and persist it.
-   * Client-orchestrated: /api/vehicle/lookup returns valuations server-side
-   * (creds stay there), then we persist via the RLS-scoped vehicle service
-   * — no admin/service-role key needed.
-   */
-  async function refresh() {
+  async function refreshValuation() {
     setRefreshing(true);
     try {
       const data = await dvlaService.lookup(vehicle.registration, {
@@ -437,120 +347,7 @@ function ValuationPanel({
     }
   }
 
-  return (
-    <Panel
-      title="AutoTrader valuation"
-      subtitle={
-        hasValuation
-          ? `${updatedLabel(vehicle.atValuationAt)} · live feed`
-          : "Not yet valued, refresh to pull live"
-      }
-      action={
-        <Button
-          variant="plain"
-          icon={<RefreshCw className={cn(refreshing && "animate-spin")} />}
-          onClick={() => void refresh()}
-          disabled={refreshing}
-        >
-          {refreshing ? "Refreshing…" : "Refresh"}
-        </Button>
-      }
-      flush
-    >
-      <div className="grid grid-cols-3 divide-x divide-(--border-secondary)">
-        <ValuationCell label="Trade" value={vehicle.atTradeValuation ?? 0} />
-        <ValuationCell
-          label="Part-ex"
-          value={vehicle.atPartExchangeValuation ?? 0}
-        />
-        <ValuationCell
-          label="Retail"
-          value={vehicle.atRetailValuation ?? 0}
-          highlight
-        />
-      </div>
-      <PriceMeter
-        webPrice={webPrice}
-        trade={vehicle.atTradeValuation ?? null}
-        retail={vehicle.atRetailValuation ?? null}
-      />
-    </Panel>
-  );
-}
-
-/**
- * Price-vs-market meter folded into the valuation card — shows where our web
- * price sits on the Trade→Retail band with a marker + a tone-coded verdict
- * chip. Hidden until we have both AutoTrader bounds and a web price.
- */
-function PriceMeter({
-  webPrice,
-  trade,
-  retail,
-}: {
-  webPrice: number;
-  trade: number | null;
-  retail: number | null;
-}) {
-  if (!webPrice || trade == null || retail == null || retail <= trade) {
-    return null;
-  }
-  const pos = Math.max(0, Math.min(1, (webPrice - trade) / (retail - trade))) * 100;
-  const ratio = webPrice / retail;
-  const verdict: { label: string; tone: BadgeTone } =
-    ratio <= 0.97
-      ? { label: "Below market", tone: "info" }
-      : ratio <= 1.03
-        ? { label: "Within market", tone: "success" }
-        : { label: "Above market", tone: "attention" };
-
-  return (
-    <div className="border-t border-(--border-secondary) px-4 pt-3">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="body-md text-(--text-secondary)">
-          Your price vs market
-        </span>
-        <Badge tone={verdict.tone}>{verdict.label}</Badge>
-      </div>
-      <div className="relative h-2 rounded-full bg-(--bg-fill-tertiary)">
-        <div
-          className="absolute -top-1 size-4 -translate-x-1/2 rounded-full border-2 border-(--bg-surface) bg-(--bg-fill-brand) shadow-(--shadow-100)"
-          style={{ left: `${pos}%` }}
-        />
-      </div>
-      <div className="mt-2 flex justify-between body-md tabular-nums text-(--text-secondary)">
-        <span>Trade {formatCurrency(trade)}</span>
-        <span className="heading-sm text-(--text)">
-          You {formatCurrency(webPrice)}
-        </span>
-        <span>Retail {formatCurrency(retail)}</span>
-      </div>
-    </div>
-  );
-}
-
-function ValuationCell({
-  label,
-  value,
-  highlight,
-}: {
-  label: string;
-  value: number;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="px-4 py-3">
-      <div className="body-md text-(--text-secondary)">{label}</div>
-      <div
-        className={cn(
-          "mt-1 heading-sm tabular-nums",
-          highlight && "text-(--text)",
-        )}
-      >
-        {value ? formatCurrency(value) : "—"}
-      </div>
-    </div>
-  );
+  return { refreshing, refreshValuation };
 }
 
 // ============================================================

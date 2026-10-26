@@ -45,12 +45,12 @@ const recentMovements = [
 ];
 
 /**
- * A vehicle's location on its detail page: where it is now and since when,
- * then its three latest moves, with buttons to move it and to see the full
- * history. The page owns the move dialog and the history drawer and passes
- * `onMove` and `onViewHistory`. Pass `recentMovements` when the page already
- * has them; otherwise the card fetches them itself. For the location in a
- * list, use `LocationBadge`.
+ * A vehicle's location on its Overview: the place and days there in the
+ * header with a Move vehicle link, then where it is and since when, and its
+ * three latest moves. The page owns the move dialog and passes `onMove`; the
+ * full history is on the vehicle's Location tab. Pass `recentMovements` when
+ * the page already has them; otherwise the card fetches them itself. For the
+ * location in a list, use `LocationBadge`.
  */
 const meta = {
   title: "App components/Locations/LocationCard",
@@ -69,7 +69,6 @@ const meta = {
     vendorNames: { "ven-kwikfit": "Kwik Fit Leicester" },
     staffNames: { "user-0003": "Tom Bradley" },
     onMove: fn(),
-    onViewHistory: fn(),
   },
   argTypes: {
     vehicle: { control: false },
@@ -125,10 +124,10 @@ export const NoMovements: Story = {
 };
 
 /**
- * For people who can't move vehicles, leave out `onMove` and `onViewHistory`
- * and the card is read-only.
- * @summary read-only, without the move buttons
+ * For people who can't move vehicles, leave out `onMove` and the card is
+ * read-only, with no link in its header.
+ * @summary read-only, without the move link
  */
 export const ReadOnly: Story = {
-  args: { onMove: undefined, onViewHistory: undefined },
+  args: { onMove: undefined },
 };

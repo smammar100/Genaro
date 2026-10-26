@@ -11,9 +11,8 @@ import { cn } from "@/lib/utils";
  * right-aligned timestamp. Rich events drop a bordered card body below
  * the title row.
  *
- * Use across:
- *   - vehicle-detail/location-tab.tsx       (per location_movement)
- *   - locations/location-history-drawer.tsx (same movement list, sheet)
+ * Used by:
+ *   - vehicle-detail/location-tab.tsx (per location_movement)
  */
 
 export type TimelineTone =

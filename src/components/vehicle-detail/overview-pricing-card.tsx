@@ -38,6 +38,7 @@ const FIELDS: EditableField<Vehicle>[] = [
     validators: [nonNegative("Floor price") as never],
     render: (v) => formatCurrency(v.minimumSalePrice),
     hint: "The lowest you will accept. Never shown to customers.",
+    note: "Never shown to customers",
   },
   {
     key: "sellingPrice",
@@ -102,6 +103,15 @@ export function OverviewPricingCard({
     [listing, onChanged, user, vehicle],
   );
 
+  // The header's one line: the two prices, readable without the body.
+  const summary = vehicle.listingPrice
+    ? `${formatCurrency(vehicle.listingPrice)} web${
+        vehicle.minimumSalePrice
+          ? ` · ${formatCurrency(vehicle.minimumSalePrice)} floor`
+          : ""
+      }`
+    : "Not priced yet";
+
   return (
     <EditableCard
       title="Pricing"
@@ -110,6 +120,8 @@ export function OverviewPricingCard({
       fields={FIELDS}
       onSave={save}
       canEdit={canEdit}
+      banded
+      summary={summary}
     />
   );
 }

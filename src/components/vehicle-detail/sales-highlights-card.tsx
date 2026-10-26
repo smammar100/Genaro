@@ -2,7 +2,7 @@ import { CalendarCheck, Gauge, ListChecks, Users, Wrench, type LucideIcon } from
 import type { ServiceHistory, Vehicle } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
 import { daysUntil } from "@/components/kanban/card-dates";
-import { Panel } from "./primitives";
+import { BandedCard } from "./banded-card";
 
 const SERVICE_HISTORY: Record<ServiceHistory, string> = {
   full: "Full",
@@ -41,8 +41,10 @@ function motHighlight(expiry: string | null): Highlight {
 
 /**
  * The four facts a buyer asks for first when they phone about a car — mileage,
- * service history, MOT and previous owners — set like the other Overview
- * cards' figures, heading-sm under body labels (call 2026-10-24).
+ * service history, MOT and previous owners — as a `BandedCard` beside Pricing
+ * and Location: mileage and service history in the header's summary, then one
+ * fact per row, label left and value right, with the MOT flagged once it's
+ * close or gone.
  */
 export function SalesHighlightsCard({ vehicle }: { vehicle: Vehicle }) {
   const highlights: Highlight[] = [
@@ -67,29 +69,40 @@ export function SalesHighlightsCard({ vehicle }: { vehicle: Vehicle }) {
     },
   ];
 
+  const [mileage, service] = highlights;
+  const summary =
+    [
+      mileage.tone === "muted" ? null : mileage.value,
+      service.tone === "muted" ? null : `${service.value.toLowerCase()} history`,
+    ]
+      .filter(Boolean)
+      .join(" · ") || "Nothing recorded yet";
+
   return (
-    <Panel
-      title={
-        <span className="flex items-center gap-2">
-          <ListChecks className="h-4 w-4 text-(--icon-secondary)" />
-          Sales highlights
-        </span>
-      }
-    >
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-5">
+    <BandedCard icon={ListChecks} title="Sales highlights" summary={summary}>
+      <dl className="flex flex-col gap-2.5">
         {highlights.map(({ icon: Icon, label, value, note, tone }) => (
-          <div key={label} className="flex min-w-0 flex-col gap-1">
+          // Label left; value right with any note under it.
+          <div key={label} className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4">
             <dt className="flex items-center gap-1.5 body-md text-(--text-secondary)">
               <Icon aria-hidden className="size-4 shrink-0 text-(--icon-secondary)" />
               {label}
             </dt>
-            <dd className={cn("heading-sm tabular-nums", tone && TONE[tone])}>
+            <dd
+              className={cn(
+                "text-right body-md tabular-nums text-(--text)",
+                tone !== "muted" && "font-semibold",
+                tone && TONE[tone],
+              )}
+            >
               {value}
             </dd>
-            {note ? <dd className={cn("body-md", tone && TONE[tone])}>{note}</dd> : null}
+            {note ? (
+              <dd className={cn("col-start-2 text-right body-sm", tone && TONE[tone])}>{note}</dd>
+            ) : null}
           </div>
         ))}
       </dl>
-    </Panel>
+    </BandedCard>
   );
 }

@@ -22,7 +22,7 @@ import { VehicleStatusBadge } from "@/components/shared/status-badge";
 import { ActionList, Button, Card, Popover } from "@/components/genaro";
 import { VEHICLE_STATUS_CHOICES } from "@/lib/constants";
 import { variantLabel } from "@/lib/vehicle-variant";
-import { formatDate, titleCase } from "@/lib/utils";
+import { cn, formatDate, titleCase } from "@/lib/utils";
 import { PHOTOS_ENABLED } from "@/lib/phase-one";
 
 /**
@@ -52,25 +52,38 @@ export function vehicleTitle(vehicle: Vehicle): string {
   return `${vehicle.year} ${titleCase(`${vehicle.make} ${vehicle.model}`)}`;
 }
 
+/** The lifecycle the progress line draws: every status but Returned, in order. */
+const STAGES = VEHICLE_STATUS_CHOICES.filter((s) => s.value !== "returned");
+
 /**
- * Vehicle hero card — the page's header (25 Oct 2026): back, the plate with
- * the status and days-in-stock badges beside it, the page's actions on the
- * right, then the vehicle's name (the page's h1) and its key facts. The Page
- * itself carries no header, so nothing repeats the name.
+ * Vehicle hero card: the page's header, the "command header" picked from the
+ * vehicle overview prototypes (26 Oct 2026). Back, the plate with the status
+ * and days-in-stock badges beside it, the vehicle's name (the page's h1) with
+ * its variant, and its key facts. A band along the bottom shows how far the
+ * car is from arrival to sale, the next step with its open to-dos, and the
+ * page's actions. The Page itself carries no header, so nothing repeats the
+ * name.
+ * @import import { VehicleHeaderCard } from "@/components/vehicle-detail/vehicle-header-card";
  */
 export function VehicleHeaderCard({
   vehicle,
   back,
   badges,
   actions,
+  todoCount,
+  onOpenTodos,
 }: {
   vehicle: Vehicle;
   /** Where Back goes: the page the vehicle was opened from. */
   back: { href: string; label: string };
   /** Beside the plate: the status menu and days-in-stock chip. */
   badges?: ReactNode;
-  /** Top right: the next step and any other page actions. */
+  /** Bottom right, beside the next step: its button and any other page actions. */
   actions?: ReactNode;
+  /** Open to-dos, linked under the next step. Null or omitted while unknown. */
+  todoCount?: number | null;
+  /** Opens the Things to do tab from the to-do link. */
+  onOpenTodos?: () => void;
 }) {
   const heroUrl = useHeroUrl(vehicle);
   const variant = variantLabel(vehicle, "");
@@ -97,9 +110,11 @@ export function VehicleHeaderCard({
     { icon: CalendarDays, label: "Received", value: `Received ${formatDate(vehicle.receivedDate)}` },
   ].filter((f) => f.value);
 
+  const nextStep = NEXT_STEP[vehicle.status];
+
   return (
-    <Card>
-      <div className="flex min-w-0 flex-wrap items-start gap-4">
+    <Card padding="0" className="@container">
+      <div className="flex min-w-0 flex-wrap items-start gap-4 p-4">
         {!PHOTOS_ENABLED ? null : heroUrl ? (
           // A fixed 176x112 slot: next/image serves a 1x/2x rendition of that
           // size instead of the full-size original.
@@ -130,16 +145,13 @@ export function VehicleHeaderCard({
             />
             <RegPlate registration={vehicle.registration} size="lg" />
             {badges}
-            {actions ? (
-              <div className="ml-auto flex flex-wrap items-center gap-2">{actions}</div>
+          </div>
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h1 className="heading-lg text-(--text)">{vehicleTitle(vehicle)}</h1>
+            {variant ? (
+              <p className="body-md text-(--text-secondary)">{variant}</p>
             ) : null}
           </div>
-          <h1 className="heading-lg mt-1 text-(--text)">
-            {vehicleTitle(vehicle)}
-          </h1>
-          {variant ? (
-            <p className="body-md text-(--text-secondary)">{variant}</p>
-          ) : null}
           <ul className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5">
             {facts.map(({ icon: Icon, label, value }) => (
               <li
@@ -155,7 +167,75 @@ export function VehicleHeaderCard({
           </ul>
         </div>
       </div>
+
+      <div className="grid items-center gap-x-8 gap-y-3 border-t border-(--border-secondary) px-4 py-3 @3xl:grid-cols-[minmax(0,1fr)_auto]">
+        <VehicleProgress status={vehicle.status} />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="body-md font-semibold text-(--text)">
+              {nextStep ? `Next: ${nextStep.label.toLowerCase()}` : "Sold, nothing left to do"}
+            </span>
+            {todoCount ? (
+              <span>
+                <Button variant="plain" onClick={onOpenTodos}>
+                  {`${todoCount} thing${todoCount === 1 ? "" : "s"} to do`}
+                </Button>
+              </span>
+            ) : todoCount === 0 ? (
+              <span className="body-md text-(--text-secondary)">No open jobs</span>
+            ) : null}
+          </div>
+          {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+        </div>
+      </div>
     </Card>
+  );
+}
+
+/**
+ * How far the car is from arrival to sale: one segment per stage, done ones
+ * green, the current one brand, with the stage named underneath. A returned
+ * car sits outside the line, so it's all upcoming and labelled Returned.
+ */
+function VehicleProgress({ status }: { status: VehicleStatus }) {
+  const current = STAGES.findIndex((s) => s.value === status);
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <ol
+        className="grid gap-1"
+        style={{ gridTemplateColumns: `repeat(${STAGES.length}, minmax(0, 1fr))` }}
+        aria-label="Progress to sale"
+      >
+        {STAGES.map((s, i) => {
+          const done = current >= 0 && i < current;
+          const here = i === current;
+          return (
+            <li key={s.value} aria-current={here ? "step" : undefined}>
+              <span
+                aria-hidden
+                className={cn(
+                  "block h-1.5 rounded-full",
+                  done
+                    ? "bg-(--bg-fill-success)"
+                    : here
+                      ? "bg-(--bg-fill-brand)"
+                      : "bg-(--bg-fill-tertiary)",
+                )}
+              />
+              <span className="sr-only">
+                {s.label}
+                {done ? " (done)" : here ? " (current)" : ""}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+      <span className="body-sm text-(--text-secondary)">
+        {current >= 0
+          ? `${STAGES[current].label} · stage ${current + 1} of ${STAGES.length}`
+          : "Returned"}
+      </span>
+    </div>
   );
 }
 

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { History as HistoryIcon } from "lucide-react";
-import { Button, Card, SkeletonBodyText } from "@/components/genaro";
+import { MapPin } from "lucide-react";
+import { Button, SkeletonBodyText } from "@/components/genaro";
+import { BandedCard } from "@/components/vehicle-detail/banded-card";
 import {
   VEHICLE_LOCATION_LABELS,
   type LocationMovement,
@@ -25,7 +26,6 @@ interface LocationCardProps {
   /** Pre-resolved user names keyed by `userId`. */
   staffNames?: Record<UUID, string>;
   onMove?: () => void;
-  onViewHistory?: () => void;
 }
 
 function daysSince(iso: string): number {
@@ -65,10 +65,12 @@ function describeMovement(
 }
 
 /**
- * Vehicle Detail right-column card showing physical location state and
- * the 3 most recent movements. Mirrors the ASCII mockup in
- * `Module_A_Vehicle_Locations.md`. Move + history actions are wired by
- * the parent (it owns the MoveDialog state).
+ * Vehicle Detail Overview card showing physical location state and the 3
+ * most recent movements, as a `BandedCard`: the place and days there in the
+ * header with Move vehicle as a link, then where it is and since when, and
+ * its recent moves. The full history lives on the vehicle's Location tab.
+ * The parent wires `onMove` (it owns the MoveDialog state); without it the
+ * card is read-only.
  * @import import { LocationCard } from "@/components/locations/location-card";
  */
 export function LocationCard({
@@ -77,7 +79,6 @@ export function LocationCard({
   vendorNames = {},
   staffNames = {},
   onMove,
-  onViewHistory,
 }: LocationCardProps) {
   const [fetched, setFetched] = useState<LocationMovement[] | null>(null);
 
@@ -100,35 +101,42 @@ export function LocationCard({
   const movements = recentMovements ?? fetched;
 
   const days = daysSince(vehicle.locationSince);
+  const place = VEHICLE_LOCATION_LABELS[vehicle.currentLocation];
+  const dayCount = `${days} day${days === 1 ? "" : "s"}`;
   return (
-    <Card title="Location">
-      <div className="flex flex-col gap-1">
-        <div className="body-md text-(--text)">
-          Currently at:{" "}
-          <span className="heading-sm">
-            {VEHICLE_LOCATION_LABELS[vehicle.currentLocation]}
+    <BandedCard
+      icon={MapPin}
+      title="Location"
+      summary={`${place} · ${dayCount}`}
+      actions={
+        onMove ? (
+          <Button variant="plain" icon="ArrowRightMinor" onClick={onMove}>
+            Move vehicle
+          </Button>
+        ) : undefined
+      }
+    >
+      <div className="flex items-start justify-between gap-4">
+        <span className="shrink-0 body-md text-(--text-secondary)">Currently at</span>
+        <span className="flex min-w-0 flex-col items-end text-right">
+          <span className="body-md font-semibold text-(--text)">{place}</span>
+          <span className="body-sm text-(--text-secondary)">
+            Since {shortDate(vehicle.locationSince)} · {dayCount}
+            {vehicle.outForTestDrive ? " · out for test drive" : ""}
           </span>
-        </div>
-        <div className="body-md text-(--text-secondary)">
-          Since {shortDate(vehicle.locationSince)} · {days} day{days === 1 ? "" : "s"}
-          {vehicle.outForTestDrive ? " · out for test drive" : ""}
-        </div>
+        </span>
       </div>
 
-      <div className="mt-2 flex flex-col gap-1">
-        <div className="heading-sm text-(--text-secondary)">
-          Recent moves
-        </div>
+      <div className="flex flex-col gap-1.5 border-t border-(--border-secondary) pt-2.5">
+        <span className="body-sm text-(--text-secondary)">Recent moves</span>
         {movements === null ? (
           <SkeletonBodyText lines={3} />
         ) : movements.length === 0 ? (
-          <div className="body-md text-(--text-secondary)">
-            No movements yet.
-          </div>
+          <span className="body-md text-(--text-secondary)">No movements yet.</span>
         ) : (
-          <ul className="flex flex-col gap-1">
+          <ul className="flex flex-col gap-1.5">
             {movements.map((m) => (
-              <li key={m.id} className="body-md flex items-baseline gap-2 text-(--text)">
+              <li key={m.id} className="grid grid-cols-[3.5rem_minmax(0,1fr)] gap-2 body-md text-(--text)">
                 <span className="tabular-nums text-(--text-secondary)">
                   {shortDate(m.createdAt)}
                 </span>
@@ -138,23 +146,6 @@ export function LocationCard({
           </ul>
         )}
       </div>
-
-      {onViewHistory || onMove ? (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          {onViewHistory ? (
-            <Button variant="tertiary" icon={<HistoryIcon />} onClick={onViewHistory}>
-              View full history
-            </Button>
-          ) : null}
-          {onMove ? (
-            <div className="ml-auto">
-              <Button icon="ArrowRightMinor" onClick={onMove}>
-                Move vehicle
-              </Button>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-    </Card>
+    </BandedCard>
   );
 }

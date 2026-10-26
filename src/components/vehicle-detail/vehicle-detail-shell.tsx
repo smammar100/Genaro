@@ -66,6 +66,9 @@ interface VehicleDetailShellProps {
   /** Job Card PDF export — surfaced on the Things to Do tab (the job sheet). */
   onExportPdf?: () => void;
   exporting?: boolean;
+  /** Called with the open to-do count whenever it's (re)fetched, so the
+   *  page header can show it beside the next step. */
+  onTodoCountChange?: (count: number | null) => void;
 }
 
 /** The detail tabs, in order. Ids are the values the page and panels use. */
@@ -100,6 +103,7 @@ export function VehicleDetailShell({
   onVehicleRefetch,
   onExportPdf,
   exporting,
+  onTodoCountChange,
 }: VehicleDetailShellProps) {
   const [todoCount, setTodoCount] = useState<number | null>(null);
   const [enquiryCount, setEnquiryCount] = useState<number | null>(null);
@@ -134,6 +138,10 @@ export function VehicleDetailShell({
       .then((rows) => setPhotoCount(rows.length))
       .catch(() => setPhotoCount(null));
   }, [vehicle.id]);
+
+  useEffect(() => {
+    onTodoCountChange?.(todoCount);
+  }, [todoCount, onTodoCountChange]);
 
   const count = (n: number | null) => (n != null && n > 0 ? n : undefined);
   const selected = Math.max(0, TAB_IDS.indexOf(activeTab as (typeof TAB_IDS)[number]));

@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { BandedCard } from "./banded-card";
 import {
   diffFields,
   firstError,
@@ -61,6 +62,8 @@ export interface EditableField<T> {
   suffix?: string;
   /** Shown under the input while editing. */
   hint?: string;
+  /** Shown under the value while reading (banded cards only). */
+  note?: string;
   /** Render numerics without thousands separators (years, identifiers). */
   plain?: boolean;
 }
@@ -77,6 +80,12 @@ interface EditableCardProps<T extends object> {
   /** Notified whenever this card enters or leaves edit mode. */
   onDirtyChange?: (dirty: boolean) => void;
   className?: string;
+  /** Render as a `BandedCard` (icon header with `summary` and the Edit /
+   *  Cancel + Save links, one field per row) — the Overview's card row.
+   *  Needs `icon`. */
+  banded?: boolean;
+  /** The banded header's one-line summary. */
+  summary?: ReactNode;
 }
 
 export function EditableCard<T extends object>({
@@ -88,6 +97,8 @@ export function EditableCard<T extends object>({
   canEdit = true,
   onDirtyChange,
   className,
+  banded = false,
+  summary,
 }: EditableCardProps<T>) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -199,6 +210,87 @@ export function EditableCard<T extends object>({
     }
   }, [buildTyped, cancel, fields, onSave, record]);
 
+  const actions = editing ? (
+    <>
+      <Button variant="tertiary" onClick={cancel} disabled={saving}>
+        Cancel
+      </Button>
+      <Button variant="primary" onClick={() => void save()} loading={saving}>
+        Save
+      </Button>
+    </>
+  ) : canEdit ? (
+    <Button
+      variant="plain"
+      icon="EditMinor"
+      onClick={startEdit}
+      accessibilityLabel={`Edit ${title}`}
+    >
+      Edit
+    </Button>
+  ) : null;
+
+  const banner = saveFailed ? (
+    <Banner tone="critical">
+      Those changes could not be saved. Your edits are still here — try
+      again, or cancel to discard them.
+    </Banner>
+  ) : null;
+
+  const rows = fields.map((f) => (
+    <div
+      key={f.key}
+      className={cn(
+        "gap-3",
+        editing && !f.readOnly
+          ? "flex flex-col"
+          : banded
+            ? "flex items-start justify-between"
+            : "flex items-center justify-between",
+      )}
+    >
+      <span
+        className={cn(
+          "shrink-0 body-md text-(--text-secondary)",
+          editing && !f.readOnly && "text-(--text)",
+        )}
+      >
+        {f.label}
+      </span>
+
+      {editing && !f.readOnly ? (
+        <FieldInput
+          field={f}
+          value={draft[f.key]}
+          error={errors[f.key]}
+          onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v }))}
+        />
+      ) : (
+        <span className="flex min-w-0 flex-col items-end text-right">
+          <span className="body-md tabular-nums">
+            {f.render
+              ? f.render(record)
+              : defaultRender((record as Record<string, unknown>)[f.key], f)}
+          </span>
+          {banded && f.note ? (
+            <span className="body-sm text-(--text-secondary)">{f.note}</span>
+          ) : null}
+        </span>
+      )}
+    </div>
+  ));
+
+  if (banded && Icon) {
+    return (
+      <div className={className} data-testid={`editable-card-${slug(title)}`}>
+        <BandedCard icon={Icon} title={title} summary={summary} actions={actions}>
+          {banner}
+          {rows}
+        </BandedCard>
+      </div>
+    );
+  }
+
   return (
     // The wrapper carries the test id and any grid placement; the Genaro
     // Card inside stretches to the grid row's height.
@@ -211,74 +303,13 @@ export function EditableCard<T extends object>({
             {title}
           </span>
         }
-        actions={
-          editing ? (
-            <>
-              <Button variant="tertiary" onClick={cancel} disabled={saving}>
-                Cancel
-              </Button>
-              <Button variant="primary" onClick={() => void save()} loading={saving}>
-                Save
-              </Button>
-            </>
-          ) : canEdit ? (
-            <Button
-              variant="plain"
-              icon="EditMinor"
-              onClick={startEdit}
-              accessibilityLabel={`Edit ${title}`}
-            >
-              Edit
-            </Button>
-          ) : null
-        }
+        actions={actions}
       >
-        {saveFailed && (
-          <Banner tone="critical">
-            Those changes could not be saved. Your edits are still here — try
-            again, or cancel to discard them.
-          </Banner>
-        )}
+        {banner}
 
         {/* Two columns only when the card itself is wide enough. */}
         <div className="@container">
-          <div className="grid gap-x-6 gap-y-3 @md:grid-cols-2">
-            {fields.map((f) => (
-              <div
-                key={f.key}
-                className={cn(
-                  "gap-3",
-                  editing && !f.readOnly
-                    ? "flex flex-col"
-                    : "flex items-center justify-between",
-                )}
-              >
-                <span
-                  className={cn(
-                    "shrink-0 body-md text-(--text-secondary)",
-                    editing && !f.readOnly && "text-(--text)",
-                  )}
-                >
-                  {f.label}
-                </span>
-
-                {editing && !f.readOnly ? (
-                  <FieldInput
-                    field={f}
-                    value={draft[f.key]}
-                    error={errors[f.key]}
-                    onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v }))}
-                  />
-                ) : (
-                  <span className="text-right body-md tabular-nums">
-                    {f.render
-                      ? f.render(record)
-                      : defaultRender((record as Record<string, unknown>)[f.key], f)}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
+          <div className="grid gap-x-6 gap-y-3 @md:grid-cols-2">{rows}</div>
         </div>
       </Card>
     </div>

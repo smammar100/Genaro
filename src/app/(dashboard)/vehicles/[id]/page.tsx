@@ -62,8 +62,9 @@ function resolveBack(from: string | null): { href: string; label: string } {
  * Vehicle detail — the Genaro product-detail pattern for a single piece of
  * stock. `VehicleHeaderCard` is the page's header (the Page has none, so the
  * name isn't repeated): back, the plate with the status menu and
- * days-in-stock chip, the lifecycle's next step as the primary action and
- * Remove from website as a destructive one, then the name and key facts.
+ * days-in-stock chip, the name and key facts, then a band with the car's
+ * progress to sale, the next step and its open to-dos, the next step as the
+ * primary action and Remove from website as a destructive one.
  * Below it `VehicleDetailShell`: the tab row, and the active tab at full width.
  */
 
@@ -92,6 +93,9 @@ export default function VehicleDetailPage({
   const { user, company } = useAuth();
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [exporting, setExporting] = useState(false);
+  // Open to-dos, reported by the shell (which owns the fetch for its tab
+  // badge) so the header can link them under the next step.
+  const [todoCount, setTodoCount] = useState<number | null>(null);
   // Active detail tab — lifted so the header "Open Inspection" can jump to it.
   // A ?tab= link (e.g. "Edit price" from the vehicle list) opens that tab.
   const [tab, setTab] = useState(() => {
@@ -229,6 +233,8 @@ export default function VehicleDetailPage({
             <DaysInStockChip days={vehicle.daysInStock} />
           </>
         }
+        todoCount={todoCount}
+        onOpenTodos={() => setTab("todo")}
         actions={
           canRemoveFromWebsite || nextStep ? (
             <>
@@ -257,6 +263,7 @@ export default function VehicleDetailPage({
         onVehicleRefetch={() => void refetchVehicle()}
         exporting={exporting}
         onExportPdf={() => void handleExportPdf()}
+        onTodoCountChange={setTodoCount}
       />
 
       {confirmDialog}
