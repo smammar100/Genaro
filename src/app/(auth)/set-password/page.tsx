@@ -85,7 +85,7 @@ export default function SetPasswordPage() {
   return (
     <AuthCard
       title="Welcome, set your password"
-      subtitle="Choose your own password to continue to the dashboard."
+      subtitle="Choose your own password to continue to Home."
     >
       <form
         onSubmit={form.handleSubmit(onSubmit)}

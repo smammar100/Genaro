@@ -10,7 +10,7 @@ import { FooterHelp, Link } from '@/components/genaro';
 - The last child of a `Page`, after the cards. It adds its own 16px padding (`space-400`), so it needs no wrapper.
 - Start with "Learn more about" and link the topic. The link text names the destination, never "click here".
 - The children are text plus a Genaro `Link`. In a file that also imports `next/link`, import the Genaro one as `{ Link as GenaroLink }`.
-- The text is 13px medium in `text`, centered.
+- The text is body in `text`, centered.
 
 ## Examples
 

@@ -61,7 +61,7 @@ function ProgressRing({ percent }: { percent: number }) {
           className="stroke-(--bg-fill-success) transition-[stroke-dashoffset]"
         />
       </svg>
-      <span className="absolute inset-0 grid place-items-center text-micro font-semibold tabular-nums">
+      <span className="absolute inset-0 grid place-items-center text-caption font-semibold tabular-nums">
         {percent}%
       </span>
     </div>

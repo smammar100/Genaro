@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import type { Vehicle } from "@/lib/types";
-import { Button, Card, SkeletonBodyText } from "@/components/genaro";
+import { Button, Card } from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { isInStock } from "@/lib/stock";
 import { locationLabel } from "@/lib/locations";
@@ -14,22 +14,20 @@ import { useCompanyLocations } from "@/hooks/use-company-locations";
 import { formatDate, titleCase } from "@/lib/utils";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";
 
-/** How far ahead the box looks: the client's "next two months". */
-const MONTHS_AHEAD = 2;
+/** How far ahead the box looks: under 60 days. */
+const DAYS_AHEAD = 60;
 
 /** Today as YYYY-MM-DD in the viewer's time zone. */
 const dayKey = (d: Date) => d.toLocaleDateString("en-CA");
 
 /**
- * Cars in stock whose MOT runs out in the next two months, or already has,
- * soonest first (call 2026-10-31): reg, car, where it is and the date, in
- * red. The dates are refreshed weekly from DVSA.
- * @import import { DashboardMotsExpiring } from "@/components/dashboard/dashboard-mots-expiring";
+ * Cars in stock whose MOT runs out in under 60 days, or already has, soonest
+ * first; null while loading. The date is the car's MOT expiry, as on its
+ * Documentation card. The dashboard reads this to decide whether the box
+ * shows at all.
  */
-export function DashboardMotsExpiring() {
+export function useMotsExpiring(): { due: Vehicle[] | null; today: string } {
   const { company } = useAuth();
-  const pathname = usePathname();
-  const custom = useCompanyLocations();
   const [vehicles, setVehicles] = useState<Vehicle[] | null>(null);
   // Read once the data lands, so rendering stays pure.
   const [today, setToday] = useState<Date | null>(null);
@@ -44,32 +42,32 @@ export function DashboardMotsExpiring() {
 
   const due = useMemo(() => {
     if (!vehicles || !today) return null;
-    const until = dayKey(new Date(today.getFullYear(), today.getMonth() + MONTHS_AHEAD, today.getDate()));
+    const until = dayKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() + DAYS_AHEAD));
     return vehicles
-      .filter((v) => isInStock(v) && v.motExpiry && v.motExpiry.slice(0, 10) <= until)
+      .filter((v) => isInStock(v) && v.motExpiry && v.motExpiry.slice(0, 10) < until)
       .sort((a, b) => (a.motExpiry ?? "").localeCompare(b.motExpiry ?? ""));
   }, [vehicles, today]);
 
-  const todayKey = today ? dayKey(today) : "";
+  return { due, today: today ? dayKey(today) : "" };
+}
+
+/**
+ * The cars from useMotsExpiring (call 2026-10-31): reg, car, where it is and
+ * the date, in red. Only drawn when there is at least one, so the dashboard
+ * has no empty box (2026-11-01).
+ * @import import { DashboardMotsExpiring } from "@/components/dashboard/dashboard-mots-expiring";
+ */
+export function DashboardMotsExpiring({ due, today: todayKey }: { due: Vehicle[]; today: string }) {
+  const pathname = usePathname();
+  const custom = useCompanyLocations();
 
   return (
     <Card
       className="h-full"
       title="MOTs expiring soon"
-      actions={
-        due && due.length > 0 ? (
-          <span className="body-sm tabular-nums text-(--text-secondary)">{due.length}</span>
-        ) : undefined
-      }
+      actions={<span className="body-sm tabular-nums text-(--text-secondary)">{due.length}</span>}
     >
-      {due === null ? (
-        <SkeletonBodyText lines={5} />
-      ) : due.length === 0 ? (
-        <p className="body-md text-(--text-secondary)">
-          No MOT runs out in the next two months.
-        </p>
-      ) : (
-        <ul className="-mx-4 -mb-4 flex flex-col">
+      <ul className="-mx-4 -mb-4 flex flex-col">
           {due.slice(0, 8).map((v) => {
             const expired = (v.motExpiry ?? "") < todayKey;
             return (
@@ -100,8 +98,7 @@ export function DashboardMotsExpiring() {
               </Button>
             </li>
           ) : null}
-        </ul>
-      )}
+      </ul>
     </Card>
   );
 }

@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard,
+  House,
   Car,
   Wrench,
   ClipboardCheck,
@@ -85,7 +85,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: null,
     section: "home",
-    items: [{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard }],
+    items: [{ label: "Home", href: "/dashboard", icon: House }],
   },
   {
     label: "Inventory",

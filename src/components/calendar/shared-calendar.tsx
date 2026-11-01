@@ -6,7 +6,8 @@ import { appointmentService } from "@/lib/services/appointment-service";
 import { workshopService } from "@/lib/services/workshop-service";
 import { maintenanceService } from "@/lib/services/maintenance-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
-import type { Appointment, MaintenanceJob, UUID, Vehicle, WorkshopJob } from "@/lib/types";
+import { leadService } from "@/lib/services/lead-service";
+import type { Appointment, Lead, MaintenanceJob, UUID, Vehicle, WorkshopJob } from "@/lib/types";
 import { Card, SkeletonBodyText, SkeletonDisplayText } from "@/components/genaro";
 import {
   ALL_KINDS,
@@ -51,16 +52,21 @@ interface Sources {
   shop: WorkshopJob[];
   maint: MaintenanceJob[];
   vehicles: Vehicle[];
+  /** For the lead type on appointment cards. */
+  leads: Lead[];
 }
 
 async function fetchSources(companyId: UUID, kinds: Kind[]): Promise<Sources> {
-  const [appts, shop, maint, vehicles] = await Promise.all([
+  const [appts, shop, maint, vehicles, leads] = await Promise.all([
     kinds.includes("appt") ? appointmentService.getAll(companyId) : Promise.resolve([]),
     kinds.includes("workshop") ? workshopService.getAll(companyId) : Promise.resolve([]),
     kinds.includes("maint") ? maintenanceService.getAll(companyId) : Promise.resolve([]),
     vehicleService.getAll(companyId),
+    // Leads only label the cards, so a failed read leaves them off rather
+    // than blanking the calendar.
+    kinds.includes("appt") ? leadService.getAll(companyId).catch(() => []) : Promise.resolve([]),
   ]);
-  return { appts, shop, maint, vehicles };
+  return { appts, shop, maint, vehicles, leads };
 }
 
 type FormState =
@@ -114,7 +120,7 @@ export function SharedCalendar({
       .catch((e: unknown) => {
         if (!live) return;
         notify.error(e instanceof Error ? e.message : "Couldn't load the calendar");
-        setSources({ appts: [], shop: [], maint: [], vehicles: [] });
+        setSources({ appts: [], shop: [], maint: [], vehicles: [], leads: [] });
       });
     return () => {
       live = false;

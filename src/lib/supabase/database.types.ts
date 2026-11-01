@@ -1247,6 +1247,7 @@ export type Database = {
           id: string
           is_demo: boolean
           lead_channel_id: string | null
+          lead_type: string
           lost_reason: string | null
           notes: string | null
           source: string
@@ -1266,6 +1267,7 @@ export type Database = {
           id?: string
           is_demo?: boolean
           lead_channel_id?: string | null
+          lead_type?: string
           lost_reason?: string | null
           notes?: string | null
           source: string
@@ -1285,6 +1287,7 @@ export type Database = {
           id?: string
           is_demo?: boolean
           lead_channel_id?: string | null
+          lead_type?: string
           lost_reason?: string | null
           notes?: string | null
           source?: string

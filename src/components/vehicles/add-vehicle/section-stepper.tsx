@@ -210,7 +210,7 @@ export function SectionStepper({
                   >
                     <span
                       className={cn(
-                        "grid size-6 shrink-0 place-items-center rounded-full body-xs-semibold",
+                        "grid size-6 shrink-0 place-items-center rounded-full body-sm-semibold",
                         on
                           ? "bg-(--bg-fill-brand) text-(--text-brand-on-bg-fill)"
                           : complete

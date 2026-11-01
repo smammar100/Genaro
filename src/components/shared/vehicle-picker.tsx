@@ -157,7 +157,7 @@ export function VehiclePicker({
                 <span className="truncate">
                   {v.make} {v.model}
                 </span>
-                <span className="shrink-0 text-micro text-muted-foreground">
+                <span className="shrink-0 text-caption text-muted-foreground">
                   {v.stockId}
                 </span>
                 {renderMeta?.(v)}

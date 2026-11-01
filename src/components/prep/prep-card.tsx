@@ -146,7 +146,7 @@ export function PrepCard({
                     >
                       {t.description}
                       {t.status === "in_progress" ? (
-                        <span className="ml-1.5 body-xs text-(--text-info)">In progress</span>
+                        <span className="ml-1.5 body-sm text-(--text-info)">In progress</span>
                       ) : null}
                     </span>
                   }

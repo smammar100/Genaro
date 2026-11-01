@@ -8,6 +8,8 @@
 import type {
   Appointment,
   Company,
+  Lead,
+  LeadType,
   MaintenanceJob,
   UUID,
   Vehicle,
@@ -41,6 +43,9 @@ interface CalEventBase {
   job: string | null;
   /** Stock vehicle, for the "Open vehicle" link. */
   vehicleId: UUID | null;
+  /** An appointment's lead type (viewing, collection, delivery); null for
+   *  walk-ins, maintenance and appointments booked without a lead. */
+  leadType: LeadType | null;
 }
 
 export type CalEvent =
@@ -203,8 +208,11 @@ export function buildEvents(input: {
   shop: WorkshopJob[];
   maint: MaintenanceJob[];
   vehicles: Vehicle[];
+  /** For each appointment's lead type; left out, cards show none. */
+  leads?: Lead[];
 }): CalEvent[] {
   const byId = new Map(input.vehicles.map((v) => [v.id, v]));
+  const leadTypeById = new Map((input.leads ?? []).map((l) => [l.id, l.leadType ?? null]));
   const vehicle = (id: UUID | null) => {
     const v = id ? byId.get(id) : undefined;
     return v
@@ -228,6 +236,7 @@ export function buildEvents(input: {
       ...vehicle(a.vehicleId),
       job: null,
       vehicleId: a.vehicleId,
+      leadType: a.leadId ? (leadTypeById.get(a.leadId) ?? null) : null,
       raw: a,
     });
   }
@@ -246,6 +255,7 @@ export function buildEvents(input: {
       car: j.vehicleDescription || null,
       job: j.description || null,
       vehicleId: null,
+      leadType: null,
       raw: j,
     });
   }
@@ -266,6 +276,7 @@ export function buildEvents(input: {
       ...vehicle(j.vehicleId),
       job: null,
       vehicleId: j.vehicleId,
+      leadType: null,
       raw: j,
     });
   }

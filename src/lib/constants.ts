@@ -54,13 +54,13 @@ export const MAINTENANCE_STATUSES: {
  * only have a slug in hand, and the source of the shipped labels.
  *
  * "Offer Made" was dropped and "Test Drive" became "Qualified / Viewing" per
- * the UAT call (GEN-65). The `offer_made` label survives here so historical
+ * the UAT call (GEN-65), then just "Viewing" (2026-11-01). The `offer_made` label survives here so historical
  * deals and activity entries still render a name rather than a raw slug.
  */
 const SALES_STAGES: { value: SalesStage; label: string }[] = [
   { value: "new_lead", label: "New Lead" },
   { value: "contacted", label: "Contacted" },
-  { value: "test_drive", label: "Qualified / Viewing" },
+  { value: "test_drive", label: "Viewing" },
   { value: "deposit_taken", label: "Deposit Taken" },
   { value: "collection_delivery", label: "Collection / Delivery" },
   { value: "completed_sale", label: "Completed Sale" },

@@ -25,19 +25,23 @@ import type { Capability } from "@/lib/capabilities";
 import { Card, SkeletonDisplayText } from "@/components/genaro";
 import { cn } from "@/lib/utils";
 
+/** Each figure, or null when its data couldn't be read (shown as "—"). */
 interface Stats {
-  carsInStock: number;
-  carsInReadiness: number;
-  soldThisMonth: number;
-  openClaims: number;
-  newLeads24h: number;
+  carsInStock: number | null;
+  carsInReadiness: number | null;
+  soldThisMonth: number | null;
+  openClaims: number | null;
+  newLeads24h: number | null;
   avgDays: number | null;
-  inspectionsPending: number;
-  activeJobs: number;
+  inspectionsPending: number | null;
+  activeJobs: number | null;
   /** Same-window prior periods, for the deltas. See DELTA note on KpiDef. */
-  soldLastMonth: number;
-  newLeadsPrev24h: number;
+  soldLastMonth: number | null;
+  newLeadsPrev24h: number | null;
 }
+
+/** A figure for its tile: the number, or a dash when it couldn't be read. */
+const fig = (n: number | null, suffix = "") => (n === null ? "—" : `${n}${suffix}`);
 
 type Delta = { text: string; dir: "up" | "down" | "flat" };
 
@@ -48,6 +52,10 @@ function signed(n: number, suffix = ""): Delta {
     ? { text: `+${n}${suffix}`, dir: "up" }
     : { text: `−${Math.abs(n)}${suffix}`, dir: "down" };
 }
+
+/** The change against the prior period, when both sides were read. */
+const change = (now: number | null, before: number | null): Delta | null =>
+  now === null || before === null ? null : signed(now - before);
 
 /**
  * Each KPI declares the capabilities that make it relevant. A card shows only
@@ -68,7 +76,7 @@ interface KpiDef {
    * from data it already loads. The rest have no delta rather than a made-up
    * one; adding those needs a stored history the app does not keep yet.
    */
-  delta?: (s: Stats) => Delta;
+  delta?: (s: Stats) => Delta | null;
   /**
    * Operational KPIs are tailored for hands-on roles (Inspector, Workshop).
    * Super-users / admins see the canonical 6-card overview instead, so these
@@ -92,7 +100,7 @@ const KPI_DEFS: KpiDef[] = [
       "advert:create",
       "admin:view_master_sheet",
     ],
-    value: (s) => String(s.carsInStock),
+    value: (s) => fig(s.carsInStock),
   },
   {
     key: "inspections_pending",
@@ -100,7 +108,7 @@ const KPI_DEFS: KpiDef[] = [
     icon: ClipboardCheck,
     href: "/maintenance/inspection",
     requiredAnyOf: ["inspection:run", "inspection:add_note"],
-    value: (s) => String(s.inspectionsPending),
+    value: (s) => fig(s.inspectionsPending),
     operational: true,
   },
   {
@@ -114,7 +122,7 @@ const KPI_DEFS: KpiDef[] = [
       "maintenance:complete",
       "workshop:add_note",
     ],
-    value: (s) => String(s.activeJobs),
+    value: (s) => fig(s.activeJobs),
     operational: true,
   },
   {
@@ -129,7 +137,7 @@ const KPI_DEFS: KpiDef[] = [
       "sales:create_lead",
       "admin:view_master_sheet",
     ],
-    value: (s) => String(s.carsInReadiness),
+    value: (s) => fig(s.carsInReadiness),
   },
   {
     key: "sold_this_month",
@@ -141,8 +149,8 @@ const KPI_DEFS: KpiDef[] = [
       "sales:edit_pipeline_stage",
       "admin:view_financials",
     ],
-    value: (s) => String(s.soldThisMonth),
-    delta: (s) => signed(s.soldThisMonth - s.soldLastMonth),
+    value: (s) => fig(s.soldThisMonth),
+    delta: (s) => change(s.soldThisMonth, s.soldLastMonth),
   },
   {
     key: "new_leads_24h",
@@ -150,8 +158,8 @@ const KPI_DEFS: KpiDef[] = [
     icon: Inbox,
     href: "/sales/pipeline",
     requiredAnyOf: ["sales:create_lead", "sales:edit_lead"],
-    value: (s) => String(s.newLeads24h),
-    delta: (s) => signed(s.newLeads24h - s.newLeadsPrev24h),
+    value: (s) => fig(s.newLeads24h),
+    delta: (s) => change(s.newLeads24h, s.newLeadsPrev24h),
   },
   {
     key: "open_claims",
@@ -167,7 +175,7 @@ const KPI_DEFS: KpiDef[] = [
       "warranty:create",
       "warranty:edit",
     ],
-    value: (s) => String(s.openClaims),
+    value: (s) => fig(s.openClaims),
   },
   {
     key: "avg_days",
@@ -179,31 +187,34 @@ const KPI_DEFS: KpiDef[] = [
       "admin:view_master_sheet",
       "inventory:edit",
     ],
-    value: (s) => (s.avgDays === null ? "—" : `${s.avgDays}d`),
+    value: (s) => fig(s.avgDays, "d"),
   },
 ];
 
 export function DashboardKpiRow() {
   const { company } = useAuth();
   const { can, isSuperUser } = usePermissions();
+  // Each source may be null: one that fails to load blanks only its own
+  // figures, not the whole row (2026-11-01).
   const [data, setData] = useState<{
-    vehicles: Awaited<ReturnType<typeof vehicleService.getAll>>;
-    claims: Awaited<ReturnType<typeof claimService.getAll>>;
-    leads: Awaited<ReturnType<typeof leadService.getAll>>;
-    jobs: Awaited<ReturnType<typeof maintenanceService.getAll>>;
-    deals: Awaited<ReturnType<typeof salesService.getAll>>;
+    vehicles: Awaited<ReturnType<typeof vehicleService.getAll>> | null;
+    claims: Awaited<ReturnType<typeof claimService.getAll>> | null;
+    leads: Awaited<ReturnType<typeof leadService.getAll>> | null;
+    jobs: Awaited<ReturnType<typeof maintenanceService.getAll>> | null;
+    deals: Awaited<ReturnType<typeof salesService.getAll>> | null;
     /** When the batch landed — the clock every KPI is measured against. */
     fetchedAt: number;
   } | null>(null);
 
   useEffect(() => {
     if (!company) return;
+    const settle = <T,>(read: Promise<T>): Promise<T | null> => read.catch(() => null);
     void Promise.all([
-      vehicleService.getAll(company.id),
-      claimService.getAll(company.id),
-      leadService.getAll(company.id),
-      maintenanceService.getAll(company.id),
-      salesService.getAll(company.id),
+      settle(vehicleService.getAll(company.id)),
+      settle(claimService.getAll(company.id)),
+      settle(leadService.getAll(company.id)),
+      settle(maintenanceService.getAll(company.id)),
+      settle(salesService.getAll(company.id)),
     ]).then(([vehicles, claims, leads, jobs, deals]) => {
       setData({ vehicles, claims, leads, jobs, deals, fetchedAt: Date.now() });
     });
@@ -230,69 +241,48 @@ export function DashboardKpiRow() {
     // "In stock" is the master sheet's Available, the same rule as All
     // vehicles. The workflow status alone counted imported cars the sheet
     // marks sold or returned to owner: 205 against ~120 (call 2026-10-31).
-    const activeVehicles = data.vehicles.filter(isInStock);
-    const carsInStock = activeVehicles.length;
-    const carsInReadiness = activeVehicles.filter(
-      (v) => v.status === "ready",
-    ).length;
-    const inspectionsPending = activeVehicles.filter(
-      (v) => v.status === "inspection_pending",
-    ).length;
-    const activeJobs = data.jobs.filter(
-      (j) => j.status === "pending" || j.status === "in_progress",
-    ).length;
-    // A vehicle counts as sold this month if its date_sold says so OR a deal
-    // for it completed this month (historic completions predate the write-back
-    // of date_sold onto the vehicle, GEN-43). Union, deduped per vehicle.
-    const soldVehicleIds = new Set<string>();
-    for (const v of data.vehicles) {
-      if (v.dateSold && new Date(v.dateSold).getTime() >= monthStart) {
-        soldVehicleIds.add(v.id);
+    const { vehicles, deals, jobs, claims, leads } = data;
+    const activeVehicles = vehicles?.filter(isInStock) ?? null;
+    const count = <T,>(list: T[] | null, keep: (x: T) => boolean) =>
+      list === null ? null : list.filter(keep).length;
+    const carsInStock = activeVehicles?.length ?? null;
+    const carsInReadiness = count(activeVehicles, (v) => v.status === "ready");
+    const inspectionsPending = count(activeVehicles, (v) => v.status === "inspection_pending");
+    const activeJobs = count(jobs, (j) => j.status === "pending" || j.status === "in_progress");
+    // A vehicle counts as sold in a month if its date_sold says so OR a deal
+    // for it completed then (historic completions predate the write-back of
+    // date_sold onto the vehicle, GEN-43). Union, deduped per vehicle; the
+    // previous month by the same rule, so the delta compares like with like.
+    const soldBetween = (from: number, to: number): number | null => {
+      if (vehicles === null && deals === null) return null;
+      const ids = new Set<string>();
+      for (const v of vehicles ?? []) {
+        if (!v.dateSold) continue;
+        const t = new Date(v.dateSold).getTime();
+        if (t >= from && t < to) ids.add(v.id);
       }
-    }
-    for (const d of data.deals) {
-      if (
-        d.stage === "completed_sale" &&
-        d.completionDate &&
-        new Date(d.completionDate).getTime() >= monthStart
-      ) {
-        soldVehicleIds.add(d.vehicleId);
+      for (const d of deals ?? []) {
+        if (d.stage !== "completed_sale" || !d.completionDate) continue;
+        const t = new Date(d.completionDate).getTime();
+        if (t >= from && t < to) ids.add(d.vehicleId);
       }
-    }
-    const soldThisMonth = soldVehicleIds.size;
-    // Same union rule over the previous calendar month, so the delta compares
-    // like with like rather than a differently-counted number.
-    const soldLastMonthIds = new Set<string>();
-    for (const v of data.vehicles) {
-      if (!v.dateSold) continue;
-      const t = new Date(v.dateSold).getTime();
-      if (t >= lastMonthStart && t < monthStart) soldLastMonthIds.add(v.id);
-    }
-    for (const d of data.deals) {
-      if (d.stage !== "completed_sale" || !d.completionDate) continue;
-      const t = new Date(d.completionDate).getTime();
-      if (t >= lastMonthStart && t < monthStart) soldLastMonthIds.add(d.vehicleId);
-    }
-    const soldLastMonth = soldLastMonthIds.size;
-    const openClaims = data.claims.filter(
-      (c) => c.status === "open" || c.status === "under_review",
-    ).length;
-    const newLeads24h = data.leads.filter(
-      (l) => now - new Date(l.createdAt).getTime() <= 86_400_000,
-    ).length;
-    const newLeadsPrev24h = data.leads.filter((l) => {
+      return ids.size;
+    };
+    const soldThisMonth = soldBetween(monthStart, Infinity);
+    const soldLastMonth = soldBetween(lastMonthStart, monthStart);
+    const openClaims = count(claims, (c) => c.status === "open" || c.status === "under_review");
+    const newLeads24h = count(leads, (l) => now - new Date(l.createdAt).getTime() <= 86_400_000);
+    const newLeadsPrev24h = count(leads, (l) => {
       const age = now - new Date(l.createdAt).getTime();
       return age > 86_400_000 && age <= 172_800_000;
-    }).length;
-    const withDays = activeVehicles.filter(
-      (v) => typeof v.daysInStock === "number",
-    );
+    });
+    // Days counted from each car's arrival (vehicleService works it out live;
+    // the stored figure drifts), so this matches the cars' own pages.
     const avgDays =
-      withDays.length === 0
+      activeVehicles === null || activeVehicles.length === 0
         ? null
         : Math.round(
-            withDays.reduce((sum, v) => sum + (v.daysInStock ?? 0), 0) /
-              withDays.length,
+            activeVehicles.reduce((sum, v) => sum + v.daysInStock, 0) / activeVehicles.length,
           );
     return {
       carsInStock,

@@ -65,6 +65,8 @@ const reRawControl = /<(button|select|textarea|table)\b|<input\b(?![^>]*type=["'
 const reInlinePx = /\b(padding|paddingTop|paddingBottom|paddingLeft|paddingRight|paddingInline|paddingBlock|margin|marginTop|marginBottom|marginLeft|marginRight|gap|rowGap|columnGap|borderRadius|border-radius|padding-[a-z]+|margin-[a-z]+|row-gap|column-gap)\s*:\s*['"]?(\d+(?:\.\d+)?)(px)?\b/g;
 const reFontFamily = /font-?family\s*:\s*(?!\s*var\(--font-|\s*inherit)/gi;
 const reEmoji = /\p{Extended_Pictographic}/gu;
+// Type that left the scale on 2026-11-01: five sizes, one family.
+const reRetiredType = /(?<![\w-])(body-xs(?:-semibold)?|text-micro|text-2xs|type-compact|font-mono|text-\[\d+(?:\.\d+)?px\])(?![\w-])/g;
 const PROPER = new Set(['Shopify', 'Genaro', 'Sidekick', 'Google', 'Facebook', 'Instagram', 'TikTok', 'Pinterest', 'YouTube', 'Point', 'Sale', 'Online', 'Store', 'POS', 'SKU', 'ID', 'URL', 'CSV', 'PDF', 'API', 'USD', 'EUR', 'CAD', 'GST', 'VAT', 'HST', 'OK', 'Apple', 'Pay', 'PayPal', 'Stripe', 'Flow', 'Shop', 'Canada', 'United', 'States', 'Kingdom', 'App', 'Balance', 'Markets', 'Plus']);
 
 const issues = [];
@@ -111,7 +113,8 @@ for (const file of files) {
       if (/--[\w-]+\s*:/.test(code)) continue;
       add(file, ln, 'warn', 'hardcoded-spacing', `${m[1]}: ${m[2]}${m[3] || ''} is hard-coded.`, /radius/i.test(m[1]) ? 'Use var(--radius-200) / var(--radius-300)…' : `Use ${pxToken(m[2])} (or the Tailwind scale: p-4 = space-400).`);
     }
-    for (const m of code.matchAll(reFontFamily)) add(file, ln, 'warn', 'font-family', 'Custom font-family.', 'This app uses Geist via var(--font-sans) (Geist Mono via var(--font-mono)); use the type classes (body-md, heading-sm…).');
+    for (const m of code.matchAll(reFontFamily)) add(file, ln, 'warn', 'font-family', 'Custom font-family.', 'This app uses one family, Geist Sans, via var(--font-sans); use the type classes (body-md, heading-sm…).');
+    if (!/pointer-coarse:text-\[16px\]/.test(code)) for (const m of code.matchAll(reRetiredType)) add(file, ln, 'error', 'off-scale-type', `"${m[1]}" is off the type scale.`, 'Five sizes only: heading-lg (display), text-title, heading-sm (subtitle), body-md (body), body-sm (caption). Codes and plates use font-code.');
     if (isTsx) {
       for (const m of code.matchAll(reRawControl)) add(file, ln, 'warn', 'raw-control', `Raw <${m[1] || 'input'}> element.`, 'Use the Genaro component (Button, TextField, Select, Checkbox, IndexTable/DataTable…) so states, focus and theming come for free.');
       if (/variant=["']primary["']/.test(code)) primaries += (code.match(/variant=["']primary["']/g) || []).length;

@@ -19,14 +19,14 @@ Every component and token is in Storybook (`pnpm storybook`, port 6006): stories
    @import "../components/genaro/styles/shadcn.css"; /* with shadcn/ui */
    ```
    Without Tailwind: `import '@/components/genaro/styles/genaro.css'` in the root layout.
-2. Font — Geist and Geist Mono via next/font with `variable: '--font-geist-sans'` / `'--font-geist-mono'` on `<html>`.
+2. Font — Geist Sans via next/font with `variable: '--font-geist-sans'` on `<html>`. It is the only face; `--font-mono` points at it.
 3. Router links — wrap the app (from a `'use client'` file) in `<GenaroProvider linkComponent={Link}>` with `Link` from `next/link`.
 4. Dark mode — `class="dark"` or `data-theme="dark"` on `<html>` (next-themes works with either).
 
 ## Rules
 - Compose pages from components: `Page` → `Layout` / `Grid` → `Card` → content. Controls are always Genaro components.
 - Style only with tokens: `var(--bg-surface)` / Tailwind `bg-(--bg-surface)`, `text-(--text-secondary)`, `rounded-(--radius-300)`, `shadow-(--shadow-100)`; spacing with Tailwind's scale (`p-4` = `space-400`). Semantic tokens only — never primitives (`gray-12`) or Tailwind palette colors. No `dark:` color overrides.
-- Type classes: `heading-lg` (page titles), `heading-sm` (card titles), `body-md` (default), `body-sm` (secondary/help), `body-md-numeric` (numbers). In this app each class is a role of the Fluid Functionalism type scale (`src/lib/type-scale.ts`, 24px largest); the role tokens `text-display` … `text-micro` work too. Never hard-code a size or line height. Three weights (`--fw-regular` 400, `--fw-medium` 500 for component labels, `--fw-semibold` 550 — the heaviest; no bold until approved), set in Geist (Geist Mono for mono, never Helvetica); no letter-spacing, no uppercase; codes use `font-code`; `.type-compact` puts a dense screen on the compact step.
+- Type classes: `heading-lg` (page titles), `heading-sm` (card titles), `body-md` (default), `body-sm` (secondary/help), `body-md-numeric` (numbers). In this app each class is a role of the Fluid Functionalism type scale (`src/lib/type-scale.ts`, 24px largest); the role tokens `text-display` … `text-caption` work too. Five sizes only: display 24/30, title 16/24, subtitle 14/20, body 13/18, caption 12/16, dense screens included. Never hard-code a size or line height. Three weights (`--fw-regular` 400, `--fw-medium` 500 for component labels, `--fw-semibold` 550 — the heaviest; no bold until approved), all in Geist Sans (no mono face, never Helvetica); no letter-spacing, no uppercase; codes and plates use `font-code`.
 - One primary action per view; destructive = `tone="critical"` + confirmation Modal.
 - Sentence case, verb + noun buttons, one- or two-word badges, no emoji.
 - Server Components by default: pass serializable props and navigate with `url`; callbacks and state only in small `'use client'` components.

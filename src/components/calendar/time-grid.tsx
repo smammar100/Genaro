@@ -110,7 +110,7 @@ export function TimeGrid({
           </div>
           {allDay.some((list) => list.length > 0) ? (
             <div className="flex border-t border-(--border-secondary)">
-              <div className="flex w-14 shrink-0 justify-end py-1.5 pr-2 body-xs text-(--text-secondary)">All day</div>
+              <div className="flex w-14 shrink-0 justify-end py-1.5 pr-2 body-sm text-(--text-secondary)">All day</div>
               {days.map((d, i) => (
                 <div key={isos[i]} className="flex min-w-0 flex-1 flex-col gap-0.5 border-l border-(--border-secondary) p-1">
                   {allDay[i].slice(0, single ? undefined : ALL_DAY_SHOWN).map((ev) => (
@@ -126,7 +126,7 @@ export function TimeGrid({
                     <button
                       type="button"
                       onClick={() => onOpenDay?.(d)}
-                      className="self-start rounded-(--radius-100) px-1.5 body-xs-semibold text-(--text-secondary) hover:bg-(--bg-surface-hover)"
+                      className="self-start rounded-(--radius-100) px-1.5 body-sm-semibold text-(--text-secondary) hover:bg-(--bg-surface-hover)"
                     >
                       {`${allDay[i].length - ALL_DAY_SHOWN} more`}
                     </button>
@@ -215,7 +215,7 @@ function HourGutter({ frame, end, nowHour }: { frame: GridFrame; end: number; no
         <span
           key={h}
           className={cn(
-            "absolute right-2 -translate-y-1/2 body-xs tabular-nums text-(--text-secondary)",
+            "absolute right-2 -translate-y-1/2 body-sm tabular-nums text-(--text-secondary)",
             // Make room for the current-time pill.
             nowHour !== null && Math.abs(nowHour - h) < 0.3 && "opacity-0",
           )}
@@ -226,7 +226,7 @@ function HourGutter({ frame, end, nowHour }: { frame: GridFrame; end: number; no
       ))}
       {nowHour !== null ? (
         <span
-          className="absolute right-1 z-10 -translate-y-1/2 rounded-(--radius-100) bg-(--bg-fill-critical) px-1 py-px body-xs-semibold tabular-nums text-(--text-critical-on-bg-fill)"
+          className="absolute right-1 z-10 -translate-y-1/2 rounded-(--radius-100) bg-(--bg-fill-critical) px-1 py-px body-sm-semibold tabular-nums text-(--text-critical-on-bg-fill)"
           style={{ top: frame.pct(nowHour) }}
         >
           {fmtHour(nowHour)}
@@ -289,7 +289,7 @@ function DayColumn({
             onClick={() => onCreateAt(iso, at)}
             className={cn(cls, "group/slot text-left transition-colors hover:bg-(--bg-surface-hover)")}
           >
-            <span className="invisible absolute top-1 left-1.5 inline-flex items-center gap-0.5 body-xs text-(--text-secondary) group-hover/slot:visible">
+            <span className="invisible absolute top-1 left-1.5 inline-flex items-center gap-0.5 body-sm text-(--text-secondary) group-hover/slot:visible">
               <Plus className="size-3" />
               {fmtHour(at)}
             </span>

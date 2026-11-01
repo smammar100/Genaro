@@ -38,8 +38,8 @@ interface SizeClasses {
   /** Padding of the segmented list around its tabs. */
   segmentPad: string;
   /** Body text inside controls (size + line height), same as `type.body`.
-   *  Its 20px line box (18px compact) is what puts a padded row on the
-   *  ladder: 8 + 20 + 8 = 36, 5 + 18 + 5 = 28. */
+   *  Its 18px line box is what puts a padded row on the ladder:
+   *  9 + 18 + 9 = 36, 5 + 18 + 5 = 28. */
   text: string;
   /** `text` for an editable field: the same body role, plus 16px on touch
    *  screens (`fieldTouchClass`), since iOS Safari zooms the page into a
@@ -80,8 +80,8 @@ const sizeMap: Record<SizeVariant, SizeClasses> = {
     icon: 16,
   },
   // 28px — the compact height for dense surfaces: filter bars, toolbars,
-  // table headers, sidebars. One step down in text (12px) and icon (14px)
-  // so the whole control shrinks together, not just its box.
+  // table headers, sidebars. The text keeps the scale's sizes (call
+  // 2026-11-01); the box, gap and icon (14px) shrink.
   compact: {
     variant: "compact",
     control: "h-7",
@@ -111,7 +111,6 @@ function useTypeScale(
     subtitle: typeScale.subtitle[variant],
     body: typeScale.body[variant],
     caption: typeScale.caption[variant],
-    micro: typeScale.micro[variant],
   };
 }
 

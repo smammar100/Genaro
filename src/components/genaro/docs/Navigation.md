@@ -106,7 +106,7 @@ const [addingChannel, setAddingChannel] = React.useState(false); // opens an "Ad
 | Prop | Type | Default | Notes |
 |---|---|---|---|
 | `items` | `NavigationItem[]` | — | Required. |
-| `title` | `string` | — | Section heading: 12px semibold, `text-secondary`. |
+| `title` | `string` | — | Section heading: caption, semibold, `text-secondary`. |
 | `fill` | `boolean` | — | The section fills the remaining height. |
 | `action` | `{ icon?: IconSource; accessibilityLabel: string; onClick?: () => void }` | — | Icon button next to the title. Only renders with a `title`. |
 | `className` | `string` | — | |

@@ -78,7 +78,7 @@ export function TourCard({
             />
           ))}
         </div>
-        <span className="body-xs shrink-0 tabular-nums text-(--text-secondary)">
+        <span className="body-sm shrink-0 tabular-nums text-(--text-secondary)">
           {currentStep + 1} / {totalSteps}
         </span>
       </div>

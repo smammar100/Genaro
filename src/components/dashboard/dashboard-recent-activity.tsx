@@ -100,7 +100,7 @@ export function DashboardRecentActivity() {
   return (
     <Card
       className="h-full"
-      title="Latest news"
+      title="Latest activity"
       actions={
         <Button variant="plain" url="/admin/activity">
           View all
@@ -115,46 +115,46 @@ export function DashboardRecentActivity() {
           listing change lands here as it is recorded.
         </p>
       ) : (
-        <ul className="-mx-2 flex flex-1 list-none flex-col justify-between">
-          {entries.map((e) => {
-            const { Icon, tag, tint } = categorize(e.actionType);
+        // The Activity log's timeline: a round icon on a rail, the entry,
+        // then its category and time underneath (call 2026-11-01).
+        <ol className="-mx-2 flex list-none flex-col">
+          {entries.map((e, i) => {
+            const { Icon, tag } = categorize(e.actionType);
             const href = e.vehicleId
               ? vehicleDetailHref(e.vehicleId, pathname)
               : "/admin/activity";
+            const last = i === entries.length - 1;
             return (
               <li key={e.id}>
                 <Link
-                  className="flex gap-2.5 rounded-(--radius-200) px-2 py-1.5 no-underline hover:bg-(--bg-surface-hover) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
+                  className="flex gap-3 rounded-(--radius-200) px-2 no-underline hover:bg-(--bg-surface-hover) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
                   href={href}
                 >
-                  {/* The design puts a 54x40 photo here. Activity entries carry
-                      no image, so the category icon fills the same slot at the
-                      same size rather than leaving a hole or inventing art. */}
-                  <span className="grid h-10 w-14 shrink-0 place-items-center rounded-(--radius-200) bg-(--bg-surface-secondary)">
-                    <Icon className={cn("h-4 w-4", tint)} />
-                  </span>
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="flex items-center gap-1.5">
-                      <span className="body-sm text-(--text-secondary)">
-                        {tag}
-                      </span>
-                      <span
-                        aria-hidden
-                        className="block size-0.5 rounded-full bg-(--icon-secondary)"
-                      />
-                      <span className="body-sm text-(--text-secondary)">
-                        {timeAgo(e.createdAt)}
-                      </span>
+                  {/* icon node + connecting rail */}
+                  <span className="flex flex-col items-center pt-1.5">
+                    <span className="z-10 grid size-8 shrink-0 place-items-center rounded-full bg-(--bg-fill-secondary) text-(--icon) ring-4 ring-(--bg-surface)">
+                      <Icon className="size-4" />
                     </span>
+                    {!last && <span className="w-px flex-1 bg-(--border)" />}
+                  </span>
+                  <span
+                    className={cn(
+                      "flex min-w-0 flex-1 flex-col gap-0.5 pt-2",
+                      last ? "pb-1.5" : "pb-4",
+                    )}
+                  >
                     <span className="body-md line-clamp-2 text-pretty text-(--text)">
                       {e.description}
+                    </span>
+                    <span className="body-sm text-(--text-secondary)">
+                      {tag} · {timeAgo(e.createdAt)}
                     </span>
                   </span>
                 </Link>
               </li>
             );
           })}
-        </ul>
+        </ol>
       )}
     </Card>
   );

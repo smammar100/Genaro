@@ -1,6 +1,6 @@
 import { createClient, type TableUpdate } from "@/lib/supabase/client";
 import { invalidate, withCache } from "@/lib/cache";
-import type { Lead, LeadSource, LeadStatus, UUID } from "@/lib/types";
+import type { Lead, LeadSource, LeadStatus, LeadType, UUID } from "@/lib/types";
 import { activityService } from "./activity-service";
 
 const NS = "leads:";
@@ -15,6 +15,7 @@ const SELECT = `
   vehicleId:vehicle_id,
   source,
   leadChannelId:lead_channel_id,
+  leadType:lead_type,
   status,
   assignedTo:assigned_to,
   notes,
@@ -34,6 +35,8 @@ interface CreateInput {
   source: LeadSource;
   /** FK to lead_channels (migration 0009). Optional during the rollout. */
   leadChannelId?: UUID | null;
+  /** Viewing when left out (0058). */
+  leadType?: LeadType;
   assignedTo: UUID;
   notes: string | null;
 }
@@ -110,6 +113,7 @@ export const leadService = {
         vehicle_id: input.vehicleId,
         source: input.source,
         lead_channel_id: input.leadChannelId ?? null,
+        lead_type: input.leadType ?? "viewing",
         status: "new",
         assigned_to: input.assignedTo,
         notes: input.notes,

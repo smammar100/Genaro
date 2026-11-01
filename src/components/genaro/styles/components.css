@@ -256,14 +256,15 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 .p-choice--disabled .p-radio__ring, .p-choice--disabled .p-choice__row:hover .p-radio__ring { background:var(--bg-fill-brand-disabled); box-shadow:none; }
 
 /* Avatar */
-.p-avatar { display:inline-flex; align-items:center; justify-content:center; overflow:hidden; flex:none; font-family:var(--font-sans); font-weight:var(--fw-semibold); line-height:1; }
+/* Initials sit on the type scale too (call 2026-11-01): caption up to 28px, body at 32px, title at 40px. */
+.p-avatar { display:inline-flex; align-items:center; justify-content:center; overflow:hidden; flex:none; font-family:var(--font-sans); font-weight:var(--fw-semibold); font-size:var(--fs-caption); line-height:var(--lh-caption); }
 .p-avatar img { width:100%; height:100%; object-fit:cover; }
 .p-avatar svg { width:100%; height:100%; }
-.p-avatar--xs { width:var(--space-500); height:var(--space-500); border-radius:var(--radius-100); font-size:8px; font-weight:var(--fw-semibold); }
-.p-avatar--sm { width:var(--space-600); height:var(--space-600); border-radius:var(--radius-150); font-size:7px; font-weight:var(--fw-semibold); }
-.p-avatar--md { width:28px; height:28px; border-radius:var(--radius-150); font-size:9px; }
-.p-avatar--lg { width:var(--space-800); height:var(--space-800); border-radius:var(--radius-200); font-size:10px; }
-.p-avatar--xl { width:var(--space-1000); height:var(--space-1000); border-radius:var(--radius-200); font-size:13px; }
+.p-avatar--xs { width:var(--space-500); height:var(--space-500); border-radius:var(--radius-100); }
+.p-avatar--sm { width:var(--space-600); height:var(--space-600); border-radius:var(--radius-150); }
+.p-avatar--md { width:28px; height:28px; border-radius:var(--radius-150); }
+.p-avatar--lg { width:var(--space-800); height:var(--space-800); border-radius:var(--radius-200); font-size:var(--fs-body); line-height:var(--lh-body); }
+.p-avatar--xl { width:var(--space-1000); height:var(--space-1000); border-radius:var(--radius-200); font-size:var(--fs-title); line-height:var(--lh-title); }
 .p-avatar--one { background:var(--avatar-one-bg-fill); color:var(--avatar-one-text-on-bg-fill); }
 .p-avatar--two { background:var(--avatar-two-bg-fill); color:var(--avatar-two-text-on-bg-fill); }
 .p-avatar--three { background:var(--avatar-three-bg-fill); color:var(--avatar-three-text-on-bg-fill); }
@@ -526,8 +527,8 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 
 /* KeyboardKey */
 .p-kbd { display:inline-flex; align-items:center; justify-content:center; min-width:var(--space-500); height:var(--space-500); padding:var(--space-050) var(--space-100); border-radius:var(--radius-100);
-  background:var(--bg-surface-tertiary); color:var(--text-secondary); font-family:var(--font-sans); font-size:var(--fs-micro); line-height:var(--lh-micro); font-weight:var(--fw-regular); box-sizing:border-box; }
-.p-kbd--small { height:var(--space-400); min-width:var(--space-400); padding:0 var(--space-100); font-size:var(--fs-micro); line-height:var(--lh-micro); }
+  background:var(--bg-surface-tertiary); color:var(--text-secondary); font-family:var(--font-sans); font-size:var(--fs-caption); line-height:var(--lh-caption); font-weight:var(--fw-regular); box-sizing:border-box; }
+.p-kbd--small { height:var(--space-400); min-width:var(--space-400); padding:0 var(--space-100); }
 .p-kbd--dark { background:var(--bg-fill-inverse); color:var(--text-inverse-secondary); }
 
 /* FullscreenBar */
@@ -686,7 +687,8 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 .p-datatable { overflow-x:auto; gap:0; }
 .p-datatable table, .p-indextable table { width:100%; border-collapse:collapse; font-family:var(--font-sans); font-size:var(--fs-body); line-height:var(--lh-body); font-weight:var(--fw-regular); color:var(--text); }
 .p-datatable th, .p-datatable td { padding:var(--space-200) var(--space-300); text-align:left; white-space:nowrap; }
-.p-datatable th { font-weight:var(--fw-regular); border-bottom:var(--border-width-025) solid var(--border); }
+/* Table headers are caption, like IndexTable's. */
+.p-datatable th { font-size:var(--fs-caption); line-height:var(--lh-caption); font-weight:var(--fw-regular); color:var(--text-secondary); border-bottom:var(--border-width-025) solid var(--border); }
 .p-datatable tbody tr + tr td { border-top:var(--border-width-025) solid var(--border-secondary); }
 .p-datatable tbody tr:hover td { background:var(--bg-surface-hover); }
 .p-datatable__totals td, .p-datatable tfoot td { background:var(--bg-surface-tertiary); font-weight:var(--fw-semibold); border-bottom:var(--border-width-025) solid var(--border); }
@@ -937,8 +939,8 @@ a.p-toast__action { text-decoration:none; }
 /* A <form> (e.g. a Server Action form) wrapping a page's cards keeps the page and section spacing. */
 .p-page__content > form, .p-layout__section > form { display:flex; flex-direction:column; gap:var(--space-400); margin:0; }
 
-/* Type scale (25 Oct 2026): a tab's counter is a counter, so micro. */
-.p-tab .p-tab__badge { font-size:var(--fs-micro); line-height:var(--lh-micro); }
+/* A tab's counter is caption, the scale's smallest size (call 2026-11-01). */
+.p-tab .p-tab__badge { font-size:var(--fs-caption); line-height:var(--lh-caption); }
 
 /* Sheet: a panel that slides in from the right, the same surface, radius and shadow as Modal. Enter 250ms, exit 180ms, on one ease-out curve; panel and backdrop share timing. */
 .p-sheet-root { position:fixed; inset:0; z-index:500; }

@@ -351,7 +351,7 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
                 <Icon className="size-4" />
                 {locationLabel(loc, custom)}
                 {on ? (
-                  <span className="rounded-full bg-(--bg-surface) px-1.5 body-xs-semibold">
+                  <span className="rounded-full bg-(--bg-surface) px-1.5 body-sm-semibold">
                     Here now
                   </span>
                 ) : !isCustomLocation(loc) && OFF_SITE[loc] ? (

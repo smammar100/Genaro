@@ -10,7 +10,7 @@ import { MediaCard } from '@/components/genaro';
 - Education and feature announcements, such as a video walkthrough or an app you recommend.
 - The media goes in `children`: an `<img>` sized to fill its box (`width: 100%`, `object-fit: cover`) or a `VideoThumbnail`.
 - Without `portrait`, the media sits on top and the text below, which fits narrow columns like a one-third section. With `portrait`, the media takes the left 40% and the text sits beside it, which suits wide columns.
-- `primaryAction` renders a default Button and `secondaryAction` a tertiary one. The description is 12px text.
+- `primaryAction` renders a default Button and `secondaryAction` a tertiary one. The description is caption text.
 - MediaCard is already a card, so don't wrap it in `Card`.
 
 ## Examples
@@ -46,7 +46,7 @@ An image beside the text, with a secondary action:
 | Prop | Type | Default | Notes |
 |---|---|---|---|
 | `title` | `string` | — | Required. `heading-sm`, rendered as an `<h2>`. |
-| `description` | `string` | — | 12px text under the title. |
+| `description` | `string` | — | Caption text under the title. |
 | `children` | `ReactNode` | — | The media. |
 | `primaryAction` | `Action` | — | Default button. |
 | `secondaryAction` | `Action` | — | Tertiary button. Uses `content`, `url` and `onAction`. |

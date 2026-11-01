@@ -92,7 +92,7 @@ Halves, using the flat names:
 
 | Prop | Type | Default | Notes |
 |---|---|---|---|
-| `title` | `string` | — | Required. `<h2>`, 14px semibold. |
+| `title` | `string` | — | Required. `<h2>`, subtitle, semibold. |
 | `description` | `ReactNode` | — | `text-secondary`, under the title. |
 | `children` | `ReactNode` | — | Cards, stacked 16px apart. |
 | `className` | `string` | — | |

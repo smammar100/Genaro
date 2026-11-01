@@ -15,6 +15,7 @@ import { leadChannelService } from "@/lib/services/lead-channel-service";
 import { dealNoteService } from "@/lib/services/deal-note-service";
 import {
   APPOINTMENT_TYPE_LABELS,
+  LEAD_TYPE_LABELS,
   type Appointment,
   type DealNote,
   type Lead,
@@ -317,6 +318,7 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
                 ...row("Phone", deal.customerPhone ? <a href={`tel:${deal.customerPhone.replace(/\s+/g, "")}`} className="hover:underline">{deal.customerPhone}</a> : null),
                 ...row("Email", deal.customerEmail ? <a href={`mailto:${deal.customerEmail}`} className="hover:underline">{deal.customerEmail}</a> : null),
                 ...row("Channel", channel?.label),
+                ...row("Lead type", lead ? LEAD_TYPE_LABELS[lead.leadType ?? "viewing"] : null),
                 ...row("Deposit", deal.depositAmount != null ? `${formatCurrency(deal.depositAmount)}${deal.depositDate ? `, ${formatDate(deal.depositDate)}` : ""}` : null),
                 ...row("Collection", deal.collectionDate ? formatDate(deal.collectionDate) : null),
                 ...row("Completed", deal.completionDate ? formatDate(deal.completionDate) : null),

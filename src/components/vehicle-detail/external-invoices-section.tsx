@@ -320,7 +320,7 @@ function InvoiceStat({
       <div className="mt-1 text-display font-semibold tabular-nums">
         {formatCurrency(total / 100)}
       </div>
-      <div className="body-xs text-(--text-secondary)">
+      <div className="body-sm text-(--text-secondary)">
 
         {count} invoice{count === 1 ? "" : "s"}
       </div>

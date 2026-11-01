@@ -198,7 +198,7 @@ export function UserCell({ name }: { name: string | null | undefined }) {
   return (
     <div className="flex items-center gap-2">
       <Avatar size="sm">
-        <AvatarFallback className="text-micro">
+        <AvatarFallback className="text-caption">
           {getInitials(name)}
         </AvatarFallback>
       </Avatar>
@@ -224,7 +224,7 @@ export function ChannelsCell({
         <span
           key={channel}
           className={cn(
-            "rounded-md px-1.5 py-0.5 text-micro capitalize",
+            "rounded-md px-1.5 py-0.5 text-caption capitalize",
             enabled
               ? "bg-foreground text-background"
               : "bg-muted text-muted-foreground",

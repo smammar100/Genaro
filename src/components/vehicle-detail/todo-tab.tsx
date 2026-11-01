@@ -427,7 +427,7 @@ function TodoRow({
       {/* Where the item came from. Least important column, so it's the one
           that goes when the panel is narrow. */}
       <span
-        className="hidden w-14 shrink-0 text-right body-xs capitalize text-(--text-secondary) sm:inline"
+        className="hidden w-14 shrink-0 text-right body-sm capitalize text-(--text-secondary) sm:inline"
         title={`Source: ${item.source}`}
       >
         {item.source}

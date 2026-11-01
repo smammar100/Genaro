@@ -9,13 +9,18 @@ import { DashboardWelcome } from "@/components/dashboard/dashboard-welcome";
 import { DashboardKpiRow } from "@/components/dashboard/dashboard-kpi-row";
 import { DashboardStockOverview } from "@/components/dashboard/dashboard-stock-overview";
 import { DashboardRecentDeals } from "@/components/dashboard/dashboard-recent-deals";
-import { DashboardMotsExpiring } from "@/components/dashboard/dashboard-mots-expiring";
+import {
+  DashboardMotsExpiring,
+  useMotsExpiring,
+} from "@/components/dashboard/dashboard-mots-expiring";
 import { DashboardUpcomingAppointments } from "@/components/dashboard/dashboard-upcoming-appointments";
 import { DashboardRecentActivity } from "@/components/dashboard/dashboard-recent-activity";
 
 export default function DashboardPage() {
   const { can, isSuperUser } = usePermissions();
   const hasVehicles = useHasVehicles();
+  // The MOT box only appears when a car's MOT runs out within 60 days.
+  const mots = useMotsExpiring();
 
   // Each widget is gated to the capabilities that make it relevant, so every
   // role sees a dashboard scoped to their job. The grid spans below adapt when
@@ -52,7 +57,9 @@ export default function DashboardPage() {
     };
   }, [can, isSuperUser]);
 
-  // The bottom row is Stock by stage / Appointments / Latest news. Its column
+  const showMots = flags.stock && (mots.due?.length ?? 0) > 0;
+
+  // The bottom row is Stock by stage / Appointments / Latest activity. Its column
   // count follows how many of those three the role can actually see, so a
   // hidden widget never leaves an empty column.
   const row3 =
@@ -81,17 +88,18 @@ export default function DashboardPage() {
 
       <DashboardKpiRow />
 
-      {/* Recent deals made room for the MOT box beside it (call 2026-10-31). */}
-      {flags.deals || flags.stock ? (
+      {/* Recent deals makes room for the MOT box only when an MOT is due
+          (call 2026-10-31, 2026-11-01). */}
+      {flags.deals || showMots ? (
         <Grid>
           {flags.deals && (
-            <Grid.Cell columnSpan={{ xs: 6, lg: flags.stock ? 8 : 12 }}>
+            <Grid.Cell columnSpan={{ xs: 6, lg: showMots ? 8 : 12 }}>
               <DashboardRecentDeals />
             </Grid.Cell>
           )}
-          {flags.stock && (
+          {showMots && mots.due && (
             <Grid.Cell columnSpan={{ xs: 6, lg: flags.deals ? 4 : 12 }}>
-              <DashboardMotsExpiring />
+              <DashboardMotsExpiring due={mots.due} today={mots.today} />
             </Grid.Cell>
           )}
         </Grid>

@@ -178,7 +178,7 @@ export function HighlightsEditor({
           <ul className="grid gap-1.5 @md:grid-cols-2">
             {current.map((h, i) => (
               <li key={`${h}-${i}`} className="flex items-center gap-2 body-md">
-                <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-(--bg-fill-secondary) body-xs-semibold text-(--text-secondary)">
+                <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-(--bg-fill-secondary) body-sm-semibold text-(--text-secondary)">
                   {i + 1}
                 </span>
                 {h}
@@ -212,7 +212,7 @@ export function HighlightsEditor({
     <div className="flex flex-col gap-2">
       {rows.map((row, i) => (
         <div key={i} className="flex items-center gap-2">
-          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-(--bg-fill-secondary) body-xs-semibold text-(--text-secondary)">
+          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-(--bg-fill-secondary) body-sm-semibold text-(--text-secondary)">
             {i + 1}
           </span>
           <Input

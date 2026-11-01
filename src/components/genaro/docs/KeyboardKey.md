@@ -47,7 +47,7 @@ On dark chrome:
 | Prop | Type | Default | Notes |
 |---|---|---|---|
 | `children` | `ReactNode` | — | The key label. |
-| `size` | `'small'` | — | 16px tall with 11px text instead of 20px. |
+| `size` | `'small'` | — | 16px tall instead of 20px; the text is caption either way. |
 | `dark` | `boolean` | — | For dark chrome: `bg-fill-inverse` with `text-inverse-secondary`. |
 | `className` | `string` | — | Extra classes on the `kbd`. |
 
