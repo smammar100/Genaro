@@ -15,7 +15,7 @@ import type {
   User,
   Vehicle,
 } from "@/lib/types";
-import { cn, formatRelativeTime } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import {
   Badge,
   Banner,
@@ -379,7 +379,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
                       {author?.name ?? "Unknown"}
                     </span>
                     <span className="text-caption text-(--text-secondary)">
-                      {formatRelativeTime(n.createdAt)}
+                      {formatDateTime(n.createdAt)}
                     </span>
                   </div>
                   <p className="mt-1 whitespace-pre-wrap">{n.content}</p>

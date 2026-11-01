@@ -4,6 +4,7 @@ import type {
   Appointment,
   AppointmentOutcome,
   AppointmentStatus,
+  AppointmentType,
   UUID,
 } from "@/lib/types";
 import { activityService } from "./activity-service";
@@ -16,6 +17,7 @@ const SELECT = `
   companyId:company_id,
   vehicleId:vehicle_id,
   leadId:lead_id,
+  appointmentType:appointment_type,
   customerName:customer_name,
   customerPhone:customer_phone,
   customerEmail:customer_email,
@@ -33,6 +35,8 @@ interface CreateInput {
   companyId: UUID;
   vehicleId: UUID;
   leadId: UUID | null;
+  /** Viewing when left out. */
+  appointmentType?: AppointmentType;
   customerName: string;
   customerPhone: string;
   customerEmail: string;
@@ -90,6 +94,7 @@ export const appointmentService = {
         company_id: input.companyId,
         vehicle_id: input.vehicleId,
         lead_id: input.leadId,
+        appointment_type: input.appointmentType ?? "viewing",
         customer_name: input.customerName,
         customer_phone: input.customerPhone,
         customer_email: input.customerEmail,
@@ -129,6 +134,7 @@ export const appointmentService = {
       Pick<
         Appointment,
         | "vehicleId"
+        | "appointmentType"
         | "customerName"
         | "customerPhone"
         | "customerEmail"
@@ -142,6 +148,7 @@ export const appointmentService = {
     const supabase = createClient();
     const updates: TableUpdate<"appointments"> = {};
     if (patch.vehicleId !== undefined) updates.vehicle_id = patch.vehicleId;
+    if (patch.appointmentType !== undefined) updates.appointment_type = patch.appointmentType;
     if (patch.customerName !== undefined) updates.customer_name = patch.customerName;
     if (patch.customerPhone !== undefined) updates.customer_phone = patch.customerPhone;
     if (patch.customerEmail !== undefined) updates.customer_email = patch.customerEmail;

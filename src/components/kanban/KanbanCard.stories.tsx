@@ -129,6 +129,17 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 /**
+ * The dense card the sales pipeline uses, so a long column shows more deals:
+ * the vehicle shares the plate's line, the facts share one line, and the
+ * padding tightens. Clicking the card opens the full record.
+ * @summary the dense card for long boards
+ */
+export const Compact: Story = {
+  args: { compact: true },
+  decorators: [inColumn(pipeline[2])],
+};
+
+/**
  * On a board, the column's status glyph leads the title: here a ring two
  * stages full. `KanbanBoard` provides it; a board that doesn't drag wraps
  * each card in `KanbanCardContext` itself.

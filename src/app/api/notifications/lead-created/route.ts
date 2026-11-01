@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       body: vehicle_interest
         ? `Interested in ${vehicle_interest}`
         : undefined,
-      link: "/sales/leads",
+      link: "/sales/pipeline",
     },
   });
 

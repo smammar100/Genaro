@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Download, Eye, Handshake } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { salesService } from "@/lib/services/sales-service";
@@ -76,6 +77,7 @@ const dealPrice = (d: SalesDeal): number | null =>
 
 export default function DealsPage() {
   const { company } = useAuth();
+  const router = useRouter();
   const [deals, setDeals] = useState<SalesDeal[] | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -144,15 +146,12 @@ export default function DealsPage() {
     }
   }
 
-  // Only completed sales that actually have an invoice are shown — an
-  // un-invoiced deal isn't a fully closed sale to review here (client decision,
-  // 2026-07-14).
+  // Every completed sale, the moment its deal reaches Completed sale. It
+  // used to wait for the invoice (2026-07-14); the client wants it listed
+  // straight away, with the invoice still to raise (call 2026-10-31).
   const closed = useMemo(
-    () =>
-      deals?.filter(
-        (d) => d.stage === "completed_sale" && invoiceForDeal(d),
-      ) ?? null,
-    [deals, invoiceForDeal],
+    () => deals?.filter((d) => d.stage === "completed_sale") ?? null,
+    [deals],
   );
 
   // Source options derived from the actual closed deals (schema-driven), so
@@ -288,7 +287,17 @@ export default function DealsPage() {
         width: 130,
         render: (d) => {
           const inv = invoiceForDeal(d);
-          if (!inv) return null;
+          if (!inv) {
+            return (
+              <Button
+                size="micro"
+                url={`/sales/invoice-generation?vehicleId=${d.vehicleId}`}
+                accessibilityLabel={`Generate invoice for ${d.customerName}`}
+              >
+                Generate invoice
+              </Button>
+            );
+          }
           return (
             <div className="flex items-center gap-1">
               <Button
@@ -319,10 +328,11 @@ export default function DealsPage() {
     ];
 
   // Row click → open the invoice detail in place (a modal on this page, not a
-  // navigation to Invoicing — GEN-42).
+  // navigation to Invoicing — GEN-42); a sale not yet invoiced opens its deal.
   function openDeal(d: SalesDeal): void {
     const inv = invoiceForDeal(d);
     if (inv) setViewingInvoice(inv);
+    else router.push(`/sales/pipeline/${d.id}`);
   }
 
   return (

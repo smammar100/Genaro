@@ -4,6 +4,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { Columns3, Filter } from "lucide-react";
 import {
   Button,
+  Combobox,
   Popover,
   Select,
   Tag,
@@ -11,6 +12,9 @@ import {
 } from "@/components/genaro";
 
 type Option = { value: string; label: string };
+
+/** The number fields' operators, whose value is typed as a number. */
+const NUMBER_OPS = ["gte", "lte", "eq"];
 
 interface SheetFilterBuilder {
   fields: Option[];
@@ -20,6 +24,8 @@ interface SheetFilterBuilder {
   op: string;
   onOpChange: (op: string) => void;
   value: string;
+  /** The field's own values. Given, "is" and "is not" pick from them. */
+  valueOptions?: Option[];
   onValueChange: (value: string) => void;
   /** Adds the condition (and closes the panel when it was valid). */
   onAdd: () => void;
@@ -118,12 +124,24 @@ export function SheetToolbar({
               value={builder.op}
               onChange={builder.onOpChange}
             />
-            <TextField
-              label="Value"
-              value={builder.value}
-              onChange={(value) => builder.onValueChange(value)}
-              autoComplete="off"
-            />
+            {builder.valueOptions && builder.op !== "contains" ? (
+              <Combobox
+                label="Value"
+                placeholder="Search or pick a value"
+                options={builder.valueOptions}
+                value={builder.value}
+                onChange={(value) => builder.onValueChange(value)}
+                emptyState="No car has that value."
+              />
+            ) : (
+              <TextField
+                label="Value"
+                type={NUMBER_OPS.includes(builder.op) ? "number" : "text"}
+                value={builder.value}
+                onChange={(value) => builder.onValueChange(value)}
+                autoComplete="off"
+              />
+            )}
             <div className="flex justify-end gap-2">
               <Button onClick={() => onFilterOpenChange(false)}>Cancel</Button>
               <Button variant="primary" submit disabled={!builder.value.trim()}>

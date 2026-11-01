@@ -59,6 +59,7 @@ import {
   EmptyState as GenaroEmptyState,
   Page,
   Select,
+  type PageSecondaryAction,
 } from "@/components/genaro";
 import { SuggestInput } from "@/components/ui/suggest-input";
 import { SheetToolbar } from "@/components/master-sheet/sheet-toolbar";
@@ -66,6 +67,7 @@ import { TotalsRow } from "@/components/master-sheet/totals-row";
 import { useIsNarrow } from "@/hooks/use-media-query";
 import { usePermissions } from "@/hooks/use-permissions";
 import { optionLabel } from "@/lib/master-sheet";
+import { byText } from "@/lib/stock";
 import { affectsCostTotals, withDerivedCosts } from "@/lib/vehicle-costs";
 import {
   cycleSort,
@@ -138,6 +140,9 @@ export interface ColDef {
   /** Render without thousands separators. Years and other identifier-like
    *  numbers read as quantities otherwise — "2,019" instead of "2019". */
   plain?: boolean;
+  /** Left-align a number column. A serial is a label, not a quantity, so it
+   *  sits beside the row's checkbox rather than at the far edge. */
+  alignStart?: boolean;
   /**
    * Droppable on small screens (GEN-93). Only honoured while the user has
    * left the column picker alone: an explicit choice in the picker is the
@@ -264,6 +269,8 @@ export interface FilterField {
   get?: (v: Vehicle) => unknown;
   /** Stored value → the words the user types (e.g. `automatic` → "AUTO"). */
   options?: { value: string; label: string }[];
+  /** A short set of values (a month, a vehicle type): no "contains". */
+  fixed?: boolean;
 }
 
 interface FilterCond {
@@ -282,14 +289,24 @@ const TEXT_OPS = [
   { v: "not", l: "is not" },
   { v: "contains", l: "contains" },
 ];
+// In words: "Mileage at least 50000" reads where "≥" made people stop.
 const NUM_OPS = [
-  { v: "gte", l: "≥" },
-  { v: "lte", l: "≤" },
-  { v: "eq", l: "=" },
+  { v: "gte", l: "at least" },
+  { v: "lte", l: "at most" },
+  { v: "eq", l: "equals" },
 ];
-function opsFor(kind: FilterKind) {
-  return kind === "num" ? NUM_OPS : TEXT_OPS;
+/**
+ * The operators a field offers. A field with a fixed set of values (vehicle
+ * type, fuel, location) is one of them or not, so it has no "contains".
+ */
+function opsFor(field: FilterField | undefined) {
+  if (field?.kind === "num") return NUM_OPS;
+  return field?.options || field?.fixed ? TEXT_OPS.filter((o) => o.v !== "contains") : TEXT_OPS;
 }
+
+/** The operators as the builder's list shows them: sentence case. */
+const opOptions = (field: FilterField | undefined) =>
+  opsFor(field).map((o) => ({ value: o.v, label: o.l.charAt(0).toUpperCase() + o.l.slice(1) }));
 function opLabel(op: string): string {
   return [...TEXT_OPS, ...NUM_OPS].find((o) => o.v === op)?.l ?? op;
 }
@@ -601,6 +618,8 @@ interface VehicleSheetProps {
   enableQuickAdd?: boolean;
   /** Hide the Export CSV button. Defaults to false. */
   hideExport?: boolean;
+  /** More header buttons, before Export CSV (workbook layout). */
+  pageActions?: PageSecondaryAction[];
   /** Extra header actions rendered after the Columns button (in the
    *  trailing CTA slot, where Export CSV otherwise sits). */
   headerActions?: ReactNode;
@@ -647,6 +666,17 @@ export interface SheetSectionContext {
 const sectionKey = (csvName: string): string =>
   `cc.vehicle-sheet.section.${csvName}`;
 
+/** sessionStorage key for a sheet's filters, search, sort and page. */
+const viewKey = (csvName: string): string => `cc.vehicle-sheet.view.${csvName}`;
+
+/** What `viewKey` holds: the filters by field key (their getters are code). */
+interface SavedView {
+  filters?: { key: string; op: string; value: string }[];
+  search?: string;
+  sort?: SortState | null;
+  page?: number;
+}
+
 /**
  * Header-band tint per section, echoing the colour coding of the client's
  * Excel sheet so a wide "All" view still reads as blocks.
@@ -678,6 +708,7 @@ export function VehicleSheet({
   editableKeys = DEFAULT_EDITABLE_KEYS,
   enableQuickAdd = true,
   hideExport = false,
+  pageActions = [],
   headerActions,
   children,
   sections,
@@ -1188,6 +1219,82 @@ export function VehicleSheet({
   /** Active column sort, or null for the grid's natural order (GEN-92). */
   const [sort, setSort] = useState<SortState | null>(null);
 
+  // Filters, search, sort and page survive leaving the sheet: opening a car
+  // and coming back used to drop them (call 2026-10-31). Kept per browser tab
+  // and restored after mount, for the same SSR reason as the hidden columns.
+  // The save effect waits for the restore, so the empty first render never
+  // overwrites the saved view; the ref keeps Strict Mode's second run from
+  // restoring over it again.
+  const viewRestoreRan = useRef(false);
+  const [viewRestored, setViewRestored] = useState(false);
+  useEffect(() => {
+    if (viewRestoreRan.current) return;
+    viewRestoreRan.current = true;
+    try {
+      const raw = sessionStorage.getItem(viewKey(csvName));
+      if (raw) {
+        const saved = JSON.parse(raw) as SavedView;
+        const restored = (saved.filters ?? []).flatMap((f): FilterCond[] => {
+          const fld = filterFields.find((x) => String(x.key) === f.key);
+          if (!fld) return [];
+          return [
+            {
+              id: filterId.current++,
+              key: fld.key,
+              label: fld.label,
+              kind: fld.kind,
+              get: fld.get,
+              options: fld.options,
+              op: f.op,
+              value: f.value,
+            },
+          ];
+        });
+        // Post-mount restore, same as the hidden columns above.
+        setFilters(restored);
+        setSearch(saved.search ?? "");
+        setSort(saved.sort ?? null);
+        setPage(saved.page ?? 1);
+      }
+    } catch {
+      // Unreadable entry: start with no filters.
+    }
+    setViewRestored(true);
+  }, [csvName, filterFields]);
+  useEffect(() => {
+    if (!viewRestored) return;
+    const view: SavedView = {
+      filters: filters.map((f) => ({ key: String(f.key), op: f.op, value: f.value })),
+      search,
+      sort,
+      page,
+    };
+    try {
+      sessionStorage.setItem(viewKey(csvName), JSON.stringify(view));
+    } catch {
+      // Blocked storage: the view still holds until the page is left.
+    }
+  }, [viewRestored, csvName, filters, search, sort, page]);
+
+  /**
+   * The picked field's own values, for the filter's Value dropdown: people
+   * pick "FORECOURT" rather than type it (call 2026-10-31). Shown as the grid
+   * shows them, which is what `matchCond` compares. Text fields only; numbers
+   * keep a typed value.
+   */
+  const bValueOptions = useMemo(() => {
+    const fld = filterFields.find((f) => f.key === bField);
+    if (!fld || fld.kind === "num" || !vehicles) return undefined;
+    const seen = new Set<string>();
+    for (const v of vehicles) {
+      const stored = fld.get ? fld.get(v) : v[fld.key as keyof Vehicle];
+      const shown = fld.options ? (optionLabel(fld.options, stored) ?? stored) : stored;
+      const text = shown === null || shown === undefined ? "" : String(shown).trim();
+      if (text) seen.add(text);
+    }
+    return [...seen].sort(byText).map((text) => ({ value: text, label: text }));
+  }, [filterFields, bField, vehicles]);
+
   const filtered = useMemo(() => {
     if (!vehicles) return null;
     const q = search.trim().toLowerCase();
@@ -1656,7 +1763,8 @@ export function VehicleSheet({
                     const isEditingThis =
                       editing?.id === v.id && editing?.key === colKey(c);
                     const alignEnd =
-                      c.type === "currency" || c.type === "number";
+                      (c.type === "currency" || c.type === "number") &&
+                      !c.alignStart;
                     return (
                       <td
                         key={colKey(c)}
@@ -1898,7 +2006,7 @@ export function VehicleSheet({
 
   if (workbook) {
     const summaryLine = summary(filtered?.length ?? null, selected.size);
-    const bOps = opsFor(kindOf(filterFields, bField));
+    const bFieldDef = filterFields.find((f) => f.key === bField);
     return (
       <>
         {/* A Genaro Page bounded to the viewport under the top bar: the
@@ -1911,9 +2019,10 @@ export function VehicleSheet({
           title={title}
           subtitle={typeof summaryLine === "string" ? summaryLine : undefined}
           fullWidth
-          secondaryActions={
-            hideExport
-              ? undefined
+          secondaryActions={[
+            ...pageActions,
+            ...(hideExport
+              ? []
               : [
                   {
                     content: "Export CSV",
@@ -1921,8 +2030,8 @@ export function VehicleSheet({
                     onAction: exportCsv,
                     disabled: !filtered,
                   },
-                ]
-          }
+                ]),
+          ]}
           className={cn(
             "flex h-[calc(100dvh-3.5rem)] flex-col [&>:first-child]:shrink-0 [&>:last-child]:min-h-0 [&>:last-child]:flex-1",
             className,
@@ -1932,7 +2041,8 @@ export function VehicleSheet({
           {SectionHeader && <SectionHeader {...sectionContext} />}
           <GenaroCard padding="0" className="type-compact min-h-96 flex-1 gap-0">
             <SheetToolbar
-              columnsLabel={`${cols.length} of ${gridCols.length} shown`}
+              // "Columns", or "72 of 72" read as a count of cars (call 2026-10-31).
+              columnsLabel={`${cols.length} of ${gridCols.length} columns`}
               columnsPanel={<div className="w-80">{columnsPanel}</div>}
               filters={filters.map((f) => ({
                 id: f.id,
@@ -1952,12 +2062,15 @@ export function VehicleSheet({
                 field: String(bField),
                 onFieldChange: (key) => {
                   setBField(key);
+                  // A value picked for the last field means nothing for this one.
+                  setBValue("");
                   setBOp(kindOf(filterFields, key) === "num" ? "gte" : "is");
                 },
-                ops: bOps.map((o) => ({ value: o.v, label: o.l })),
+                ops: opOptions(bFieldDef),
                 op: bOp,
                 onOpChange: setBOp,
                 value: bValue,
+                valueOptions: bValueOptions,
                 onValueChange: setBValue,
                 onAdd: addFilter,
               }}
@@ -2174,7 +2287,7 @@ export function VehicleSheet({
                 <Select
                   label="Operator"
                   labelHidden
-                  options={opsFor(kindOf(filterFields, bField)).map((o) => ({ value: o.v, label: o.l }))}
+                  options={opOptions(filterFields.find((f) => f.key === bField))}
                   value={bOp}
                   onChange={setBOp}
                 />

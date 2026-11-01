@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, ButtonGroup } from "@/components/genaro";
+import { Button } from "@/components/genaro";
 import { useAuth } from "@/contexts/auth-context";
 import { AddVehicleModal } from "@/components/vehicles/add-vehicle-modal";
 
@@ -13,8 +13,9 @@ function salutation(hour: number): string {
 
 /**
  * The dashboard's page header, in the Genaro Page-header anatomy: the
- * greeting as the title (heading-lg), Export as the secondary action and Add
- * vehicle as the page's one primary action.
+ * greeting as the title (heading-lg) and Add vehicle as the page's one
+ * primary action. Export came off (call 2026-10-31): it only opened the
+ * master sheet, which exports itself.
  *
  * It is drawn here rather than through `Page title/primaryAction` because the
  * onboarding tour anchors on `#tour-add-vehicle`, and Page's actions take no
@@ -40,18 +41,15 @@ export function DashboardGreeting() {
         {hour !== null &&
           `${salutation(hour)}${firstName ? `, ${firstName}` : ""}`}
       </h2>
-      <ButtonGroup>
-        <Button url="/admin/master-sheet">Export</Button>
-        <span id="tour-add-vehicle" className="inline-flex">
-          <Button
-            variant="primary"
-            icon="PlusMinor"
-            onClick={() => setAddOpen(true)}
-          >
-            Add vehicle
-          </Button>
-        </span>
-      </ButtonGroup>
+      <span id="tour-add-vehicle" className="inline-flex">
+        <Button
+          variant="primary"
+          icon="PlusMinor"
+          onClick={() => setAddOpen(true)}
+        >
+          Add vehicle
+        </Button>
+      </span>
       <AddVehicleModal open={addOpen} onOpenChange={setAddOpen} />
     </div>
   );

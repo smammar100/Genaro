@@ -102,7 +102,9 @@ export async function withCache<T>(
   }
   const existing = inflight.get(key) as Promise<T> | undefined;
   if (existing) return existing;
-  const promise = (async () => {
+  // A holder, so the read can check whether it is still the one in flight.
+  const read: { promise?: Promise<T> } = {};
+  read.promise = (async () => {
     try {
       let value: T;
       try {
@@ -119,27 +121,38 @@ export async function withCache<T>(
         }
         value = await withTimeout(fetcher());
       }
-      cache.set(key, { value, expires: Date.now() + ttlMs });
+      // An invalidate while this read was out dropped it from `inflight`: it
+      // may predate the write, so it answers its own callers but is not kept.
+      if (inflight.get(key) === read.promise) {
+        cache.set(key, { value, expires: Date.now() + ttlMs });
+      }
       return value;
     } finally {
-      inflight.delete(key);
+      if (inflight.get(key) === read.promise) inflight.delete(key);
     }
   })();
-  inflight.set(key, promise);
-  return promise;
+  inflight.set(key, read.promise);
+  return read.promise;
 }
 
 /**
- * Drop every cached entry whose key starts with `prefix`.
- * Call this from mutation methods so the next read fetches fresh data.
+ * Drop every cached entry whose key starts with `prefix`, and forget the reads
+ * still out for it. Call this from mutation methods so the next read fetches
+ * fresh data. Without the second half, a read sent just before a write was
+ * joined by the read after it and cached the old rows: a pipeline card dragged
+ * while another move was saving snapped back (call 2026-10-31).
  */
 export function invalidate(prefix: string): void {
   for (const k of cache.keys()) {
     if (k.startsWith(prefix)) cache.delete(k);
+  }
+  for (const k of inflight.keys()) {
+    if (k.startsWith(prefix)) inflight.delete(k);
   }
 }
 
 /** Clear everything — useful on sign-out so the next user doesn't see stale rows. */
 export function invalidateAll(): void {
   cache.clear();
+  inflight.clear();
 }

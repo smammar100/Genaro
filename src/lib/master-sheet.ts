@@ -14,6 +14,8 @@ import type {
   Vehicle,
   VehicleType,
 } from "./types";
+import { isCustomLocation } from "./types";
+import { locationLabel } from "./locations";
 
 /* ------------------------------------------------------------------ *
  * Sections
@@ -319,6 +321,7 @@ export const LOCATION_OPTIONS: SelectOption[] = [
   { value: "staff", label: "STAFF" },
   { value: "courtesy_car", label: "COURTESY CAR" },
   { value: "sold", label: "SOLD" },
+  { value: "returned_to_owner", label: "RETURNED TO OWNER" },
 ];
 
 /** Suggestions only — these cells stay free text, as on the sheet. */
@@ -368,7 +371,11 @@ export function optionLabel(
 ): string | null {
   if (value === null || value === undefined || value === "") return null;
   const s = String(value);
-  return options.find((o) => o.value === s)?.label ?? s.toUpperCase();
+  const listed = options.find((o) => o.value === s)?.label;
+  if (listed) return listed;
+  // A company's own location (0056) isn't in the fixed list: use its name.
+  if (isCustomLocation(s)) return locationLabel(s).toUpperCase();
+  return s.toUpperCase();
 }
 
 /**

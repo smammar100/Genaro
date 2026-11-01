@@ -25,6 +25,7 @@ import {
 import { PipelineStageSettings } from "@/components/admin/pipeline-stage-settings";
 import { InspectionChecklistSettings } from "@/components/admin/inspection-checklist-settings";
 import { LeadChannelSettings } from "@/components/admin/lead-channel-settings";
+import { LocationSettings } from "@/components/admin/location-settings";
 import { BackupPanel } from "@/components/settings/backup-panel";
 import { toast } from "@/lib/toast";
 import { authService } from "@/lib/services/auth-service";
@@ -52,6 +53,7 @@ const SECTIONS = [
   { id: "inspection", content: "Inspection checklist" },
   { id: "pipeline", content: "Sales pipeline" },
   { id: "channels", content: "Lead channels" },
+  { id: "locations", content: "Locations" },
   { id: "backup", content: "Backup" },
 ] as const;
 
@@ -155,7 +157,7 @@ export default function SettingsPage() {
     <Page
       fullWidth
       title="Settings"
-      subtitle={`Your profile${canManage ? ", plus your company details, inspection checklist, sales pipeline, lead channels and backups" : ""}.`}
+      subtitle={`Your profile${canManage ? ", plus your company details, inspection checklist, sales pipeline, lead channels, locations and backups" : ""}.`}
     >
       {/* Section tabs sit under the header, Shopify-style, and scroll
           sideways on a narrow screen rather than wrapping. */}
@@ -271,6 +273,7 @@ export default function SettingsPage() {
             {active === "inspection" && <InspectionChecklistSettings />}
             {active === "pipeline" && <PipelineStageSettings />}
             {active === "channels" && <LeadChannelSettings />}
+            {active === "locations" && <LocationSettings />}
             {active === "backup" && <BackupPanel />}
           </>
         )}

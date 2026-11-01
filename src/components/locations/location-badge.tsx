@@ -8,10 +8,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import {
-  VEHICLE_LOCATION_LABELS,
-  type CurrentLocation,
-} from "@/lib/types";
+import { type CurrentLocation } from "@/lib/types";
+import { locationLabel } from "@/lib/locations";
+import { useCompanyLocations } from "@/hooks/use-company-locations";
 
 interface LocationBadgeProps {
   location: CurrentLocation;
@@ -67,6 +66,7 @@ export function LocationBadge({
   compact = false,
   className,
 }: LocationBadgeProps) {
+  const custom = useCompanyLocations();
   const offSiteDot = OFF_SITE_DOT[location];
   const isOffSite = offSiteDot !== undefined;
   const offSiteTooltip =
@@ -95,7 +95,7 @@ export function LocationBadge({
           className,
         )}
       >
-        <span className="text-(--text)">{VEHICLE_LOCATION_LABELS[location]}</span>
+        <span className="text-(--text)">{locationLabel(location, custom)}</span>
 
         {isOffSite ? (
           <Tooltip>

@@ -205,7 +205,9 @@ export const locationService = {
         status: string;
       }[]) {
         if (row.status === "sold" || row.status === "returned") continue;
-        counts[row.current_location] = (counts[row.current_location] ?? 0) + 1;
+        // Sold and returned-to-owner cars are not at a place (0051, 0055).
+        if (!(row.current_location in counts)) continue;
+        counts[row.current_location] += 1;
       }
       return counts;
     });

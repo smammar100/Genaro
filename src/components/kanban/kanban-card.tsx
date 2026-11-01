@@ -52,6 +52,12 @@ export interface KanbanCardProps {
   quickAction?: React.ReactNode;
   /** Clicking the card anywhere outside its own links and buttons opens it. */
   onOpen?: () => void;
+  /**
+   * The dense card for long boards: the vehicle beside the plate, the facts
+   * on one wrapping line, tighter padding. The record's own view carries the
+   * rest (call 2026-10-31).
+   */
+  compact?: boolean;
 }
 
 const TEXT_TONE: Record<KanbanTextTone, string> = {
@@ -120,6 +126,7 @@ export function KanbanCard({
   action,
   quickAction,
   onOpen,
+  compact = false,
 }: KanbanCardProps) {
   const lines = (facts ?? []).filter((f): f is KanbanFact => Boolean(f));
   const NoteIcon = note?.icon;
@@ -145,13 +152,23 @@ export function KanbanCard({
           {menu}
         </div>
       ) : null}
-      <div className="flex min-w-0 flex-col gap-2 p-4">
+      <div className={cn("flex min-w-0 flex-col", compact ? "gap-1.5 p-3" : "gap-2 p-4")}>
         <div className={cn("flex min-w-0 items-center gap-2.5", menu && "pr-7")}>
           {thumbnail ? (
             // Not a target of its own: a press on the photo drags or opens the card.
             <span className="pointer-events-none shrink-0 select-none">{thumbnail}</span>
           ) : null}
-          <div className="flex min-h-6 min-w-0 items-center">{identity}</div>
+          <div className="flex min-h-6 min-w-0 shrink-0 items-center">{identity}</div>
+          {/* Compact: the vehicle shares the plate's line and ellipses, with
+              the full name and reference on hover. */}
+          {compact && vehicle ? (
+            <span
+              title={reference ? `${vehicle} · ${reference}` : vehicle}
+              className="body-sm min-w-0 truncate text-(--text-secondary)"
+            >
+              {vehicle}
+            </span>
+          ) : null}
         </div>
 
         <div className="flex min-w-0 items-start gap-1.5">
@@ -165,7 +182,7 @@ export function KanbanCard({
 
         {/* The reference shares the vehicle's line, which wraps, so neither
             is ever cut to an ellipsis. */}
-        {vehicle || reference ? (
+        {!compact && (vehicle || reference) ? (
           <p className={cn("body-sm flex flex-wrap items-center gap-x-2 gap-y-0.5 text-(--text-secondary)", WRAP_ANYWHERE)}>
             {vehicle ? <span>{vehicle}</span> : null}
             {vehicle && reference ? (
@@ -176,7 +193,12 @@ export function KanbanCard({
         ) : null}
 
         {lines.length > 0 ? (
-          <div className="flex min-w-0 flex-col gap-1 pt-0.5">
+          <div
+            className={cn(
+              "flex min-w-0",
+              compact ? "flex-wrap gap-x-3 gap-y-0.5" : "flex-col gap-1 pt-0.5",
+            )}
+          >
             {lines.map((f, i) => {
               const Icon = f.icon;
               const tone = f.tone ?? "default";
@@ -209,7 +231,12 @@ export function KanbanCard({
       </div>
 
       {person || money || action || quickAction ? (
-        <div className="flex min-w-0 flex-wrap items-center gap-2 border-t border-(--border-secondary) px-4 py-3">
+        <div
+          className={cn(
+            "flex min-w-0 flex-wrap items-center gap-2 border-t border-(--border-secondary)",
+            compact ? "px-3 py-2" : "px-4 py-3",
+          )}
+        >
           {person ? (
             // A long name ellipses (full name on hover) before the amount
             // gives up any room.

@@ -13,11 +13,13 @@ import {
   type CalEvent,
   type Kind,
 } from "@/lib/calendar-model";
-import type { Vehicle } from "@/lib/types";
+import { APPOINTMENT_TYPE_LABELS, type AppointmentType, type Vehicle } from "@/lib/types";
 import { KIND_META } from "./event-meta";
 
 export interface FormFields {
   kind: Kind;
+  /** Appointments only: viewing, collection or delivery. */
+  appointmentType: AppointmentType;
   customerName: string;
   customerPhone: string;
   customerEmail: string;
@@ -33,6 +35,7 @@ export interface FormFields {
 
 export const EMPTY_FIELDS: FormFields = {
   kind: "appt",
+  appointmentType: "viewing",
   customerName: "",
   customerPhone: "",
   customerEmail: "",
@@ -54,6 +57,7 @@ export function fieldsForEvent(ev: CalEvent): FormFields {
       return {
         ...EMPTY_FIELDS,
         kind: "appt",
+        appointmentType: ev.raw.appointmentType ?? "viewing",
         customerName: ev.raw.customerName,
         customerPhone: ev.raw.customerPhone,
         customerEmail: ev.raw.customerEmail,
@@ -205,6 +209,15 @@ export function EventFormModal({
 
         {fields.kind === "appt" ? (
           <>
+            <Select
+              label="Type"
+              options={(Object.keys(APPOINTMENT_TYPE_LABELS) as AppointmentType[]).map((t) => ({
+                label: APPOINTMENT_TYPE_LABELS[t],
+                value: t,
+              }))}
+              value={fields.appointmentType}
+              onChange={(v) => set("appointmentType", v as AppointmentType)}
+            />
             <TextField label="Customer name" value={fields.customerName} onChange={(v) => set("customerName", v)} autoComplete="name" />
             <div className="grid grid-cols-2 gap-3">
               <TextField label="Phone" type="tel" value={fields.customerPhone} onChange={(v) => set("customerPhone", v)} autoComplete="tel" />

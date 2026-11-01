@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  Banknote,
   CalendarClock,
   CalendarDays,
   CalendarPlus,
@@ -11,18 +10,22 @@ import {
   CircleX,
   Clock,
   Ellipsis,
-  Phone,
   TrendingUp,
   TriangleAlert,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
+import { usePermissions } from "@/hooks/use-permissions";
 import { salesService } from "@/lib/services/sales-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import { authService } from "@/lib/services/auth-service";
 import { pipelineStageService } from "@/lib/services/pipeline-stage-service";
 import { appointmentService } from "@/lib/services/appointment-service";
+import { leadService } from "@/lib/services/lead-service";
+import { leadChannelService } from "@/lib/services/lead-channel-service";
 import type {
   Appointment,
+  LeadChannel,
+  LeadSource,
   PipelineStage,
   SalesDeal,
   SalesStage,
@@ -30,20 +33,23 @@ import type {
   User,
   Vehicle,
 } from "@/lib/types";
+import { APPOINTMENT_TYPE_LABELS, LEAD_SOURCES } from "@/lib/types";
 import {
-  Avatar,
   Button,
+  ButtonGroup,
   EmptyState,
+  IndexTable,
   Link as GenaroLink,
   Page,
   Select,
-  type SelectOption,
+  useConfirm,
 } from "@/components/genaro";
+import { RegPlate } from "@/components/shared/reg-plate";
 import { VehicleImage } from "@/components/shared/vehicle-image";
 import { PHOTOS_ENABLED } from "@/lib/phase-one";
-import { DealDetailSheet } from "@/components/sales/deal-detail-sheet";
 import { QuickBookModal } from "@/components/calendar/quick-book-modal";
 import { ChangeVehicleModal } from "@/components/sales/change-vehicle-modal";
+import { CreateLeadModal, type NewLead } from "@/components/sales/create-lead-modal";
 import { RowActionButton } from "@/components/ui/resource-list";
 import {
   DropdownMenu,
@@ -64,9 +70,10 @@ import {
   todayKey,
 } from "@/components/kanban/card-dates";
 import type { KanbanColumn, KanbanTone } from "@/components/kanban/stage-icon";
-import { formatCurrency, formatRelativeTime } from "@/lib/utils";
+import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import { toast } from "@/lib/toast";
+import { saleConfirmOptions } from "@/lib/sale-confirm";
 
 // Per-stage tone for the column's status glyph (no coloured column top-bars).
 // The shipped stages keep a fixed tone; user-added stages cycle through the
@@ -130,6 +137,9 @@ function dateFact(d: SalesDeal, behaviour: StageBehaviour | undefined): KanbanFa
   return { icon: CalendarDays, text: `Collection ${days === 1 ? "tomorrow" : date}` };
 }
 
+/** Where the viewer's board-or-list choice is kept. */
+const VIEW_KEY = "cc.sales-pipeline.view";
+
 /** Newest activity first, the service's own order; it also places the drop slot. */
 const compareDeals = (a: SalesDeal, b: SalesDeal): number =>
   b.updatedAt.localeCompare(a.updatedAt);
@@ -145,16 +155,45 @@ export default function SalesPipelinePage() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, company } = useAuth();
+  const { can, isSuperUser } = usePermissions();
+  const canCreateLead = isSuperUser || can("sales:create_lead");
+  const { confirm, confirmDialog } = useConfirm();
   const [deals, setDeals] = useState<SalesDeal[] | null>(null);
   const [stages, setStages] = useState<PipelineStage[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [agentFilter, setAgentFilter] = useState<string | "all">("all");
   const [nowTs, setNowTs] = useState<number | null>(null);
-  const [viewDeal, setViewDeal] = useState<SalesDeal | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [bookDeal, setBookDeal] = useState<SalesDeal | null>(null);
   const [swapDeal, setSwapDeal] = useState<SalesDeal | null>(null);
+  const [channels, setChannels] = useState<LeadChannel[]>([]);
+  const [createOpen, setCreateOpen] = useState(false);
+  // Board or list (call 2026-10-31: the board gets hard to scan as it fills).
+  // Restored after mount: storage only exists in the browser.
+  const [view, setView] = useState<"board" | "list">("board");
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (localStorage.getItem(VIEW_KEY) === "list") setView("list");
+    } catch {
+      // Blocked storage: the board it is.
+    }
+  }, []);
+  const pickView = (next: "board" | "list") => {
+    setView(next);
+    try {
+      localStorage.setItem(VIEW_KEY, next);
+    } catch {
+      // The choice still holds until the page is left.
+    }
+  };
+
+  // "New lead" in the command palette lands here with ?new=1: open Create lead.
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (searchParams.get("new") === "1") setCreateOpen(true);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!company) return;
@@ -164,31 +203,34 @@ export default function SalesPipelinePage() {
       vehicleService.getAll(company.id),
       authService.getUsersForCompany(company.id),
       appointmentService.getAll(company.id),
-    ]).then(([d, s, v, u, a]) => {
+      leadChannelService.getEnabled(company.id),
+    ]).then(([d, s, v, u, a, c]) => {
       setDeals(d);
       setStages(s);
       setVehicles(v);
       setUsers(u);
       setAppointments(a);
+      setChannels(c);
       setNowTs(Date.now());
-    });
+    })
+      // One failed read used to leave the skeleton up for good; say so instead.
+      .catch(() => toast.error("Couldn't load the pipeline. Reload the page to try again."));
   }, [company]);
 
   /**
    * Each deal's next upcoming appointment, shown on its card. Matched on the
    * lead when the deal has one, else on the car and the customer's name.
    */
+  /** Whether an appointment belongs to a deal: by its lead, else car and name. */
+  const isDealAppointment = (d: SalesDeal, a: Appointment): boolean =>
+    d.leadId ? a.leadId === d.leadId : a.vehicleId === d.vehicleId && a.customerName === d.customerName;
+
   const nextAppointment = useMemo(() => {
     const today = todayKey();
     const upcoming = appointments
       .filter((a) => a.status === "upcoming" && a.date >= today)
       .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
-    return (d: SalesDeal) =>
-      upcoming.find((a) =>
-        d.leadId
-          ? a.leadId === d.leadId
-          : a.vehicleId === d.vehicleId && a.customerName === d.customerName,
-      ) ?? null;
+    return (d: SalesDeal) => upcoming.find((a) => isDealAppointment(d, a)) ?? null;
   }, [appointments]);
 
   // Cars a deal can move to: anything still in the business.
@@ -209,6 +251,54 @@ export default function SalesPipelinePage() {
     toast.success(`Vehicle changed to ${vehicle.registration}`);
   }
 
+  /**
+   * A lead taken here opens its deal in New lead straight away (call
+   * 2026-10-31: leads are created from the pipeline now, not the leads page).
+   * A car carries one open deal at a time, so a car already in play is
+   * refused before anything is written.
+   */
+  async function createLead(lead: NewLead) {
+    if (!user || !company) return;
+    const busy = deals?.find((d) => d.vehicleId === lead.vehicle.id && d.stage !== "lost");
+    if (busy) {
+      throw new Error(
+        `${lead.vehicle.registration} already has an open deal for ${busy.customerName}. Pick another car, or work that deal.`,
+      );
+    }
+    const channel = channels.find((c) => c.id === lead.leadChannelId);
+    const slug = channel?.slug as LeadSource | undefined;
+    const source: LeadSource = slug && LEAD_SOURCES.includes(slug) ? slug : "other";
+    const notes = lead.channelOtherReason
+      ? `Channel: ${lead.channelOtherReason}${lead.notes ? `\n\n${lead.notes}` : ""}`
+      : lead.notes;
+    const created = await leadService.create(
+      {
+        companyId: company.id,
+        customerName: lead.customerName,
+        customerPhone: lead.customerPhone,
+        customerEmail: lead.customerEmail,
+        vehicleInterest: lead.vehicleInterest,
+        vehicleId: lead.vehicle.id,
+        source,
+        leadChannelId: lead.leadChannelId,
+        assignedTo: lead.assignedTo,
+        notes,
+      },
+      user.id,
+    );
+    await salesService.create({
+      companyId: company.id,
+      vehicleId: lead.vehicle.id,
+      leadId: created.id,
+      customerName: lead.customerName,
+      customerPhone: lead.customerPhone,
+      customerEmail: lead.customerEmail,
+      sellingAgent: lead.assignedTo,
+    });
+    setDeals(await salesService.getAll(company.id));
+    toast.success(`Lead created for ${lead.customerName}`);
+  }
+
   const boardDeals = useMemo(() => {
     if (!deals || stages.length === 0) return null;
     // `nowTs` is stamped once after the data loads (it also drives the card age
@@ -222,12 +312,10 @@ export default function SalesPipelinePage() {
       stages.filter((s) => s.behaviour === "won").map((s) => s.slug),
     );
     return deals.filter(
-      (d) =>
-        (agentFilter === "all" || d.sellingAgent === agentFilter) &&
-        // A closed sale ages off the board after a fortnight.
-        !(wonSlugs.has(d.stage) && d.completionDate && d.completionDate < cutoff),
+      // A closed sale ages off the board after a fortnight.
+      (d) => !(wonSlugs.has(d.stage) && d.completionDate && d.completionDate < cutoff),
     );
-  }, [deals, stages, agentFilter, nowTs]);
+  }, [deals, stages, nowTs]);
 
   const vehicleById = useMemo(() => new Map(vehicles.map((v) => [v.id, v])), [vehicles]);
   const userById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
@@ -258,6 +346,12 @@ export default function SalesPipelinePage() {
     if (!user || !company || !deals) return;
     const target = deals.find((d) => d.id === id);
     if (!target || target.stage === stage) return;
+    // Completing the sale marks the car sold too, so ask before it happens.
+    const into = stages.find((s) => s.slug === stage);
+    if (into?.behaviour === "won") {
+      const reg = vehicleById.get(target.vehicleId)?.registration ?? null;
+      if (!(await confirm(saleConfirmOptions(target.customerName, reg, into.label)))) return;
+    }
     const prevDeals = deals;
     // Optimistic: the card should land in its new column the instant it's
     // dropped, not after updateStage's write chain + a full refetch resolve
@@ -275,57 +369,103 @@ export default function SalesPipelinePage() {
     }
   }
 
-  // Each agent with their avatar; "All agents" clears the filter. Deactivated
-  // accounts only appear while they still have deals on the board (and say
-  // so), so a name never shows up twice for no reason.
-  const agentsWithDeals = new Set((deals ?? []).map((d) => d.sellingAgent));
-  const agentOptions: SelectOption[] = [
-    { label: "All agents", value: "all", media: <Avatar size="xs" /> },
-    ...users
-      .filter(
-        (u) =>
-          (u.role === "sales" || u.role === "owner" || u.role === "admin") &&
-          (u.active || agentsWithDeals.has(u.id)),
-      )
-      .map((u) => ({
-        label: u.active ? u.name : `${u.name} (deactivated)`,
-        value: u.id,
-        media: <Avatar size="xs" name={u.name} source={u.avatarUrl ?? undefined} />,
-      })),
-  ];
+  /** Whole days since the deal last moved, from the instant the data landed. */
+  const daysInStage = (d: SalesDeal): number =>
+    nowTs ? Math.max(0, Math.round((nowTs - new Date(d.updatedAt).getTime()) / 86_400_000)) : 0;
+
+  // The list: open deals in stage order, then newest activity. Lost deals
+  // stay off it, as the board starts with their column hidden.
+  const stageOrder = new Map(stages.map((s, i) => [s.slug, i]));
+  const lostSlugs = new Set(stages.filter((s) => s.behaviour === "lost").map((s) => s.slug));
+  const listDeals = (boardDeals ?? [])
+    .filter((d) => !lostSlugs.has(columnOf(d)))
+    .sort(
+      (a, b) =>
+        (stageOrder.get(columnOf(a)) ?? 0) - (stageOrder.get(columnOf(b)) ?? 0) ||
+        compareDeals(a, b),
+    );
+  const stageOptions = stages.map((s) => ({ label: s.label, value: s.slug }));
 
   return (
     <Page
       title="Sales pipeline"
       subtitle="Track every deal from new lead to completed sale. Rename, reorder, add or remove stages in Settings."
       fullWidth
-      // The agent filter scopes the whole board, so it sits in the header's
-      // top-right corner rather than in a row of its own above the columns.
+      primaryAction={
+        canCreateLead ? { content: "Create lead", onAction: () => setCreateOpen(true) } : undefined
+      }
       controls={
-        deals && deals.length > 0 ? (
-          <div className="w-56">
-            {/* Unfiltered, the field just asks "Select agent"; a chosen
-                agent shows as their avatar and name. */}
-            <Select
-              label="Agent"
-              labelHidden
-              placeholder="Select agent"
-              options={agentOptions}
-              value={agentFilter === "all" ? "" : agentFilter}
-              onChange={(v) => setAgentFilter(v)}
-            />
-          </div>
-        ) : undefined
+        <ButtonGroup variant="segmented">
+          <Button pressed={view === "board"} onClick={() => pickView("board")}>
+            Board
+          </Button>
+          <Button pressed={view === "list"} onClick={() => pickView("list")}>
+            List
+          </Button>
+        </ButtonGroup>
       }
     >
       {/* An empty board shows its empty state even before any stages
           exist, rather than a skeleton that never resolves. */}
       {deals && deals.length === 0 ? (
         <EmptyState heading="No deals yet" icon={<TrendingUp />}>
-          Convert a lead into an appointment, then a deal will appear.
+          Create a lead and its deal appears here in New lead.
         </EmptyState>
       ) : !boardDeals ? (
         <KanbanSkeleton columns={5} />
+      ) : view === "list" ? (
+        <IndexTable
+          selectable={false}
+          headings={[
+            { title: "Customer" },
+            { title: "Vehicle" },
+            { title: "Stage" },
+            { title: "Agent" },
+            { title: "Value", alignment: "end" },
+            { title: "Next appointment" },
+            { title: "In stage", alignment: "end" },
+          ]}
+          onRowClick={(id) => router.push(`/sales/pipeline/${id}`)}
+          rows={listDeals.map((d) => {
+            const v = vehicleById.get(d.vehicleId);
+            const value = dealValue(d);
+            const appt = nextAppointment(d);
+            return {
+              id: d.id,
+              cells: [
+                d.customerName,
+                v ? (
+                  <span className="flex min-w-0 items-center gap-2">
+                    <RegPlate registration={v.registration} size="sm" />
+                    <span className="truncate">{`${v.make} ${v.model}`}</span>
+                  </span>
+                ) : (
+                  <span className="text-(--text-secondary)">No vehicle</span>
+                ),
+                // Moving here runs the same path as a drag on the board. Its
+                // list opens in a portal, whose clicks still reach the row in
+                // React, so they stop here rather than open the deal.
+                <div key="stage" className="w-48" onClick={(e) => e.stopPropagation()}>
+                  <Select
+                    label={`Stage for ${d.customerName}`}
+                    labelHidden
+                    options={stageOptions}
+                    value={columnOf(d)}
+                    onChange={(stage) => void handleMove(d.id, stage)}
+                  />
+                </div>,
+                userById.get(d.sellingAgent)?.name ?? "No agent",
+                <span key="value" className="tabular-nums">
+                  {value != null ? formatCurrency(value) : "—"}
+                </span>,
+                appt
+                  ? `${APPOINTMENT_TYPE_LABELS[appt.appointmentType ?? "viewing"]}, ${dayDate(appt.date)}, ${appt.time.slice(0, 5)}`
+                  : "—",
+                <span key="days" className="tabular-nums">{`${daysInStage(d)}d`}</span>,
+              ],
+            };
+          })}
+        />
       ) : (
         <KanbanBoard
           id="sales-pipeline"
@@ -360,7 +500,10 @@ export default function SalesPipelinePage() {
             const appt = open ? nextAppointment(d) : null;
             return (
               <KanbanCard
-                onOpen={() => setViewDeal(d)}
+                // Compact, so a long column shows more deals; the phone and
+                // deposit are in the deal's own view (call 2026-10-31).
+                compact
+                onOpen={() => router.push(`/sales/pipeline/${d.id}`)}
                 thumbnail={
                   v && PHOTOS_ENABLED ? (
                     <VehicleImage
@@ -389,7 +532,7 @@ export default function SalesPipelinePage() {
                     monochrome
                     removeUnderline
                     className="text-left hover:underline"
-                    onClick={() => setViewDeal(d)}
+                    url={`/sales/pipeline/${d.id}`}
                   >
                     {d.customerName}
                   </GenaroLink>
@@ -401,38 +544,20 @@ export default function SalesPipelinePage() {
                     ? {
                         icon: CalendarClock,
                         tone: daysUntil(appt.date) === 0 ? "caution" : undefined,
-                        text:
+                        // The type leads: a collection reads differently from a viewing.
+                        text: APPOINTMENT_TYPE_LABELS[appt.appointmentType ?? "viewing"],
+                        detail:
                           daysUntil(appt.date) === 0
-                            ? `Appointment today, ${appt.time.slice(0, 5)}`
-                            : `Appointment ${dayDate(appt.date)}, ${appt.time.slice(0, 5)}`,
-                      }
-                    : null,
-                  d.customerPhone
-                    ? {
-                        icon: Phone,
-                        text: (
-                          <a
-                            href={`tel:${d.customerPhone.replace(/\s+/g, "")}`}
-                            draggable={false}
-                            className="hover:underline"
-                          >
-                            {d.customerPhone}
-                          </a>
-                        ),
-                      }
-                    : null,
-                  d.depositAmount
-                    ? {
-                        icon: Banknote,
-                        text: `${formatCurrency(d.depositAmount)} deposit`,
-                        detail: d.depositDate ? `paid ${shortDate(d.depositDate)}` : "paid",
+                            ? `today, ${appt.time.slice(0, 5)}`
+                            : `${dayDate(appt.date)}, ${appt.time.slice(0, 5)}`,
+                        title: "Next appointment",
                       }
                     : null,
                   {
                     icon: Clock,
                     tone: ageTone(days),
                     text: `${days}d in stage`,
-                    title: `Updated ${formatRelativeTime(d.updatedAt)}`,
+                    title: `Updated ${formatDateTime(d.updatedAt)}`,
                   },
                 ]}
                 note={
@@ -457,7 +582,9 @@ export default function SalesPipelinePage() {
                       </RowActionButton>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setViewDeal(d)}>View deal</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => router.push(`/sales/pipeline/${d.id}`)}>
+                        View deal
+                      </DropdownMenuItem>
                       {open && v ? (
                         <DropdownMenuItem onClick={() => setBookDeal(d)}>
                           Book appointment
@@ -508,17 +635,6 @@ export default function SalesPipelinePage() {
         />
       )}
 
-      <DealDetailSheet
-        deal={viewDeal}
-        vehicle={viewDeal ? (vehicleById.get(viewDeal.vehicleId) ?? null) : null}
-        agent={viewDeal ? (userById.get(viewDeal.sellingAgent) ?? null) : null}
-        users={users}
-        open={viewDeal !== null}
-        onOpenChange={(o) => {
-          if (!o) setViewDeal(null);
-        }}
-      />
-
       <QuickBookModal
         booking={bookDeal ? { kind: "appt", deal: bookDeal } : null}
         vehicles={swappable}
@@ -536,6 +652,17 @@ export default function SalesPipelinePage() {
         vehicles={swappable}
         onSave={changeDealVehicle}
       />
+      <CreateLeadModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        vehicles={swappable}
+        channels={channels}
+        users={users.filter((u) => u.active)}
+        defaultAssignee={user?.id}
+        draftKey={company && user ? `cc-lead-draft:${company.id}:${user.id}` : null}
+        onCreate={createLead}
+      />
+      {confirmDialog}
     </Page>
   );
 }
