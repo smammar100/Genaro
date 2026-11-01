@@ -87,6 +87,7 @@ export type Database = {
           notifications_sent: Json
           outcome: string
           special_requirements: string | null
+          appointment_type: string
           status: string
           time: string
           updated_at: string
@@ -106,6 +107,7 @@ export type Database = {
           notifications_sent?: Json
           outcome: string
           special_requirements?: string | null
+          appointment_type?: string
           status: string
           time: string
           updated_at?: string
@@ -125,6 +127,7 @@ export type Database = {
           notifications_sent?: Json
           outcome?: string
           special_requirements?: string | null
+          appointment_type?: string
           status?: string
           time?: string
           updated_at?: string

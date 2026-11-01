@@ -40,7 +40,7 @@ import {
   JobStatusBadge,
   jobStatusLabel,
 } from "@/components/maintenance/job-status";
-import { formatCurrency, formatDate, formatRelativeTime } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 
 const NOTE_TYPES: { value: JobNoteType; label: string; tone?: BadgeTone }[] = [
@@ -253,8 +253,9 @@ export default function MaintenanceJobDetailPage({
                             {author?.name ?? "System"}
                           </span>
                         </div>
-                        <span className="body-sm text-(--text-secondary)">
-                          {formatRelativeTime(n.createdAt)}
+                        {/* The full date and time, not "4 days ago" (call 2026-10-31). */}
+                        <span className="body-sm tabular-nums text-(--text-secondary)">
+                          {formatDateTime(n.createdAt)}
                         </span>
                       </div>
                       <p className="body-md mt-1 whitespace-pre-wrap">

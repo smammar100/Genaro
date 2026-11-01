@@ -145,17 +145,40 @@ export type Transmission = "automatic" | "manual";
  * Exactly one of these at any time; movements between values are audited
  * via the `location_movements` table.
  */
-export type VehicleLocation = "forecourt" | "yard" | "garage" | "staff" | "courtesy_car";
+export type BuiltInLocation = "forecourt" | "yard" | "garage" | "staff" | "courtesy_car";
+
+/** A company's own place (0056), stored by a slug that never changes. */
+export type CustomLocationKey = `loc_${string}`;
+
+/** A place a car can be: built in, or one the company added in Settings. */
+export type VehicleLocation = BuiltInLocation | CustomLocationKey;
+
+export const isCustomLocation = (location: string): location is CustomLocationKey =>
+  location.startsWith("loc_");
+
+/** A company's own place, from Settings → Locations (0056). */
+export interface CompanyLocation {
+  id: UUID;
+  companyId: UUID;
+  slug: CustomLocationKey;
+  label: string;
+  sortOrder: number;
+  /** Set when it was removed: hidden from moves and tabs, kept for history. */
+  archivedAt: ISODateTime | null;
+  createdAt: ISODateTime;
+}
 
 /**
- * Where a vehicle is recorded: one of the places above, or "sold" once its
- * master sheet AVAILABLE / SOLD reads SOLD (migration 0051's trigger sets it).
- * Sold is not somewhere a car can be moved to, so it is not in
- * VEHICLE_LOCATIONS (the Locations tabs and move destinations).
+ * Where a vehicle is recorded: one of the places above, or "sold" /
+ * "returned_to_owner" once its master sheet AVAILABLE / SOLD says so
+ * (migrations 0051 and 0055 set them by trigger). Neither is somewhere a car
+ * can be moved to, so they are not in VEHICLE_LOCATIONS (the Locations tabs
+ * and move destinations).
  */
-export type CurrentLocation = VehicleLocation | "sold";
+export type CurrentLocation = VehicleLocation | "sold" | "returned_to_owner";
 
-export const VEHICLE_LOCATIONS: VehicleLocation[] = [
+/** The built-in places; a company's own come from `company_locations`. */
+export const VEHICLE_LOCATIONS: BuiltInLocation[] = [
   "forecourt",
   "yard",
   "garage",
@@ -163,13 +186,14 @@ export const VEHICLE_LOCATIONS: VehicleLocation[] = [
   "courtesy_car",
 ];
 
-export const VEHICLE_LOCATION_LABELS: Record<CurrentLocation, string> = {
+export const VEHICLE_LOCATION_LABELS: Record<Exclude<CurrentLocation, CustomLocationKey>, string> = {
   forecourt: "Forecourt",
   yard: "Yard",
   garage: "Garage",
   staff: "Staff",
   courtesy_car: "Courtesy car",
   sold: "Sold",
+  returned_to_owner: "Returned to owner",
 };
 
 /**
@@ -683,6 +707,17 @@ export type LeadSource =
   | "facebook"
   | "referral"
   | "other";
+/** Every lead source, for mapping a lead channel's slug onto one. */
+export const LEAD_SOURCES: readonly LeadSource[] = [
+  "website",
+  "phone",
+  "walk_in",
+  "autotrader",
+  "ebay",
+  "facebook",
+  "referral",
+  "other",
+];
 export type LeadStatus =
   | "new"
   | "contacted"
@@ -756,11 +791,20 @@ export type AppointmentOutcome =
   | "sold"
   | "lost";
 
+/** What an appointment is for (0054). */
+export type AppointmentType = "viewing" | "collection" | "delivery";
+export const APPOINTMENT_TYPE_LABELS: Record<AppointmentType, string> = {
+  viewing: "Viewing",
+  collection: "Collection",
+  delivery: "Delivery",
+};
+
 export interface Appointment {
   id: UUID;
   companyId: UUID;
   vehicleId: UUID;
   leadId: UUID | null;
+  appointmentType: AppointmentType;
   customerName: string;
   customerPhone: string;
   customerEmail: string;

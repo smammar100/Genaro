@@ -25,6 +25,7 @@ export async function createEvent(
       companyId,
       vehicleId: fields.vehicleId,
       leadId,
+      appointmentType: fields.appointmentType,
       customerName: fields.customerName.trim(),
       customerPhone: fields.customerPhone.trim(),
       customerEmail: fields.customerEmail.trim(),
@@ -91,6 +92,7 @@ export async function updateEvent(
     await appointmentService.update(
       ref.id,
       {
+        appointmentType: fields.appointmentType,
         customerName: fields.customerName.trim(),
         customerPhone: fields.customerPhone.trim(),
         customerEmail: fields.customerEmail.trim(),

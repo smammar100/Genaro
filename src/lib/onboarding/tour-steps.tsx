@@ -155,22 +155,6 @@ const GUIDED_STEPS: GuidedStep[] = [
     actionLabel: "Prep & repair",
   },
   {
-    icon: "📣",
-    title: "Now it can sell",
-    content: (
-      <>
-        Every buyer starts as a lead — log them even when the call goes nowhere,
-        because this is what tells you which cars people actually ring about.
-      </>
-    ),
-    selector: navSelector("/sales/leads"),
-    side: "right-top",
-    pointerPadding: 6,
-    pointerRadius: 8,
-    awaitRoute: "/sales/leads",
-    actionLabel: "Leads",
-  },
-  {
     icon: "📅",
     title: "Viewings and test drives",
     content: (
@@ -192,9 +176,10 @@ const GUIDED_STEPS: GuidedStep[] = [
     title: "Closing the deal",
     content: (
       <>
-        The pipeline shows every live deal by stage, so you can see what is close
-        and what has gone quiet. Move a deal to sold and the car leaves your
-        forecourt figures.
+        Every buyer starts here as a lead: take it with Create lead, even when the
+        call goes nowhere. The pipeline then shows every live deal by stage, so
+        you can see what is close and what has gone quiet. Move a deal to sold
+        and the car leaves your forecourt figures.
       </>
     ),
     selector: navSelector("/sales/pipeline"),

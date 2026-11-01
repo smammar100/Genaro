@@ -2,44 +2,48 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { rulesResolver, emailIssue, type FormRules } from "@/lib/auth/form-resolver";
+import { rulesResolver, requiredIssue, type FormRules } from "@/lib/auth/form-resolver";
 import { toast } from "@/lib/toast";
 import { useAutoFocusField } from "@/hooks/use-auto-focus";
 import { Button, Link } from "@/components/genaro";
 import { AuthCard, RhfTextField } from "../_components/auth-card";
 
-// Loaded on submit, not with the page: the Supabase client is the largest
-// library here and the form paints without it.
-const getSupabase = () => import("@/lib/supabase/client").then((m) => m.createClient());
-
 interface FormValues {
-  email: string;
+  identifier: string;
 }
 
 const rules: FormRules<FormValues> = (values) => ({
   values,
-  issues: emailIssue<FormValues>("email", values.email),
+  issues: requiredIssue<FormValues>("identifier", values.identifier, "Enter your username or email"),
 });
 
+/**
+ * Forgot password: a username or an email, as at sign-in (call 2026-10-31).
+ * The server sends the link to the account's email, or for a username
+ * account to the email set on My profile.
+ */
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: rulesResolver(rules),
-    defaultValues: { email: "" },
+    defaultValues: { identifier: "" },
   });
 
   // Focus the field on desktop only — see useAutoFocusField.
-  useAutoFocusField(form.setFocus, "email", !sent);
+  useAutoFocusField(form.setFocus, "identifier", !sent);
 
   async function onSubmit(values: FormValues) {
-    const supabase = await getSupabase();
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-      redirectTo: `${origin}/reset-password`,
+    // The dealership for a username, as the sign-in page reads it.
+    const org = new URLSearchParams(window.location.search).get("org") ?? undefined;
+    const res = await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier: values.identifier, org }),
     });
-    if (error) {
-      toast.error(error.message);
+    if (!res.ok) {
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      toast.error(json.error ?? "Couldn't send the link. Try again.");
       return;
     }
     setSent(true);
@@ -54,8 +58,13 @@ export default function ForgotPasswordPage() {
       {sent ? (
         <div className="flex flex-col gap-3">
           <p className="body-md text-(--text)">
-            If an account exists for that email, the reset link is on its
-            way. Open the link from the same device.
+            If that account has an email for resets, the link is on its way.
+            It works once, for an hour.
+          </p>
+          <p className="body-md text-(--text-secondary)">
+            Nothing after a few minutes? If you sign in with a username and
+            haven&apos;t saved an email on My profile, ask your manager to reset
+            your password in Users &amp; permissions.
           </p>
           <div>
             <Link url="/login">Back to sign in</Link>
@@ -68,11 +77,10 @@ export default function ForgotPasswordPage() {
         >
           <RhfTextField
             control={form.control}
-            name="email"
-            label="Email"
-            type="email"
-            autoComplete="email"
-            placeholder="you@carcapital.uk"
+            name="identifier"
+            label="Username or email"
+            autoComplete="username"
+            placeholder="username"
           />
           <Button
             variant="primary"

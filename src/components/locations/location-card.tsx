@@ -5,13 +5,15 @@ import { MapPin } from "lucide-react";
 import { Button, SkeletonBodyText } from "@/components/genaro";
 import { BandedCard } from "@/components/vehicle-detail/banded-card";
 import {
-  VEHICLE_LOCATION_LABELS,
+  type CompanyLocation,
   type LocationMovement,
   type UUID,
   type Vehicle,
   type VehicleLocation,
 } from "@/lib/types";
 import { locationService } from "@/lib/services/location-service";
+import { locationLabel } from "@/lib/locations";
+import { useCompanyLocations } from "@/hooks/use-company-locations";
 
 interface LocationCardProps {
   vehicle: Vehicle;
@@ -48,11 +50,12 @@ function describeMovement(
   m: LocationMovement,
   vendorNames: Record<UUID, string>,
   staffNames: Record<UUID, string>,
+  custom: CompanyLocation[],
 ): string {
   const fromLabel = m.fromLocation
-    ? VEHICLE_LOCATION_LABELS[m.fromLocation as VehicleLocation]
+    ? locationLabel(m.fromLocation as VehicleLocation, custom)
     : "Arrival";
-  const toLabel = VEHICLE_LOCATION_LABELS[m.toLocation];
+  const toLabel = locationLabel(m.toLocation, custom);
   let context = "";
   if (m.toLocation === "garage" && m.externalVendorId) {
     const v = vendorNames[m.externalVendorId];
@@ -80,6 +83,7 @@ export function LocationCard({
   onMove,
 }: LocationCardProps) {
   const [fetched, setFetched] = useState<LocationMovement[] | null>(null);
+  const custom = useCompanyLocations();
 
   useEffect(() => {
     if (recentMovements) return;
@@ -100,7 +104,7 @@ export function LocationCard({
   const movements = recentMovements ?? fetched;
 
   const days = daysSince(vehicle.locationSince);
-  const place = VEHICLE_LOCATION_LABELS[vehicle.currentLocation];
+  const place = locationLabel(vehicle.currentLocation, custom);
   const dayCount = `${days} day${days === 1 ? "" : "s"}`;
   return (
     <BandedCard
@@ -138,7 +142,7 @@ export function LocationCard({
                 <span className="tabular-nums text-(--text-secondary)">
                   {shortDate(m.createdAt)}
                 </span>
-                <span>{describeMovement(m, vendorNames, staffNames)}</span>
+                <span>{describeMovement(m, vendorNames, staffNames, custom)}</span>
               </li>
             ))}
           </ul>

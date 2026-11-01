@@ -38,9 +38,9 @@ describe("navRows", () => {
   });
 
   it("opens the tour's group instead while the tour runs", () => {
-    const rows = navRows(groups, { pathname: "/vehicles", tourGroup: "Sales" });
+    const rows = navRows(groups, { pathname: "/maintenance/inspection", tourGroup: "Sales" });
     expect(find(rows, "Sales").selected).toBe(true);
-    expect(find(rows, "Inventory").selected).toBe(false);
+    expect(find(rows, "Maintenance").selected).toBe(false);
   });
 
   it("opens the section the user clicked, without changing the current page", () => {
@@ -77,11 +77,11 @@ describe("navRows", () => {
 
   it("makes a single-page section the page's own link and anchor", () => {
     const rows = navRows(visibleNavGroups(only("sales:create_lead"), false), {
-      pathname: "/sales/leads",
+      pathname: "/sales/pipeline",
       tourGroup: null,
     });
     const sales = find(rows, "Sales");
-    expect(sales).toMatchObject({ href: "/sales/leads", id: navTourId("/sales/leads"), selected: true });
+    expect(sales).toMatchObject({ href: "/sales/pipeline", id: navTourId("/sales/pipeline"), selected: true });
     expect(sales.pages).toBeUndefined();
   });
 
@@ -98,7 +98,7 @@ describe("navRows", () => {
 
 describe("navGroupForHref", () => {
   it("finds the group a route lives in", () => {
-    expect(navGroupForHref("/admin/locations")).toBe("Inventory");
+    expect(navGroupForHref("/vehicles")).toBe("Inventory");
     expect(navGroupForHref("/dashboard")).toBeNull();
     expect(navGroupForHref(undefined)).toBeNull();
   });

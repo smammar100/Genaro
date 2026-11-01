@@ -11,7 +11,6 @@ import {
 } from "@/components/genaro";
 import { Input } from "@/components/ui/input";
 import {
-  VEHICLE_LOCATION_LABELS,
   VEHICLE_LOCATIONS,
   type LocationMovement,
   type UUID,
@@ -21,6 +20,8 @@ import {
   type Vendor,
 } from "@/lib/types";
 import { locationService } from "@/lib/services/location-service";
+import { liveLocations, locationLabel } from "@/lib/locations";
+import { useCompanyLocations } from "@/hooks/use-company-locations";
 
 interface MoveDialogProps {
   open: boolean;
@@ -54,9 +55,9 @@ function shortDate(iso: string): string {
 /**
  * Move dialog (Spec v3.0 · Module A · Chunk 2.4 / 2.5).
  *
- * Single dialog covering all 4 destinations. Garage and Staff destinations
- * reveal their branch fields (vendor / staff user) and enforce a required
- * `expected_return_at`. The current location is disabled in the radio
+ * Single dialog covering every destination. Garage and Staff destinations
+ * reveal their branch fields (vendor / staff user); a garage also needs an
+ * `expected_return_at`, a staff hand-over doesn't (call 2026-10-31). The current location is disabled in the radio
  * group so users can't move "to here". On submit:
  *
  *   1. `locationService.createMovement` (inserts movement, updates vehicle,
@@ -98,15 +99,22 @@ export function MoveDialog({
 
   const activeVendors = useMemo(() => vendors.filter((v) => v.active), [vendors]);
   const activeUsers = useMemo(() => users.filter((u) => u.active), [users]);
+  // The built-in places, then the company's own from Settings → Locations.
+  const custom = useCompanyLocations();
+  const destinations: VehicleLocation[] = [
+    ...VEHICLE_LOCATIONS,
+    ...liveLocations(custom).map((l) => l.slug),
+  ];
 
-  const needsBranch = destination === "garage" || destination === "staff";
+  // A car handed to staff has no due date (call 2026-10-31); a garage job does.
+  const needsReturn = destination === "garage";
   const errors: string[] = [];
   if (!destination) errors.push("Pick a destination");
   if (destination === vehicle.currentLocation)
     errors.push("Already at this location");
   if (destination === "garage" && !vendorId) errors.push("Pick a vendor");
   if (destination === "staff" && !staffUserId) errors.push("Pick a staff member");
-  if (needsBranch && !expectedReturn) errors.push("Expected-back time required");
+  if (needsReturn && !expectedReturn) errors.push("Expected-back time required");
 
   const canSubmit = errors.length === 0 && !submitting;
 
@@ -121,7 +129,7 @@ export function MoveDialog({
           toLocation: destination,
           externalVendorId: destination === "garage" ? (vendorId as UUID) : null,
           staffUserId: destination === "staff" ? (staffUserId as UUID) : null,
-          expectedReturnAt: needsBranch
+          expectedReturnAt: needsReturn
             ? new Date(expectedReturn).toISOString()
             : null,
           notes: notes.trim() || null,
@@ -129,7 +137,7 @@ export function MoveDialog({
         actorId,
       );
       toast.success(
-        `Moved to ${VEHICLE_LOCATION_LABELS[destination]}`,
+        `Moved to ${locationLabel(destination, custom)}`,
       );
       onSuccess?.(movement);
       onOpenChange(false);
@@ -171,15 +179,15 @@ export function MoveDialog({
           <span className="font-code">{vehicle.registration}</span> · Currently
           at{" "}
           <span className="font-semibold text-(--text)">
-            {VEHICLE_LOCATION_LABELS[vehicle.currentLocation]}
+            {locationLabel(vehicle.currentLocation, custom)}
           </span>{" "}
           (since {shortDate(vehicle.locationSince)})
         </p>
 
         <ChoiceList
           title="Move to"
-          choices={VEHICLE_LOCATIONS.map((loc) => ({
-            label: VEHICLE_LOCATION_LABELS[loc],
+          choices={destinations.map((loc) => ({
+            label: locationLabel(loc, custom),
             value: loc,
             disabled: loc === vehicle.currentLocation,
             helpText: loc === vehicle.currentLocation ? "Current" : undefined,
@@ -215,7 +223,7 @@ export function MoveDialog({
           />
         ) : null}
 
-        {needsBranch ? (
+        {needsReturn ? (
           <Labelled id="move-expected" label="Expected back" requiredIndicator>
             <Input
               id="move-expected"

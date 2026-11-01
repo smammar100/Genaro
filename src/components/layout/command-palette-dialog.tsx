@@ -48,7 +48,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   },
   {
     label: "New lead",
-    href: "/sales/leads",
+    href: "/sales/pipeline?new=1",
     icon: UserPlus,
     requiredAnyOf: ["sales:create_lead"],
   },

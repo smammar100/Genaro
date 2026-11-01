@@ -90,12 +90,14 @@ function MovementEditForm({
   companyId,
   onSaved,
 }: MovementEditDialogProps & { movement: LocationMovement }) {
-  // The database records the move to Sold when AVAILABLE / SOLD turns SOLD
-  // (migration 0051). Its destination follows the sale, so only its time and
-  // notes are corrected here.
-  const isSale = movement.toLocation === "sold";
+  // The database records the move to Sold or Returned to owner when
+  // AVAILABLE / SOLD says so (migrations 0051, 0055). Its destination follows
+  // the sale, so only its time and notes are corrected here.
+  const isSale = movement.toLocation === "sold" || movement.toLocation === "returned_to_owner";
   const [toLocation, setToLocation] = useState<VehicleLocation>(
-    movement.toLocation === "sold" ? "forecourt" : movement.toLocation,
+    movement.toLocation === "sold" || movement.toLocation === "returned_to_owner"
+      ? "forecourt"
+      : movement.toLocation,
   );
   const [movedAt, setMovedAt] = useState(() => toLocalInput(movement.createdAt));
   const [expectedReturn, setExpectedReturn] = useState(() =>

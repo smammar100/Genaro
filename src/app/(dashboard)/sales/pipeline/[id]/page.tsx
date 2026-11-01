@@ -1,0 +1,453 @@
+"use client";
+
+import { use, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { CalendarClock, Car } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import { salesService } from "@/lib/services/sales-service";
+import { vehicleService } from "@/lib/services/vehicle-service";
+import { authService } from "@/lib/services/auth-service";
+import { pipelineStageService } from "@/lib/services/pipeline-stage-service";
+import { appointmentService } from "@/lib/services/appointment-service";
+import { leadService } from "@/lib/services/lead-service";
+import { leadChannelService } from "@/lib/services/lead-channel-service";
+import { dealNoteService } from "@/lib/services/deal-note-service";
+import {
+  APPOINTMENT_TYPE_LABELS,
+  type Appointment,
+  type DealNote,
+  type Lead,
+  type LeadChannel,
+  type PipelineStage,
+  type SalesDeal,
+  type User,
+  type Vehicle,
+} from "@/lib/types";
+import {
+  Avatar,
+  Button,
+  Card,
+  DescriptionList,
+  EmptyState,
+  Page,
+  SkeletonBodyText,
+  SplitButton,
+  TextField,
+  useConfirm,
+} from "@/components/genaro";
+import { RegPlate } from "@/components/shared/reg-plate";
+import { DealStageBadge } from "@/components/sales/status-badges";
+import { StagePath } from "@/components/sales/stage-path";
+import { QuickBookModal } from "@/components/calendar/quick-book-modal";
+import { ChangeVehicleModal } from "@/components/sales/change-vehicle-modal";
+import {
+  FUEL_OPTIONS,
+  SERVICE_HISTORY_OPTIONS,
+  TRANSMISSION_OPTIONS,
+  optionLabel,
+} from "@/lib/master-sheet";
+import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
+import { vehicleDetailHref } from "@/lib/vehicle-nav";
+import { toast } from "@/lib/toast";
+import { locationLabel } from "@/lib/locations";
+import { useCompanyLocations } from "@/hooks/use-company-locations";
+import { saleConfirmOptions } from "@/lib/sale-confirm";
+
+interface Loaded {
+  deal: SalesDeal;
+  stages: PipelineStage[];
+  vehicle: Vehicle | null;
+  vehicles: Vehicle[];
+  users: User[];
+  appointments: Appointment[];
+  lead: Lead | null;
+  channels: LeadChannel[];
+  notes: DealNote[];
+  /** When the data landed, for the days-in-stage count. */
+  at: number;
+}
+
+const APPOINTMENT_STATUS: Record<Appointment["status"], string> = {
+  upcoming: "Upcoming",
+  completed: "Completed",
+  cancelled: "Cancelled",
+  no_show: "No show",
+};
+
+/** Whether an appointment belongs to the deal: by its lead, else car and name. */
+const isDealAppointment = (d: SalesDeal, a: Appointment): boolean =>
+  d.leadId ? a.leadId === d.leadId : a.vehicleId === d.vehicleId && a.customerName === d.customerName;
+
+/** A description-list row, or nothing when there is no value to show. */
+const row = (term: string, value: ReactNode) =>
+  value === null || value === undefined || value === "" ? [] : [{ term, description: value }];
+
+/**
+ * A deal on its own page (prototype variation E, after the Salesforce lead
+ * record; call 2026-10-31 asked for the whole car and the whole deal in one
+ * place). The stages run across the top with the key figures under them;
+ * the customer, the vehicle and the activity sit side by side below. Opened
+ * from a pipeline card or list row.
+ */
+export default function DealPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const pathname = usePathname();
+  const { user, company } = useAuth();
+  const [data, setData] = useState<Loaded | null>(null);
+  const [missing, setMissing] = useState(false);
+  const [moving, setMoving] = useState(false);
+  const [note, setNote] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
+  const [booking, setBooking] = useState(false);
+  const [swapping, setSwapping] = useState(false);
+  const { confirm, confirmDialog } = useConfirm();
+  const customLocations = useCompanyLocations();
+
+  // Fetches everything the page shows; null when the deal isn't there.
+  const fetchDeal = useCallback(async (): Promise<Loaded | null> => {
+    if (!company) return null;
+    const deal = await salesService.getById(id);
+    if (!deal) return null;
+    const [stages, vehicles, users, appointments, lead, channels, notes] = await Promise.all([
+      pipelineStageService.getEnabled(company.id),
+      vehicleService.getAll(company.id),
+      authService.getUsersForCompany(company.id),
+      appointmentService.getAll(company.id),
+      deal.leadId ? leadService.getById(deal.leadId) : Promise.resolve(null),
+      leadChannelService.getAll(company.id),
+      dealNoteService.getForDeal(deal.id),
+    ]);
+    return {
+      deal,
+      stages,
+      vehicle: vehicles.find((v) => v.id === deal.vehicleId) ?? null,
+      vehicles,
+      users,
+      appointments: appointments
+        .filter((a) => isDealAppointment(deal, a))
+        .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`)),
+      lead,
+      channels,
+      notes,
+      at: Date.now(),
+    };
+  }, [company, id]);
+
+  const apply = (loaded: Loaded | null) => {
+    if (loaded) setData(loaded);
+    else setMissing(true);
+  };
+  const load = () => fetchDeal().then(apply);
+
+  useEffect(() => {
+    if (!company) return;
+    void fetchDeal().then(apply);
+  }, [company, fetchDeal]);
+
+  const stageOf = useMemo(
+    () => new Map((data?.stages ?? []).map((s) => [s.slug, s])),
+    [data?.stages],
+  );
+
+  if (missing) {
+    return (
+      <Page title="Deal" backAction={{ content: "Sales pipeline", url: "/sales/pipeline" }}>
+        <EmptyState heading="This deal isn't here any more" action={{ content: "Open the pipeline", url: "/sales/pipeline" }}>
+          It may have been removed, or the link is from another company.
+        </EmptyState>
+      </Page>
+    );
+  }
+
+  if (!data) {
+    return (
+      <Page title="Deal" backAction={{ content: "Sales pipeline", url: "/sales/pipeline" }}>
+        <Card>
+          <SkeletonBodyText lines={6} />
+        </Card>
+      </Page>
+    );
+  }
+
+  const { deal, stages, vehicle, users, appointments, lead, channels, notes } = data;
+  const stage = stageOf.get(deal.stage);
+  const behaviour = stage?.behaviour;
+  const open = behaviour !== "won" && behaviour !== "lost";
+  const agent = users.find((u) => u.id === deal.sellingAgent);
+  const channel = channels.find((c) => c.id === lead?.leadChannelId);
+  const days = Math.max(0, Math.round((data.at - new Date(deal.updatedAt).getTime()) / 86_400_000));
+  const upcoming = appointments.find((a) => a.status === "upcoming");
+  // The stage after this one on the path, skipping Lost; none once it's won.
+  const path = stages.filter((s) => s.behaviour !== "lost");
+  const next = open ? path[path.findIndex((s) => s.slug === deal.stage) + 1] : undefined;
+  const canInvoice = behaviour === "reserved" || behaviour === "won";
+  const lost = stages.find((s) => s.behaviour === "lost");
+  const swappable = data.vehicles.filter((v) => v.status !== "sold" && v.status !== "returned");
+
+  async function move(slug: string) {
+    if (!user || slug === deal.stage) return;
+    const target = stageOf.get(slug);
+    if (target?.behaviour === "won") {
+      const ok = await confirm(
+        saleConfirmOptions(deal.customerName, vehicle?.registration ?? null, target.label),
+      );
+      if (!ok) return;
+    }
+    setMoving(true);
+    try {
+      await salesService.updateStage(deal.id, slug, user.id);
+      toast.success(`Moved to ${stageOf.get(slug)?.label ?? slug}`);
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't move the deal");
+    } finally {
+      setMoving(false);
+    }
+  }
+
+  // The deal fell through: its car goes back on sale, so ask first.
+  async function markLost(slug: string) {
+    const ok = await confirm({
+      title: `Mark ${deal.customerName}'s deal as lost?`,
+      description: vehicle
+        ? `${vehicle.registration} goes back on sale. You can move the deal back later.`
+        : "You can move the deal back later.",
+      confirmText: "Mark as lost",
+      destructive: true,
+    });
+    if (ok) await move(slug);
+  }
+
+  async function addNote() {
+    if (!user || !note.trim()) return;
+    setSavingNote(true);
+    try {
+      const added = await dealNoteService.add({ dealId: deal.id, userId: user.id, content: note.trim() });
+      setData((d) => (d ? { ...d, notes: [...d.notes, added] } : d));
+      setNote("");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't add the note");
+    } finally {
+      setSavingNote(false);
+    }
+  }
+
+  async function changeVehicle(v: Vehicle) {
+    if (!user) return;
+    await salesService.changeVehicle(deal.id, v.id, user.id);
+    toast.success(`Vehicle changed to ${v.registration}`);
+    await load();
+  }
+
+  const value = deal.agreedPrice ?? deal.offerPrice;
+  const figures: [string, ReactNode][] = [
+    ["Price", vehicle?.listingPrice != null ? formatCurrency(vehicle.listingPrice) : "—"],
+    [deal.agreedPrice != null ? "Agreed" : "Offer", value != null ? formatCurrency(value) : "—"],
+    ["Agent", agent?.name ?? "No agent"],
+    [
+      "Next appointment",
+      upcoming
+        ? `${APPOINTMENT_TYPE_LABELS[upcoming.appointmentType ?? "viewing"]}, ${formatDate(upcoming.date)}, ${upcoming.time.slice(0, 5)}`
+        : "None booked",
+    ],
+  ];
+
+  return (
+    <Page
+      title={`${deal.customerName}${vehicle ? ` · ${vehicle.make} ${vehicle.model}` : ""}`}
+      titleMetadata={<DealStageBadge stage={deal.stage} label={stage?.label} behaviour={behaviour} />}
+      backAction={{ content: "Sales pipeline", url: "/sales/pipeline" }}
+      // One split button on the right: the next stage, with the rarer moves
+      // under its arrow (call 2026-10-31).
+      controls={
+        <>
+          {open && vehicle ? <Button onClick={() => setBooking(true)}>Book appointment</Button> : null}
+          {canInvoice ? (
+            <Button
+              variant={behaviour === "won" ? "primary" : undefined}
+              url={`/sales/invoice-generation?vehicleId=${deal.vehicleId}`}
+            >
+              Generate invoice
+            </Button>
+          ) : null}
+          {next ? (
+            <SplitButton
+              onAction={() => void move(next.slug)}
+              disabled={moving}
+              actions={[
+                { content: "Change vehicle", onAction: () => setSwapping(true) },
+                ...(lost
+                  ? [{ content: "Mark as lost", destructive: true, onAction: () => void markLost(lost.slug) }]
+                  : []),
+              ]}
+            >
+              {next.behaviour === "won" ? "Mark as sold" : `Move to ${next.label}`}
+            </SplitButton>
+          ) : null}
+          {behaviour === "lost" && path[0] ? (
+            <Button variant="primary" loading={moving} onClick={() => void move(path[0].slug)}>
+              Reopen deal
+            </Button>
+          ) : null}
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <Card>
+          <div className="flex flex-col gap-4">
+            <StagePath stages={stages} current={deal.stage} daysInStage={open ? days : undefined} />
+            <dl className="grid grid-cols-2 gap-4 border-t border-(--border-secondary) pt-3 md:grid-cols-4">
+              {figures.map(([term, description]) => (
+                <div key={term} className="flex min-w-0 flex-col">
+                  <dt className="body-sm text-(--text-secondary)">{term}</dt>
+                  <dd className="body-md-semibold truncate tabular-nums">{description}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </Card>
+
+        <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1.3fr]">
+          <Card title="Customer">
+            <DescriptionList
+              gap="tight"
+              items={[
+                ...row("Name", deal.customerName),
+                ...row("Phone", deal.customerPhone ? <a href={`tel:${deal.customerPhone.replace(/\s+/g, "")}`} className="hover:underline">{deal.customerPhone}</a> : null),
+                ...row("Email", deal.customerEmail ? <a href={`mailto:${deal.customerEmail}`} className="hover:underline">{deal.customerEmail}</a> : null),
+                ...row("Channel", channel?.label),
+                ...row("Deposit", deal.depositAmount != null ? `${formatCurrency(deal.depositAmount)}${deal.depositDate ? `, ${formatDate(deal.depositDate)}` : ""}` : null),
+                ...row("Collection", deal.collectionDate ? formatDate(deal.collectionDate) : null),
+                ...row("Completed", deal.completionDate ? formatDate(deal.completionDate) : null),
+                ...row("Opened", formatDateTime(deal.createdAt)),
+              ]}
+            />
+          </Card>
+
+          <Card title="Vehicle">
+            {vehicle ? (
+              <div className="flex flex-col gap-3">
+                <Link
+                  href={vehicleDetailHref(vehicle.id, pathname)}
+                  className="-m-1 flex flex-wrap items-center gap-2 rounded-(--radius-200) p-1 transition-colors hover:bg-(--bg-surface-hover)"
+                >
+                  <RegPlate registration={vehicle.registration} size="sm" />
+                  <span className="body-sm text-(--text-secondary)">
+                    {vehicle.variantName ? `${vehicle.variantName} · ` : ""}
+                    <span className="font-code">{vehicle.stockId}</span>
+                  </span>
+                </Link>
+                <DescriptionList
+                  gap="tight"
+                  items={[
+                    ...row("Year", vehicle.year || null),
+                    ...row("Mileage", vehicle.mileage ? `${vehicle.mileage.toLocaleString("en-GB")} miles` : null),
+                    ...row("Fuel", optionLabel(FUEL_OPTIONS, vehicle.fuelType)),
+                    ...row("Gearbox", optionLabel(TRANSMISSION_OPTIONS, vehicle.transmission)),
+                    ...row("Colour", vehicle.colour),
+                    ...row("Keys", vehicle.numKeys || null),
+                    ...row("Former keepers", vehicle.formerKeepers),
+                    ...row("Service history", optionLabel(SERVICE_HISTORY_OPTIONS, vehicle.serviceHistory)),
+                    ...row("MOT expiry", vehicle.motExpiry ? formatDate(vehicle.motExpiry) : null),
+                    ...row("Location", locationLabel(vehicle.currentLocation, customLocations)),
+                  ]}
+                />
+              </div>
+            ) : (
+              <p className="body-md inline-flex items-center gap-1.5 text-(--text-secondary)">
+                <Car aria-hidden className="size-4" /> No vehicle linked
+              </p>
+            )}
+          </Card>
+
+          <Card title="Activity">
+            <div className="flex flex-col gap-3">
+              {appointments.length > 0 ? (
+                <ul className="flex flex-col gap-2">
+                  {appointments.map((a) => (
+                    <li
+                      key={a.id}
+                      className="flex items-center gap-3 rounded-(--radius-300) bg-(--bg-surface-info) px-3 py-2"
+                    >
+                      <CalendarClock aria-hidden className="size-4 shrink-0 text-(--text-info)" />
+                      <span className="body-md min-w-0 flex-1">
+                        <span className="font-semibold">{APPOINTMENT_TYPE_LABELS[a.appointmentType ?? "viewing"]}</span>
+                        {" · "}
+                        {formatDate(a.date)}, {a.time.slice(0, 5)}
+                      </span>
+                      <span className="body-sm text-(--text-secondary)">{APPOINTMENT_STATUS[a.status]}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <TextField
+                label="New note"
+                labelHidden
+                multiline={2}
+                value={note}
+                onChange={setNote}
+                placeholder="Add a note, e.g. offered £500 off for a deposit this week"
+              />
+              <div className="flex justify-end">
+                <Button onClick={() => void addNote()} loading={savingNote} disabled={!note.trim()}>
+                  Add note
+                </Button>
+              </div>
+              <ul className="flex flex-col">
+                {[...notes].reverse().map((n) => {
+                  const author = users.find((u) => u.id === n.userId)?.name ?? "Unknown";
+                  return (
+                    <li key={n.id} className="flex gap-3 border-t border-(--border-secondary) py-3">
+                      <Avatar size="sm" name={author} />
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                          <span className="body-md-semibold">{author}</span>
+                          <span className="body-sm tabular-nums text-(--text-secondary)">
+                            {formatDateTime(n.createdAt)}
+                          </span>
+                        </div>
+                        <p className="body-md whitespace-pre-wrap text-pretty">{n.content}</p>
+                      </div>
+                    </li>
+                  );
+                })}
+                {/* What was said when the lead was taken, oldest of all. */}
+                {lead?.notes?.trim() ? (
+                  <li className="flex gap-3 border-t border-(--border-secondary) py-3">
+                    <Avatar size="sm" name={users.find((u) => u.id === lead.assignedTo)?.name ?? "Lead"} />
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                        <span className="body-md-semibold">With the lead</span>
+                        <span className="body-sm tabular-nums text-(--text-secondary)">
+                          {formatDateTime(lead.createdAt)}
+                        </span>
+                      </div>
+                      <p className="body-md whitespace-pre-wrap text-pretty">{lead.notes.trim()}</p>
+                    </div>
+                  </li>
+                ) : null}
+              </ul>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      <QuickBookModal
+        booking={booking ? { kind: "appt", deal } : null}
+        vehicles={swappable}
+        onClose={() => setBooking(false)}
+        onBooked={() => void load()}
+      />
+      <ChangeVehicleModal
+        open={swapping}
+        onClose={() => setSwapping(false)}
+        customerName={deal.customerName}
+        current={vehicle}
+        vehicles={swappable}
+        onSave={changeVehicle}
+      />
+      {confirmDialog}
+    </Page>
+  );
+}

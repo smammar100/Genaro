@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { KeyRound } from "lucide-react";
 import {
   Button,
@@ -25,10 +25,11 @@ import {
 import { PipelineStageSettings } from "@/components/admin/pipeline-stage-settings";
 import { InspectionChecklistSettings } from "@/components/admin/inspection-checklist-settings";
 import { LeadChannelSettings } from "@/components/admin/lead-channel-settings";
+import { LocationSettings } from "@/components/admin/location-settings";
 import { BackupPanel } from "@/components/settings/backup-panel";
 import { toast } from "@/lib/toast";
 import { authService } from "@/lib/services/auth-service";
-import { accountHandle } from "@/lib/auth/username";
+import { accountHandle, isSyntheticEmail } from "@/lib/auth/username";
 
 /** Quarter-hour steps for the working-hours pickers ("00:00" … "23:45"). */
 const QUARTER_HOURS: string[] = Array.from({ length: 96 }, (_, i) => {
@@ -52,6 +53,7 @@ const SECTIONS = [
   { id: "inspection", content: "Inspection checklist" },
   { id: "pipeline", content: "Sales pipeline" },
   { id: "channels", content: "Lead channels" },
+  { id: "locations", content: "Locations" },
   { id: "backup", content: "Backup" },
 ] as const;
 
@@ -155,7 +157,7 @@ export default function SettingsPage() {
     <Page
       fullWidth
       title="Settings"
-      subtitle={`Your profile${canManage ? ", plus your company details, inspection checklist, sales pipeline, lead channels and backups" : ""}.`}
+      subtitle={`Your profile${canManage ? ", plus your company details, inspection checklist, sales pipeline, lead channels, locations and backups" : ""}.`}
     >
       {/* Section tabs sit under the header, Shopify-style, and scroll
           sideways on a narrow screen rather than wrapping. */}
@@ -271,6 +273,7 @@ export default function SettingsPage() {
             {active === "inspection" && <InspectionChecklistSettings />}
             {active === "pipeline" && <PipelineStageSettings />}
             {active === "channels" && <LeadChannelSettings />}
+            {active === "locations" && <LocationSettings />}
             {active === "backup" && <BackupPanel />}
           </>
         )}
@@ -356,7 +359,84 @@ function ProfilePanel() {
           </div>
         </Card>
       </Layout.AnnotatedSection>
+      <RecoveryEmailSection />
     </Layout>
+  );
+}
+
+/**
+ * Where Forgot password sends the reset link (call 2026-10-31). A username
+ * account's sign-in email is internal and gets no mail, so it saves a real
+ * one here; an email account's link goes to its sign-in email.
+ */
+function RecoveryEmailSection() {
+  const { user } = useAuth();
+  const usernameAccount = isSyntheticEmail(user?.email);
+  const [saved, setSaved] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!user || !usernameAccount) return;
+    authService
+      .getOwnRecoveryEmail(user.id)
+      .then((value) => {
+        setSaved(value);
+        setEmail(value ?? "");
+      })
+      .catch(() => {
+        // Before migration 0057: the field just starts empty.
+      });
+  }, [user, usernameAccount]);
+
+  async function save() {
+    if (!user) return;
+    setSaving(true);
+    try {
+      await authService.updateOwnRecoveryEmail(user.id, email);
+      setSaved(email.trim().toLowerCase() || null);
+      toast.success(email.trim() ? "Reset email saved" : "Reset email removed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't save the email");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Layout.AnnotatedSection
+      title="Password reset"
+      description="Where Forgot password sends a link to choose a new password."
+    >
+      <Card>
+        {usernameAccount ? (
+          <div className="flex flex-col gap-4">
+            <TextField
+              label="Email for password resets"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={setEmail}
+              helpText="You sign in with a username, so add an email you can open. Without one, ask your manager to reset your password."
+            />
+            <div className="flex justify-end">
+              <Button
+                variant="primary"
+                onClick={() => void save()}
+                loading={saving}
+                disabled={(email.trim().toLowerCase() || null) === saved}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="body-md text-(--text-secondary)">
+            Reset links go to the email you sign in with, {user?.email}.
+          </p>
+        )}
+      </Card>
+    </Layout.AnnotatedSection>
   );
 }
 

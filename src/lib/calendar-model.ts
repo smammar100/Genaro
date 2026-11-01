@@ -13,6 +13,7 @@ import type {
   Vehicle,
   WorkshopJob,
 } from "@/lib/types";
+import { APPOINTMENT_TYPE_LABELS } from "@/lib/types";
 import { titleCase } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ types */
@@ -218,7 +219,8 @@ export function buildEvents(input: {
       key: `appt-${a.id}`,
       kind: "appt",
       id: a.id,
-      title: a.customerName,
+      // The type with the name: a delivery and a viewing book differently.
+      title: `${APPOINTMENT_TYPE_LABELS[a.appointmentType ?? "viewing"]}: ${a.customerName}`,
       date: a.date,
       start,
       end: start + APPT_DURATION,

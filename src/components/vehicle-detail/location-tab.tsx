@@ -19,15 +19,18 @@ import { Badge, Button, Card } from "@/components/genaro";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useCompanyLocations } from "@/hooks/use-company-locations";
+import { liveLocations, locationLabel } from "@/lib/locations";
 import {
   VEHICLE_LOCATIONS,
-  VEHICLE_LOCATION_LABELS,
+  isCustomLocation,
+  type BuiltInLocation,
+  type CustomLocationKey,
   type LocationMovement,
   type UUID,
   type User,
   type CurrentLocation,
   type Vehicle,
-  type VehicleLocation,
   type Vendor,
 } from "@/lib/types";
 import { locationService } from "@/lib/services/location-service";
@@ -44,7 +47,7 @@ import {
   type TimelineTone,
 } from "@/components/shared/timeline";
 
-const LOCATION_ICON: Record<VehicleLocation, LucideIcon> = {
+const LOCATION_ICON: Record<BuiltInLocation, LucideIcon> = {
   forecourt: Warehouse,
   yard: ParkingSquare,
   garage: Wrench,
@@ -52,7 +55,7 @@ const LOCATION_ICON: Record<VehicleLocation, LucideIcon> = {
   courtesy_car: CarFront,
 };
 
-const OFF_SITE: Record<VehicleLocation, boolean> = {
+const OFF_SITE: Record<BuiltInLocation, boolean> = {
   forecourt: false,
   yard: false,
   garage: true,
@@ -60,13 +63,14 @@ const OFF_SITE: Record<VehicleLocation, boolean> = {
   courtesy_car: true,
 };
 
-const TO_LOCATION_TONE: Record<CurrentLocation, TimelineTone> = {
+const TO_LOCATION_TONE: Record<Exclude<CurrentLocation, CustomLocationKey>, TimelineTone> = {
   forecourt: "emerald",
   yard: "slate",
   garage: "rose",
   staff: "amber",
   courtesy_car: "violet",
   sold: "sky",
+  returned_to_owner: "slate",
 };
 
 interface LocationTabProps {
@@ -74,7 +78,7 @@ interface LocationTabProps {
 }
 
 const LOCATION_TONE: Record<
-  CurrentLocation,
+  Exclude<CurrentLocation, CustomLocationKey>,
   { dot: string; surface: string; ring: string; text: string }
 > = {
   forecourt: {
@@ -112,6 +116,12 @@ const LOCATION_TONE: Record<
     surface: "bg-(--bg-surface-info)",
     ring: "ring-(--border-info)",
     text: "text-(--text-info)",
+  },
+  returned_to_owner: {
+    dot: "bg-(--icon-secondary)",
+    surface: "bg-(--bg-surface-secondary)",
+    ring: "ring-(--border)",
+    text: "text-(--text-secondary)",
   },
 };
 
@@ -171,6 +181,7 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
     setPrevVehicleProp(vehicleProp);
     setVehicle(vehicleProp);
   }
+  const custom = useCompanyLocations();
   const [movements, setMovements] = useState<LocationMovement[] | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -201,7 +212,7 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
       description:
         plan.nextState.currentLocation &&
         plan.nextState.currentLocation !== vehicle.currentLocation
-          ? `This is the latest movement, so the vehicle will revert to ${VEHICLE_LOCATION_LABELS[plan.nextState.currentLocation]}.`
+          ? `This is the latest movement, so the vehicle will revert to ${locationLabel(plan.nextState.currentLocation, custom)}.`
           : "The movement is removed from the vehicle's history. This cannot be undone.",
       confirmText: "Delete",
       destructive: true,
@@ -257,7 +268,9 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
     [users],
   );
 
-  const tone = LOCATION_TONE[vehicle.currentLocation];
+  // A company's own place looks like the yard: on site, nothing special.
+  const toneOf = (loc: CurrentLocation) => (isCustomLocation(loc) ? LOCATION_TONE.yard : LOCATION_TONE[loc]);
+  const tone = toneOf(vehicle.currentLocation);
   const days = daysSince(vehicle.locationSince);
   const totalMoves = movements?.length ?? null;
 
@@ -291,7 +304,7 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="heading-sm text-(--text)">
-                  {VEHICLE_LOCATION_LABELS[vehicle.currentLocation]}
+                  {locationLabel(vehicle.currentLocation, custom)}
                 </h2>
                 <span className={cn("size-2 rounded-full", tone.dot)} aria-hidden />
                 {vehicle.outForTestDrive ? (
@@ -321,9 +334,9 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
 
         {/* Presence strip — the 4 locations, current marked "Here now" */}
         <div className="flex flex-wrap gap-2">
-          {VEHICLE_LOCATIONS.map((loc) => {
-            const meta = LOCATION_TONE[loc];
-            const Icon = LOCATION_ICON[loc];
+          {[...VEHICLE_LOCATIONS, ...liveLocations(custom).map((l) => l.slug)].map((loc) => {
+            const meta = toneOf(loc);
+            const Icon = isCustomLocation(loc) ? MapPin : LOCATION_ICON[loc];
             const on = loc === vehicle.currentLocation;
             return (
               <div
@@ -336,12 +349,12 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
                 )}
               >
                 <Icon className="size-4" />
-                {VEHICLE_LOCATION_LABELS[loc]}
+                {locationLabel(loc, custom)}
                 {on ? (
                   <span className="rounded-full bg-(--bg-surface) px-1.5 body-xs-semibold">
                     Here now
                   </span>
-                ) : OFF_SITE[loc] ? (
+                ) : !isCustomLocation(loc) && OFF_SITE[loc] ? (
                   <span className={cn("size-1.5 rounded-full", meta.dot)} aria-hidden />
                 ) : null}
               </div>
@@ -362,9 +375,9 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
           <Timeline>
             {movements.map((m) => {
               const fromLabel = m.fromLocation
-                ? VEHICLE_LOCATION_LABELS[m.fromLocation]
+                ? locationLabel(m.fromLocation, custom)
                 : "Arrival";
-              const toLabel = VEHICLE_LOCATION_LABELS[m.toLocation];
+              const toLabel = locationLabel(m.toLocation, custom);
               const isOpenStay =
                 (m.toLocation === "garage" || m.toLocation === "staff") &&
                 !m.actualReturnAt;
@@ -392,7 +405,7 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
                 <TimelineItem
                   key={m.id}
                   icon={MapPin}
-                  tone={TO_LOCATION_TONE[m.toLocation]}
+                  tone={isCustomLocation(m.toLocation) ? "slate" : TO_LOCATION_TONE[m.toLocation]}
                   timestamp={
                     <>
                       {fullDateTime(m.createdAt)}

@@ -26,16 +26,9 @@
  */
 
 import { readFileSync } from "node:fs";
-import { unzipSync, strFromU8 } from "fflate";
 import { createClient } from "@supabase/supabase-js";
-import {
-  mapLegacyRow,
-  type Cell,
-  type LegacyVehicleRow,
-  type SheetHeaders,
-  type SheetRow,
-} from "../src/lib/master-sheet-import.ts";
-import { computeCostTotals } from "../src/lib/vehicle-costs.ts";
+import type { LegacyVehicleRow } from "../src/lib/master-sheet-import.ts";
+import { prepareImport, readWorkbook } from "../src/lib/master-sheet-workbook.ts";
 
 /* ------------------------------------------------------------------ *
  * Args
@@ -64,133 +57,25 @@ if (APPLY && (!COMPANY || !RECEIVED_BY)) {
 }
 
 /* ------------------------------------------------------------------ *
- * Minimal .xlsx reader (cached values only — formulas are not evaluated)
+ * Read + map (src/lib/master-sheet-workbook.ts, shared with the app)
  * ------------------------------------------------------------------ */
 
-const decode = (s: string) =>
-  s
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
-    .replace(/&amp;/g, "&");
-
-function readWorkbook(path: string): Map<number, SheetRow> {
-  const zip = unzipSync(new Uint8Array(readFileSync(path)));
-  const shared: string[] = [];
-  const sst = zip["xl/sharedStrings.xml"];
-  if (sst) {
-    for (const si of strFromU8(sst).matchAll(/<si>([\s\S]*?)<\/si>/g)) {
-      const parts = [...si[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map((m) => decode(m[1]));
-      shared.push(parts.join(""));
-    }
-  }
-  const sheetName = Object.keys(zip)
-    .filter((k) => /^xl\/worksheets\/sheet\d+\.xml$/.test(k))
-    .sort((a, b) => Number(a.match(/\d+/)![0]) - Number(b.match(/\d+/)![0]))[0];
-  const xml = strFromU8(zip[sheetName]);
-
-  const rows = new Map<number, SheetRow>();
-  for (const c of xml.matchAll(/<c r="([A-Z]+)(\d+)"([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
-    const [, col, rowStr, attrs, inner = ""] = c;
-    const type = /\bt="(\w+)"/.exec(attrs)?.[1];
-    const v = /<v>([\s\S]*?)<\/v>/.exec(inner)?.[1];
-    let value: Cell = null;
-    if (type === "s" && v !== undefined) value = shared[Number(v)] ?? null;
-    else if (type === "inlineStr") value = decode(/<t[^>]*>([\s\S]*?)<\/t>/.exec(inner)?.[1] ?? "");
-    else if (type === "str") value = v !== undefined ? decode(v) : null;
-    else if (type === "b") value = v === "1" ? "TRUE" : "FALSE";
-    else if (type === "e") value = null;
-    else if (v !== undefined) value = Number(v);
-    const row = Number(rowStr);
-    const r = rows.get(row) ?? {};
-    r[col] = value;
-    rows.set(row, r);
-  }
-  return rows;
-}
-
-/* ------------------------------------------------------------------ *
- * Map + verify
- * ------------------------------------------------------------------ */
-
-const sheet = readWorkbook(FILE);
-const headerRow = sheet.get(4) ?? {};
-const headers: SheetHeaders = Object.fromEntries(
-  Object.entries(headerRow)
-    .filter(([, v]) => v !== null)
-    .map(([k, v]) => [k, String(v).replace(/\s+/g, " ").replace(/\(\d\)/g, "").trim()]),
-);
-if (!/LEGACY/i.test(headers.A ?? "") || !/REG/i.test(headers.B ?? "")) {
-  console.error(`Row 4 doesn't look like the master sheet header (A="${headers.A}", B="${headers.B}").`);
+let prepared: ReturnType<typeof prepareImport>;
+try {
+  prepared = prepareImport(readWorkbook(new Uint8Array(readFileSync(FILE))), {
+    includeDuplicates: INCLUDE_DUPLICATES,
+    limit: LIMIT,
+  });
+} catch (e) {
+  console.error((e as Error).message);
   process.exit(1);
 }
-
-type Totals = { total_buying_price: number; landed_cost: number; base_cost: number; gross_earning: number | null };
-const mapped: (LegacyVehicleRow & Totals)[] = [];
-const skipped = new Map<string, number>();
-const mismatches: string[] = [];
-const seenSerials = new Set<number>();
-
-const dataRows = [...sheet.keys()].filter((n) => n >= 5).sort((a, b) => a - b);
-for (const n of dataRows.slice(0, LIMIT)) {
-  const result = mapLegacyRow(sheet.get(n)!, headers, { includeDuplicates: INCLUDE_DUPLICATES });
-  if (result.kind === "skip") {
-    skipped.set(result.reason, (skipped.get(result.reason) ?? 0) + 1);
-    continue;
-  }
-  const r = result.row;
-  if (seenSerials.has(r.legacy_serial_number)) {
-    skipped.set("repeated legacy serial", (skipped.get("repeated legacy serial") ?? 0) + 1);
-    continue;
-  }
-  seenSerials.add(r.legacy_serial_number);
-  const totals = computeCostTotals({
-    buyingPrice: r.buying_price,
-    vatOnBuyingPrice: r.vat_on_buying_price,
-    buyersFee: r.buyers_fee,
-    vatOnBuyersFee: r.vat_on_buyers_fee,
-    inspectionCharge: r.inspection_charge,
-    vatOnInspectionCharge: r.vat_on_inspection_charge,
-    evAssuredCharge: r.ev_assured_charge,
-    vatOnEvAssuredCharge: r.vat_on_ev_assured_charge,
-    batteryReportFee: r.battery_report_fee,
-    vatOnBatteryReportFee: r.vat_on_battery_report_fee,
-    lateStorageFee: r.late_storage_fee,
-    vatOnLateStorageFee: r.vat_on_late_storage_fee,
-    collectionFee: r.collection_fee,
-    vatOnCollectionFee: r.vat_on_collection_fee,
-    deliveryFee: r.delivery_fee,
-    vatOnDeliveryFee: r.vat_on_delivery_fee,
-    otherCharges: null,
-    loadingFee: null,
-    unloadingFee: null,
-    stockingCharges: 0,
-    valueAddition: r.value_addition,
-    warrantyCost: null,
-  });
-  if (
-    result.sheetTotalBuyingPrice !== null &&
-    Math.abs(totals.totalBuyingPrice - result.sheetTotalBuyingPrice) > 0.01
-  ) {
-    mismatches.push(
-      `row ${n} (S/N ${r.legacy_serial_number}, ${r.registration}): app ${totals.totalBuyingPrice.toFixed(2)} vs sheet ${result.sheetTotalBuyingPrice.toFixed(2)}`,
-    );
-  }
-  mapped.push({
-    ...r,
-    total_buying_price: totals.totalBuyingPrice,
-    landed_cost: totals.landedCost,
-    base_cost: totals.baseCost,
-    gross_earning:
-      r.selling_price === null ? null : Math.round(r.selling_price - totals.baseCost),
-  });
-}
+const { rowsRead, rows: mapped, mismatches } = prepared;
+const skipped = new Map(Object.entries(prepared.skipped));
 
 const count = (pred: (r: LegacyVehicleRow) => boolean) => mapped.filter(pred).length;
 console.log(`\nMaster sheet: ${FILE}`);
-console.log(`  data rows read      ${Math.min(dataRows.length, LIMIT)}`);
+console.log(`  data rows read      ${rowsRead}`);
 console.log(`  mapped              ${mapped.length}`);
 console.log(`    sold              ${count((r) => r.sale_status === "sold")}`);
 console.log(`    in stock          ${count((r) => r.sale_status === "available")}`);

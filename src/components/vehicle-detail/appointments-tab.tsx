@@ -21,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AddEnquiryDialog } from "@/components/enquiries/add-enquiry-dialog";
-import { cn, formatDate, formatRelativeTime } from "@/lib/utils";
+import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { Panel, Pill, SectionDivider } from "./primitives";
 
 interface AppointmentsTabProps {
@@ -266,7 +266,7 @@ function EnquiriesTable({
               </TableCell>
               <TableCell>{sp?.name ?? "—"}</TableCell>
               <TableCell className="text-muted-foreground">
-                {formatRelativeTime(e.createdAt)}
+                {formatDateTime(e.createdAt)}
               </TableCell>
               <TableCell>
                 <Pill tone={STATUS_TONE[e.status]}>{e.status}</Pill>

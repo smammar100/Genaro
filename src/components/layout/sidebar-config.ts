@@ -6,7 +6,6 @@ import {
   Hammer,
   Calendar as CalendarIcon,
   Megaphone,
-  UserPlus,
   CalendarCheck,
   TrendingUp,
   Shield,
@@ -21,7 +20,6 @@ import {
   Briefcase,
   Handshake,
   ShieldAlert,
-  MapPin,
   Building2,
   type LucideIcon,
 } from "lucide-react";
@@ -97,6 +95,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         label: "All vehicles",
         href: "/vehicles",
         icon: Car,
+        // Locations merged in (call 2026-10-31): a tab per place, Move on each row.
         requiredAnyOf: [
           "inventory:add",
           "inventory:edit",
@@ -104,15 +103,8 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
           "maintenance:create",
           "photos:process",
           "advert:create",
+          "locations:move",
         ],
-      },
-      // Spec v3.0 · Module A — Locations lives inside Inventory so the
-      // four-tab page sits next to the vehicle list it filters.
-      {
-        label: "Locations",
-        href: "/admin/locations",
-        icon: MapPin,
-        requiredAnyOf: ["locations:move"],
       },
       // "Add vehicle" is the button at the top of the rail (AdminNavigation),
       // not a nav row.
@@ -212,12 +204,6 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     icon: TrendingUp,
     items: [
       {
-        label: "Leads",
-        href: "/sales/leads",
-        icon: UserPlus,
-        requiredAnyOf: ["sales:create_lead", "sales:edit_lead"],
-      },
-      {
         label: "Appointments",
         href: "/sales/appointments",
         icon: CalendarCheck,
@@ -227,7 +213,8 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         label: "Pipeline",
         href: "/sales/pipeline",
         icon: TrendingUp,
-        requiredAnyOf: ["sales:edit_pipeline_stage"],
+        // Leads are taken here now; the Leads page went (call 2026-10-31).
+        requiredAnyOf: ["sales:edit_pipeline_stage", "sales:create_lead", "sales:edit_lead"],
       },
       {
         // Named for the pipeline stage that fills it. A user drags a card to

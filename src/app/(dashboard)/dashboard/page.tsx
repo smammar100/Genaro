@@ -9,6 +9,7 @@ import { DashboardWelcome } from "@/components/dashboard/dashboard-welcome";
 import { DashboardKpiRow } from "@/components/dashboard/dashboard-kpi-row";
 import { DashboardStockOverview } from "@/components/dashboard/dashboard-stock-overview";
 import { DashboardRecentDeals } from "@/components/dashboard/dashboard-recent-deals";
+import { DashboardMotsExpiring } from "@/components/dashboard/dashboard-mots-expiring";
 import { DashboardUpcomingAppointments } from "@/components/dashboard/dashboard-upcoming-appointments";
 import { DashboardRecentActivity } from "@/components/dashboard/dashboard-recent-activity";
 
@@ -80,7 +81,21 @@ export default function DashboardPage() {
 
       <DashboardKpiRow />
 
-      {flags.deals && <DashboardRecentDeals />}
+      {/* Recent deals made room for the MOT box beside it (call 2026-10-31). */}
+      {flags.deals || flags.stock ? (
+        <Grid>
+          {flags.deals && (
+            <Grid.Cell columnSpan={{ xs: 6, lg: flags.stock ? 8 : 12 }}>
+              <DashboardRecentDeals />
+            </Grid.Cell>
+          )}
+          {flags.stock && (
+            <Grid.Cell columnSpan={{ xs: 6, lg: flags.deals ? 4 : 12 }}>
+              <DashboardMotsExpiring />
+            </Grid.Cell>
+          )}
+        </Grid>
+      ) : null}
 
       {row3 > 0 && (
         <Grid>

@@ -6,6 +6,7 @@ import { vehicleService } from "@/lib/services/vehicle-service";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
 import { Button, Card, SkeletonBodyText } from "@/components/genaro";
 import { PHOTOS_ENABLED } from "@/lib/phase-one";
+import { isInStock } from "@/lib/stock";
 
 /**
  * Active stock broken into pipeline buckets, drawn in Genaro fill tokens.
@@ -52,10 +53,13 @@ export function DashboardStockOverview() {
 
   const { segments, total } = useMemo(() => {
     if (!vehicles) return { segments: null, total: 0 };
+    // Only cars the master sheet calls Available: imported cars it marks sold
+    // or returned to owner still carry "received" and filled the last bucket.
+    const stock = vehicles.filter(isInStock);
     const counted = BUCKETS.map((b) => ({
       label: b.label,
       token: b.token,
-      value: vehicles.filter((v) => b.statuses.includes(v.status)).length,
+      value: stock.filter((v) => b.statuses.includes(v.status)).length,
     }));
     return {
       segments: counted,

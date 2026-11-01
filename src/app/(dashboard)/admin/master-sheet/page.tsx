@@ -6,7 +6,11 @@ import {
   type FilterField,
   type SheetSectionContext,
 } from "@/components/vehicles/vehicle-sheet";
+import { useState } from "react";
 import { SectionTabs } from "@/components/master-sheet/section-tabs";
+import { ImportSheetModal } from "@/components/master-sheet/import-sheet-modal";
+import { usePermissions } from "@/hooks/use-permissions";
+import { invalidate } from "@/lib/cache";
 import { columnCountsBySection } from "@/lib/master-sheet-metrics";
 import type { Vehicle } from "@/lib/types";
 import { VehicleImage } from "@/components/shared/vehicle-image";
@@ -87,6 +91,7 @@ const COLS: ColDef[] = [
     type: "number",
     width: 90,
     plain: true,
+    alignStart: true,
     sticky: true,
     section: COMMON,
     editable: true,
@@ -308,6 +313,8 @@ const COLS: ColDef[] = [
     toPatch: (value) => ({ lockNut: toBool(value) ?? false }),
   },
   { key: "otherItemsReceived", label: "Other items received", type: "text", width: 170, section: REC, editable: true },
+  // App-only, refreshed weekly from DVSA (call 2026-10-31), so not typed into.
+  { key: "motExpiry", label: "MOT expiry", type: "date", width: 120, section: REC },
 
   // ── Value Addition (sheet BB) ─────────────────────────────────────────
   // New cars: the Things to Do roll-up, read-only here. Legacy cars keep the
@@ -371,7 +378,7 @@ const FILTER_FIELDS: FilterField[] = [
   { key: "currentLocation", label: "Location", kind: "text", options: LOCATION_OPTIONS },
   { key: "make", label: "Make", kind: "text" },
   { key: "model", label: "Model", kind: "text" },
-  { key: "vehicleCategory", label: "Vehicle type", kind: "text", get: (v) => vehicleCategory(v) },
+  { key: "vehicleCategory", label: "Vehicle type", kind: "text", get: (v) => vehicleCategory(v), fixed: true },
   { key: "transmission", label: "Transmission", kind: "text", options: TRANSMISSION_OPTIONS },
   { key: "colour", label: "Colour", kind: "text" },
   { key: "mileage", label: "Mileage", kind: "num" },
@@ -380,15 +387,15 @@ const FILTER_FIELDS: FilterField[] = [
   { key: "ownedBy", label: "Owned by", kind: "text" },
   { key: "ownerDetails", label: "Owner details", kind: "text" },
   // Month / year filters — the client's "which month did it come in / sell".
-  { key: "purchaseMonth", label: "Purchase month", kind: "text", get: purchaseMonth },
+  { key: "purchaseMonth", label: "Purchase month", kind: "text", get: purchaseMonth, fixed: true },
   { key: "purchaseYear", label: "Purchase year", kind: "num", get: purchaseYear },
-  { key: "receivingMonth", label: "Receiving month", kind: "text", get: receivingMonth },
+  { key: "receivingMonth", label: "Receiving month", kind: "text", get: receivingMonth, fixed: true },
   { key: "receivingYear", label: "Receiving year", kind: "num", get: receivingYear },
   { key: "fuelType", label: "Fuel type", kind: "text", options: FUEL_OPTIONS },
   { key: "logBook", label: "Log book", kind: "text" },
   { key: "serviceHistory", label: "Service history", kind: "text", options: SERVICE_HISTORY_OPTIONS },
   { key: "saleStatus", label: "Available / sold", kind: "text", options: SALE_STATUS_OPTIONS },
-  { key: "soldMonth", label: "Sold month", kind: "text", get: soldMonth },
+  { key: "soldMonth", label: "Sold month", kind: "text", get: soldMonth, fixed: true },
   { key: "soldYear", label: "Sold year", kind: "num", get: soldYear },
   { key: "sellingAgent", label: "Selling agent / lead from", kind: "text" },
   { key: "totalBuyingPrice", label: "Total buying price", kind: "num" },
@@ -412,9 +419,19 @@ function MasterSheetSectionHeader({ section, onSectionChange }: SheetSectionCont
 }
 
 export default function MasterSheetPage() {
+  const { can, isSuperUser } = usePermissions();
+  const canImport = isSuperUser || (can("inventory:add") && can("inventory:edit_costs"));
+  const [importOpen, setImportOpen] = useState(false);
+  // A new key remounts the sheet so it reloads after an import.
+  const [loads, setLoads] = useState(0);
   return (
+    <>
     <VehicleSheet
+      key={loads}
       title="Master sheet"
+      pageActions={
+        canImport ? [{ content: "Import sheet", onAction: () => setImportOpen(true) }] : []
+      }
       cols={COLS}
       filterFields={FILTER_FIELDS}
       sections={MASTER_SHEET_SECTIONS}
@@ -427,5 +444,14 @@ export default function MasterSheetPage() {
         }`
       }
     />
+    <ImportSheetModal
+      open={importOpen}
+      onClose={() => setImportOpen(false)}
+      onImported={() => {
+        invalidate("vehicles:");
+        setLoads((n) => n + 1);
+      }}
+    />
+    </>
   );
 }

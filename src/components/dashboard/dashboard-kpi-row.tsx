@@ -20,6 +20,7 @@ import { claimService } from "@/lib/services/claim-service";
 import { leadService } from "@/lib/services/lead-service";
 import { maintenanceService } from "@/lib/services/maintenance-service";
 import { salesService } from "@/lib/services/sales-service";
+import { isInStock } from "@/lib/stock";
 import type { Capability } from "@/lib/capabilities";
 import { Card, SkeletonDisplayText } from "@/components/genaro";
 import { cn } from "@/lib/utils";
@@ -147,7 +148,7 @@ const KPI_DEFS: KpiDef[] = [
     key: "new_leads_24h",
     label: "New leads (24h)",
     icon: Inbox,
-    href: "/sales/leads",
+    href: "/sales/pipeline",
     requiredAnyOf: ["sales:create_lead", "sales:edit_lead"],
     value: (s) => String(s.newLeads24h),
     delta: (s) => signed(s.newLeads24h - s.newLeadsPrev24h),
@@ -226,13 +227,10 @@ export function DashboardKpiRow() {
       today.getMonth() - 1,
       1,
     ).getTime();
-    // "In stock" = vehicles still in the live pipeline. Exclude terminal /
-    // dead-end states (sold, returned) so a returned car isn't counted as
-    // stock — it also skews Avg Days in Stock.
-    const NON_LIVE_STATUSES = new Set(["sold", "returned"]);
-    const activeVehicles = data.vehicles.filter(
-      (v) => !NON_LIVE_STATUSES.has(v.status) && v.removedFromWebsiteAt === null,
-    );
+    // "In stock" is the master sheet's Available, the same rule as All
+    // vehicles. The workflow status alone counted imported cars the sheet
+    // marks sold or returned to owner: 205 against ~120 (call 2026-10-31).
+    const activeVehicles = data.vehicles.filter(isInStock);
     const carsInStock = activeVehicles.length;
     const carsInReadiness = activeVehicles.filter(
       (v) => v.status === "ready",
