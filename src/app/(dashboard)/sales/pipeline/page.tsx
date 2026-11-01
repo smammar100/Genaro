@@ -70,7 +70,7 @@ import {
   todayKey,
 } from "@/components/kanban/card-dates";
 import type { KanbanColumn, KanbanTone } from "@/components/kanban/stage-icon";
-import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { formatCurrency, formatDateTime, titleCase } from "@/lib/utils";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import { toast } from "@/lib/toast";
 import { saleConfirmOptions } from "@/lib/sale-confirm";
@@ -279,6 +279,7 @@ export default function SalesPipelinePage() {
         customerEmail: lead.customerEmail,
         vehicleInterest: lead.vehicleInterest,
         vehicleId: lead.vehicle.id,
+        leadType: lead.leadType,
         source,
         leadChannelId: lead.leadChannelId,
         assignedTo: lead.assignedTo,
@@ -435,9 +436,12 @@ export default function SalesPipelinePage() {
               cells: [
                 d.customerName,
                 v ? (
-                  <span className="flex min-w-0 items-center gap-2">
+                  // The plate, the car under it, as on the dashboard's Recent deals.
+                  <span className="flex min-w-0 flex-col items-start gap-1">
                     <RegPlate registration={v.registration} size="sm" />
-                    <span className="truncate">{`${v.make} ${v.model}`}</span>
+                    <span className="truncate text-(--text-secondary)">
+                      {titleCase(`${v.make} ${v.model}`)}
+                    </span>
                   </span>
                 ) : (
                   <span className="text-(--text-secondary)">No vehicle</span>

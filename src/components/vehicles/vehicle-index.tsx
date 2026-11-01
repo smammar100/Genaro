@@ -150,10 +150,10 @@ export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
   }, [companyId, loadStock]);
 
   const location = VIEWS[view]?.location ?? null;
-  // MOTs running out within two months show in red, as on the dashboard.
+  // MOTs running out in under 60 days show in red, as on the dashboard.
   const [motSoon] = React.useState(() => {
     const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth() + 2, d.getDate()).toLocaleDateString("en-CA");
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 60).toLocaleDateString("en-CA");
   });
   const rows = React.useMemo(() => {
     if (!vehicles) return null;
@@ -289,7 +289,7 @@ export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
                 v.motExpiry ? (
                   <span
                     key="mot"
-                    className={cn("tabular-nums", v.motExpiry.slice(0, 10) <= motSoon && "text-(--text-critical)")}
+                    className={cn("tabular-nums", v.motExpiry.slice(0, 10) < motSoon && "text-(--text-critical)")}
                   >
                     {formatDate(v.motExpiry)}
                   </span>

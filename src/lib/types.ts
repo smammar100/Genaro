@@ -768,6 +768,8 @@ export interface Lead {
    * the column from `source` for every existing row.
    */
   leadChannelId?: UUID | null;
+  /** What they are coming in for (0058). */
+  leadType: LeadType;
   status: LeadStatus;
   assignedTo: UUID;
   notes: string | null;
@@ -798,6 +800,10 @@ export const APPOINTMENT_TYPE_LABELS: Record<AppointmentType, string> = {
   collection: "Collection",
   delivery: "Delivery",
 };
+
+/** What a lead is coming in for (0058): the same three as an appointment. */
+export type LeadType = AppointmentType;
+export const LEAD_TYPE_LABELS = APPOINTMENT_TYPE_LABELS;
 
 export interface Appointment {
   id: UUID;

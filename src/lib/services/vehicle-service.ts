@@ -25,6 +25,19 @@ import {
 
 const NS = "vehicles:";
 
+/**
+ * Days in stock for a car still in stock, counted from its arrival. The stored
+ * days_in_stock is only set at arrival and frozen at sale, so read straight it
+ * drifts behind (the dashboard averaged 144 days against a real 154,
+ * 2026-11-01). A sold or returned car keeps the figure frozen at the sale.
+ */
+function withLiveDays(v: Vehicle): Vehicle {
+  if (v.status === "sold" || v.status === "returned" || v.saleStatus !== "available") return v;
+  const received = Date.parse(v.receivedDate);
+  if (Number.isNaN(received)) return v;
+  return { ...v, daysInStock: Math.max(0, Math.floor((Date.now() - received) / 86_400_000)) };
+}
+
 /** Rows per request when reading a whole table — PostgREST's default cap. */
 const PAGE_ROWS = 1000;
 
@@ -314,7 +327,7 @@ export const vehicleService = {
           .range(from, from + PAGE_ROWS - 1);
         if (error) throw error;
         const page = (data ?? []) as unknown as Vehicle[];
-        rows.push(...page);
+        rows.push(...page.map(withLiveDays));
         if (page.length < PAGE_ROWS) break;
       }
       return rows;
@@ -340,7 +353,7 @@ export const vehicleService = {
       }
       const { data, error } = await q;
       if (error) throw error;
-      return toPage((data ?? []) as unknown as Vehicle[], limit);
+      return toPage(((data ?? []) as unknown as Vehicle[]).map(withLiveDays), limit);
     });
   },
 
@@ -354,7 +367,7 @@ export const vehicleService = {
       if (companyId) q = q.eq("company_id", companyId);
       const { data, error } = await q.maybeSingle();
       if (error) throw error;
-      return data as unknown as Vehicle | null;
+      return data ? withLiveDays(data as unknown as Vehicle) : null;
     });
   },
 

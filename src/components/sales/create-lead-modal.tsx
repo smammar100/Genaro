@@ -5,7 +5,7 @@ import { Banner, Labelled, Modal, Select, TextField } from "@/components/genaro"
 import { VehiclePicker } from "@/components/shared/vehicle-picker";
 import { isValidUkPhone } from "@/lib/formatters";
 import { toast } from "@/lib/toast";
-import type { LeadChannel, User, Vehicle } from "@/lib/types";
+import { LEAD_TYPE_LABELS, type LeadChannel, type LeadType, type User, type Vehicle } from "@/lib/types";
 
 /** A new lead as the modal hands it over. */
 export interface NewLead {
@@ -13,6 +13,8 @@ export interface NewLead {
   customerPhone: string;
   customerEmail: string | null;
   vehicle: Vehicle;
+  /** What they are coming in for: viewing, collection or delivery. */
+  leadType: LeadType;
   /** The car in words, for the lead's record: "Ford Fiesta (OY70 TZG)". */
   vehicleInterest: string;
   leadChannelId: string;
@@ -45,6 +47,7 @@ interface Form {
   customerPhone: string;
   customerEmail: string;
   vehicleId: string | null;
+  leadType: LeadType;
   leadChannelId: string;
   channelOtherReason: string;
   assignedTo: string;
@@ -56,6 +59,7 @@ const EMPTY: Form = {
   customerPhone: "",
   customerEmail: "",
   vehicleId: null,
+  leadType: "viewing",
   leadChannelId: "",
   channelOtherReason: "",
   assignedTo: "",
@@ -180,6 +184,7 @@ export function CreateLeadModal({
         customerPhone: form.customerPhone.trim(),
         customerEmail: form.customerEmail.trim() || null,
         vehicle,
+        leadType: form.leadType,
         vehicleInterest: `${vehicle.make} ${vehicle.model} (${vehicle.registration})`,
         leadChannelId: form.leadChannelId,
         channelOtherReason:
@@ -237,20 +242,32 @@ export function CreateLeadModal({
             error={show("customerEmail")}
           />
         </div>
-        <Labelled
-          id={pickerId}
-          label="Vehicle"
-          helpText="Search by reg. The lead opens a deal on this car in New lead."
-          error={show("vehicle")}
-        >
-          <VehiclePicker
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Labelled
             id={pickerId}
-            vehicles={vehicles}
-            value={vehicle}
-            placeholder="Search by reg"
-            onChange={(v) => set("vehicleId", v?.id ?? null)}
+            label="Vehicle"
+            helpText="Search by reg. The lead opens a deal on this car in New lead."
+            error={show("vehicle")}
+          >
+            <VehiclePicker
+              id={pickerId}
+              vehicles={vehicles}
+              value={vehicle}
+              placeholder="Search by reg"
+              onChange={(v) => set("vehicleId", v?.id ?? null)}
+            />
+          </Labelled>
+          {/* What they are coming in for (call 2026-10-31). */}
+          <Select
+            label="Lead type"
+            options={(Object.keys(LEAD_TYPE_LABELS) as LeadType[]).map((t) => ({
+              label: LEAD_TYPE_LABELS[t],
+              value: t,
+            }))}
+            value={form.leadType}
+            onChange={(v) => set("leadType", v as LeadType)}
           />
-        </Labelled>
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <Select
             label="Lead channel"
