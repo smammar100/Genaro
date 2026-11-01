@@ -2,7 +2,6 @@ import "server-only";
 import { getResend, EMAIL_FROM } from "./resend";
 import { renderInviteEmail } from "./templates/invite-email";
 import { renderCredentialsEmail } from "./templates/credentials-email";
-import { renderPasswordResetEmail } from "./templates/password-reset-email";
 
 export async function sendStaffInviteEmail(params: {
   recipientEmail: string;
@@ -55,25 +54,6 @@ export async function sendCredentialsEmail(params: {
     to: params.recipientEmail,
     subject: `Your Car Capital account for ${params.companyName} is ready`,
     html,
-  });
-
-  if (error) throw new Error(`Resend error: ${error.message}`);
-}
-
-/** Forgot password: the one-use reset link (call 2026-10-31). */
-export async function sendPasswordResetEmail(params: {
-  recipientEmail: string;
-  recipientName: string;
-  resetUrl: string;
-}): Promise<void> {
-  const { error } = await getResend().emails.send({
-    from: EMAIL_FROM,
-    to: params.recipientEmail,
-    subject: "Reset your Car Capital password",
-    html: renderPasswordResetEmail({
-      recipientName: params.recipientName,
-      resetUrl: params.resetUrl,
-    }),
   });
 
   if (error) throw new Error(`Resend error: ${error.message}`);

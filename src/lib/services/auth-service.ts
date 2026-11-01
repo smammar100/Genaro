@@ -88,31 +88,6 @@ export const authService = {
     invalidate(NS);
   },
 
-  /** Where Forgot password sends a username account's link (0057). */
-  async getOwnRecoveryEmail(userId: UUID): Promise<string | null> {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("users")
-      .select("recovery_email" as never)
-      .eq("id", userId)
-      .single();
-    if (error) throw error;
-    return (data as unknown as { recovery_email: string | null }).recovery_email;
-  },
-
-  async updateOwnRecoveryEmail(userId: UUID, email: string | null): Promise<void> {
-    const trimmed = email?.trim().toLowerCase() || null;
-    if (trimmed && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed)) {
-      throw new Error("Enter a valid email address");
-    }
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("users")
-      .update({ recovery_email: trimmed } as never)
-      .eq("id", userId);
-    if (error) throw error;
-  },
-
   async getUsersForCompany(companyId: UUID): Promise<User[]> {
     return withCache(`${NS}users:${companyId}`, async () => {
       const supabase = createClient();

@@ -49,19 +49,6 @@ export default function ResetPasswordPage() {
     // catches the event, as it did when the client was a static import.
     void getSupabase().then((supabase) => {
       if (cancelled) return;
-      // A link from Forgot password carries a one-use token to verify here
-      // (api/auth/forgot-password); a valid one opens the recovery session.
-      const params = new URLSearchParams(window.location.search);
-      const tokenHash = params.get("token_hash");
-      if (tokenHash && params.get("type") === "recovery") {
-        settled = true;
-        void supabase.auth
-          .verifyOtp({ type: "recovery", token_hash: tokenHash })
-          .then(({ error }) => {
-            if (!cancelled) setStatus(error ? "invalid" : "ready");
-          });
-        return;
-      }
       // PASSWORD_RECOVERY fires when the recovery link is exchanged for a session.
       const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
         if (event === "PASSWORD_RECOVERY" && session) {
