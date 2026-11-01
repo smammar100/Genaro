@@ -4,10 +4,14 @@ import type * as React from "react";
 import { Wrench } from "lucide-react";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { fmtHour, type CalEvent } from "@/lib/calendar-model";
+import { LEAD_TYPE_LABELS } from "@/lib/types";
 import { cn, formatRegPlate } from "@/lib/utils";
 import { KIND_META, eventStatus, timeText } from "./event-meta";
 
 export type OpenEvent = (ev: CalEvent, anchor: HTMLElement) => void;
+
+/** "Lead: Collection", for an appointment booked from a lead. */
+const leadText = (ev: CalEvent) => (ev.leadType ? `Lead: ${LEAD_TYPE_LABELS[ev.leadType]}` : null);
 
 /** One line per fact, for the native tooltip on every event. */
 function tooltip(ev: CalEvent): string {
@@ -15,6 +19,7 @@ function tooltip(ev: CalEvent): string {
   return [
     ev.title,
     timeText(ev),
+    leadText(ev),
     ev.job,
     [ev.reg && formatRegPlate(ev.reg), ev.car].filter(Boolean).join(" · "),
     status.flag ? status.label : null,
@@ -28,6 +33,7 @@ function accessibleName(ev: CalEvent): string {
   return [
     `${KIND_META[ev.kind].singular}: ${ev.title}`,
     timeText(ev),
+    leadText(ev),
     ev.reg && formatRegPlate(ev.reg),
     status.flag ? status.label : null,
   ]
@@ -65,12 +71,12 @@ function cardTone(ev: CalEvent, past: boolean, selected: boolean) {
 
 /**
  * An event on the day and week grids. The card sizes itself to its time slot
- * and container queries decide what fits. A half-hour slot gets one line:
- * time and name, plus the job and plate when the card is wide (day view).
- * From two lines it adds the time and the plate; taller cards add the job
- * and the car. Finished events keep their colour with quieter text,
- * cancelled ones are outlined and struck through, and the open event fills
- * with its colour.
+ * and container queries decide what fits. The time isn't on the card: the
+ * card's place in the grid says it, and the tooltip spells it out (call
+ * 2026-11-01). A half-hour slot gets one line: the name, plus the job and
+ * plate when the card is wide (day view). From two lines it adds the plate
+ * and an appointment's lead type; taller cards add the job and the car. Finished events keep their colour with quieter text, cancelled ones
+ * are outlined and struck through, and the open event fills with its colour.
  */
 export function TimeGridEvent({
   ev,
@@ -90,9 +96,8 @@ export function TimeGridEvent({
   const tone = cardTone(ev, past, selected);
   const StatusIcon = status.Icon;
   const plate = ev.reg ? (
-    // A tighter plate than the "sm" size, so it fits beside the time in a
-    // week column.
-    <RegPlate registration={ev.reg} size="sm" className="shrink-0 px-1 py-px tracking-[0.04em]" />
+    // A tighter plate than the "sm" size, so it fits a week column.
+    <RegPlate registration={ev.reg} size="sm" className="shrink-0 px-1 py-px" />
   ) : null;
   const statusIcon = status.flag ? (
     <StatusIcon aria-hidden className={cn("size-3.5 shrink-0", !selected && status.iconTone)} />
@@ -122,18 +127,8 @@ export function TimeGridEvent({
         )}
       />
       <span className="absolute inset-0 flex flex-col py-[3px] pr-1.5 pl-2.5 [container-type:size]">
-        {/* Line 1: the name. On a one-line card the time sits in front of it
-            and, when wide, the job and plate follow. */}
+        {/* Line 1: the name. On a wide one-line card the job and plate follow. */}
         <span className="flex min-w-0 items-center gap-1.5">
-          <span
-            className={cn(
-              // A narrow lane keeps the name and drops the time.
-              "shrink-0 body-sm tabular-nums [@container(max-width:90px)]:hidden [@container(min-height:38px)]:hidden",
-              tone.tint,
-            )}
-          >
-            {fmtHour(ev.start)}
-          </span>
           <span className={cn("min-w-0 truncate body-sm-semibold", tone.struck && "line-through")}>
             {ev.title}
           </span>
@@ -150,27 +145,32 @@ export function TimeGridEvent({
           </span>
         </span>
 
-        {/* Line 2: when, the status if it's notable, and the plate. */}
-        <span className={cn("hidden min-w-0 items-center gap-1.5 body-sm tabular-nums [@container(min-height:38px)]:flex", tone.tint)}>
-          <span className="shrink-0 [@container(min-width:170px)]:hidden">{fmtHour(ev.start)}</span>
-          <span className="hidden shrink-0 [@container(min-width:170px)]:inline">{timeText(ev)}</span>
-          {status.flag ? (
-            <span className="hidden min-w-0 truncate [@container(min-width:240px)]:inline">{`· ${status.label}`}</span>
+        {/* Line 2: the plate, the lead type and, when notable and there's room,
+            the status. A week column has room for the type alone
+            ("Collection"); a wide card names it ("Lead: Collection"); a
+            narrow one leaves it to the tooltip rather than clip it. */}
+        <span className={cn("hidden min-w-0 items-center gap-1.5 body-sm [@container(min-height:34px)]:flex", tone.tint)}>
+          {plate}
+          {ev.leadType ? (
+            <span className={cn("hidden min-w-0 truncate [@container(min-width:128px)]:inline", tone.muted)}>
+              <span className="[@container(min-width:200px)]:hidden">{LEAD_TYPE_LABELS[ev.leadType]}</span>
+              <span className="hidden [@container(min-width:200px)]:inline">{leadText(ev)}</span>
+            </span>
           ) : null}
-          {plate ? (
-            <span className="hidden [@container(min-width:104px)]:inline-flex">{plate}</span>
+          {status.flag ? (
+            <span className="hidden min-w-0 truncate [@container(min-width:240px)]:inline">{status.label}</span>
           ) : null}
         </span>
 
-        {/* Lines 3 and 4: the job (walk-ins) and the car. */}
+        {/* Line 3: the job (walk-ins); line 4 the car. */}
         {ev.job ? (
-          <span className={cn("hidden truncate body-sm [@container(min-height:54px)]:block", tone.muted)}>{ev.job}</span>
+          <span className={cn("hidden truncate body-sm [@container(min-height:50px)]:block", tone.muted)}>{ev.job}</span>
         ) : null}
         {ev.car ? (
           <span
             className={cn(
               "hidden truncate body-sm",
-              ev.job ? "[@container(min-height:70px)]:block" : "[@container(min-height:54px)]:block",
+              ev.job ? "[@container(min-height:68px)]:block" : "[@container(min-height:50px)]:block",
               tone.muted,
             )}
           >

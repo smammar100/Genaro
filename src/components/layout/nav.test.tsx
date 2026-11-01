@@ -34,7 +34,7 @@ describe("navRows", () => {
       "/maintenance/calendar",
     ]);
     expect(find(rows, "Sales").selected).toBe(false);
-    expect(find(rows, "Dashboard").selected).toBe(false);
+    expect(find(rows, "Home").selected).toBe(false);
   });
 
   it("opens the tour's group instead while the tour runs", () => {
@@ -70,7 +70,7 @@ describe("navRows", () => {
 
   it("anchors every page for the tour", () => {
     const rows = navRows(groups, { pathname: "/dashboard", tourGroup: null });
-    expect(find(rows, "Dashboard").id).toBe(navTourId("/dashboard"));
+    expect(find(rows, "Home").id).toBe(navTourId("/dashboard"));
     const ids = find(rows, "Warranties").pages?.map((p) => p.id);
     expect(ids).toContain("tour-nav-warranties-claims");
   });

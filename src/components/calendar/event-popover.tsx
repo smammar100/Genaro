@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Clock, Mail, Phone, StickyNote, X, type LucideIcon } from "lucide-react";
+import { CalendarDays, Clock, Mail, Phone, StickyNote, Tag, X, type LucideIcon } from "lucide-react";
 import { Badge, Button, Card } from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { dayLabel, fromISO, type CalEvent } from "@/lib/calendar-model";
+import { LEAD_TYPE_LABELS } from "@/lib/types";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import { KIND_META, eventStatus, timeText } from "./event-meta";
 
@@ -153,6 +154,7 @@ export function EventPopover({
           </div>
           <Fact icon={CalendarDays}>{dayLabel(fromISO(ev.date))}</Fact>
           <Fact icon={Clock}>{ev.allDay ? "All day · no time booked" : timeText(ev)}</Fact>
+          {ev.leadType ? <Fact icon={Tag}>{`Lead type: ${LEAD_TYPE_LABELS[ev.leadType]}`}</Fact> : null}
           {phone ? <Fact icon={Phone}>{phone}</Fact> : null}
           {email ? <Fact icon={Mail}>{email}</Fact> : null}
           {ev.reg || ev.car ? (
