@@ -4,7 +4,7 @@ import { DAYS_IN_STOCK_THRESHOLDS } from "./constants";
 import { typeScaleRoles } from "./type-scale";
 
 /**
- * tailwind-merge that knows the type scale's roles (text-display … text-micro,
+ * tailwind-merge that knows the type scale's roles (text-display … text-caption,
  * lib/type-scale.ts) are font sizes. Stock, it reads `text-body` as a colour
  * and drops it next to `text-(--text-secondary)`.
  */

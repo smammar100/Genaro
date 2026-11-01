@@ -150,7 +150,7 @@ function HeroIllustration() {
           ["Sold", 1, "success"],
         ].map(([lane, n, tone]) => (
           <div key={lane as string} style={{ display: "grid", gap: "var(--space-100)", alignContent: "start" }}>
-            <div className="body-xs" style={{ color: "var(--text-secondary)" }}>
+            <div className="body-sm" style={{ color: "var(--text-secondary)" }}>
               {lane}
             </div>
             {Array.from({ length: n as number }, (_, i) => (
@@ -365,14 +365,13 @@ export function TypeLadder() {
     ["subtitle", 14],
     ["body", 13],
     ["caption", 12],
-    ["micro", 11],
   ] as const;
   return (
     <div style={{ display: "flex", alignItems: "flex-end", gap: "var(--space-300)" }}>
       {roles.map(([role]) => (
         <div key={role} style={{ textAlign: "center" }}>
           <div style={{ fontSize: `var(--fs-${role})`, lineHeight: `var(--lh-${role})`, fontWeight: "var(--fw-semibold)" }}>Aa</div>
-          <div className="body-xs" style={{ color: "var(--text-secondary)" }}>
+          <div className="body-sm" style={{ color: "var(--text-secondary)" }}>
             {role}
           </div>
         </div>
@@ -407,7 +406,7 @@ export function AgentPanel({ children }: { children: React.ReactNode }) {
       <div className="body-md" style={{ color: "var(--text-secondary)" }}>
         {children}
       </div>
-      <pre className="font-mono body-sm" style={{ margin: 0, padding: "var(--space-300)", borderRadius: "var(--radius-200)", background: "var(--bg-surface-secondary)", overflowX: "auto" }}>
+      <pre className="font-code body-sm" style={{ margin: 0, padding: "var(--space-300)", borderRadius: "var(--radius-200)", background: "var(--bg-surface-secondary)", overflowX: "auto" }}>
         {`pnpm storybook\n# MCP server   http://localhost:6006/mcp\n# Manifests    storybook-static/manifests/components.json, docs.json`}
       </pre>
     </div>

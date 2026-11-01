@@ -125,7 +125,7 @@ export function MonthGrid({
                 <button
                   type="button"
                   onClick={() => onOpenDay(d)}
-                  className="relative self-start rounded-(--radius-100) px-1.5 body-xs-semibold text-(--text-secondary) hover:bg-(--bg-surface-selected)"
+                  className="relative self-start rounded-(--radius-100) px-1.5 body-sm-semibold text-(--text-secondary) hover:bg-(--bg-surface-selected)"
                 >
                   {`${more} more`}
                 </button>

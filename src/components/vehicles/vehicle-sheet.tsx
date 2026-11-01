@@ -2013,8 +2013,8 @@ export function VehicleSheet({
             header, section header and toolbar stay put while the grid's own
             container scrolls (so its sticky header sticks). The header
             (first child) keeps its size; the content column (last child)
-            takes the rest. The grid is a dense screen, so its card sets type
-            on the scale's compact step. */}
+            takes the rest. The grid uses the same five type sizes as every
+            other screen (call 2026-11-01). */}
         <Page
           title={title}
           subtitle={typeof summaryLine === "string" ? summaryLine : undefined}
@@ -2039,7 +2039,7 @@ export function VehicleSheet({
         >
           {helper}
           {SectionHeader && <SectionHeader {...sectionContext} />}
-          <GenaroCard padding="0" className="type-compact min-h-96 flex-1 gap-0">
+          <GenaroCard padding="0" className="min-h-96 flex-1 gap-0">
             <SheetToolbar
               // "Columns", or "72 of 72" read as a count of cars (call 2026-10-31).
               columnsLabel={`${cols.length} of ${gridCols.length} columns`}

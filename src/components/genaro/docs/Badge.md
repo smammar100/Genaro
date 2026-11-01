@@ -70,7 +70,7 @@ Strong, with an icon, and large:
 | `tone` | `'neutral' \| 'info' \| 'success' \| 'attention' \| 'warning' \| 'critical' \| 'magic' \| 'new'` | `'neutral'` | Exported as `BadgeTone`. `magic` and `new` share the purple fill. |
 | `progress` | `'incomplete' \| 'partiallyComplete' \| 'complete'` | — | Leading progress pip. Exported as `BadgeProgress`. |
 | `strong` | `boolean` | — | Solid fill for info, success, attention, warning, critical (e.g. `bg-fill-critical`); neutral only darkens the text; no effect on `magic`/`new`. |
-| `size` | `'medium' \| 'large'` | `'medium'` | `large`: 13px text and 4px vertical padding. |
+| `size` | `'medium' \| 'large'` | `'medium'` | `large`: body-size text and 4px vertical padding. |
 | `icon` | `IconSource` | — | Leading icon name (`'ClockMinor'`) or element. |
 | `className` | `string` | — | Extra classes on the root (layout only). |
 

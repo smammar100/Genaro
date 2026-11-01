@@ -1,6 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist } from "next/font/google";
 import type { Decorator, Preview } from "@storybook/nextjs-vite";
 import {
   Controls,
@@ -16,24 +16,20 @@ import { create } from "storybook/theming";
 import { GenaroProvider } from "../src/components/genaro";
 import "../src/app/globals.css";
 
-// The app's typefaces, loaded the way app/layout.tsx loads them.
+// The app's one typeface, loaded the way app/layout.tsx loads it.
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
-const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
-document.documentElement.classList.add(geistSans.variable, geistMono.variable);
+document.documentElement.classList.add(geistSans.variable);
 
 /**
  * Light or dark: Genaro's own token sets, switched by `.dark` on <html> as in
- * the app. Default or compact: the type scale's two steps (`.type-compact`).
+ * the app. The type scale has one step, so there is no density switch.
  */
 const withAppChrome: Decorator = (Story, context) => {
   const dark = context.globals.theme === "dark";
   document.documentElement.classList.toggle("dark", dark);
   return (
     <GenaroProvider linkComponent={Link}>
-      <div
-        className={context.globals.density === "compact" ? "type-compact" : undefined}
-        style={{ background: "var(--bg)", color: "var(--text)", fontFamily: "var(--font-sans)" }}
-      >
+      <div style={{ background: "var(--bg)", color: "var(--text)", fontFamily: "var(--font-sans)" }}>
         <Story />
       </div>
     </GenaroProvider>
@@ -63,20 +59,8 @@ const preview: Preview = {
         dynamicTitle: true,
       },
     },
-    density: {
-      description: "Type scale step",
-      toolbar: {
-        title: "Type step",
-        icon: "paragraph",
-        items: [
-          { value: "default", title: "Default type" },
-          { value: "compact", title: "Compact type" },
-        ],
-        dynamicTitle: true,
-      },
-    },
   },
-  initialGlobals: { theme: "light", density: "default" },
+  initialGlobals: { theme: "light" },
   parameters: {
     layout: "padded",
     controls: {
@@ -93,7 +77,7 @@ const preview: Preview = {
       theme: create({
         base: "light",
         fontBase: "var(--font-geist-sans), Geist, sans-serif",
-        fontCode: "var(--font-geist-mono), 'Geist Mono', monospace",
+        fontCode: "var(--font-geist-sans), Geist, sans-serif",
       }),
       page: () => (
         <>

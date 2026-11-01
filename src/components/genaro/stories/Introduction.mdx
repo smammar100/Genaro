@@ -37,14 +37,14 @@ import { RegPlate } from "../../shared/reg-plate";
   <Rule kind="tokens" title="Tokens only" example={<DoDont good={<code>bg-(--bg-surface)</code>} bad={<code>bg-[#ffffff]</code>} />}>
     Style with semantic tokens: var(--bg-surface), bg-(--bg-surface), text-(--text-secondary), rounded-(--radius-300). Spacing uses Tailwind's scale (p-4 is --space-400). No hex, no Tailwind palette colours, no dark: overrides. The one exception is reg-plate yellow (bg-plate).
   </Rule>
-  <Rule kind="type" title="Six type roles" example={<TypeLadder />}>
-    Display 24/30, title 16/22, subtitle 14/20, body 13/20, caption 12/16, micro 11/14. 24px is the largest size anywhere. Dense screens use the compact step (.type-compact). Set type with a class (heading-lg, heading-sm, body-md, body-sm, body-xs) or a role token, never a pixel size.
+  <Rule kind="type" title="Five type sizes" example={<TypeLadder />}>
+    Display 24/30, title 16/24, subtitle 14/20, body 13/18, caption 12/16: the only sizes anywhere, dense screens included. Set type with a class (heading-lg, heading-sm, body-md, body-sm) or a role token, never a pixel size.
   </Rule>
   <Rule kind="weights" title="Three weights" example={<WeightsExample />}>
     Regular 400 for text, medium 500 for component labels (buttons, tabs, badges, tags), semibold 550 for headings, page titles, big figures, names in a row and selected items. Semibold is the heaviest weight; there is no bold.
   </Rule>
-  <Rule kind="typefaces" title="Geist and Geist Mono" example={<div style={{ display: "flex", alignItems: "center", gap: "var(--space-300)" }}><span className="body-md">Geist for every word</span><RegPlate registration="OY70 TZG" size="sm" /></div>}>
-    Geist for all text; Geist Mono only where a mono face is needed, such as reg plates. Codes like stock IDs and VINs use font-code: Geist with even-width figures. Never Helvetica or Inter.
+  <Rule kind="typefaces" title="One typeface: Geist Sans" example={<div style={{ display: "flex", alignItems: "center", gap: "var(--space-300)" }}><span className="body-md">Geist for every word</span><RegPlate registration="OY70 TZG" size="sm" /></div>}>
+    Geist Sans for everything, reg plates included; there is no mono face. Codes like stock IDs, VINs and plates use font-code: Geist with even-width figures. Never Helvetica or Inter.
   </Rule>
   <Rule kind="colour" title="Two text colours" example={<div><div className="body-md">Primary text, --text</div><div className="body-md" style={{ color: "var(--text-secondary)" }}>Secondary text, --text-secondary</div></div>}>
     Text is --text or --text-secondary, never faded with opacity. Tone colours (critical, success, warning, caution, info) mark status only.
@@ -69,7 +69,7 @@ export default function VehiclePage() {
   );
 }`} />
 
-<p className="body-md" style={{ color: "var(--text-secondary)" }}>The toolbar has a <strong>Theme</strong> switch (light and dark) and a <strong>Type step</strong> switch (default and compact), so any story can be checked in both.</p>
+<p className="body-md" style={{ color: "var(--text-secondary)" }}>The toolbar has a <strong>Theme</strong> switch (light and dark), so any story can be checked in both.</p>
 
 <AgentPanel>
   Storybook serves an MCP server at /mcp while pnpm storybook runs (http://localhost:6006/mcp), and a build writes the manifests to /manifests/components.json and /manifests/docs.json. Each component entry carries its import line, its props with their descriptions, and every story as a code snippet with a one-line summary of when to use it. Prefer the patterns those stories show over inventing new ones.

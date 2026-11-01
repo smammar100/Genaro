@@ -14,10 +14,8 @@ import { cn } from "@/lib/utils";
  */
 
 /*
- * Type-scale exception (GEN-57): the text-[length:var(--fs-micro-compact)]/text-[length:var(--fs-micro-compact)] below sit on SVG
- * <text> inside a fixed viewBox — they scale with the chart, not with the
- * document, so they're geometry rather than UI type and deliberately don't
- * come from the --text-* scale. Everywhere else, use the scale.
+ * Axis and legend labels are caption, the scale's smallest size, like any
+ * other meta text (call 2026-11-01; they were 10px under GEN-57).
  */
 
 /** Fixed categorical order — brand tokens, never cycled past 5 (fold to Other). */
@@ -120,7 +118,7 @@ export function BarChart({
               x={padL - 6}
               y={gy + 3}
               textAnchor="end"
-              className="fill-muted-foreground text-[length:var(--fs-micro-compact)] tabular-nums"
+              className="fill-muted-foreground text-caption tabular-nums"
             >
               {fmtY(max * t)}
             </text>
@@ -144,7 +142,7 @@ export function BarChart({
               x={cx}
               y={H - 8}
               textAnchor="middle"
-              className="fill-muted-foreground text-[length:var(--fs-micro-compact)]"
+              className="fill-muted-foreground text-caption"
             >
               {d.label}
             </text>
@@ -261,7 +259,7 @@ export function DonutChart({
             x={cx}
             y={cx + 14}
             textAnchor="middle"
-            className="fill-muted-foreground text-[length:var(--fs-micro-compact)]"
+            className="fill-muted-foreground text-caption"
           >
             {centerLabel}
           </text>

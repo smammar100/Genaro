@@ -1173,7 +1173,8 @@ const SidebarMenuBadge = forwardRef<HTMLDivElement, SidebarMenuBadgeProps>(
         data-sidebar="menu-badge"
         className={cn(
           "pointer-events-none absolute right-2 z-10 flex h-5 min-w-5 items-center justify-center px-1 tabular-nums",
-          sizeClasses.variant === "compact" ? "top-1 text-[length:var(--fs-micro-compact)]" : "top-1.5 text-micro",
+          "text-caption",
+          sizeClasses.variant === "compact" ? "top-1" : "top-1.5",
           "transition-[color,font-variation-settings] duration-80",
           lit ? "text-foreground" : "text-muted-foreground",
           className

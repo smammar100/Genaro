@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -14,23 +14,13 @@ import { SidebarPreference } from "@/components/layout/sidebar-preference";
 import { TitleTooltips } from "@/components/layout/title-tooltips";
 import { cookies } from "next/headers";
 
-// Type is Geist, and Geist Mono wherever a mono face is used (call
-// 2026-10-25). Both are self-hosted by next/font as --font-geist-sans and
-// --font-geist-mono; the Genaro tokens make them --font-sans / --font-mono.
+// Type is Geist Sans, everywhere: one family, mono and plates included (call
+// 2026-11-01). next/font self-hosts it as --font-geist-sans; the Genaro tokens
+// make it --font-sans, and --font-mono points at the same face.
 const geistSans = Geist({
   subsets: ["latin"],
   variable: "--font-geist-sans",
   display: "swap",
-});
-
-// Latin only, and not preloaded: reg plates are never what a page paints
-// first, and the sign-in pages show none, so it shouldn't compete with Geist
-// and the CSS for the first paint. It swaps in when a page first shows one.
-const geistMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-geist-mono",
-  display: "swap",
-  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -82,7 +72,6 @@ export default async function RootLayout({
         "h-full",
         "antialiased",
         geistSans.variable,
-        geistMono.variable,
         "font-sans",
       )}
     >

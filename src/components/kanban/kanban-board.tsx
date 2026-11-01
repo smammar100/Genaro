@@ -184,7 +184,7 @@ export function KanbanLane({
             <span className="body-md shrink-0 tabular-nums text-(--text-secondary)">{count}</span>
           </div>
           {summary || reserveSummary ? (
-            <span className="body-xs truncate tabular-nums text-(--text-secondary)">{summary || "\u00a0"}</span>
+            <span className="body-sm truncate tabular-nums text-(--text-secondary)">{summary || "\u00a0"}</span>
           ) : null}
         </div>
         {actions ? <span className="-mr-1.5 flex h-6 shrink-0 items-center gap-0.5">{actions}</span> : null}
@@ -522,7 +522,7 @@ export function KanbanBoard<T>({
               </div>
             ))}
           </div>
-          <p className="body-xs mt-auto text-(--text-secondary)">
+          <p className="body-sm mt-auto text-(--text-secondary)">
             {`Drop a ${noun.one} on a column to move it there, or select one to bring it back to the board.`}
           </p>
         </aside>

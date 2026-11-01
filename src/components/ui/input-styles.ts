@@ -18,13 +18,14 @@ export function inputBoxClassName(className?: string, unstyled = false) {
   );
 }
 
-/** The text control inside that box. */
+/** The text control inside that box. An input centres its one line of text
+ *  itself, so the line height stays the role's (no leading-*, call 2026-11-01). */
 export function inputControlClassName(size: InputSize = "default", type?: string) {
   return cn(
-    "h-7.5 pointer-coarse:h-11 pointer-coarse:leading-11 w-full min-w-0 rounded-[inherit] px-3 leading-7.5 outline-none [transition:background-color_5000000s_ease-in-out_0s] placeholder:text-(--text-secondary)",
+    "h-7.5 pointer-coarse:h-11 w-full min-w-0 rounded-[inherit] px-3 outline-none [transition:background-color_5000000s_ease-in-out_0s] placeholder:text-(--text-secondary)",
     size === "sm" &&
-      "h-6.5 pointer-coarse:h-10 pointer-coarse:leading-10 px-2.5 leading-6.5",
-    size === "lg" && "h-8.5 leading-8.5",
+      "h-6.5 pointer-coarse:h-10 px-2.5",
+    size === "lg" && "h-8.5",
     type === "search" &&
       "[&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none",
     type === "file" &&

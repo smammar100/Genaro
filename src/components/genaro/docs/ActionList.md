@@ -78,7 +78,7 @@ Sections, help text, a suffix, and an active, destructive and disabled item. Wit
 |---|---|---|---|
 | `content` | `string` | — | Required label. |
 | `icon` | `IconSource` | — | Leading icon. |
-| `helpText` | `string` | — | Second line, 12px `text-secondary`. |
+| `helpText` | `string` | — | Second line, caption in `text-secondary`. |
 | `suffix` | `ReactNode` | — | Trailing icon name or node. |
 | `destructive` | `boolean` | — | `text-critical` / `icon-critical`. |
 | `active` | `boolean` | — | The current choice. |

@@ -60,15 +60,15 @@ const sizeMap: Record<SizeVariant, SizeClasses> = {
     icon: 16,
   },
   // 28px — the compact height for dense surfaces: filter bars, toolbars,
-  // table headers, sidebars. One step down in text (12px) and icon (14px)
-  // so the whole control shrinks together, not just its box.
+  // table headers, sidebars. The text stays body (call 2026-11-01); the
+  // box, gap and icon (14px) shrink.
   compact: {
     variant: "compact",
     control: "h-7",
     controlHeight: 28,
     segmentItem: "h-6",
     segmentPad: "p-0.5",
-    text: "text-caption",
+    text: "text-body",
     px: "px-2.5",
     itemPx: "px-1.5",
     gap: "gap-1",
@@ -93,17 +93,18 @@ interface TypeScaleStep {
  * for consumers composing their own screens.
  */
 const typeScale = {
-  /** Page titles. */
-  display: { default: 28, compact: 24 },
+  /** Page titles. Five sizes at both steps (call 2026-11-01): the compact
+   *  step tightens rows, not type. Same values as lib/type-scale.ts. */
+  display: { default: 24, compact: 24 },
   /** Section headings, dialog titles. */
-  title: { default: 16, compact: 15 },
-  /** Card titles, chat bubbles, emphasized rows. */
-  subtitle: { default: 14, compact: 13 },
+  title: { default: 16, compact: 16 },
+  /** Sub-headings and card titles. */
+  subtitle: { default: 14, compact: 14 },
   /** Control labels and body copy — `SizeClasses.text`. */
-  body: { default: 13, compact: 12 },
-  /** Secondary text: descriptions, meta rows, errors, eyebrows and group
-   *  labels (the former overline role — an uppercase or muted caption). */
-  caption: { default: 12, compact: 11 },
+  body: { default: 13, compact: 13 },
+  /** Secondary text: descriptions, meta rows, errors, group labels, table
+   *  headers. */
+  caption: { default: 12, compact: 12 },
 } as const satisfies Record<string, TypeScaleStep>;
 
 type TypeScaleRole = keyof typeof typeScale;

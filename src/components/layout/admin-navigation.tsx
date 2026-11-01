@@ -140,7 +140,7 @@ function Row({ row, onToggle }: { row: NavRow; onToggle?: () => void }) {
               <SidebarMenuSubButton isActive={page.selected} render={<Link href={page.href} id={page.id} />}>
                 {page.label}
                 {page.badge ? (
-                  <span className="body-xs ml-auto tabular-nums text-(--text-secondary)">{page.badge}</span>
+                  <span className="body-sm ml-auto tabular-nums text-(--text-secondary)">{page.badge}</span>
                 ) : null}
               </SidebarMenuSubButton>
             </SidebarMenuSubItem>

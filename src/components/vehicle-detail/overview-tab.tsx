@@ -418,7 +418,7 @@ function MarketplacePanel({ listing }: { listing: Listing | null }) {
             >
               <span
                 className={cn(
-                  "flex h-7 w-7 items-center justify-center rounded-(--radius-100) font-mono body-xs-semibold tracking-wider",
+                  "flex h-7 w-7 items-center justify-center rounded-(--radius-100) font-code body-sm-semibold",
                   r.iconBg,
                 )}
               >

@@ -102,7 +102,7 @@ const [saving, setSaving] = React.useState(false);
 | Prop | Type | Default | Notes |
 |---|---|---|---|
 | `title` | `string` | — | The page's `<h1>`, set in `heading-lg` (20/24). |
-| `subtitle` | `string` | — | 12px `text-secondary` line under the title. |
+| `subtitle` | `string` | — | Caption line in `text-secondary` under the title. |
 | `titleMetadata` | `ReactNode` | — | Badges beside the title, 8px apart. |
 | `titlePicker` | `Action` | — | Heading-sized dropdown button after the title. Only `content` and `onAction` are used. |
 | `backAction` | `Action` | — | Tertiary `ArrowLeftMinor` button. `content` is its label (default "Back"). |

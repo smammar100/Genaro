@@ -142,7 +142,7 @@ export const WithMeta: Story = {
     renderMeta: (vehicle) => {
       const progress = inspections[vehicle.id];
       return progress ? (
-        <span className="body-xs shrink-0 text-(--text-caution)">
+        <span className="body-sm shrink-0 text-(--text-caution)">
           insp {progress.done}/{progress.total}
         </span>
       ) : null;

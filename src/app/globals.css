@@ -89,15 +89,17 @@
   --radius-xl: var(--radius-300);
   --radius-2xl: var(--radius-300);
 
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* One family: Geist Sans, mono included (call 2026-11-01). The mono
+     utility and code/kbd render Geist; codes get even figures from font-code. */
+  --font-mono: var(--font-sans);
 
-  /* Tailwind's type scale re-pointed at Genaro's: text-sm is body-md (13/20),
-     text-xs body-sm (12/16), text-base/lg heading-sm (14/20), text-xl/2xl
-     heading-lg (20/24). */
+  /* Tailwind's type scale re-pointed at Genaro's: text-sm is body (13/18),
+     text-xs and the 2xs size caption (12/16), text-base/lg subtitle (14/20),
+     text-xl/2xl/3xl display (24/30). */
   /* The Tailwind sizes are the type scale roles (lib/type-scale.ts), so a stray
      text-sm still lands on the scale. Components use the role names. */
-  --text-2xs: var(--fs-micro);
-  --text-2xs--line-height: var(--lh-micro);
+  --text-2xs: var(--fs-caption);
+  --text-2xs--line-height: var(--lh-caption);
   --text-xs: var(--fs-caption);
   --text-xs--line-height: var(--lh-caption);
   --text-sm: var(--fs-body);
@@ -122,8 +124,6 @@
   --text-body--line-height: var(--lh-body);
   --text-caption: var(--fs-caption);
   --text-caption--line-height: var(--lh-caption);
-  --text-micro: var(--fs-micro);
-  --text-micro--line-height: var(--lh-micro);
 
   /* Three weights (--fw-* below). Anything heavier than semibold is
      semibold until bold is approved. */
@@ -181,8 +181,8 @@
 }
 
 /* Codes (stock IDs, VINs, invoice numbers, usernames, temporary passwords)
-   are set in Geist with even figures (Geist has no slashed zero). Reg
-   plates keep their plate face in Geist Mono. */
+   and reg plates are set in Geist with even figures (Geist has no slashed
+   zero). */
 @utility font-code {
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
@@ -192,34 +192,21 @@
   @apply mx-auto max-w-[1416px] px-4 lg:px-6;
 }
 
-/* Fluid Functionalism type scale (lib/type-scale.ts). Display is set to 24/30,
-   the scale's own compact display pair, instead of its 28/34: page titles and
-   big figures grow 4px from the app's 20px, not 8 (25 Oct 2026). */
+/* Fluid Functionalism type scale (lib/type-scale.ts): five sizes for the
+   whole app, each with one line height (call 2026-11-01; title, subtitle,
+   body and caption retuned the same day). Dense screens use
+   the same sizes; only their rows and controls get tighter. */
 :root {
   --fs-display: 24px;
   --lh-display: 30px;
-  --fs-display-compact: 24px;
-  --lh-display-compact: 30px;
   --fs-title: 16px;
-  --lh-title: 22px;
-  --fs-title-compact: 15px;
-  --lh-title-compact: 20px;
+  --lh-title: 24px;
   --fs-subtitle: 14px;
   --lh-subtitle: 20px;
-  --fs-subtitle-compact: 13px;
-  --lh-subtitle-compact: 18px;
   --fs-body: 13px;
-  --lh-body: 20px;
-  --fs-body-compact: 12px;
-  --lh-body-compact: 18px;
+  --lh-body: 18px;
   --fs-caption: 12px;
   --lh-caption: 16px;
-  --fs-caption-compact: 11px;
-  --lh-caption-compact: 14px;
-  --fs-micro: 11px;
-  --lh-micro: 14px;
-  --fs-micro-compact: 10px;
-  --lh-micro-compact: 12px;
 
   /* Three weights: regular for text; medium for component labels (buttons,
      tabs, badges, tags, filter pills, pagination); semibold for headings,
@@ -231,34 +218,16 @@
   --fw-semibold: 550;
 }
 
-/* The scale's compact step, for dense screens such as the master sheet:
-   every role one step down (body 12/18, caption 11/14). Genaro classes and
-   the text-<role> utilities read these variables, so a subtree follows. */
-.type-compact {
-  --fs-display: var(--fs-display-compact);
-  --lh-display: var(--lh-display-compact);
-  --fs-title: var(--fs-title-compact);
-  --lh-title: var(--lh-title-compact);
-  --fs-subtitle: var(--fs-subtitle-compact);
-  --lh-subtitle: var(--lh-subtitle-compact);
-  --fs-body: var(--fs-body-compact);
-  --lh-body: var(--lh-body-compact);
-  --fs-caption: var(--fs-caption-compact);
-  --lh-caption: var(--lh-caption-compact);
-  --fs-micro: var(--fs-micro-compact);
-  --lh-micro: var(--lh-micro-compact);
-}
-
 @layer components {
   :where(.typeset) {
-    --typeset-display: var(--fs-display, 28px);
-    --typeset-display-leading: var(--lh-display, 34px);
+    --typeset-display: var(--fs-display, 24px);
+    --typeset-display-leading: var(--lh-display, 30px);
     --typeset-title: var(--fs-title, 16px);
-    --typeset-title-leading: var(--lh-title, 22px);
+    --typeset-title-leading: var(--lh-title, 24px);
     --typeset-subtitle: var(--fs-subtitle, 14px);
     --typeset-subtitle-leading: var(--lh-subtitle, 20px);
     --typeset-body: var(--fs-body, 13px);
-    --typeset-body-leading: var(--lh-body, 20px);
+    --typeset-body-leading: var(--lh-body, 18px);
     --typeset-caption: var(--fs-caption, 12px);
     --typeset-caption-leading: var(--lh-caption, 16px);
     --typeset-space-block: 12px;
@@ -279,16 +248,6 @@
     white-space: normal;
   }
   :where(.typeset.typeset-compact) {
-    --typeset-display: var(--fs-display-compact, 24px);
-    --typeset-display-leading: var(--lh-display-compact, 30px);
-    --typeset-title: var(--fs-title-compact, 15px);
-    --typeset-title-leading: var(--lh-title-compact, 20px);
-    --typeset-subtitle: var(--fs-subtitle-compact, 13px);
-    --typeset-subtitle-leading: var(--lh-subtitle-compact, 18px);
-    --typeset-body: var(--fs-body-compact, 12px);
-    --typeset-body-leading: var(--lh-body-compact, 18px);
-    --typeset-caption: var(--fs-caption-compact, 11px);
-    --typeset-caption-leading: var(--lh-caption-compact, 14px);
     --typeset-space-block: 8px;
     --typeset-space-heading: 4px;
     --typeset-space-section: 16px;

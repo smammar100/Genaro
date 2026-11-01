@@ -398,7 +398,7 @@ function RecommendedActions() {
       <div className="divide-y divide-(--border-secondary)">
         {actions.map((a, i) => (
           <div key={a.title} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-(--bg-fill-brand) body-xs-semibold text-(--text-brand-on-bg-fill) tabular-nums">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-(--bg-fill-brand) body-sm-semibold text-(--text-brand-on-bg-fill) tabular-nums">
               {i + 1}
             </span>
             <div className="min-w-0 flex-1">

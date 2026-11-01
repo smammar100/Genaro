@@ -7,8 +7,8 @@ import type React from "react";
 type AvatarSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
 
 const AVATAR_SIZE_CLASS: Record<AvatarSize, string> = {
-  xs: "size-5 text-micro",
-  sm: "size-6 text-micro",
+  xs: "size-5 text-caption",
+  sm: "size-6 text-caption",
   md: "size-8 text-caption",
   lg: "size-10 text-body",
   xl: "size-12 text-subtitle",

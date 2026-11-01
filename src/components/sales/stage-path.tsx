@@ -45,7 +45,7 @@ export function StagePath({ stages, current, daysInStage }: StagePathProps) {
           >
             <span className="w-full truncate">{s.label}</span>
             {here && daysInStage !== undefined ? (
-              <span className="body-xs tabular-nums">
+              <span className="body-sm tabular-nums">
                 {daysInStage} {daysInStage === 1 ? "day" : "days"}
               </span>
             ) : null}
