@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Download } from "lucide-react";
 import type { TodoItem, TodoStatus, Vendor } from "@/lib/types";
 import { useAuth } from "@/contexts/auth-context";
-import { todoService } from "@/lib/services/todo-service";
+import { countOpenTodos, todoService } from "@/lib/services/todo-service";
 import { vendorService } from "@/lib/services/vendor-service";
 import { toast } from "@/lib/toast";
 import { parseNumeric } from "@/lib/field-edit";
@@ -30,6 +30,8 @@ interface TodoTabProps {
   exporting?: boolean;
   /** Fired after any change that can move the car's status (GEN-64). */
   onChanged?: () => void;
+  /** The open count whenever the list loads or changes, so the tab badge matches it. */
+  onOpenCountChange?: (open: number) => void;
 }
 
 const STATUS_TONE: Record<TodoStatus, React.ComponentProps<typeof Pill>["tone"]> = {
@@ -76,6 +78,7 @@ export function TodoTab({
   onExportPdf,
   exporting,
   onChanged,
+  onOpenCountChange,
 }: TodoTabProps) {
   const { company, user } = useAuth();
   const { confirm, confirmDialog } = useConfirm();
@@ -90,6 +93,10 @@ export function TodoTab({
       void vendorService.getAll(company.id).then(setVendors);
     }
   }, [vehicleId, company?.id]);
+
+  useEffect(() => {
+    if (todos) onOpenCountChange?.(countOpenTodos(todos));
+  }, [todos, onOpenCountChange]);
 
   async function refresh() {
     setTodos(await todoService.getForVehicle(vehicleId));
@@ -180,9 +187,7 @@ export function TodoTab({
 
   const total = todos.reduce((acc, t) => acc + (t.cost ?? 0), 0);
   const vendorById = new Map(vendors.map((v) => [v.id, v]));
-  const open = todos.filter(
-    (t) => t.status === "pending" || t.status === "in_progress",
-  ).length;
+  const open = countOpenTodos(todos);
   const done = todos.filter((t) => t.status === "completed").length;
   const allDone = todos.length > 0 && open === 0;
   // Show all status groups that have items; always show the three core

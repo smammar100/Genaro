@@ -8,6 +8,7 @@ import { TextField } from '@/components/genaro';
 
 ## Use it for
 - Every free-text input. Always pass a `label`; hide it with `labelHidden` only when context makes the purpose obvious (search).
+- `type="date"` is a day (date of sale, collection date); the value is `YYYY-MM-DD`, empty when cleared.
 - `type="number"` adds up/down stepper buttons; for prices use `inputMode="decimal"` with a `"$"` prefix instead of a stepper.
 - `prefix` / `suffix` for units and currency ("$", "kg"); both also accept an icon name (`'SearchMinor'`).
 - Errors say what happened and how to fix it: "Enter a valid email address". No blame, no exclamation marks.
@@ -79,7 +80,7 @@ const [query, setQuery] = React.useState('');
 | `defaultValue` | `string` | `''` | Initial value when uncontrolled. |
 | `onChange` | `(value: string, id: string) => void` | — | |
 | `name` | `string` | — | Posts the value with a `<form>` / Server Action. |
-| `type` | `'text' \| 'email' \| 'number' \| 'password' \| 'search' \| 'tel' \| 'url'` | `'text'` | `number` adds the stepper. |
+| `type` | `'text' \| 'email' \| 'number' \| 'password' \| 'search' \| 'tel' \| 'url' \| 'date'` | `'text'` | `number` adds the stepper; `date` uses the browser's date picker and its value is `YYYY-MM-DD`. |
 | `step` | `number` | `1` | Stepper increment for `type="number"`; results are rounded to the step's (or value's) decimals, so `0.1` steps stay clean. |
 | `multiline` | `boolean \| number` | — | Textarea: `true` for 3 rows, or a row count. |
 | `placeholder` | `string` | — | |

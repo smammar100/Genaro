@@ -235,7 +235,7 @@ function CellInput({
   );
 }
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 50;
 
 // Column-resize bounds (GEN-20). Columns never shrink below MIN so a header
 // stays clickable, nor grow past MAX so one column can't run off the screen.
@@ -1363,6 +1363,11 @@ export function VehicleSheet({
     setPage(1);
   }
 
+  function clearFilters() {
+    setFilters([]);
+    setPage(1);
+  }
+
   const totalPages = sorted
     ? Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
     : 1;
@@ -2049,6 +2054,7 @@ export function VehicleSheet({
                 label: `${f.label} ${opLabel(f.op)} ${f.value}`,
               }))}
               onRemoveFilter={removeFilter}
+              onClearFilters={clearFilters}
               filterOpen={builderOpen}
               onFilterOpenChange={(open) => {
                 setBuilderOpen(open);

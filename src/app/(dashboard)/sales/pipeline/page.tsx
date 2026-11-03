@@ -73,7 +73,9 @@ import type { KanbanColumn, KanbanTone } from "@/components/kanban/stage-icon";
 import { formatCurrency, formatDateTime, titleCase } from "@/lib/utils";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import { toast } from "@/lib/toast";
-import { saleConfirmOptions } from "@/lib/sale-confirm";
+import { enquirySourceForChannel, enquirySourceOptions, unsaleConfirmOptions } from "@/lib/sale-confirm";
+import { CompleteSaleModal } from "@/components/sales/complete-sale-modal";
+import type { SaleDetails } from "@/lib/services/sales-service";
 
 // Per-stage tone for the column's status glyph (no coloured column top-bars).
 // The shipped stages keep a fixed tone; user-added stages cycle through the
@@ -166,6 +168,12 @@ export default function SalesPipelinePage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [bookDeal, setBookDeal] = useState<SalesDeal | null>(null);
   const [swapDeal, setSwapDeal] = useState<SalesDeal | null>(null);
+  // A deal being completed: the sale dialog is open for it.
+  const [selling, setSelling] = useState<{
+    deal: SalesDeal;
+    stage: SalesStage;
+    source: string | null;
+  } | null>(null);
   const [channels, setChannels] = useState<LeadChannel[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   // Board or list (call 2026-10-31: the board gets hard to scan as it fills).
@@ -347,12 +355,33 @@ export default function SalesPipelinePage() {
     if (!user || !company || !deals) return;
     const target = deals.find((d) => d.id === id);
     if (!target || target.stage === stage) return;
-    // Completing the sale marks the car sold too, so ask before it happens.
+    // Completing the sale marks the car sold too, so the sale dialog asks for
+    // its details first; the card moves once they are saved.
     const into = stages.find((s) => s.slug === stage);
     if (into?.behaviour === "won") {
-      const reg = vehicleById.get(target.vehicleId)?.registration ?? null;
-      if (!(await confirm(saleConfirmOptions(target.customerName, reg, into.label)))) return;
+      const lead = target.leadId ? await leadService.getById(target.leadId).catch(() => null) : null;
+      const vehicle = vehicleById.get(target.vehicleId);
+      setSelling({
+        deal: target,
+        stage,
+        source:
+          vehicle?.sellingAgent ||
+          enquirySourceForChannel(channels.find((c) => c.id === lead?.leadChannelId)),
+      });
+      return;
     }
+    // Moving a completed sale back undoes it, so say what that clears.
+    const from = stages.find((s) => s.slug === target.stage);
+    if (from?.behaviour === "won") {
+      const reg = vehicleById.get(target.vehicleId)?.registration ?? null;
+      if (!(await confirm(unsaleConfirmOptions(target.customerName, reg, into?.label ?? stage)))) return;
+    }
+    await moveDeal(target, stage);
+  }
+
+  async function moveDeal(target: SalesDeal, stage: SalesStage, sale?: SaleDetails) {
+    if (!user || !company || !deals) return;
+    const id = target.id;
     const prevDeals = deals;
     // Optimistic: the card should land in its new column the instant it's
     // dropped, not after updateStage's write chain + a full refetch resolve
@@ -361,12 +390,20 @@ export default function SalesPipelinePage() {
     setDeals(deals.map((d) => (d.id === id ? movedDeal(d, stage) : d)));
     const label = stages.find((s) => s.slug === stage)?.label ?? stage;
     try {
-      await salesService.updateStage(id, stage, user.id);
-      setDeals(await salesService.getAll(company.id));
+      await salesService.updateStage(id, stage, user.id, sale);
+      // The car changes with the deal (sold, or back on sale), so both reload.
+      const [d, v] = await Promise.all([
+        salesService.getAll(company.id),
+        vehicleService.getAll(company.id),
+      ]);
+      setDeals(d);
+      setVehicles(v);
       toast.success(`Moved → ${label}`);
     } catch (e) {
       setDeals(prevDeals);
       toast.error(e instanceof Error ? e.message : "Couldn't move the deal");
+      // The sale dialog shows the failure and stays open.
+      if (sale) throw e;
     }
   }
 
@@ -665,6 +702,29 @@ export default function SalesPipelinePage() {
         defaultAssignee={user?.id}
         draftKey={company && user ? `cc-lead-draft:${company.id}:${user.id}` : null}
         onCreate={createLead}
+      />
+      <CompleteSaleModal
+        open={selling !== null}
+        customerName={selling?.deal.customerName ?? ""}
+        vehicle={selling ? (vehicleById.get(selling.deal.vehicleId) ?? null) : null}
+        stageLabel={stages.find((s) => s.slug === selling?.stage)?.label ?? "Completed sale"}
+        defaultPrice={
+          selling
+            ? (selling.deal.agreedPrice ??
+              selling.deal.offerPrice ??
+              vehicleById.get(selling.deal.vehicleId)?.sellingPrice ??
+              vehicleById.get(selling.deal.vehicleId)?.listingPrice ??
+              null)
+            : null
+        }
+        defaultSource={selling?.source ?? null}
+        sourceOptions={enquirySourceOptions(vehicles.map((v) => v.sellingAgent), selling?.source)}
+        onClose={() => setSelling(null)}
+        onConfirm={async (sale) => {
+          if (!selling) return;
+          await moveDeal(selling.deal, selling.stage, sale);
+          setSelling(null);
+        }}
       />
       {confirmDialog}
     </Page>

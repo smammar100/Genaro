@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { CalendarClock, Car } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { salesService } from "@/lib/services/sales-service";
+import { salesService, type DealParticulars, type SaleDetails } from "@/lib/services/sales-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import { authService } from "@/lib/services/auth-service";
 import { pipelineStageService } from "@/lib/services/pipeline-stage-service";
@@ -42,6 +42,8 @@ import { DealStageBadge } from "@/components/sales/status-badges";
 import { StagePath } from "@/components/sales/stage-path";
 import { QuickBookModal } from "@/components/calendar/quick-book-modal";
 import { ChangeVehicleModal } from "@/components/sales/change-vehicle-modal";
+import { CompleteSaleModal } from "@/components/sales/complete-sale-modal";
+import { DealParticularsModal, balanceDue } from "@/components/sales/deal-particulars-modal";
 import {
   FUEL_OPTIONS,
   SERVICE_HISTORY_OPTIONS,
@@ -53,7 +55,7 @@ import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import { toast } from "@/lib/toast";
 import { locationLabel } from "@/lib/locations";
 import { useCompanyLocations } from "@/hooks/use-company-locations";
-import { saleConfirmOptions } from "@/lib/sale-confirm";
+import { enquirySourceForChannel, enquirySourceOptions, unsaleConfirmOptions } from "@/lib/sale-confirm";
 
 interface Loaded {
   deal: SalesDeal;
@@ -65,6 +67,8 @@ interface Loaded {
   lead: Lead | null;
   channels: LeadChannel[];
   notes: DealNote[];
+  /** The viewing day (migration 0060), read on its own. */
+  viewingDate: string | null;
   /** When the data landed, for the days-in-stage count. */
   at: number;
 }
@@ -102,6 +106,9 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
   const [savingNote, setSavingNote] = useState(false);
   const [booking, setBooking] = useState(false);
   const [swapping, setSwapping] = useState(false);
+  // The won stage the sale dialog is completing into, while it is open.
+  const [selling, setSelling] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
   const { confirm, confirmDialog } = useConfirm();
   const customLocations = useCompanyLocations();
 
@@ -110,7 +117,7 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
     if (!company) return null;
     const deal = await salesService.getById(id);
     if (!deal) return null;
-    const [stages, vehicles, users, appointments, lead, channels, notes] = await Promise.all([
+    const [stages, vehicles, users, appointments, lead, channels, notes, viewingDate] = await Promise.all([
       pipelineStageService.getEnabled(company.id),
       vehicleService.getAll(company.id),
       authService.getUsersForCompany(company.id),
@@ -118,6 +125,7 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
       deal.leadId ? leadService.getById(deal.leadId) : Promise.resolve(null),
       leadChannelService.getAll(company.id),
       dealNoteService.getForDeal(deal.id),
+      salesService.getViewingDate(deal.id),
     ]);
     return {
       deal,
@@ -131,6 +139,7 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
       lead,
       channels,
       notes,
+      viewingDate,
       at: Date.now(),
     };
   }, [company, id]);
@@ -149,6 +158,18 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
   const stageOf = useMemo(
     () => new Map((data?.stages ?? []).map((s) => [s.slug, s])),
     [data?.stages],
+  );
+
+  // Stable between loads, so the edit dialog doesn't reset while it's open.
+  const particulars = useMemo(
+    () => ({
+      agreedPrice: data?.deal.agreedPrice ?? null,
+      depositAmount: data?.deal.depositAmount ?? null,
+      depositDate: data?.deal.depositDate ?? null,
+      collectionDate: data?.deal.collectionDate ?? null,
+      viewingDate: data?.viewingDate ?? null,
+    }),
+    [data],
   );
 
   if (missing) {
@@ -186,18 +207,29 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
   const lost = stages.find((s) => s.behaviour === "lost");
   const swappable = data.vehicles.filter((v) => v.status !== "sold" && v.status !== "returned");
 
+  // Completing the sale asks for its details first (bug list 2026-11-02,
+  // item 2); undoing one says what it clears.
   async function move(slug: string) {
     if (!user || slug === deal.stage) return;
     const target = stageOf.get(slug);
     if (target?.behaviour === "won") {
+      setSelling(slug);
+      return;
+    }
+    if (behaviour === "won") {
       const ok = await confirm(
-        saleConfirmOptions(deal.customerName, vehicle?.registration ?? null, target.label),
+        unsaleConfirmOptions(deal.customerName, vehicle?.registration ?? null, target?.label ?? slug),
       );
       if (!ok) return;
     }
+    await moveTo(slug);
+  }
+
+  async function moveTo(slug: string, sale?: SaleDetails) {
+    if (!user) return;
     setMoving(true);
     try {
-      await salesService.updateStage(deal.id, slug, user.id);
+      await salesService.updateStage(deal.id, slug, user.id, sale);
       toast.success(`Moved to ${stageOf.get(slug)?.label ?? slug}`);
       await load();
     } catch (e) {
@@ -205,6 +237,23 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
     } finally {
       setMoving(false);
     }
+  }
+
+  // The sale dialog's Save: a failure stays in the dialog, with its message.
+  async function completeSale(sale: SaleDetails) {
+    if (!user || !selling) return;
+    await salesService.updateStage(deal.id, selling, user.id, sale);
+    setSelling(null);
+    toast.success(`${vehicle?.registration ?? "The car"} marked as sold`);
+    await load();
+  }
+
+  async function saveParticulars(patch: DealParticulars & { viewingDate?: string | null }) {
+    const { viewingDate, ...rest } = patch;
+    if (Object.keys(rest).length > 0) await salesService.updateParticulars(deal.id, rest);
+    if (viewingDate !== undefined) await salesService.setViewingDate(deal.id, viewingDate);
+    toast.success("Deal updated");
+    await load();
   }
 
   // The deal fell through: its car goes back on sale, so ask first.
@@ -242,6 +291,7 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
   }
 
   const value = deal.agreedPrice ?? deal.offerPrice;
+  const balance = balanceDue(deal.agreedPrice, deal.depositAmount);
   const figures: [string, ReactNode][] = [
     ["Price", vehicle?.listingPrice != null ? formatCurrency(vehicle.listingPrice) : "—"],
     [deal.agreedPrice != null ? "Agreed" : "Offer", value != null ? formatCurrency(value) : "—"],
@@ -298,7 +348,7 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
         <Card>
           <div className="flex flex-col gap-4">
             <StagePath stages={stages} current={deal.stage} daysInStage={open ? days : undefined} />
-            <dl className="grid grid-cols-2 gap-4 border-t border-(--border-secondary) pt-3 md:grid-cols-4">
+            <dl className="grid grid-cols-2 gap-4 pt-1 md:grid-cols-4">
               {figures.map(([term, description]) => (
                 <div key={term} className="flex min-w-0 flex-col">
                   <dt className="body-sm text-(--text-secondary)">{term}</dt>
@@ -310,22 +360,51 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
         </Card>
 
         <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1.3fr]">
+          <div className="flex min-w-0 flex-col gap-4">
           <Card title="Customer">
             <DescriptionList
               gap="tight"
+              descriptionAlign="end"
               items={[
                 ...row("Name", deal.customerName),
                 ...row("Phone", deal.customerPhone ? <a href={`tel:${deal.customerPhone.replace(/\s+/g, "")}`} className="hover:underline">{deal.customerPhone}</a> : null),
                 ...row("Email", deal.customerEmail ? <a href={`mailto:${deal.customerEmail}`} className="hover:underline">{deal.customerEmail}</a> : null),
                 ...row("Channel", channel?.label),
                 ...row("Lead type", lead ? LEAD_TYPE_LABELS[lead.leadType ?? "viewing"] : null),
-                ...row("Deposit", deal.depositAmount != null ? `${formatCurrency(deal.depositAmount)}${deal.depositDate ? `, ${formatDate(deal.depositDate)}` : ""}` : null),
-                ...row("Collection", deal.collectionDate ? formatDate(deal.collectionDate) : null),
-                ...row("Completed", deal.completionDate ? formatDate(deal.completionDate) : null),
                 ...row("Opened", formatDateTime(deal.createdAt)),
               ]}
             />
           </Card>
+
+          {/* The deal's particulars, editable here (bug list 2026-11-02, item 4). */}
+          <Card
+            title="Deal"
+            actions={
+              <Button variant="plain" onClick={() => setEditing(true)}>
+                Edit
+              </Button>
+            }
+          >
+            <DescriptionList
+              gap="tight"
+              descriptionAlign="end"
+              items={[
+                { term: "Agreed total price", description: deal.agreedPrice != null ? formatCurrency(deal.agreedPrice) : "—" },
+                {
+                  term: "Deposit paid",
+                  description:
+                    deal.depositAmount != null
+                      ? `${formatCurrency(deal.depositAmount)}${deal.depositDate ? `, ${formatDate(deal.depositDate)}` : ""}`
+                      : "—",
+                },
+                { term: "Balance due", description: balance != null ? formatCurrency(balance) : "—" },
+                { term: "Date of viewing", description: data.viewingDate ? formatDate(data.viewingDate) : "—" },
+                { term: "Date of collection", description: deal.collectionDate ? formatDate(deal.collectionDate) : "—" },
+                ...row("Completed", deal.completionDate ? formatDate(deal.completionDate) : null),
+              ]}
+            />
+          </Card>
+          </div>
 
           <Card title="Vehicle">
             {vehicle ? (
@@ -342,6 +421,7 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
                 </Link>
                 <DescriptionList
                   gap="tight"
+                  descriptionAlign="end"
                   items={[
                     ...row("Year", vehicle.year || null),
                     ...row("Mileage", vehicle.mileage ? `${vehicle.mileage.toLocaleString("en-GB")} miles` : null),
@@ -400,7 +480,7 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
                 {[...notes].reverse().map((n) => {
                   const author = users.find((u) => u.id === n.userId)?.name ?? "Unknown";
                   return (
-                    <li key={n.id} className="flex gap-3 border-t border-(--border-secondary) py-3">
+                    <li key={n.id} className="flex gap-3 py-2">
                       <Avatar size="sm" name={author} />
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <div className="flex flex-wrap items-baseline justify-between gap-x-3">
@@ -416,7 +496,7 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
                 })}
                 {/* What was said when the lead was taken, oldest of all. */}
                 {lead?.notes?.trim() ? (
-                  <li className="flex gap-3 border-t border-(--border-secondary) py-3">
+                  <li className="flex gap-3 py-2">
                     <Avatar size="sm" name={users.find((u) => u.id === lead.assignedTo)?.name ?? "Lead"} />
                     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
@@ -440,6 +520,24 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
         vehicles={swappable}
         onClose={() => setBooking(false)}
         onBooked={() => void load()}
+      />
+      <CompleteSaleModal
+        open={selling !== null}
+        customerName={deal.customerName}
+        vehicle={vehicle}
+        stageLabel={(selling && stageOf.get(selling)?.label) || "Completed sale"}
+        defaultPrice={deal.agreedPrice ?? deal.offerPrice ?? vehicle?.sellingPrice ?? vehicle?.listingPrice ?? null}
+        defaultSource={vehicle?.sellingAgent || enquirySourceForChannel(channel)}
+        sourceOptions={enquirySourceOptions(data.vehicles.map((v) => v.sellingAgent), vehicle?.sellingAgent)}
+        onClose={() => setSelling(null)}
+        onConfirm={completeSale}
+      />
+      <DealParticularsModal
+        open={editing}
+        customerName={deal.customerName}
+        value={particulars}
+        onClose={() => setEditing(false)}
+        onSave={saveParticulars}
       />
       <ChangeVehicleModal
         open={swapping}

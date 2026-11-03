@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ArrowRightLeft } from "lucide-react";
 import {
   Button,
   Card,
@@ -67,15 +68,13 @@ const COLUMNS: {
     compare: (a, b) => (a.motExpiry ?? "9999").localeCompare(b.motExpiry ?? "9999"),
   },
   { title: "Arrived", compare: (a, b) => byNewest(b, a) },
-  { title: "Days in stock", alignment: "end", compare: (a, b) => a.daysInStock - b.daysInStock },
-  // The row's Move button, from the Locations page this one replaced.
-  { title: "Move", alignment: "end" },
+  { title: "Days in stock", compare: (a, b) => a.daysInStock - b.daysInStock },
 ];
 
 const column = (title: string) => COLUMNS.findIndex((c) => c.title === title);
 
 const HEADINGS: IndexTableHeading[] = COLUMNS.map(({ title, alignment, compare }) => ({
-  title: title === "Move" ? "" : title,
+  title,
   alignment,
   sortable: Boolean(compare),
 }));
@@ -279,13 +278,28 @@ export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
                 titleCase(v.model),
                 capitalizeWords(v.fuelType) ?? "—",
                 <VehicleStatusBadge key="status" status={v.status} />,
-                <LocationBadge
-                  key="location"
-                  location={v.currentLocation}
-                  outForTestDrive={v.outForTestDrive}
-                  testDriveExpectedBackAt={v.testDriveExpectedBackAt}
-                  compact
-                />,
+                // The row's Move button sits beside where the car is (call
+                // 2026-11-02), pushed to the cell's edge so the buttons line up
+                // down the column whatever the location's name.
+                <div key="location" className="flex w-full items-center justify-between gap-2">
+                  <LocationBadge
+                    location={v.currentLocation}
+                    outForTestDrive={v.outForTestDrive}
+                    testDriveExpectedBackAt={v.testDriveExpectedBackAt}
+                    compact
+                  />
+                  {canMove ? (
+                    <Button
+                      size="micro"
+                      variant="tertiary"
+                      icon={<ArrowRightLeft />}
+                      accessibilityLabel={`Move ${v.registration}`}
+                      onClick={() => setMoving(v)}
+                    >
+                      Move
+                    </Button>
+                  ) : null}
+                </div>,
                 v.motExpiry ? (
                   <span
                     key="mot"
@@ -300,11 +314,6 @@ export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
                 <span key="days" className="tabular-nums">
                   {v.daysInStock}
                 </span>,
-                canMove ? (
-                  <Button key="move" size="micro" onClick={() => setMoving(v)}>
-                    Move
-                  </Button>
-                ) : null,
               ],
             }))}
           />

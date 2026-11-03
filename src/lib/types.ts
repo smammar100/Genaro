@@ -703,6 +703,7 @@ export type LeadSource =
   | "phone"
   | "walk_in"
   | "autotrader"
+  | "cargurus"
   | "ebay"
   | "facebook"
   | "referral"
@@ -713,6 +714,7 @@ export const LEAD_SOURCES: readonly LeadSource[] = [
   "phone",
   "walk_in",
   "autotrader",
+  "cargurus",
   "ebay",
   "facebook",
   "referral",

@@ -7,9 +7,8 @@ import {
 } from "./vehicle-variant";
 
 describe("variantLabel", () => {
-  // The lookup fills variantName with a bare engine size ("2.0") and
-  // derivative with the full description, so derivative is the useful one.
-  it("prefers the full AutoTrader derivative over the bare variant name", () => {
+  // A bare engine size ("2.0") says less than the full description.
+  it("prefers the full AutoTrader derivative over a bare engine size", () => {
     expect(
       variantLabel({
         variantName: "2.0",
@@ -17,6 +16,24 @@ describe("variantLabel", () => {
         variantCode: "TG68",
       }),
     ).toBe("2.0 318d Sport Saloon 4dr Diesel Auto Euro 6 (s/s) (150 ps)");
+  });
+
+  // Bug 9 (2026-11-02): an edited variant never showed over the derivative.
+  it("shows the dealer's own variant over the AutoTrader derivative", () => {
+    expect(
+      variantLabel({
+        variantName: "2.0 A SP",
+        derivative: "3.0 TDI V6 50 Black Edition Saloon 4dr Diesel Tiptronic quattro Euro 6 (s/s) (286 ps)",
+      }),
+    ).toBe("2.0 A SP");
+  });
+
+  it("falls back to the derivative when the variant is cleared", () => {
+    expect(variantLabel({ variantName: "", derivative: "2.0 TFSI S line" })).toBe("2.0 TFSI S line");
+  });
+
+  it("shows a bare engine size when it is all there is", () => {
+    expect(variantLabel({ variantName: "2.0", derivative: null })).toBe("2.0");
   });
 
   it("falls back to the variant name when there is no derivative", () => {

@@ -136,8 +136,20 @@ export const inspectionService = {
     const supabase = createClient();
     const v = await vehicleService.getById(vehicleId);
     if (!v) throw new Error("Vehicle not found");
-    // Clear any prior rows (re-start support) then bulk insert.
-    await supabase.from("inspection_checks").delete().eq("vehicle_id", vehicleId);
+    // Clear any prior rows (re-start support) then bulk insert. A failed or
+    // refused delete must stop here: inserting on top of the old answers is
+    // what left a Reset still showing them.
+    const { error: clearError } = await supabase
+      .from("inspection_checks")
+      .delete()
+      .eq("vehicle_id", vehicleId);
+    if (clearError) throw clearError;
+    // RLS refuses a delete by matching no rows, not with an error.
+    const { count: left } = await supabase
+      .from("inspection_checks")
+      .select("id", { count: "exact", head: true })
+      .eq("vehicle_id", vehicleId);
+    if (left) throw new Error("You don't have permission to reset this inspection.");
     const today = new Date().toISOString().slice(0, 10);
     const items = await inspectionChecklistService.getAll(v.companyId);
     const rows = items.map((item) => ({

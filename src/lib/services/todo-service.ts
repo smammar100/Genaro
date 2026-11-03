@@ -39,6 +39,11 @@ interface AddInput {
 /** Work that still blocks the car: cancelled items are closed, not outstanding. */
 const OPEN_STATUSES: TodoStatus[] = ["pending", "in_progress"];
 
+/** Items still to do (pending or in progress): the one count every badge and summary shows. */
+export function countOpenTodos(todos: Pick<TodoItem, "status">[]): number {
+  return todos.filter((t) => OPEN_STATUSES.includes(t.status)).length;
+}
+
 interface UpdateInput {
   description?: string;
   vendorId?: UUID | null;
