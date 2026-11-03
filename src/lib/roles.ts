@@ -150,7 +150,7 @@ export const ROLE_DEFS: RoleDef[] = [
     label: "Inspector",
     group: "Operations roles",
     description:
-      "Runs the 20-point inspection, adds inspection notes, raises follow-up workshop jobs.",
+      "Runs the inspection checklist, adds inspection notes, raises follow-up workshop jobs.",
     capabilities: [
       "inspection:run",
       "inspection:add_note",

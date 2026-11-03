@@ -13,7 +13,7 @@ export interface TextFieldProps {
   value?: string;
   defaultValue?: string;
   onChange?: (value: string, id: string) => void;
-  type?: 'text' | 'email' | 'number' | 'password' | 'search' | 'tel' | 'url';
+  type?: 'text' | 'email' | 'number' | 'password' | 'search' | 'tel' | 'url' | 'date';
   /** `true` for 3 rows, or a row count. */
   multiline?: boolean | number;
   placeholder?: string;

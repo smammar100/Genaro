@@ -64,6 +64,29 @@ export const Tight: Story = {
 };
 
 /**
+ * Values against the right edge, as on a deal's Customer and Vehicle cards:
+ * labels down the left, values down the right, nothing running together.
+ * @summary values aligned to the card's right edge
+ */
+export const AlignedEnd: Story = {
+  args: { descriptionAlign: "end" },
+  render: (args) => (
+    <Card title="Vehicle">
+      <DescriptionList {...args} />
+    </Card>
+  ),
+};
+
+/**
+ * A rule between rows, for the rare list whose rows can't be read on spacing
+ * alone. Most lists don't need it: separators are a last resort.
+ * @summary rules between rows, only when spacing isn't enough
+ */
+export const Divided: Story = {
+  args: { divided: true },
+};
+
+/**
  * Inside a card, the list sits under the card's title with no rule above its
  * first row.
  * @summary under a card title

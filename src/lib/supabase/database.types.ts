@@ -1750,6 +1750,7 @@ export type Database = {
           stage: string
           updated_at: string
           vehicle_id: string
+          viewing_date: string | null
         }
         Insert: {
           agreed_price?: number | null
@@ -1770,6 +1771,7 @@ export type Database = {
           stage: string
           updated_at?: string
           vehicle_id: string
+          viewing_date?: string | null
         }
         Update: {
           agreed_price?: number | null
@@ -1790,6 +1792,7 @@ export type Database = {
           stage?: string
           updated_at?: string
           vehicle_id?: string
+          viewing_date?: string | null
         }
         Relationships: [
           {

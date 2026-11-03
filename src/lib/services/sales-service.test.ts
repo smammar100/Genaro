@@ -32,6 +32,7 @@ const vehicleMocks = vi.hoisted(() => ({
   getById: vi.fn(),
   changeStatus: vi.fn(async () => undefined),
   update: vi.fn(async () => undefined),
+  recomputeValueAddition: vi.fn(async () => null),
 }));
 vi.mock("./vehicle-service", () => ({ vehicleService: vehicleMocks }));
 
@@ -69,6 +70,7 @@ beforeEach(() => {
   vehicleMocks.getById.mockReset();
   vehicleMocks.changeStatus.mockReset().mockResolvedValue(undefined);
   vehicleMocks.update.mockReset().mockResolvedValue(undefined);
+  vehicleMocks.recomputeValueAddition.mockReset().mockResolvedValue(null);
   listingMocks.getForVehicle.mockReset();
   listingMocks.setStatusForVehicle.mockReset().mockResolvedValue(undefined);
   leadMocks.update.mockReset().mockResolvedValue(undefined);
@@ -114,6 +116,148 @@ describe("updateStage → completed_sale", () => {
       "user-9",
     );
     expect(listingMocks.setStatusForVehicle).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateStage → completed_sale with the sale dialog's details", () => {
+  const sale = {
+    dateSold: "2026-06-28",
+    sellingPrice: 12995,
+    enquirySource: "CAR GURUS",
+    valueAddition: 640,
+  };
+
+  it("dates the deal from the sale and writes all four onto the car", async () => {
+    setup({
+      stage: "completed_sale",
+      vehicle: { status: "reserved", receivedDate: "2026-06-01", valueAddition: 450 },
+      listing: { status: "reserved" },
+    });
+    await salesService.updateStage("deal-0001", "completed_sale", "user-9", sale);
+
+    const update = db.current.calls.find((c) => c.steps.some((s) => s.method === "update"));
+    expect(stepArgs(update!, "update")).toEqual([
+      { stage: "completed_sale", completion_date: "2026-06-28", agreed_price: 12995 },
+    ]);
+    expect(vehicleMocks.update).toHaveBeenCalledWith(
+      "veh-0001",
+      expect.objectContaining({
+        status: "sold",
+        saleStatus: "sold",
+        dateSold: "2026-06-28",
+        sellingPrice: 12995,
+        sellingAgent: "CAR GURUS",
+        valueAddition: 640,
+        // Days in stock run to the date of sale, not today.
+        daysInStock: 27,
+      }),
+      "user-9",
+    );
+  });
+
+  it("the dialog's price replaces one already on the car", async () => {
+    setup({ stage: "completed_sale", vehicle: { sellingPrice: 9000 }, listing: null });
+    await salesService.updateStage("deal-0001", "completed_sale", "user-9", sale);
+    expect(vehicleMocks.update).toHaveBeenCalledWith(
+      "veh-0001",
+      expect.objectContaining({ sellingPrice: 12995 }),
+      "user-9",
+    );
+  });
+});
+
+describe("updateStage → out of completed_sale (the sale is undone)", () => {
+  function setupUndo(opts: { to: SalesStage; listing?: Partial<Listing> | null; logged?: unknown[] }) {
+    const before = makeSalesDeal({ stage: "completed_sale", completionDate: "2026-06-28" });
+    const after = makeSalesDeal({ stage: opts.to, completionDate: null });
+    db.current = createSupabaseMock((call) => {
+      if (call.table === "sales_deals") {
+        const writing = call.steps.some((s) => s.method === "update");
+        return { data: writing ? after : before, error: null };
+      }
+      if (call.table === "activity_log") {
+        return {
+          data: opts.logged ?? [
+            { metadata: { dealId: "deal-0001", previousStatus: "ready", previousValueAddition: 450 } },
+          ],
+          error: null,
+        };
+      }
+      return undefined;
+    });
+    vehicleMocks.getById.mockResolvedValue(
+      makeVehicle({
+        status: "sold",
+        saleStatus: "sold",
+        dateSold: "2026-06-28",
+        sellingPrice: 12995,
+        sellingAgent: "CAR GURUS",
+        valueAddition: 640,
+      }),
+    );
+    listingMocks.getForVehicle.mockResolvedValue(
+      opts.listing === null ? null : makeListing(opts.listing ?? { status: "sold" }),
+    );
+  }
+
+  it("clears the completion date and every sale figure; the car is available again", async () => {
+    setupUndo({ to: "contacted" });
+    await salesService.updateStage("deal-0001", "contacted", "user-9");
+
+    const update = db.current.calls.find(
+      (c) => c.table === "sales_deals" && c.steps.some((s) => s.method === "update"),
+    );
+    expect(stepArgs(update!, "update")).toEqual([{ stage: "contacted", completion_date: null }]);
+    expect(vehicleMocks.update).toHaveBeenCalledWith(
+      "veh-0001",
+      expect.objectContaining({
+        status: "ready",
+        saleStatus: "available",
+        dateSold: null,
+        sellingPrice: null,
+        sellingAgent: null,
+        valueAddition: 450,
+      }),
+      "user-9",
+    );
+    expect(vehicleMocks.recomputeValueAddition).toHaveBeenCalledWith("veh-0001", "user-9");
+    expect(listingMocks.setStatusForVehicle).toHaveBeenCalledWith("veh-0001", "live");
+  });
+
+  it("back to a reserved stage, the car stays reserved", async () => {
+    setupUndo({ to: "deposit_taken" });
+    await salesService.updateStage("deal-0001", "deposit_taken", "user-9");
+    expect(vehicleMocks.update).toHaveBeenCalledWith(
+      "veh-0001",
+      expect.objectContaining({ status: "reserved", saleStatus: "available", sellingPrice: null }),
+      "user-9",
+    );
+    expect(listingMocks.setStatusForVehicle).toHaveBeenCalledWith("veh-0001", "reserved");
+    // Not re-reserved through the normal path on top of the undo.
+    expect(vehicleMocks.changeStatus).not.toHaveBeenCalled();
+  });
+
+  it("with no record of the sale, the car goes back to listed and keeps its value addition", async () => {
+    setupUndo({ to: "lost", logged: [] });
+    await salesService.updateStage("deal-0001", "lost", "user-9");
+    const patch = (vehicleMocks.update.mock.calls[0] as unknown[])[1] as Record<string, unknown>;
+    expect(patch).toMatchObject({ status: "listed", saleStatus: "available", dateSold: null });
+    expect(patch).not.toHaveProperty("valueAddition", 450);
+  });
+
+  it("a listing that isn't marked sold is left alone", async () => {
+    setupUndo({ to: "contacted", listing: { status: "draft" } });
+    await salesService.updateStage("deal-0001", "contacted", "user-9");
+    expect(listingMocks.setStatusForVehicle).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateParticulars", () => {
+  it("writes only the fields given", async () => {
+    setup({ stage: "offer_made" });
+    await salesService.updateParticulars("deal-0001", { agreedPrice: 14500, depositAmount: 500 });
+    const update = db.current.calls.find((c) => c.steps.some((s) => s.method === "update"));
+    expect(stepArgs(update!, "update")).toEqual([{ agreed_price: 14500, deposit_amount: 500 }]);
   });
 });
 

@@ -666,9 +666,12 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 
 /* DescriptionList */
 .p-dlist { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); margin:0; font-family:var(--font-sans); font-size:var(--fs-body); line-height:var(--lh-body); font-weight:var(--fw-regular); color:var(--text); }
-.p-dlist__term, .p-dlist__desc { margin:0; padding:var(--space-400) 0; border-top:var(--border-width-025) solid var(--border-secondary); }
+.p-dlist__term, .p-dlist__desc { margin:0; padding:var(--space-400) 0; min-width:0; overflow-wrap:anywhere; }
 .p-dlist__term { font-weight:var(--fw-semibold); padding-right:var(--space-400); }
-.p-dlist > :nth-child(1), .p-dlist > :nth-child(2) { border-top:0; }
+/* Rules between rows only when asked for (divided): spacing separates rows by default. */
+.p-dlist--divided .p-dlist__term, .p-dlist--divided .p-dlist__desc { border-top:var(--border-width-025) solid var(--border-secondary); }
+.p-dlist--divided > :nth-child(1), .p-dlist--divided > :nth-child(2) { border-top:0; }
+.p-dlist--align-end .p-dlist__desc { text-align:end; }
 .p-dlist--tight .p-dlist__term, .p-dlist--tight .p-dlist__desc { padding:var(--space-200) 0; }
 
 /* ResourceList */
@@ -963,6 +966,8 @@ a.p-toast__action { text-decoration:none; }
 .p-sheet__actions { grid-column:2; grid-row:1; display:flex; align-items:center; gap:var(--space-100); }
 .p-sheet__body { flex:1; min-height:0; display:flex; flex-direction:column; gap:var(--space-400); padding:var(--space-400); overflow:auto; overscroll-behavior:contain; }
 .p-sheet__body--flush { padding:0; gap:0; }
+/* The body scrolls; its children keep their full height. Without this a flush Card (overflow hidden) shrank to the body and clipped its last rows. */
+.p-sheet__body > * { flex-shrink:0; }
 .p-sheet--subdued .p-sheet__body { background:var(--bg-surface-secondary); }
 .p-sheet__footer { flex:none; display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:var(--space-200); padding:var(--space-400); border-top:var(--border-width-025) solid var(--border); }
 .p-sheet__footer-start { margin-right:auto; }

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Vehicle } from "@/lib/types";
 import { Card, Layout, SkeletonBodyText, Tabs } from "@/components/genaro";
-import { todoService } from "@/lib/services/todo-service";
+import { countOpenTodos, todoService } from "@/lib/services/todo-service";
 import { enquiryService } from "@/lib/services/enquiry-service";
 import { vehiclePhotoService } from "@/lib/services/vehicle-photo-service";
 import { PHOTOS_ENABLED } from "@/lib/phase-one";
@@ -115,13 +115,16 @@ export function VehicleDetailShell({
   const activeTab = (TAB_IDS as readonly string[]).includes(requestedTab) ? requestedTab : "overview";
   const setActiveTab = onValueChange ?? setInternalTab;
 
+  // Recounted on every tab switch too: completing an inspection on its tab
+  // adds Things to Do, and the badge must not keep the count from page load.
   useEffect(() => {
     void todoService
       .getForVehicle(vehicle.id)
-      .then((rows) =>
-        setTodoCount(rows.filter((r) => r.status !== "completed").length),
-      )
+      .then((rows) => setTodoCount(countOpenTodos(rows)))
       .catch(() => setTodoCount(null));
+  }, [vehicle.id, activeTab]);
+
+  useEffect(() => {
     void enquiryService
       .getForVehicle(vehicle.id)
       .then((rows) => setEnquiryCount(rows.length))
@@ -208,17 +211,8 @@ export function VehicleDetailShell({
                 exporting={exporting}
                 // Closing the last item can flip the car to "ready" (GEN-64), so the
                 // header/status and the tab's own count both need re-pulling.
-                onChanged={() => {
-                  void todoService
-                    .getForVehicle(vehicle.id)
-                    .then((rows) =>
-                      setTodoCount(
-                        rows.filter((r) => r.status !== "completed").length,
-                      ),
-                    )
-                    .catch(() => undefined);
-                  onVehicleRefetch?.();
-                }}
+                onChanged={() => onVehicleRefetch?.()}
+                onOpenCountChange={setTodoCount}
               />
             )}
             {activeTab === "inspection" && <InspectionTab vehicle={vehicle} />}

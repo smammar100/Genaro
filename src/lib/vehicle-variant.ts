@@ -18,18 +18,25 @@ interface VariantSource {
 
 const EM_DASH = "—";
 
+/** A variant name that is only an engine size ("2.0", "1.6"), which says less than the derivative. */
+const BARE_ENGINE_SIZE = /^\d+(\.\d+)?$/;
+
 /**
  * The human-readable variant, or an em dash when we genuinely have no name.
  *
- * `derivative` wins over `variantName` deliberately. In practice the DVLA/
- * AutoTrader lookup fills `variantName` with a bare engine size ("2.0", "1.6")
- * and `derivative` with the full description ("2.0 318d Sport Saloon 4dr
- * Diesel Auto Euro 6 (s/s) (150 ps)") — so preferring the name would show the
- * least useful of the two. This is the order the original inline chain used;
- * the bug was only ever the `?? variantCode` on the end of it.
+ * `variantName` is the dealer's own (typed on arrival, imported from the
+ * master sheet, or edited on the Details tab, whose hint says "leave blank to
+ * fall back to the AutoTrader derivative"), so it wins: AutoTrader's
+ * derivative can be wrong, and an edit that never showed was bug 9 on the
+ * 2026-11-02 list. The one exception is a bare engine size ("2.0"), which
+ * says less than the full derivative ("2.0 318d Sport Saloon 4dr Diesel Auto
+ * Euro 6 (s/s) (150 ps)"). The code is never shown (GEN-91).
  */
 export function variantLabel(v: VariantSource, fallback: string = EM_DASH): string {
-  return firstNonEmpty(v.derivative, v.variantName) ?? fallback;
+  const name = firstNonEmpty(v.variantName);
+  const derivative = firstNonEmpty(v.derivative);
+  if (name && !(derivative && BARE_ENGINE_SIZE.test(name))) return name;
+  return derivative ?? name ?? fallback;
 }
 
 /**

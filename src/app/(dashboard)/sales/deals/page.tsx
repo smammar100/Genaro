@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Download, Eye, Handshake } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { salesService } from "@/lib/services/sales-service";
@@ -23,7 +23,9 @@ import {
   SkeletonBodyText,
 } from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
+import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import {
+  UserCell,
   DataGridGroupHeaderRow,
   DataGridHeaderRow,
   DataGridRow,
@@ -70,14 +72,32 @@ function monthLabel(key: string): string {
   const month = MONTHS[Number(m) - 1];
   return month ? `${month} ${y}` : key;
 }
-const dealDate = (d: SalesDeal): string => d.completionDate ?? d.updatedAt;
-const dealMonth = (d: SalesDeal): string => dealDate(d).slice(0, 7);
-const dealPrice = (d: SalesDeal): number | null =>
-  d.agreedPrice ?? d.offerPrice ?? null;
+/**
+ * One completed sale: a deal that reached Completed sale in the app, or a car
+ * the master sheet has as SOLD with no such deal (the sales from before the
+ * app, imported from the spreadsheet; bug list 2026-11-02, item 11).
+ */
+interface SaleRow {
+  id: string;
+  deal: SalesDeal | null;
+  vehicleId: string;
+  customerName: string;
+  price: number | null;
+  /** Date of sale; null for an old sheet row that never recorded one. */
+  date: string | null;
+  agent: string | null;
+}
+
+/** Group key for sales with no date. */
+const NO_DATE = "none";
+const saleMonth = (r: SaleRow): string => r.date?.slice(0, 7) ?? NO_DATE;
+const groupLabel = (key: string): string =>
+  key === NO_DATE ? "Date not recorded" : monthLabel(key);
 
 export default function DealsPage() {
   const { company } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [deals, setDeals] = useState<SalesDeal[] | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -113,7 +133,7 @@ export default function DealsPage() {
   // Resolve a completed sale's invoice: prefer the explicit saleId link, else
   // fall back to the sale invoice for the deal's vehicle (demo data doesn't
   // always populate saleId).
-  const invoiceForDeal = useMemo(() => {
+  const invoiceFor = useMemo(() => {
     const bySale = new Map<string, Invoice>();
     const saleByVehicle = new Map<string, Invoice>();
     invoices.forEach((i) => {
@@ -122,8 +142,8 @@ export default function DealsPage() {
         saleByVehicle.set(i.vehicleId, i);
       }
     });
-    return (d: SalesDeal): Invoice | undefined =>
-      bySale.get(d.id) ?? saleByVehicle.get(d.vehicleId);
+    return (r: SaleRow): Invoice | undefined =>
+      (r.deal ? bySale.get(r.deal.id) : undefined) ?? saleByVehicle.get(r.vehicleId);
   }, [invoices]);
 
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
@@ -148,19 +168,56 @@ export default function DealsPage() {
 
   // Every completed sale, the moment its deal reaches Completed sale. It
   // used to wait for the invoice (2026-07-14); the client wants it listed
-  // straight away, with the invoice still to raise (call 2026-10-31).
-  const closed = useMemo(
-    () => deals?.filter((d) => d.stage === "completed_sale") ?? null,
-    [deals],
-  );
+  // straight away, with the invoice still to raise (call 2026-10-31). The
+  // master sheet's earlier sales sit alongside, so the history is complete.
+  const closed = useMemo<SaleRow[] | null>(() => {
+    if (!deals) return null;
+    const won = deals.filter((d) => d.stage === "completed_sale");
+    const dealt = new Set(won.map((d) => d.vehicleId));
+    const fromDeals = won.map((d): SaleRow => {
+      const v = vehicleById.get(d.vehicleId);
+      return {
+        id: d.id,
+        deal: d,
+        vehicleId: d.vehicleId,
+        customerName: d.customerName,
+        // The car's recorded selling price is the final figure (the sale
+        // dialog and invoicing both write it); the deal's own is a fallback.
+        price: v?.sellingPrice ?? d.agreedPrice ?? d.offerPrice ?? null,
+        date: d.completionDate ?? v?.dateSold ?? d.updatedAt,
+        agent: userById.get(d.sellingAgent ?? "")?.name ?? null,
+      };
+    });
+    const saleInvoice = new Map<string, Invoice>();
+    invoices.forEach((i) => {
+      if (i.type === "sale" && i.vehicleId && !saleInvoice.has(i.vehicleId)) {
+        saleInvoice.set(i.vehicleId, i);
+      }
+    });
+    const fromSheet = vehicles
+      .filter((v) => v.saleStatus === "sold" && !dealt.has(v.id))
+      .map((v): SaleRow => {
+        const inv = saleInvoice.get(v.id);
+        return {
+          id: `sheet-${v.id}`,
+          deal: null,
+          vehicleId: v.id,
+          customerName: inv?.buyerName?.trim() || inv?.partyName?.trim() || "—",
+          price: v.sellingPrice,
+          date: v.dateSold,
+          agent: v.sellingAgent?.trim() || null,
+        };
+      });
+    return [...fromDeals, ...fromSheet];
+  }, [deals, vehicles, invoices, vehicleById, userById]);
 
   // Source options derived from the actual closed deals (schema-driven), so
   // specific auction houses (e.g. "BCA Auction") only appear when present.
   const sourceFilters: SelectFilter[] = useMemo(() => {
     if (!closed) return [];
     const labels = new Set<string>();
-    closed.forEach((d) => {
-      const label = sourceLabel(vehicleById.get(d.vehicleId));
+    closed.forEach((r) => {
+      const label = sourceLabel(vehicleById.get(r.vehicleId));
       if (label !== "—") labels.add(label);
     });
     if (labels.size === 0) return [];
@@ -176,14 +233,14 @@ export default function DealsPage() {
 
   const filtered = useMemo(() => {
     if (!closed) return null;
-    return closed.filter((d) => {
-      const v = vehicleById.get(d.vehicleId);
-      return matchesFilterState(d, filters, {
+    return closed.filter((r) => {
+      const v = vehicleById.get(r.vehicleId);
+      return matchesFilterState(r, filters, {
         searchText: () =>
-          [v?.registration, v?.make, v?.model, v?.stockId, d.customerName]
+          [v?.registration, v?.make, v?.model, v?.stockId, r.customerName, r.agent]
             .filter(Boolean)
             .join(" "),
-        date: () => dealDate(d),
+        date: () => r.date,
         selectValue: (_row, key) => (key === "source" ? sourceLabel(v) : null),
       });
     });
@@ -193,20 +250,20 @@ export default function DealsPage() {
   // so useSort (and the grouping below) don't re-sort on every render.
   const comparators = useMemo(
     () => ({
-      reg: (a: SalesDeal, b: SalesDeal) =>
+      reg: (a: SaleRow, b: SaleRow) =>
         (vehicleById.get(a.vehicleId)?.registration ?? "").localeCompare(
           vehicleById.get(b.vehicleId)?.registration ?? "",
         ),
-      customerName: (a: SalesDeal, b: SalesDeal) =>
+      customerName: (a: SaleRow, b: SaleRow) =>
         a.customerName.localeCompare(b.customerName),
-      price: (a: SalesDeal, b: SalesDeal) =>
-        (dealPrice(a) ?? 0) - (dealPrice(b) ?? 0),
-      completed: (a: SalesDeal, b: SalesDeal) =>
-        dealDate(a).localeCompare(dealDate(b)),
+      price: (a: SaleRow, b: SaleRow) => (a.price ?? 0) - (b.price ?? 0),
+      // Undated sheet sales count as the oldest.
+      completed: (a: SaleRow, b: SaleRow) =>
+        (a.date ?? "").localeCompare(b.date ?? ""),
     }),
     [vehicleById],
   );
-  const { sorted, sortKey, sortDir, onSort } = useSort<SalesDeal>(
+  const { sorted, sortKey, sortDir, onSort } = useSort<SaleRow>(
     filtered ?? undefined,
     comparators,
     { key: "completed", dir: "desc" },
@@ -215,13 +272,13 @@ export default function DealsPage() {
   // Monthly grouping — the client reviews completed sales month by month.
   const { groups, isCollapsed, toggle } = useRowGroups(
     sorted,
-    dealMonth,
-    monthLabel,
+    saleMonth,
+    groupLabel,
   );
 
   // Not memoized: the Invoice column closes over downloadingId so its spinner
   // stays current. The table is small, so rebuilding the column list is cheap.
-  const cols: ColumnDef<SalesDeal>[] = [
+  const cols: ColumnDef<SaleRow>[] = [
       {
         key: "vehicle",
         label: "Vehicle",
@@ -229,8 +286,8 @@ export default function DealsPage() {
         sortable: true,
         sortKey: "reg",
         width: 240,
-        render: (d) => {
-          const v = vehicleById.get(d.vehicleId);
+        render: (r) => {
+          const v = vehicleById.get(r.vehicleId);
           return (
             <div className="flex min-w-0 items-center gap-2">
               {v ? (
@@ -256,21 +313,29 @@ export default function DealsPage() {
         type: "currency",
         sortable: true,
         width: 110,
-        get: dealPrice,
+        get: (r) => r.price,
       },
       {
         key: "source",
         label: "Source",
         type: "text",
         width: 130,
-        get: (d) => sourceLabel(vehicleById.get(d.vehicleId)),
+        get: (r) => sourceLabel(vehicleById.get(r.vehicleId)),
       },
       {
         key: "agent",
         label: "Agent",
-        type: "user",
+        type: "custom",
         width: 150,
-        get: (d) => userById.get(d.sellingAgent ?? "")?.name ?? null,
+        get: (r) => r.agent,
+        // A deal's agent is a member of staff; a sheet sale's is the sheet's
+        // "lead from" wording (ZUTO, AUTO TRADER), so it isn't drawn as a person.
+        render: (r) =>
+          r.deal ? (
+            <UserCell name={r.agent} />
+          ) : (
+            <span className="body-sm truncate">{r.agent ?? "—"}</span>
+          ),
       },
       {
         key: "completed",
@@ -278,21 +343,21 @@ export default function DealsPage() {
         type: "date",
         sortable: true,
         width: 120,
-        get: dealDate,
+        get: (r) => r.date,
       },
       {
         key: "invoice",
         label: "Invoice",
         type: "custom",
         width: 130,
-        render: (d) => {
-          const inv = invoiceForDeal(d);
+        render: (r) => {
+          const inv = invoiceFor(r);
           if (!inv) {
             return (
               <Button
                 size="micro"
-                url={`/sales/invoice-generation?vehicleId=${d.vehicleId}`}
-                accessibilityLabel={`Generate invoice for ${d.customerName}`}
+                url={`/sales/invoice-generation?vehicleId=${r.vehicleId}`}
+                accessibilityLabel={`Generate invoice for ${r.customerName}`}
               >
                 Generate invoice
               </Button>
@@ -328,17 +393,19 @@ export default function DealsPage() {
     ];
 
   // Row click → open the invoice detail in place (a modal on this page, not a
-  // navigation to Invoicing — GEN-42); a sale not yet invoiced opens its deal.
-  function openDeal(d: SalesDeal): void {
-    const inv = invoiceForDeal(d);
+  // navigation to Invoicing — GEN-42); a sale not yet invoiced opens its deal,
+  // or the car when the sale came from the master sheet.
+  function openSale(r: SaleRow): void {
+    const inv = invoiceFor(r);
     if (inv) setViewingInvoice(inv);
-    else router.push(`/sales/pipeline/${d.id}`);
+    else if (r.deal) router.push(`/sales/pipeline/${r.deal.id}`);
+    else router.push(vehicleDetailHref(r.vehicleId, pathname));
   }
 
   return (
     <Page
       title="Completed sales"
-      subtitle="Your completed sales history. Deals still in progress live on the sales pipeline."
+      subtitle="Your completed sales history, including earlier sales from the master sheet. Deals still in progress live on the sales pipeline."
       fullWidth
       secondaryActions={[{ content: "View pipeline", url: "/sales/pipeline" }]}
     >
@@ -359,7 +426,7 @@ export default function DealsPage() {
         </Card>
       ) : closed.length === 0 ? (
         <EmptyState heading="No completed sales yet" icon={<Handshake />}>
-          Move a pipeline card to Completed sale to see it here.
+          Move a pipeline card to Completed sale, or mark a car sold on the master sheet, to see it here.
         </EmptyState>
       ) : groups.length === 0 ? (
         <EmptyState heading="No deals match your filters" icon={<Handshake />}>
@@ -385,13 +452,13 @@ export default function DealsPage() {
                     span={cols.length}
                   />
                   {!isCollapsed(g.key) &&
-                    g.rows.map((d, i) => (
+                    g.rows.map((r, i) => (
                       <DataGridRow
-                        key={d.id}
-                        row={d}
+                        key={r.id}
+                        row={r}
                         cols={cols}
                         index={i}
-                        onClick={openDeal}
+                        onClick={openSale}
                       />
                     ))}
                 </Fragment>

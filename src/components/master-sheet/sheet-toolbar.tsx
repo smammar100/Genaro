@@ -39,6 +39,8 @@ interface SheetToolbarProps {
   /** Applied conditions, shown as removable tags under the toolbar. */
   filters: { id: number; label: string }[];
   onRemoveFilter: (id: number) => void;
+  /** Removes every applied filter at once. */
+  onClearFilters: () => void;
   filterOpen: boolean;
   onFilterOpenChange: (open: boolean) => void;
   builder: SheetFilterBuilder;
@@ -57,6 +59,7 @@ export function SheetToolbar({
   columnsPanel,
   filters,
   onRemoveFilter,
+  onClearFilters,
   filterOpen,
   onFilterOpenChange,
   builder,
@@ -173,6 +176,9 @@ export function SheetToolbar({
               {f.label}
             </Tag>
           ))}
+          <Button variant="tertiary" size="micro" onClick={onClearFilters}>
+            Clear all
+          </Button>
         </div>
       )}
     </div>

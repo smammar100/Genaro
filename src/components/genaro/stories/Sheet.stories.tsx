@@ -293,7 +293,7 @@ export const Saving: Story = {
  */
 export const Large: Story = {
   args: {
-    title: "20-point inspection",
+    title: "Inspection checklist",
     subtitle: "Ford Fiesta · L-927 · Inspector: Sam Okafor",
     size: "large",
     children: (

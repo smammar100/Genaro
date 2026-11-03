@@ -12,4 +12,4 @@ export { DataGridColumnsButton, useColumnVisibility } from "./columns-button";
 export { DataGridDensityToggle, useDensity } from "./density";
 export { useSort } from "./sort";
 export { DataGridGroupHeaderRow, useRowGroups } from "./grouping";
-export { AtIndicatorCell, VehicleCell } from "./cells";
+export { AtIndicatorCell, UserCell, VehicleCell } from "./cells";

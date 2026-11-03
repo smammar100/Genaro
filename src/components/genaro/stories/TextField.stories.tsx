@@ -84,6 +84,15 @@ export const WithSuffix: Story = {
 };
 
 /**
+ * A single day, such as the date a car was sold. The browser's own date
+ * picker opens from the field, and the value is `YYYY-MM-DD`.
+ * @summary a day, with the browser's date picker
+ */
+export const DateField: Story = {
+  args: { label: "Date of sale", type: "date", value: "2026-11-02" },
+};
+
+/**
  * Small whole numbers people nudge up or down, such as the number of keys.
  * `type="number"` adds a stepper.
  * @summary small counts, with up and down steppers

@@ -24,6 +24,7 @@ import {
   EmptyState,
   Select,
   TextField,
+  useConfirm,
 } from "@/components/genaro";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -83,6 +84,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
   const [lastCompleted, setLastCompleted] = useState<{ flagged: number } | null>(
     null,
   );
+  const { confirm, confirmDialog } = useConfirm();
 
   useEffect(() => {
     void inspectionService.getForVehicle(vehicle.id).then(setChecks);
@@ -111,7 +113,27 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
     if (!user) return;
     const fresh = await inspectionService.start(vehicle.id, user.id);
     setChecks(fresh);
+    setLastCompleted(null);
     toast.success("Inspection started");
+  }
+
+  // Reset wipes every answer, so it asks first.
+  async function handleReset() {
+    const ok = await confirm({
+      title: "Reset this inspection?",
+      description: `Every answer and action for ${vehicle.registration} is cleared and the checklist starts again from 0.`,
+      confirmText: "Reset inspection",
+      destructive: true,
+    });
+    if (!ok) return;
+    setSubmitting(true);
+    try {
+      await handleStart();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't reset the inspection");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function handleStatusChange(num: number, status: string) {
@@ -187,16 +209,19 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
             onAction: () => void handleStart(),
           }}
         >
-          Run a 20-point inspection to surface issues and auto-generate Things
-          to Do. Your answers save automatically as you go.
+          Run the inspection checklist to surface issues and auto-generate
+          Things to Do. Your answers save automatically as you go.
         </EmptyState>
       </Card>
     );
   }
 
-  const completed = checks.filter((c) => c.status).length;
+  // Counted per checklist point, the same rows the list below renders.
+  const completed = items.filter(
+    (item) => checks.find((c) => c.checkNumber === item.number)?.status,
+  ).length;
   const total = items.length;
-  const percent = Math.round((completed / total) * 100);
+  const percent = total ? Math.round((completed / total) * 100) : 0;
   const flagged = checks.filter(
     (c) => c.status && NEGATIVE_INSPECTION_STATUSES.has(c.status),
   ).length;
@@ -232,7 +257,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={() => void handleStart()} disabled={submitting}>
+            <Button onClick={() => void handleReset()} disabled={submitting}>
               Reset
             </Button>
             <Button
@@ -315,6 +340,8 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <Input
+                      // Keyed to the row, so a Reset (new rows) clears old text.
+                      key={check?.id ?? `none-${item.number}`}
                       aria-label={`Action required for ${item.item}`}
                       defaultValue={check?.actionRequired ?? ""}
                       placeholder={
@@ -389,6 +416,7 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
           </div>
         )}
       </Card>
+      {confirmDialog}
     </div>
   );
 }

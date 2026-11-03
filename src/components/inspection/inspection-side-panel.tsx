@@ -35,7 +35,7 @@ export function InspectionSidePanel({ vehicle, open, onOpenChange, onComplete }:
       size="large"
       title={
         <span className="flex items-center gap-2">
-          20-point inspection
+          Inspection checklist
           {shown ? <RegPlate registration={shown.registration} size="sm" /> : null}
         </span>
       }

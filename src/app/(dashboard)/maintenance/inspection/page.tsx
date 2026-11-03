@@ -86,7 +86,10 @@ async function fetchQueue(companyId: string) {
   );
   const rows: Row[] = scope.map((v, i) => {
     const checks = checksByVehicle[i];
-    const progress = checks.filter((c) => c.status).length;
+    // Per checklist point, as the squares show it.
+    const progress = items.filter(
+      (item) => checks.find((c) => c.checkNumber === item.number)?.status,
+    ).length;
     return { vehicle: v, checks, progress, total: items.length };
   });
   return { rows, users, items };
@@ -134,7 +137,7 @@ export default function MaintenanceInspectionListPage() {
   return (
     <Page
       title="Inspection queue"
-      subtitle="Vehicles waiting on their 20-point inspection. Run a check and cars move through automatically once it is done."
+      subtitle="Vehicles waiting on their inspection checklist. Run a check and cars move through automatically once it is done."
       fullWidth
     >
       {/* Queue tabs: their own row under the header, outside the card. */}
@@ -186,10 +189,14 @@ export default function MaintenanceInspectionListPage() {
       <InspectionSidePanel
         vehicle={selected}
         open={selected !== null}
+        // Reload on every close, not just on Complete: answers and a Reset
+        // made in the panel must show in the queue's progress straight away.
         onOpenChange={(o) => {
-          if (!o) setSelected(null);
+          if (!o) {
+            setSelected(null);
+            setRefreshKey((k) => k + 1);
+          }
         }}
-        onComplete={() => setRefreshKey((k) => k + 1)}
       />
     </Page>
   );
