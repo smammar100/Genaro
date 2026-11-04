@@ -59,11 +59,14 @@ export default function DashboardPage() {
 
   const showMots = flags.stock && (mots.due?.length ?? 0) > 0;
 
-  // The bottom row is Stock by stage / Appointments / Latest activity. Its column
-  // count follows how many of those three the role can actually see, so a
-  // hidden widget never leaves an empty column.
+  // The bottom row is Stock by stage / Appointments / MOTs expiring soon /
+  // Latest activity. Its column count follows how many of those the role can
+  // actually see, so a hidden widget never leaves an empty column.
   const row3 =
-    Number(flags.stock) + Number(flags.calendar) + Number(flags.news);
+    Number(flags.stock) +
+    Number(flags.calendar) +
+    Number(showMots) +
+    Number(flags.news);
 
   // Layout follows Dashboard Home.dc.html: greeting, KPI strip, the deals
   // table full width, then up to three equal cards.
@@ -88,22 +91,9 @@ export default function DashboardPage() {
 
       <DashboardKpiRow />
 
-      {/* Recent deals makes room for the MOT box only when an MOT is due
-          (call 2026-10-31, 2026-11-01). */}
-      {flags.deals || showMots ? (
-        <Grid>
-          {flags.deals && (
-            <Grid.Cell columnSpan={{ xs: 6, lg: showMots ? 8 : 12 }}>
-              <DashboardRecentDeals />
-            </Grid.Cell>
-          )}
-          {showMots && mots.due && (
-            <Grid.Cell columnSpan={{ xs: 6, lg: flags.deals ? 4 : 12 }}>
-              <DashboardMotsExpiring due={mots.due} today={mots.today} />
-            </Grid.Cell>
-          )}
-        </Grid>
-      ) : null}
+      {/* Recent deals keeps the full width; the MOT box sits in the row
+          below (call 2026-11-04). */}
+      {flags.deals && <DashboardRecentDeals />}
 
       {row3 > 0 && (
         <Grid>
@@ -115,6 +105,11 @@ export default function DashboardPage() {
           {flags.calendar && (
             <Grid.Cell columnSpan={{ xs: 6, lg: row3Span }}>
               <DashboardUpcomingAppointments />
+            </Grid.Cell>
+          )}
+          {showMots && mots.due && (
+            <Grid.Cell columnSpan={{ xs: 6, lg: row3Span }}>
+              <DashboardMotsExpiring due={mots.due} today={mots.today} />
             </Grid.Cell>
           )}
           {flags.news && (
