@@ -73,7 +73,7 @@ export function DashboardStockOverview() {
       title="Stock by stage"
       actions={
         <Button variant="plain" url="/vehicles">
-          Inventory
+          View all
         </Button>
       }
     >
@@ -110,11 +110,11 @@ export function DashboardStockOverview() {
                 />
               ))}
           </div>
-          <ul className="flex list-none flex-col">
+          <ul className="flex list-none flex-col gap-1">
             {segments.map((seg) => (
               <li
                 key={seg.label}
-                className="body-md flex items-center gap-2 border-t border-(--border-secondary) py-2 first:border-t-0"
+                className="body-md flex items-center gap-2 py-1.5"
               >
                 <span
                   aria-hidden

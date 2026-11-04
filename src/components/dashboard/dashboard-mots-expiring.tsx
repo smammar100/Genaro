@@ -65,16 +65,21 @@ export function DashboardMotsExpiring({ due, today: todayKey }: { due: Vehicle[]
     <Card
       className="h-full"
       title="MOTs expiring soon"
-      actions={<span className="body-sm tabular-nums text-(--text-secondary)">{due.length}</span>}
+      actions={
+        <Button variant="plain" url="/vehicles">
+          View all
+        </Button>
+      }
     >
-      <ul className="-mx-4 -mb-4 flex flex-col">
+      {/* No dividers between rows: spacing separates them, as in Appointments. */}
+      <ul className="-mx-2 flex list-none flex-col gap-1">
           {due.slice(0, 8).map((v) => {
             const expired = (v.motExpiry ?? "") < todayKey;
             return (
-              <li key={v.id} className="border-t border-(--border-secondary)">
+              <li key={v.id}>
                 <Link
                   href={vehicleDetailHref(v.id, pathname)}
-                  className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-(--bg-surface-hover)"
+                  className="flex items-center gap-3 rounded-(--radius-200) px-2 py-1.5 transition-colors hover:bg-(--bg-surface-hover)"
                 >
                   <RegPlate registration={v.registration} size="sm" />
                   <span className="flex min-w-0 flex-1 flex-col">
@@ -92,7 +97,7 @@ export function DashboardMotsExpiring({ due, today: todayKey }: { due: Vehicle[]
             );
           })}
           {due.length > 8 ? (
-            <li className="border-t border-(--border-secondary) px-4 py-2.5">
+            <li className="px-2 py-1.5">
               <Button variant="plain" url="/vehicles">
                 {`${due.length - 8} more in All vehicles`}
               </Button>

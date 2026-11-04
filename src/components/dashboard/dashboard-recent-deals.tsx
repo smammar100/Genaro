@@ -65,7 +65,7 @@ export function DashboardRecentDeals() {
       <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-2">
         <h2 className="heading-sm text-(--text)">Recent deals</h2>
         <Button variant="plain" url="/sales/pipeline">
-          View pipeline
+          View all
         </Button>
       </div>
 
