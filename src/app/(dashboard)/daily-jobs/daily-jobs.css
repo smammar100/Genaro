@@ -1,0 +1,32 @@
+/* Daily jobs: the strike-off and the day sheet's column sizing. Tokens only. */
+
+/* A line draws across the job once it's done. A background line (rather than
+   text-decoration) can animate, and wraps with the text across lines. */
+.dj-title {
+  color: var(--text);
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 55%;
+  background-size: 0% 1px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: background-size 260ms cubic-bezier(0.23, 1, 0.32, 1), color 160ms ease-out;
+}
+.dj-title--done { color: var(--text-secondary); background-size: 100% 1px; }
+@media (prefers-reduced-motion: reduce) {
+  .dj-title { transition: none; }
+}
+
+/* The table fills its card and only the Job column flexes and wraps; the
+   others take their content's width. (IndexTable's min-width would otherwise
+   let it grow to the longest job and push the other columns off the card.) */
+.dj-sheet table { width: 100%; }
+.dj-sheet td:first-child { width: 100%; white-space: normal; }
+.dj-sheet th:not(:first-child), .dj-sheet td:not(:first-child) { width: 1%; }
+
+/* On a narrow table, Posted by moves under the job instead of keeping a column. */
+.dj-meta { display: none; }
+@container p-indextable (max-width: 820px) {
+  .dj-sheet th:nth-child(3), .dj-sheet td:nth-child(3) { display: none; }
+  .dj-meta { display: block; }
+}

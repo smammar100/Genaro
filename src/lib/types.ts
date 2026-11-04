@@ -890,6 +890,31 @@ export interface DealNote {
   createdAt: ISODateTime;
 }
 
+export type DailyJobPriority = "urgent" | "high" | "normal" | "low";
+export type DailyJobStatus = "pending" | "completed";
+
+/**
+ * One job on the team's day sheet (0061): posted by anyone, picked up by a
+ * member of staff, then completed (and struck off).
+ */
+export interface DailyJob {
+  id: UUID;
+  companyId: UUID;
+  /** yyyy-mm-dd */
+  jobDate: string;
+  title: string;
+  /** The car's plate, when the job is about one. */
+  registration: string | null;
+  priority: DailyJobPriority;
+  status: DailyJobStatus;
+  createdBy: UUID;
+  pickedUpBy: UUID | null;
+  pickedUpAt: ISODateTime | null;
+  completedBy: UUID | null;
+  completedAt: ISODateTime | null;
+  createdAt: ISODateTime;
+}
+
 // ============================================================
 // WARRANTIES & CLAIMS
 // ============================================================

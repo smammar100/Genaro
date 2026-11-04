@@ -17,7 +17,8 @@ describe("visibleNavGroups", () => {
 
   it("drops a group the user can see nothing in", () => {
     const labels = visibleNavGroups(only("sales:create_lead"), false).map((g) => g.label);
-    expect(labels).toEqual([null, "Sales"]);
+    // Daily jobs has no capability gate: everyone posts and works the sheet.
+    expect(labels).toEqual([null, "Daily jobs", "Sales"]);
   });
 });
 
@@ -60,7 +61,7 @@ describe("navRows", () => {
   it("moves the section gap to the first group a user can see", () => {
     const salesOnly = visibleNavGroups(only("sales:create_lead"), false);
     const rows = navRows(salesOnly, { pathname: "/dashboard", tourGroup: null });
-    expect(rows.filter((r) => r.newSection).map((r) => r.label)).toEqual(["Sales"]);
+    expect(rows.filter((r) => r.newSection).map((r) => r.label)).toEqual(["Daily jobs"]);
   });
 
   it("closes the route's section when the user closes it", () => {

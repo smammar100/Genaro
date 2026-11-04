@@ -21,6 +21,7 @@ import {
   Handshake,
   ShieldAlert,
   Building2,
+  ListChecks,
   type LucideIcon,
 } from "lucide-react";
 import type { Capability } from "@/lib/capabilities";
@@ -171,6 +172,14 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         ],
       },
     ],
+  },
+  {
+    // The team's day sheet of small jobs (car wash runs, MOT drops), between the
+    // prep work and the selling it supports. Anyone may post and work it, so
+    // it has no capability gate (call 2026-11-04).
+    label: "Daily jobs",
+    icon: ListChecks,
+    items: [{ label: "Daily jobs", href: "/daily-jobs", icon: ListChecks }],
   },
   {
     label: "Advert",
