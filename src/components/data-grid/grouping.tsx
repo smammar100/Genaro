@@ -21,13 +21,19 @@ interface RowGroup<T> {
  *
  * Render each group as `<DataGridGroupHeaderRow>` followed by its
  * `<DataGridRow>`s (skipped when `isCollapsed(group.key)`).
+ *
+ * Groups start open; pass `{ defaultCollapsed: true }` to start them closed
+ * (a group the user opens stays open as the rows change).
  */
 export function useRowGroups<T>(
   rows: T[] | undefined,
   groupBy: (row: T) => string,
   labelFor?: (key: string) => string,
+  options?: { defaultCollapsed?: boolean },
 ) {
-  const [collapsed, setCollapsed] = React.useState<Set<string>>(
+  const defaultCollapsed = options?.defaultCollapsed ?? false;
+  // The keys the user has flipped away from the default.
+  const [flipped, setFlipped] = React.useState<Set<string>>(
     () => new Set(),
   );
 
@@ -48,7 +54,7 @@ export function useRowGroups<T>(
   }, [rows, groupBy, labelFor]);
 
   const toggle = React.useCallback((key: string) => {
-    setCollapsed((prev) => {
+    setFlipped((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
@@ -57,8 +63,8 @@ export function useRowGroups<T>(
   }, []);
 
   const isCollapsed = React.useCallback(
-    (key: string) => collapsed.has(key),
-    [collapsed],
+    (key: string) => flipped.has(key) !== defaultCollapsed,
+    [flipped, defaultCollapsed],
   );
 
   return { groups, isCollapsed, toggle };
@@ -71,6 +77,7 @@ export function DataGridGroupHeaderRow({
   collapsed,
   onToggle,
   span,
+  level = 0,
 }: {
   label: string;
   count: number;
@@ -78,16 +85,23 @@ export function DataGridGroupHeaderRow({
   onToggle: () => void;
   /** Total column count incl. the selection + trailing columns. */
   span: number;
+  /** 1 for a group nested inside another (a month under its year). */
+  level?: 0 | 1;
 }) {
   const Chevron = collapsed ? ChevronRight : ChevronDown;
   return (
     <tr>
       <td
         colSpan={span}
-        className="sticky left-0 border-b bg-(--bg-surface-secondary) px-3"
+        className={
+          level === 1
+            ? "sticky left-0 border-b bg-(--bg-surface) pr-3 pl-8"
+            : "sticky left-0 border-b bg-(--bg-surface-secondary) px-3"
+        }
       >
         <button
           type="button"
+          aria-expanded={!collapsed}
           onClick={onToggle}
           className="flex h-8 w-full items-center gap-1.5 text-left text-body font-semibold"
         >

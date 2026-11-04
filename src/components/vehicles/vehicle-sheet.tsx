@@ -54,6 +54,7 @@ import { DataGridPagination } from "@/components/data-grid";
 import { LocationBadge } from "@/components/locations/location-badge";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import {
+  Button as GenaroButton,
   Card as GenaroCard,
   Checkbox as GenaroCheckbox,
   EmptyState as GenaroEmptyState,
@@ -1422,6 +1423,22 @@ export function VehicleSheet({
     });
   }
 
+  /**
+   * Back to the default column set: every column shown, the saved choice
+   * forgotten, and the narrow-screen hiding allowed again (bug list 2026-11-04).
+   */
+  function resetColumns() {
+    setUserPickedColumns(false);
+    setVisible(new Set(allCols.map((c) => colKey(c))));
+    try {
+      localStorage.removeItem(colHiddenKey(csvName));
+    } catch {
+      // Blocked storage: the reset still applies for this session.
+    }
+  }
+  const columnsCustomised =
+    userPickedColumns || gridCols.some((c) => !visible.has(colKey(c)));
+
   /** Open a vehicle's detail page, stamping the originating list path as
    *  `?from=` so the detail Back button returns here (not always Inventory). */
   function openVehicle(id: string) {
@@ -1474,15 +1491,19 @@ export function VehicleSheet({
     // Shorter in the workbook: its toolbar sits lower on the page, and the
     // panel opens below it.
     <ScrollArea className={cn("p-3", workbook ? "max-h-[45vh]" : "max-h-[60vh]")}>
-      {/* Says out loud what the responsive rule does, and that
-          choosing columns turns it off (GEN-93). */}
-      {!userPickedColumns && allCols.some((c) => c.mobileHide) && (
-        <p className="mb-3 text-caption text-muted-foreground">
-          On a narrow screen some columns are hidden to keep the
-          grid readable. Choose your own columns here and every one
-          you pick stays visible at any width.
-        </p>
-      )}
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="text-caption text-(--text-secondary) tabular-nums">
+          {cols.length} of {gridCols.length} shown
+        </span>
+        <GenaroButton
+          variant="tertiary"
+          size="micro"
+          disabled={!columnsCustomised}
+          onClick={resetColumns}
+        >
+          Reset columns
+        </GenaroButton>
+      </div>
       <div className="grid grid-cols-2 gap-2">
         {gridCols.map((c) => {
           const k = colKey(c);

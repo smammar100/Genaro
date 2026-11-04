@@ -150,6 +150,25 @@ export const inspectionService = {
       .select("id", { count: "exact", head: true })
       .eq("vehicle_id", vehicleId);
     if (left) throw new Error("You don't have permission to reset this inspection.");
+    // A reset clears the actions the last inspection raised as well as its
+    // answers: its open Things to Do items and the jobs created with them.
+    // Finished ones stay as a record of work done (bug list 2026-11-04).
+    const { error: todoError } = await supabase
+      .from("todo_items")
+      .delete()
+      .eq("vehicle_id", vehicleId)
+      .eq("source", "inspection")
+      .in("status", ["pending", "in_progress"]);
+    if (todoError) throw todoError;
+    const { error: jobError } = await supabase
+      .from("maintenance_jobs")
+      .delete()
+      .eq("vehicle_id", vehicleId)
+      .neq("status", "completed")
+      .like("notes", "Auto-created from 20-point inspection%");
+    if (jobError) throw jobError;
+    invalidate("todos:");
+    invalidate("maintenance:");
     const today = new Date().toISOString().slice(0, 10);
     const items = await inspectionChecklistService.getAll(v.companyId);
     const rows = items.map((item) => ({
