@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, Mail, Pencil, Printer, Receipt } from "lucide-react";
+import { Eye, Mail, Pencil, Printer } from "lucide-react";
 import {
   Avatar,
   Badge,
@@ -21,6 +21,7 @@ import {
   TextField,
   type BadgeProgress,
   type BadgeTone,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -568,7 +569,7 @@ export default function InvoicingPage() {
               <SkeletonBodyText lines={8} />
             </Card>
           ) : searched.length === 0 ? (
-            <EmptyState icon={<Receipt />} heading="No invoices in this view">
+            <EmptyState illustration={<EmptyStateIllustration variant="list" />} heading="No invoices in this view">
               Switch tabs or create one.
             </EmptyState>
           ) : (

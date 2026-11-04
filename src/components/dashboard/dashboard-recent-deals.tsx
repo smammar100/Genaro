@@ -8,7 +8,7 @@ import { vehicleService } from "@/lib/services/vehicle-service";
 import { pipelineStageService } from "@/lib/services/pipeline-stage-service";
 import { authService } from "@/lib/services/auth-service";
 import type { PipelineStage, SalesDeal, User, Vehicle } from "@/lib/types";
-import { Button, Card, IndexTable, SkeletonBodyText } from "@/components/genaro";
+import { Button, Card, EmptyState, EmptyStateIllustration, IndexTable, SkeletonBodyText } from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { DealStageBadge } from "@/components/sales/status-badges";
 import { titleCase } from "@/lib/utils";
@@ -74,9 +74,13 @@ export function DashboardRecentDeals() {
           <SkeletonBodyText lines={6} />
         </div>
       ) : newest.length === 0 ? (
-        <p className="body-md px-6 pt-6 pb-10 text-center text-(--text-secondary)">
-          No deals yet. A lead created on the pipeline shows up here.
-        </p>
+        <EmptyState
+          compact
+          illustration={<EmptyStateIllustration variant="kanban" size="small" />}
+          heading="No deals yet"
+        >
+          A lead created on the pipeline shows up here.
+        </EmptyState>
       ) : (
         <IndexTable
           // The card above draws the surface; the table sits flush inside it.

@@ -10,7 +10,6 @@ import {
   CircleX,
   Clock,
   Ellipsis,
-  TrendingUp,
   TriangleAlert,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
@@ -43,6 +42,7 @@ import {
   Page,
   Select,
   useConfirm,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { VehicleImage } from "@/components/shared/vehicle-image";
@@ -446,7 +446,7 @@ export default function SalesPipelinePage() {
       {/* An empty board shows its empty state even before any stages
           exist, rather than a skeleton that never resolves. */}
       {deals && deals.length === 0 ? (
-        <EmptyState heading="No deals yet" icon={<TrendingUp />}>
+        <EmptyState illustration={<EmptyStateIllustration variant="kanban" />} heading="No deals yet">
           Create a lead and its deal appears here in New lead.
         </EmptyState>
       ) : !boardDeals ? (

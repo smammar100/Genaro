@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, ClipboardCheck, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { inspectionService } from "@/lib/services/inspection-service";
 import { inspectionNoteService } from "@/lib/services/inspection-note-service";
@@ -25,6 +25,7 @@ import {
   Select,
   TextField,
   useConfirm,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -201,9 +202,8 @@ export function InspectionChecklist({ vehicle, inspector, onComplete }: Props) {
   if (checks.length === 0) {
     return (
       <Card padding="0">
-        <EmptyState
+        <EmptyState illustration={<EmptyStateIllustration variant="checklist" />}
           heading="No inspection yet"
-          icon={<ClipboardCheck />}
           action={{
             content: "Start inspection",
             onAction: () => void handleStart(),

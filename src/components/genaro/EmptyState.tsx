@@ -8,6 +8,8 @@ import { cx } from './utils';
 export interface EmptyStateProps {
   heading?: string;
   children?: React.ReactNode;
+  /** An EmptyStateIllustration (or any drawing). Takes precedence over `image` and `icon`. */
+  illustration?: React.ReactNode;
   /** Illustration URL. */
   image?: string;
   /** Shown in a tinted circle when there is no image. */
@@ -16,6 +18,8 @@ export interface EmptyStateProps {
   secondaryAction?: Action;
   footerContent?: React.ReactNode;
   fullWidth?: boolean;
+  /** Tighter padding, for an empty state inside a card. */
+  compact?: boolean;
   className?: string;
 }
 
@@ -23,10 +27,12 @@ export interface EmptyStateProps {
  * First-use or no-results state explaining what goes here and how to start.
  * @import import { EmptyState } from "@/components/genaro";
  */
-export function EmptyState({ heading, children, image, icon, action, secondaryAction, footerContent, fullWidth, className }: EmptyStateProps) {
+export function EmptyState({ heading, children, illustration, image, icon, action, secondaryAction, footerContent, fullWidth, compact, className }: EmptyStateProps) {
   return (
-    <div className={cx('p-empty', fullWidth && 'p-empty--full', className)}>
-      {image ? (
+    <div className={cx('p-empty', fullWidth && 'p-empty--full', compact && 'p-empty--compact', className)}>
+      {illustration ? (
+        illustration
+      ) : image ? (
         <img className="p-empty__image" src={image} alt="" />
       ) : icon ? (
         <div className="p-empty__icon">

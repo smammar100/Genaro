@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Car Capital empty states</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: summary tiles and findings first, then one filterable inventory grouped by area.
+   Follows the Genaro type scale (24/30, 16/24, 14/20, 13/18, 12/16) and its neutral surfaces. */
+:root {
+  --bg: #f1f1f1;
+  --surface: #ffffff;
+  --surface-2: #f7f7f7;
+  --text: #303030;
+  --text-2: #616161;
+  --accent: #005bd3;
+  --border: #e3e3e3;
+  --good: #0c5132; --good-bg: #cdfee1;
+  --warn: #5e4200; --warn-bg: #ffef9d;
+  --bad: #8e0b21; --bad-bg: #fee9e8;
+  --info: #00527c; --info-bg: #eaf4ff;
+  --neutral-bg: #ebebeb;
+  --font: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1a1a; --surface: #262626; --surface-2: #2e2e2e; --text: #e3e3e3; --text-2: #a8a8a8;
+    --accent: #6fa8ff; --border: #3a3a3a;
+    --good: #8fe0b0; --good-bg: #133524; --warn: #f5d36b; --warn-bg: #3a2f0a;
+    --bad: #ffa3a3; --bad-bg: #3d1517; --info: #8cc8ff; --info-bg: #10283d; --neutral-bg: #353535;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1a1a1a; --surface: #262626; --surface-2: #2e2e2e; --text: #e3e3e3; --text-2: #a8a8a8;
+  --accent: #6fa8ff; --border: #3a3a3a;
+  --good: #8fe0b0; --good-bg: #133524; --warn: #f5d36b; --warn-bg: #3a2f0a;
+  --bad: #ffa3a3; --bad-bg: #3d1517; --info: #8cc8ff; --info-bg: #10283d; --neutral-bg: #353535;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; line-height: 18px; }
+main { max-width: 1240px; margin: 0 auto; padding: 32px 24px 64px; display: flex; flex-direction: column; gap: 24px; }
+h1 { font-size: 24px; line-height: 30px; font-weight: 600; margin: 0; text-wrap: balance; }
+h2 { font-size: 16px; line-height: 24px; font-weight: 600; margin: 0; text-wrap: balance; }
+h3 { font-size: 14px; line-height: 20px; font-weight: 600; margin: 0; }
+p { margin: 0; text-wrap: pretty; }
+.lede { color: var(--text-2); max-width: 70ch; margin-top: 4px; }
+.card { background: var(--surface); border-radius: 12px; padding: 16px; box-shadow: 0 1px 0 rgba(0,0,0,.07), 0 0 0 1px rgba(0,0,0,.04); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.tile { display: flex; flex-direction: column; gap: 2px; }
+.tile .n { font-size: 24px; line-height: 30px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile .l { color: var(--text-2); font-size: 12px; line-height: 16px; }
+.findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+.finding { display: flex; flex-direction: column; gap: 6px; }
+.finding .count { font-size: 12px; line-height: 16px; color: var(--text-2); }
+.finding ul { margin: 0; padding-left: 18px; color: var(--text-2); display: flex; flex-direction: column; gap: 2px; }
+.blocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.bar { height: 8px; border-radius: 4px; background: var(--neutral-bg); overflow: hidden; margin-top: 6px; }
+.bar span { display: block; height: 100%; background: var(--accent); }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.controls input[type="search"] { font: inherit; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); min-width: 240px; flex: 1 1 240px; }
+.controls select { font: inherit; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); }
+.controls .shown { color: var(--text-2); font-size: 12px; margin-left: auto; font-variant-numeric: tabular-nums; }
+button.chip { font: inherit; font-weight: 500; font-size: 12px; line-height: 16px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
+button.chip[aria-pressed="true"] { background: var(--text); color: var(--surface); border-color: var(--text); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.area { display: flex; flex-direction: column; gap: 8px; }
+.area-head { display: flex; align-items: baseline; gap: 8px; }
+.area-head .c { color: var(--text-2); font-size: 12px; font-variant-numeric: tabular-nums; }
+.table-wrap { overflow-x: auto; background: var(--surface); border-radius: 12px; box-shadow: 0 1px 0 rgba(0,0,0,.07), 0 0 0 1px rgba(0,0,0,.04); }
+table { width: 100%; border-collapse: collapse; min-width: 980px; }
+th { text-align: left; font-weight: 500; font-size: 12px; line-height: 16px; color: var(--text-2); padding: 8px 12px; background: var(--surface-2); }
+td { padding: 10px 12px; vertical-align: top; border-top: 1px solid var(--border); }
+tr:first-child td { border-top: 0; }
+td.where { width: 18%; }
+td.where .file { display: block; color: var(--text-2); font-size: 12px; line-height: 16px; margin-top: 2px; word-break: break-all; }
+td.msg { width: 34%; }
+td.msg .h { font-weight: 600; }
+td.msg .d { color: var(--text-2); margin-top: 2px; }
+td.msg .none { color: var(--text-2); }
+td.act { width: 14%; }
+td.iss { width: 22%; }
+.pill { display: inline-block; font-size: 12px; line-height: 16px; font-weight: 500; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.t-first { background: var(--info-bg); color: var(--info); }
+.t-results { background: var(--neutral-bg); color: var(--text); }
+.t-notfound, .t-error { background: var(--warn-bg); color: var(--warn); }
+.t-access { background: var(--bad-bg); color: var(--bad); }
+.t-card { background: var(--good-bg); color: var(--good); }
+.t-picker, .t-chart { background: var(--neutral-bg); color: var(--text-2); }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.issue { font-size: 12px; line-height: 16px; color: var(--bad); background: var(--bad-bg); padding: 1px 8px; border-radius: 999px; }
+.ok { font-size: 12px; color: var(--text-2); }
+.block { font-size: 12px; line-height: 16px; color: var(--text-2); display: block; margin-top: 4px; }
+.btnlike { display: inline-block; font-size: 12px; line-height: 16px; font-weight: 500; border: 1px solid var(--border); border-radius: 8px; padding: 2px 8px; background: var(--surface-2); }
+.empty-result { text-align: center; color: var(--text-2); padding: 32px; }
+.notes { color: var(--text-2); display: flex; flex-direction: column; gap: 6px; max-width: 90ch; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (max-width: 480px) { main { padding: 20px 16px 48px; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Car Capital empty states</h1>
+    <p class="lede">Every place the app tells someone there is nothing to show, mapped from the code on 4 November 2026 (branch prep-card-prototype). Each row gives the screen, the file and line, what it says, the way forward it offers, and what is off about it today.</p>
+  </header>
+
+  <section class="tiles" id="tiles" aria-label="Totals"></section>
+
+  <section class="card" aria-labelledby="blocks-h">
+    <h2 id="blocks-h">How they are built</h2>
+    <p class="lede">Four different building blocks draw the same idea. Only the Genaro EmptyState follows the design system end to end.</p>
+    <div class="blocks" id="blocks" style="margin-top:12px"></div>
+  </section>
+
+  <section aria-labelledby="find-h" style="display:flex;flex-direction:column;gap:12px">
+    <h2 id="find-h">What needs fixing</h2>
+    <div class="findings" id="findings"></div>
+  </section>
+
+  <section aria-labelledby="inv-h" style="display:flex;flex-direction:column;gap:12px">
+    <h2 id="inv-h">Inventory</h2>
+    <div class="controls">
+      <label for="q" class="sr" style="position:absolute;left:-9999px">Search empty states</label>
+      <input id="q" type="search" placeholder="Search screen, file or wording">
+      <label for="type" style="position:absolute;left:-9999px">Type</label>
+      <select id="type"></select>
+      <label for="blockSel" style="position:absolute;left:-9999px">Building block</label>
+      <select id="blockSel"></select>
+      <button class="chip" id="onlyIssues" aria-pressed="false">Only ones with issues</button>
+      <span class="shown" id="shown"></span>
+    </div>
+    <div id="inventory" style="display:flex;flex-direction:column;gap:20px"></div>
+  </section>
+
+  <section class="card notes" aria-labelledby="notes-h">
+    <h2 id="notes-h" style="color:var(--text)">Not counted here</h2>
+    <p>Field values that read “none” rather than an empty screen: “No vendor”, “No garage”, “No agent”, “No vehicle”, “No due date”, “No expiry on file”, “No floor set”, “No attachment”, “No dealer partner”, “No show”. They label a blank field and belong with field formatting, not empty states.</p>
+    <p>Form feedback that is a lookup result rather than an empty list: the vehicle returns registration lookup and missing sale invoice, and the “No registration yet?” hint when adding a car.</p>
+    <p>PDF templates (“No items recorded” on the job card) and the Storybook stories.</p>
+    <p>The MOTs expiring soon card on the dashboard has no empty state by design: it is hidden when no MOT is due.</p>
+  </section>
+</main>
+
+<script>
+const TYPES = {
+  first: "First use",
+  results: "No results",
+  notfound: "Not found",
+  access: "No access",
+  error: "Error",
+  card: "Inside a card or tab",
+  picker: "Picker or dropdown",
+  chart: "Chart",
+};
+const BLOCKS = {
+  genaro: "Genaro EmptyState",
+  old: "Old shared EmptyState",
+  text: "Hand-written text",
+  kanban: "Kanban column",
+  prop: "Component's empty prop",
+};
+const ISSUES = {
+  noaction: "No way forward",
+  noclear: "No clear-filters button",
+  wrongcase: "Same message for two cases",
+  devtext: "Developer text shown to users",
+  old: "Old component",
+  hand: "Hand-written, not a component",
+  divider: "Sits in divider lines",
+  internal: "Internal page",
+  vague: "Vague wording",
+  nobody: "Missing body text",
+  varied: "Wording differs from its siblings",
+};
+
+// a: area, w: screen, f: file:line, t: type, b: building block, h: heading,
+// d: body, act: action offered, ic: icon, n: issue keys
+const DATA = [
+  // Dashboard
+  { a: "Dashboard", w: "Home, first run (no cars at all)", f: "components/dashboard/dashboard-welcome.tsx:68", t: "first", b: "text", h: "Welcome, {name} · Start with a registration", d: "Type the plate and we'll pull the make, model, derivative, tax and MOT for you.", act: "Plate field + Add vehicle", ic: "", n: [] },
+  { a: "Dashboard", w: "Recent deals card", f: "components/dashboard/dashboard-recent-deals.tsx:78", t: "card", b: "text", h: "", d: "No deals yet. A lead created on the pipeline shows up here.", act: "", ic: "", n: ["hand", "noaction"] },
+  { a: "Dashboard", w: "Stock by stage card", f: "components/dashboard/dashboard-stock-overview.tsx:86", t: "card", b: "text", h: "", d: "No cars are in the pipeline. Vehicles appear here from the moment they are booked in, and move between stages as prep completes.", act: "", ic: "", n: ["hand", "noaction"] },
+  { a: "Dashboard", w: "Appointments card", f: "components/dashboard/dashboard-upcoming-appointments.tsx:66", t: "card", b: "text", h: "", d: "No upcoming appointments", act: "Book appointment", ic: "", n: ["hand"] },
+  { a: "Dashboard", w: "Latest activity card", f: "components/dashboard/dashboard-recent-activity.tsx:114", t: "card", b: "text", h: "", d: "Nothing has happened today. Every sale, inspection, workshop job and listing change lands here as it is recorded.", act: "", ic: "", n: ["hand"] },
+
+  // Inventory
+  { a: "Inventory", w: "All vehicles, no cars", f: "components/vehicles/vehicle-index.tsx:237", t: "first", b: "genaro", h: "No vehicles in stock", d: "Add a vehicle by its registration to start tracking it.", act: "Add vehicle", ic: "", n: [] },
+  { a: "Inventory", w: "All vehicles, search finds nothing", f: "components/vehicles/vehicle-index.tsx:245", t: "results", b: "genaro", h: "No vehicles found", d: "Try a different search or location.", act: "Clear search", ic: "", n: [] },
+  { a: "Inventory", w: "Vehicle page, car missing", f: "app/(dashboard)/vehicles/[id]/page.tsx:207", t: "notfound", b: "genaro", h: "Vehicle not found", d: "It may have been deleted or the link is out of date.", act: "Back", ic: "", n: [] },
+  { a: "Inventory", w: "Advert editor, car missing", f: "app/(dashboard)/vehicles/[id]/advert/page.tsx:68", t: "notfound", b: "genaro", h: "Vehicle not found", d: "It may have been deleted or the link is out of date.", act: "Back to all vehicles", ic: "", n: [] },
+  { a: "Inventory", w: "Add vehicle, dealer partner list", f: "components/vehicles/add-vehicle/buying-card.tsx:60", t: "picker", b: "prop", h: "", d: "No dealer partners", act: "", ic: "", n: ["noaction"] },
+  { a: "Inventory", w: "Add vehicle, received by", f: "components/vehicles/add-vehicle/receiving-card.tsx:159", t: "picker", b: "text", h: "", d: "No employee matches.", act: "", ic: "", n: ["old"] },
+
+  // Vehicle detail
+  { a: "Vehicle detail", w: "Overview, new car", f: "components/vehicle-detail/overview-tab.tsx:132", t: "first", b: "genaro", h: "New to stock, let's get it sale-ready", d: "", act: "Start inspection (+ secondary)", ic: "Rocket", n: [] },
+  { a: "Vehicle detail", w: "Header card, open jobs", f: "components/vehicle-detail/vehicle-header-card.tsx:185", t: "card", b: "text", h: "", d: "No open jobs", act: "", ic: "", n: ["hand"] },
+  { a: "Vehicle detail", w: "Things to do, empty column", f: "components/vehicle-detail/todo-tab.tsx:255", t: "card", b: "text", h: "", d: "Nothing here.", act: "Add (column header)", ic: "", n: ["hand", "vague", "divider"] },
+  { a: "Vehicle detail", w: "Inspection tab, not started", f: "components/vehicles/inspection-checklist.tsx:204", t: "first", b: "genaro", h: "No inspection yet", d: "Run the inspection checklist to surface issues and auto-generate Things to Do.", act: "Start inspection", ic: "ClipboardCheck", n: [] },
+  { a: "Vehicle detail", w: "Photos tab, no photos", f: "components/vehicle-detail/photos-tab.tsx:392", t: "first", b: "genaro", h: "No photos yet", d: "Drop target · JPG, PNG or WebP, up to 15 MB each", act: "Upload photos", ic: "ImagePlus", n: [] },
+  { a: "Vehicle detail", w: "Photos tab, gallery", f: "components/vehicle-detail/photos-tab.tsx:590", t: "card", b: "text", h: "", d: "No photos uploaded yet.", act: "", ic: "", n: ["hand"] },
+  { a: "Vehicle detail", w: "Listing tab, not listed", f: "components/vehicle-detail/listing-tab.tsx:49", t: "first", b: "genaro", h: "Not listed yet", d: "Vehicles in ‘ready’ status can be listed …", act: "Open advert editor", ic: "Megaphone", n: [] },
+  { a: "Vehicle detail", w: "Listing tab, description", f: "components/vehicle-detail/listing-inline-editor.tsx:68", t: "card", b: "text", h: "", d: "No description yet, add one in the Advert editor.", act: "", ic: "", n: ["hand", "noaction"] },
+  { a: "Vehicle detail", w: "Listing tab, highlights", f: "components/vehicle-detail/listing-inline-editor.tsx:190", t: "card", b: "text", h: "", d: "No highlights yet, add up to {n} in the Advert editor.", act: "", ic: "", n: ["hand", "noaction"] },
+  { a: "Vehicle detail", w: "Appointments tab", f: "components/vehicle-detail/appointments-tab.tsx:222", t: "first", b: "genaro", h: "No enquiries on this vehicle yet", d: "", act: "Add first enquiry", ic: "Users", n: [] },
+  { a: "Vehicle detail", w: "Activity tab, nothing logged", f: "components/vehicle-detail/activity-tab.tsx:222", t: "first", b: "genaro", h: "No activity yet", d: "Every action on this vehicle will appear here.", act: "", ic: "History", n: [] },
+  { a: "Vehicle detail", w: "Activity tab, filter finds nothing", f: "components/vehicle-detail/activity-tab.tsx:249", t: "results", b: "text", h: "", d: "No events match this filter.", act: "", ic: "", n: ["hand", "noclear"] },
+  { a: "Vehicle detail", w: "Financials, external invoices", f: "components/vehicle-detail/external-invoices-section.tsx:183", t: "card", b: "text", h: "", d: "No external invoices logged yet, use {link} …", act: "Inline link", ic: "", n: ["hand"] },
+  { a: "Vehicle detail", w: "Location card, movements", f: "components/locations/location-card.tsx:137", t: "card", b: "text", h: "", d: "No movements yet.", act: "", ic: "", n: ["hand"] },
+
+  // Maintenance
+  { a: "Maintenance", w: "Inspection queue, pending tab", f: "app/(dashboard)/maintenance/inspection/page.tsx:165", t: "first", b: "genaro", h: "No vehicles awaiting inspection", d: "All current stock has cleared the inspection step.", act: "", ic: "ClipboardCheck", n: [] },
+  { a: "Maintenance", w: "Inspection queue, completed tab", f: "app/(dashboard)/maintenance/inspection/page.tsx:165", t: "first", b: "genaro", h: "No completed inspections yet", d: "Inspected vehicles will appear here.", act: "", ic: "ClipboardCheck", n: [] },
+  { a: "Maintenance", w: "Prep board, no cars", f: "components/prep/prep-board.tsx:85", t: "first", b: "genaro", h: "Nothing in prep", d: "Cars appear here the moment an inspection is completed with outstanding items.", act: "", ic: "Wrench", n: [] },
+  { a: "Maintenance", w: "Prep board, empty column", f: "components/prep/prep-board.tsx:51", t: "card", b: "kanban", h: "", d: "Nothing here", act: "", ic: "", n: ["vague", "varied"] },
+  { a: "Maintenance", w: "Prep card, no jobs", f: "components/prep/prep-card.tsx:128", t: "card", b: "text", h: "", d: "Nothing raised yet.", act: "", ic: "", n: ["hand"] },
+  { a: "Maintenance", w: "Prep things-to-do sheet", f: "components/prep/prep-todo-sheet.tsx:318", t: "card", b: "text", h: "", d: "Nothing waiting to start. / Nothing raised for this car yet. Add the first job to start prep.", act: "", ic: "", n: ["hand"] },
+  { a: "Maintenance", w: "Prep, assign someone", f: "components/prep/prep-assignee.tsx:87", t: "picker", b: "prop", h: "", d: "No one by that name.", act: "", ic: "", n: [] },
+  { a: "Maintenance", w: "Maintenance board, no jobs", f: "app/(dashboard)/maintenance/page.tsx:259", t: "first", b: "genaro", h: "No maintenance jobs yet", d: "Add a job, or add a vehicle to auto-create a pending one.", act: "Add job", ic: "Wrench", n: [] },
+  { a: "Maintenance", w: "Any kanban board, empty column", f: "components/kanban/kanban-board.tsx:473", t: "card", b: "kanban", h: "", d: "No {jobs} here yet", act: "Add (per column)", ic: "", n: [] },
+  { a: "Maintenance", w: "Workshop, no jobs", f: "app/(dashboard)/maintenance/workshop/page.tsx:346", t: "first", b: "genaro", h: "No workshop jobs", d: "Track customer walk-in service appointments here.", act: "Add workshop job", ic: "Wrench", n: [] },
+  { a: "Maintenance", w: "Maintenance job, missing", f: "app/(dashboard)/maintenance/jobs/[id]/page.tsx:173", t: "notfound", b: "genaro", h: "Job not found", d: "It may have been deleted, or the link is out of date.", act: "Back to maintenance", ic: "", n: [] },
+  { a: "Maintenance", w: "Maintenance calendar, quiet week", f: "app/(dashboard)/maintenance/calendar/page.tsx", t: "first", b: "text", h: "", d: "(none: the grid is simply blank)", act: "", ic: "", n: ["noaction", "nobody"] },
+
+  // Sales
+  { a: "Sales", w: "Pipeline, no deals", f: "app/(dashboard)/sales/pipeline/page.tsx:449", t: "first", b: "genaro", h: "No deals yet", d: "Create a lead and its deal appears here in New lead.", act: "", ic: "TrendingUp", n: ["noaction"] },
+  { a: "Sales", w: "Deal page, missing", f: "app/(dashboard)/sales/pipeline/[id]/page.tsx:178", t: "notfound", b: "genaro", h: "This deal isn't here any more", d: "It may have been removed, or the link is from another company.", act: "Open the pipeline", ic: "", n: ["varied"] },
+  { a: "Sales", w: "Pipeline settings, empty stage", f: "components/admin/pipeline-stage-settings.tsx:311", t: "card", b: "text", h: "", d: "Nothing is sitting in this stage.", act: "", ic: "", n: ["hand"] },
+  { a: "Sales", w: "Appointments calendar, quiet week", f: "app/(dashboard)/sales/appointments/page.tsx", t: "first", b: "text", h: "", d: "(none: the grid is simply blank)", act: "", ic: "", n: ["noaction", "nobody"] },
+  { a: "Sales", w: "Completed sales, none yet", f: "app/(dashboard)/sales/deals/page.tsx:435", t: "first", b: "genaro", h: "No completed sales yet", d: "Move a pipeline card to Completed sale, or mark a car sold on the master sheet, to see it here.", act: "", ic: "Handshake", n: ["noaction"] },
+  { a: "Sales", w: "Completed sales, filters find nothing", f: "app/(dashboard)/sales/deals/page.tsx:439", t: "results", b: "genaro", h: "No deals match your filters", d: "Try widening the date range or clearing a filter.", act: "", ic: "Handshake", n: ["noclear"] },
+  { a: "Sales", w: "Invoice generation, no access", f: "app/(dashboard)/sales/invoice-generation/page.tsx:731", t: "access", b: "old", h: "You don't have access", d: "Generating invoices requires the Generate Invoice capability.", act: "", ic: "ShieldX", n: ["old", "varied"] },
+  { a: "Sales", w: "New enquiry, customer search", f: "components/enquiries/customer-search-step.tsx:86", t: "results", b: "text", h: "", d: "No matches for “{name}”. Continue with a new customer below.", act: "New customer row", ic: "", n: ["hand"] },
+  { a: "Sales", w: "New enquiry, create customer row", f: "components/enquiries/create-new-customer-row.tsx:54", t: "picker", b: "text", h: "", d: "No good match for “{name}”. Create a new customer record.", act: "Create customer", ic: "", n: [] },
+  { a: "Sales", w: "Enquiry source dropdown", f: "components/enquiries/source-dropdown.tsx:73", t: "picker", b: "text", h: "", d: "No sources match.", act: "", ic: "", n: ["old"] },
+  { a: "Sales", w: "Postcode lookup (enquiry, invoice)", f: "components/enquiries/postcode-lookup-field.tsx:54 · invoice-generation/page.tsx:842", t: "results", b: "text", h: "", d: "No address found for that postcode. Enter it manually. / No match for that postcode, enter the address manually.", act: "", ic: "", n: ["varied"] },
+  { a: "Sales", w: "Deal, change vehicle", f: "components/sales/change-vehicle-modal.tsx:93", t: "card", b: "text", h: "", d: "No vehicle linked yet.", act: "", ic: "", n: [] },
+  { a: "Sales", w: "Vehicle picker (shared)", f: "components/shared/vehicle-picker.tsx:140", t: "picker", b: "text", h: "", d: "No vehicle matches that reg. / … leave blank to use free text.", act: "", ic: "", n: [] },
+  { a: "Sales", w: "Add calendar event, vehicle", f: "components/shared/add-event-sheet.tsx:305", t: "picker", b: "text", h: "", d: "No vehicles match.", act: "", ic: "", n: ["old"] },
+
+  // Warranties
+  { a: "Warranties", w: "In-house warranties", f: "app/(dashboard)/warranties/in-house/page.tsx:186", t: "first", b: "genaro", h: "No in-house warranties", d: "Create a warranty when you sell a vehicle with Car Capital cover. / with a search: Try a different search term or clear the filter.", act: "", ic: "ShieldCheck", n: ["noaction", "noclear", "wrongcase"] },
+  { a: "Warranties", w: "External warranties", f: "app/(dashboard)/warranties/external/page.tsx:167", t: "first", b: "genaro", h: "No external warranties", d: "Third-party warranties show up here once they're sold with a vehicle. / with a search: Try a different search term …", act: "", ic: "ExternalLink", n: ["noclear", "wrongcase"] },
+  { a: "Warranties", w: "Claims", f: "app/(dashboard)/warranties/claims/page.tsx:169", t: "first", b: "genaro", h: "No claims match", d: "Customer claims will appear here when filed against a warranty. / with a search: Try a different search term …", act: "", ic: "ShieldAlert", n: ["wrongcase", "noclear", "noaction"] },
+  { a: "Warranties", w: "Warranty detail, claims", f: "components/warranties/warranty-detail-sheet.tsx:295", t: "card", b: "text", h: "", d: "No claims filed against this warranty.", act: "", ic: "", n: ["hand", "noaction"] },
+  { a: "Warranties", w: "New claim, pick warranty", f: "components/warranties/new-claim-dialog.tsx:171", t: "picker", b: "text", h: "", d: "No active warranties.", act: "", ic: "", n: ["old"] },
+  { a: "Warranties", w: "New warranty, pick vehicle", f: "components/warranties/new-warranty-dialog.tsx:236", t: "picker", b: "text", h: "", d: "No vehicles match.", act: "", ic: "", n: ["old"] },
+
+  // Advert
+  { a: "Advert", w: "Work list, no listings", f: "app/(dashboard)/advert/work-list/page.tsx:605", t: "first", b: "genaro", h: "No listings yet", d: "Mark a vehicle as ready, then create a listing.", act: "", ic: "", n: ["noaction"] },
+  { a: "Advert", w: "Work list, nothing selected", f: "app/(dashboard)/advert/work-list/page.tsx:677", t: "card", b: "genaro", h: "No listing selected", d: "Select a listing to preview its advert.", act: "", ic: "", n: [] },
+  { a: "Advert", w: "Work list, vehicle dropdown", f: "app/(dashboard)/advert/work-list/page.tsx:449", t: "picker", b: "prop", h: "", d: "No vehicles available", act: "", ic: "", n: [] },
+  { a: "Advert", w: "Advert editor, features", f: "components/advert/feature-picker.tsx:143", t: "card", b: "text", h: "", d: "No features selected, pick from the categories above.", act: "", ic: "", n: [] },
+  { a: "Advert", w: "Performance, no live listings", f: "app/(dashboard)/advert/performance/page.tsx:225", t: "first", b: "genaro", h: "No live listings yet", d: "Publish a vehicle from the work list to start tracking performance.", act: "Open work list", ic: "", n: [] },
+  { a: "Advert", w: "Performance, leads chart", f: "app/(dashboard)/advert/performance/page.tsx:257", t: "chart", b: "text", h: "", d: "No leads recorded in the last {n} days.", act: "", ic: "", n: [] },
+  { a: "Advert", w: "Performance, channel", f: "app/(dashboard)/advert/performance/page.tsx:288", t: "card", b: "text", h: "", d: "No enquiries on this channel yet", act: "", ic: "", n: [] },
+  { a: "Advert", w: "Photo processing, no cars", f: "app/(dashboard)/advert/photo-processing/page.tsx:167", t: "first", b: "genaro", h: "No vehicles in stock", d: "Add a vehicle first, then come back here to manage photos.", act: "", ic: "", n: ["noaction"] },
+  { a: "Advert", w: "Photo processing, search", f: "app/(dashboard)/advert/photo-processing/page.tsx:189", t: "results", b: "text", h: "", d: "No vehicle matches that reg.", act: "", ic: "", n: ["hand", "noclear"] },
+
+  // Administrative
+  { a: "Administrative", w: "Master sheet, filters find nothing", f: "components/vehicles/vehicle-sheet.tsx:2122", t: "results", b: "genaro", h: "No cars match these filters", d: "Remove a filter or change the search to see more cars.", act: "Clear filters", ic: "", n: [] },
+  { a: "Administrative", w: "Master sheet, no cars", f: "components/vehicles/vehicle-sheet.tsx:2137", t: "first", b: "genaro", h: "No vehicles yet", d: "Cars appear here as soon as they are added.", act: "", ic: "", n: ["noaction"] },
+  { a: "Administrative", w: "Vehicle sheet, classic layout", f: "components/vehicles/vehicle-sheet.tsx:2354", t: "first", b: "old", h: "No vehicles", d: "Add a vehicle or adjust your filters.", act: "", ic: "FileSpreadsheet", n: ["old", "wrongcase", "noaction"] },
+  { a: "Administrative", w: "Master sheet, filter value picker", f: "components/master-sheet/sheet-toolbar.tsx:137", t: "picker", b: "prop", h: "", d: "No car has that value.", act: "", ic: "", n: [] },
+  { a: "Administrative", w: "Invoicing, empty tab", f: "app/(dashboard)/admin/invoicing/page.tsx:571", t: "results", b: "genaro", h: "No invoices in this view", d: "Switch tabs or create one.", act: "", ic: "Receipt", n: ["noaction", "wrongcase"] },
+  { a: "Administrative", w: "Invoicing, external invoices", f: "components/external-invoices/external-invoice-list.tsx:198", t: "first", b: "genaro", h: "No {kind} invoices yet / No invoices match these filters", d: "", act: "Add invoice (first use only)", ic: "FileText", n: ["noclear"] },
+  { a: "Administrative", w: "Invoice, payments", f: "components/invoicing/invoice-payments-panel.tsx:187", t: "card", b: "text", h: "", d: "Nothing received yet.", act: "", ic: "", n: ["hand"] },
+  { a: "Administrative", w: "Reports, no access", f: "app/(dashboard)/admin/reports/page.tsx:427", t: "access", b: "genaro", h: "Access restricted", d: "You don't have permission to view reports.", act: "", ic: "BarChart3", n: ["varied"] },
+  { a: "Administrative", w: "Reports, nothing sold", f: "app/(dashboard)/admin/reports/page.tsx:514", t: "card", b: "text", h: "", d: "Nothing in this selection has sold yet, so every sales figure below …", act: "", ic: "", n: [] },
+  { a: "Administrative", w: "Reports, 5 charts", f: "app/(dashboard)/admin/reports/page.tsx:601–689", t: "chart", b: "prop", h: "", d: "No sales yet. (×2) · No vehicles in stock. · No sales for this selection. (×2)", act: "", ic: "", n: [] },
+  { a: "Administrative", w: "Any chart, default", f: "components/charts/simple-charts.tsx:58", t: "chart", b: "prop", h: "", d: "No data for this selection.", act: "", ic: "", n: [] },
+  { a: "Administrative", w: "Users & permissions, no access", f: "app/(dashboard)/admin/users-and-permissions/page.tsx:52", t: "access", b: "genaro", h: "You don't have access", d: "Managing team permissions requires the Manage permissions capability.", act: "", ic: "ShieldX", n: ["varied"] },
+  { a: "Administrative", w: "Users & permissions, filter", f: "components/admin/permissions-grid/permissions-grid.tsx:78", t: "results", b: "genaro", h: "No team members match", d: "Adjust the filter or add a new staff member.", act: "", ic: "ShieldCheck", n: ["noclear"] },
+  { a: "Administrative", w: "Add staff, page access search", f: "components/admin/add-staff-dialog.tsx:392", t: "results", b: "text", h: "", d: "No views match “{search}”.", act: "", ic: "", n: ["hand"] },
+  { a: "Administrative", w: "Activity log", f: "app/(dashboard)/admin/activity/page.tsx:285", t: "first", b: "genaro", h: "No activity", d: "Once people start using the system, every action lands here.", act: "", ic: "History", n: [] },
+  { a: "Administrative", w: "Master calendar, quiet week", f: "app/(dashboard)/admin/master-calendar/page.tsx", t: "first", b: "text", h: "", d: "(none: the grid is simply blank)", act: "", ic: "", n: ["noaction", "nobody"] },
+  { a: "Administrative", w: "Vehicle returns", f: "app/(dashboard)/admin/vehicle-returns/page.tsx:785", t: "first", b: "genaro", h: "No returns or cancellations yet", d: "Process customer returns and cancellations and track resolution paths.", act: "Create return", ic: "Undo2", n: [] },
+  { a: "Administrative", w: "Vendors, garages", f: "app/(dashboard)/admin/vendors/page.tsx:488", t: "first", b: "genaro", h: "No garages yet", d: "Add the garages and parts suppliers you work with.", act: "", ic: "Store", n: ["noaction"] },
+  { a: "Administrative", w: "Vendors, dealer partners", f: "app/(dashboard)/admin/vendors/page.tsx:901", t: "first", b: "genaro", h: "No dealer partners yet", d: "Add the trade partners who supply you stock. (Requires database migration 0002.)", act: "", ic: "Handshake", n: ["noaction", "devtext"] },
+  { a: "Administrative", w: "Dealer partner, missing", f: "app/(dashboard)/admin/vendors/dealer-partners/[id]/page.tsx:223", t: "notfound", b: "genaro", h: "Partner not found", d: "This dealer partner doesn't exist or the table isn't migrated.", act: "", ic: "", n: ["devtext", "noaction"] },
+  { a: "Administrative", w: "Dealer partner, stock lists", f: "app/(dashboard)/admin/vendors/dealer-partners/[id]/page.tsx:308", t: "card", b: "text", h: "", d: "No vehicles currently in stock from this partner … / No previous vehicles from this partner.", act: "", ic: "", n: ["hand"] },
+  { a: "Administrative", w: "AutoTrader advertisers", f: "app/(dashboard)/admin/advertisers/page.tsx:194", t: "first", b: "genaro", h: "No advertisers yet", d: "Run a sync to pull them from AutoTrader. (only for people who can sync)", act: "", ic: "", n: ["noaction", "nobody"] },
+
+  // App-wide
+  { a: "App-wide", w: "Any page, no permission", f: "components/layout/route-guard.tsx:27", t: "access", b: "old", h: "Access restricted", d: "You don't have permission to view this page. Ask an administrator to grant access in Users & permissions.", act: "", ic: "ShieldX", n: ["old"] },
+  { a: "App-wide", w: "Page not found (404)", f: "app/not-found.tsx:11", t: "notfound", b: "genaro", h: "Page not found", d: "The link may be old, or the page may have moved.", act: "Go to home", ic: "", n: [] },
+  { a: "App-wide", w: "Page crashed", f: "app/(dashboard)/error.tsx:20", t: "error", b: "genaro", h: "Something went wrong", d: "", act: "Try again · Reload page · Home link", ic: "", n: [] },
+  { a: "App-wide", w: "Search (⌘K)", f: "components/layout/command-palette-dialog.tsx:158", t: "results", b: "text", h: "", d: "No results.", act: "", ic: "", n: ["vague", "old"] },
+  { a: "App-wide", w: "Notifications menu", f: "components/layout/admin-top-bar.tsx:86", t: "card", b: "prop", h: "", d: "No notifications", act: "", ic: "", n: [] },
+  { a: "App-wide", w: "Table pagination footer", f: "components/data-grid/pagination.tsx:45", t: "card", b: "text", h: "", d: "No rows", act: "", ic: "", n: ["vague"] },
+  { a: "App-wide", w: "Genaro Combobox default", f: "components/genaro/Combobox.tsx:291", t: "picker", b: "prop", h: "", d: "No matches", act: "", ic: "", n: [] },
+  { a: "App-wide", w: "Prototype page", f: "app/prototype/page.tsx:11", t: "first", b: "genaro", h: "No prototype in progress", d: "Variations for the next feature appear here while they're being chosen.", act: "", ic: "", n: ["internal"] },
+];
+
+const AREAS = [...new Set(DATA.map((r) => r.a))];
+const el = (tag, attrs = {}, ...kids) => {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else e.setAttribute(k, v);
+  }
+  kids.flat().forEach((k) => k != null && e.append(k));
+  return e;
+};
+
+// Totals
+const withIssues = DATA.filter((r) => r.n.length);
+const tiles = [
+  [DATA.length, "empty states mapped"],
+  [AREAS.length, "areas of the app"],
+  [new Set(DATA.map((r) => r.f.split(":")[0])).size, "files"],
+  [withIssues.length, "with at least one issue"],
+  [DATA.filter((r) => r.n.includes("noaction")).length, "offer no way forward"],
+];
+document.getElementById("tiles").append(...tiles.map(([n, l]) => el("div", { class: "card tile" }, el("span", { class: "n", text: String(n) }), el("span", { class: "l", text: l }))));
+
+// Building blocks
+const blockNotes = {
+  genaro: "The design-system component: icon tile, heading, body, actions.",
+  text: "A paragraph or span styled by hand at each site.",
+  prop: "A component's own empty text (Combobox, Select, charts).",
+  old: "components/shared/empty-state, the pre-Genaro version.",
+  kanban: "KanbanEmpty inside a board column.",
+};
+document.getElementById("blocks").append(...Object.keys(BLOCKS).map((k) => {
+  const n = DATA.filter((r) => r.b === k).length;
+  return el("div", { class: "tile" },
+    el("h3", { text: BLOCKS[k] }),
+    el("span", { class: "l", text: `${n} of ${DATA.length} · ${blockNotes[k]}` }),
+    el("div", { class: "bar" }, el("span", { style: `width:${(n / DATA.length) * 100}%` })));
+}));
+
+// Findings
+const FINDINGS = [
+  { title: "First-use screens that leave people stuck", key: "noaction", text: "They say there is nothing yet but give no button to make the first one, even where the page has an add button elsewhere." },
+  { title: "Filters find nothing, and there is no way to clear them", key: "noclear", text: "Inventory and the master sheet have a Clear button; these don't." },
+  { title: "One message for two different situations", key: "wrongcase", text: "“No claims match” shows even when no claim has ever been filed; the classic vehicle sheet says “add a vehicle or adjust your filters” in both cases." },
+  { title: "Developer wording on screen", key: "devtext", text: "“Requires database migration 0002” and “the table isn't migrated” are build notes, not something staff can act on." },
+  { title: "Hand-written instead of a component", key: "hand", text: "Every dashboard card, most vehicle-detail sections and the prep board roll their own text, so size, colour, spacing and punctuation drift." },
+  { title: "Still on the old component", key: "old", text: "The route guard, invoice generation and the classic vehicle sheet use components/shared/empty-state; several pickers use the old shadcn ComboboxEmpty or CommandEmpty." },
+  { title: "Siblings that say the same thing differently", key: "varied", text: "No access has three headings (Access restricted, You don't have access) across four places; not found reads “Vehicle not found”, “Job not found”, “Partner not found” and “This deal isn't here any more”; empty columns read “Nothing here”, “Nothing here.” and “No jobs here yet”." },
+  { title: "Calendars with no empty state at all", key: "nobody", text: "The appointments, maintenance and master calendars show a blank grid on a quiet week, with no line saying nothing is booked or how to book." },
+];
+document.getElementById("findings").append(...FINDINGS.map((f) => {
+  const rows = DATA.filter((r) => r.n.includes(f.key));
+  return el("div", { class: "card finding" },
+    el("h3", { text: f.title }),
+    el("span", { class: "count", text: `${rows.length} ${rows.length === 1 ? "place" : "places"}` }),
+    el("p", { text: f.text, style: "color:var(--text-2)" }),
+    el("ul", {}, rows.slice(0, 6).map((r) => el("li", { text: `${r.a}: ${r.w}` })), rows.length > 6 ? el("li", { text: `and ${rows.length - 6} more` }) : null));
+}));
+
+// Inventory with filters
+const q = document.getElementById("q");
+const typeSel = document.getElementById("type");
+const blockSel = document.getElementById("blockSel");
+const onlyIssues = document.getElementById("onlyIssues");
+typeSel.append(el("option", { value: "", text: "All types" }), ...Object.entries(TYPES).map(([k, v]) => el("option", { value: k, text: `${v} (${DATA.filter((r) => r.t === k).length})` })));
+blockSel.append(el("option", { value: "", text: "All building blocks" }), ...Object.entries(BLOCKS).map(([k, v]) => el("option", { value: k, text: `${v} (${DATA.filter((r) => r.b === k).length})` })));
+
+function row(r) {
+  const msg = el("td", { class: "msg" });
+  if (r.h) msg.append(el("div", { class: "h", text: r.h }));
+  if (r.d) msg.append(el("div", { class: r.h ? "d" : "", text: r.d }));
+  if (!r.h && !r.d) msg.append(el("span", { class: "none", text: "No text" }));
+  return el("tr", {},
+    el("td", { class: "where" }, el("div", { text: r.w }), el("span", { class: "file", text: r.f })),
+    el("td", {}, el("span", { class: `pill t-${r.t}`, text: TYPES[r.t] }), el("span", { class: "block", text: BLOCKS[r.b] + (r.ic ? ` · ${r.ic} icon` : " · no icon") })),
+    msg,
+    el("td", { class: "act" }, r.act ? el("span", { class: "btnlike", text: r.act }) : el("span", { class: "ok", text: "None" })),
+    el("td", { class: "iss" }, r.n.length ? el("div", { class: "tags" }, r.n.map((k) => el("span", { class: "issue", text: ISSUES[k] }))) : el("span", { class: "ok", text: "Fine as it is" })));
+}
+
+function render() {
+  const term = q.value.trim().toLowerCase();
+  const rows = DATA.filter((r) =>
+    (!typeSel.value || r.t === typeSel.value) &&
+    (!blockSel.value || r.b === blockSel.value) &&
+    (onlyIssues.getAttribute("aria-pressed") !== "true" || r.n.length) &&
+    (!term || [r.a, r.w, r.f, r.h, r.d, r.act].join(" ").toLowerCase().includes(term)));
+  const box = document.getElementById("inventory");
+  box.replaceChildren();
+  document.getElementById("shown").textContent = `${rows.length} of ${DATA.length} shown`;
+  if (!rows.length) {
+    box.append(el("div", { class: "card empty-result" }, el("p", { text: "No empty states match. Clear the search or pick All types." })));
+    return;
+  }
+  for (const area of AREAS) {
+    const list = rows.filter((r) => r.a === area);
+    if (!list.length) continue;
+    box.append(el("div", { class: "area" },
+      el("div", { class: "area-head" }, el("h3", { text: area }), el("span", { class: "c", text: `${list.length}` })),
+      el("div", { class: "table-wrap" }, el("table", {},
+        el("thead", {}, el("tr", {}, ["Screen", "Type", "What it says", "Way forward", "Issues"].map((h) => el("th", { scope: "col", text: h })))),
+        el("tbody", {}, list.map(row))))));
+  }
+}
+q.addEventListener("input", render);
+typeSel.addEventListener("change", render);
+blockSel.addEventListener("change", render);
+onlyIssues.addEventListener("click", () => {
+  onlyIssues.setAttribute("aria-pressed", onlyIssues.getAttribute("aria-pressed") === "true" ? "false" : "true");
+  render();
+});
+render();
+</script>
+</body>
+</html>

@@ -14,6 +14,7 @@ import {
   EmptyState,
   Page,
   TextField,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
@@ -164,7 +165,7 @@ export default function PhotoProcessingPage() {
         <Skeleton className="h-72 rounded-(--radius-300)" />
       ) : vehicles.length === 0 ? (
         <Card padding="0">
-          <EmptyState heading="No vehicles in stock" icon="ProductsMinor">
+          <EmptyState illustration={<EmptyStateIllustration variant="gallery" />} heading="No vehicles in stock">
             Add a vehicle first, then come back here to manage photos.
           </EmptyState>
         </Card>

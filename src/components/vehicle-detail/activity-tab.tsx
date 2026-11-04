@@ -38,7 +38,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { activityService } from "@/lib/services/activity-service";
 import { teamService } from "@/lib/services/team-service";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge, Button, EmptyState, type BadgeTone } from "@/components/genaro";
+import { Badge, Button, EmptyState, type BadgeTone, EmptyStateIllustration } from "@/components/genaro";
 import { cn, formatDateTime } from "@/lib/utils";
 import { Panel } from "./primitives";
 
@@ -219,7 +219,7 @@ export function ActivityTab({ vehicleId }: ActivityTabProps) {
 
   if (entries.length === 0) {
     return (
-      <EmptyState icon={<History />} heading="No activity yet">
+      <EmptyState illustration={<EmptyStateIllustration variant="timeline" />} heading="No activity yet">
         Every action on this vehicle will appear here.
       </EmptyState>
     );

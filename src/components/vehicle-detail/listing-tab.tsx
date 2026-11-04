@@ -6,7 +6,7 @@ import { Megaphone } from "lucide-react";
 import type { Listing, Vehicle } from "@/lib/types";
 import { listingService } from "@/lib/services/listing-service";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Banner, Button, EmptyState, Tag } from "@/components/genaro";
+import { Banner, Button, EmptyState, Tag, EmptyStateIllustration } from "@/components/genaro";
 import { Field, FieldGrid, Panel } from "./primitives";
 import { usePermissions } from "@/hooks/use-permissions";
 import {
@@ -46,8 +46,7 @@ export function ListingTab({ vehicle }: ListingTabProps) {
 
   if (listing === null) {
     return (
-      <EmptyState
-        icon={<Megaphone />}
+      <EmptyState illustration={<EmptyStateIllustration variant="detail" />}
         heading="Not listed yet"
         action={{
           content: "Open advert editor",

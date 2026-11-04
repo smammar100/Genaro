@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { Button, EmptyState } from "@/components/genaro";
+import { Button, EmptyState, EmptyStateIllustration } from "@/components/genaro";
 
 export default function DashboardError({
   error,
@@ -17,8 +17,7 @@ export default function DashboardError({
   }, [error]);
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
-      <EmptyState
-        icon="AlertMinor"
+      <EmptyState illustration={<EmptyStateIllustration variant="error" />}
         heading="Something went wrong"
         action={{ content: "Try again", onAction: () => unstable_retry() }}
         secondaryAction={{ content: "Reload page", onAction: () => window.location.reload() }}

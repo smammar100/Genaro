@@ -2,8 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ShieldX } from "lucide-react";
-import { Card, EmptyState, Page } from "@/components/genaro";
+import { Card, EmptyState, Page, EmptyStateIllustration } from "@/components/genaro";
 import { usePermissions } from "@/hooks/use-permissions";
 import { AddStaffDialog } from "@/components/admin/add-staff-dialog";
 import {
@@ -49,7 +48,7 @@ export default function TeamAndSecurityPage() {
     >
       {noAccess ? (
         <Card>
-          <EmptyState icon={<ShieldX />} heading="You don't have access">
+          <EmptyState illustration={<EmptyStateIllustration variant="lock" />} heading="You don't have access">
             Managing team permissions requires the Manage permissions
             capability.
           </EmptyState>

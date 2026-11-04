@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Users, Zap } from "lucide-react";
+import { ArrowRight, Zap } from "lucide-react";
 import type { Appointment, Customer, Enquiry, User, Vehicle } from "@/lib/types";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -10,7 +10,7 @@ import { appointmentService } from "@/lib/services/appointment-service";
 import { enquiryService } from "@/lib/services/enquiry-service";
 import { customerService } from "@/lib/services/customer-service";
 import { teamService } from "@/lib/services/team-service";
-import { Banner, Button, EmptyState, ProgressBar } from "@/components/genaro";
+import { Banner, Button, EmptyState, ProgressBar, EmptyStateIllustration } from "@/components/genaro";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -219,8 +219,7 @@ function EnquiriesTable({
     return (
       // Already inside the panel's card, so the empty state drops its own
       // card chrome.
-      <EmptyState
-        icon={<Users />}
+      <EmptyState illustration={<EmptyStateIllustration variant="list" />}
         heading="No enquiries on this vehicle yet"
         action={{ content: "Add first enquiry", onAction: onAddEnquiry }}
         className="rounded-none bg-transparent pt-6 pb-8 shadow-none"

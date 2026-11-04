@@ -1,8 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { ShieldX } from "lucide-react";
-import { EmptyState } from "@/components/shared/empty-state";
+import { EmptyState, EmptyStateIllustration } from "@/components/genaro";
 import { usePermissions } from "@/hooks/use-permissions";
 import { requiredCapsForPath } from "./sidebar-config";
 
@@ -24,10 +23,8 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   if (caps.some(can)) return <>{children}</>;
 
   return (
-    <EmptyState
-      icon={ShieldX}
-      title="Access restricted"
-      description="You don't have permission to view this page. Ask an administrator to grant access in Users & permissions."
-    />
+    <EmptyState illustration={<EmptyStateIllustration variant="lock" />} heading="Access restricted">
+      You don&apos;t have permission to view this page. Ask an administrator to grant access in Users &amp; permissions.
+    </EmptyState>
   );
 }

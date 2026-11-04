@@ -16,6 +16,7 @@ import {
   EmptyState,
   Page,
   ProgressBar,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RegPlate } from "@/components/shared/reg-plate";
@@ -222,9 +223,8 @@ export default function PerformancePage() {
         <Skeleton className="h-96 rounded-(--radius-300)" />
       ) : live.length === 0 ? (
         <Card padding="0">
-          <EmptyState
+          <EmptyState illustration={<EmptyStateIllustration variant="chart" />}
             heading="No live listings yet"
-            icon="AnalyticsMinor"
             action={{ content: "Open work list", url: "/advert/work-list" }}
           >
             Publish a vehicle from the work list to start tracking performance.

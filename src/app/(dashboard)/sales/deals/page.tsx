@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Download, Eye, Handshake } from "lucide-react";
+import { Download, Eye } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { salesService } from "@/lib/services/sales-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
@@ -21,6 +21,7 @@ import {
   EmptyState,
   Page,
   SkeletonBodyText,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";
@@ -432,11 +433,11 @@ export default function DealsPage() {
           <SkeletonBodyText lines={8} />
         </Card>
       ) : closed.length === 0 ? (
-        <EmptyState heading="No completed sales yet" icon={<Handshake />}>
+        <EmptyState illustration={<EmptyStateIllustration variant="list" plates />} heading="No completed sales yet">
           Move a pipeline card to Completed sale, or mark a car sold on the master sheet, to see it here.
         </EmptyState>
       ) : years.length === 0 ? (
-        <EmptyState heading="No deals match your filters" icon={<Handshake />}>
+        <EmptyState illustration={<EmptyStateIllustration variant="search" plates />} heading="No deals match your filters">
           Try widening the date range or clearing a filter.
         </EmptyState>
       ) : (

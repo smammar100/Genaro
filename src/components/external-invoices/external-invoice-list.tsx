@@ -14,6 +14,7 @@ import {
   Select,
   SkeletonBodyText,
   TextField,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -195,8 +196,7 @@ export function ExternalInvoiceList({ kind }: Props) {
           <SkeletonBodyText lines={6} />
         </Card>
       ) : filtered.length === 0 ? (
-        <EmptyState
-          icon={<FileText />}
+        <EmptyState illustration={<EmptyStateIllustration variant="list" />}
           heading={
             isFiltered
               ? "No invoices match these filters"

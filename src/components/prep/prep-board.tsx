@@ -1,13 +1,12 @@
 "use client";
 
-import { Wrench } from "lucide-react";
 import {
   PREP_STATUSES,
   type PrepCar,
   type PrepStatus,
 } from "@/lib/services/prep-service";
 import type { TodoStatus, User } from "@/lib/types";
-import { Card, EmptyState } from "@/components/genaro";
+import { Card, EmptyState, EmptyStateIllustration } from "@/components/genaro";
 import { KanbanEmpty, KanbanFrame, KanbanLane, KanbanSkeleton } from "@/components/kanban/kanban-board";
 import type { KanbanColumn } from "@/components/kanban/stage-icon";
 import { PrepCard } from "./prep-card";
@@ -82,7 +81,7 @@ export function PrepBoard({ cars, ...actions }: PrepBoardActions & { cars: PrepC
   if (cars.length === 0) {
     return (
       <Card padding="0">
-        <EmptyState icon={<Wrench className="fill-none" />} heading="Nothing in prep">
+        <EmptyState illustration={<EmptyStateIllustration variant="kanban" />} heading="Nothing in prep">
           Cars appear here the moment an inspection is completed with outstanding items.
         </EmptyState>
       </Card>

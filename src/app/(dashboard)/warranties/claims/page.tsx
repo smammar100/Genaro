@@ -2,14 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ShieldAlert } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { claimService } from "@/lib/services/claim-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import { warrantyService } from "@/lib/services/warranty-service";
 import type { Vehicle, Warranty, WarrantyClaim } from "@/lib/types";
 import { useRealtimeTable } from "@/hooks/use-realtime-table";
-import { EmptyState, Page } from "@/components/genaro";
+import { EmptyState, Page, EmptyStateIllustration } from "@/components/genaro";
 import { KpiStrip } from "@/components/warranties/kpi-strip";
 import {
   FilterChips,
@@ -166,7 +165,7 @@ export default function ClaimsPage() {
         loading={!rows}
       >
         {rows && rows.length === 0 ? (
-          <EmptyState className="rounded-none shadow-none" heading="No claims match" icon={<ShieldAlert />}>
+          <EmptyState illustration={<EmptyStateIllustration variant={query ? "search" : "list"} />} className="rounded-none shadow-none" heading="No claims match">
             {query
               ? "Try a different search term or clear the filter."
               : "Customer claims will appear here when filed against a warranty."}

@@ -29,6 +29,7 @@ export { ProgressBar, type ProgressBarProps } from './ProgressBar';
 export { ExceptionList, type ExceptionListProps, type ExceptionListItem } from './ExceptionList';
 export { SkeletonBodyText, SkeletonBox, SkeletonDisplayText, SkeletonThumbnail, type SkeletonBodyTextProps, type SkeletonBoxProps, type SkeletonDisplayTextProps, type SkeletonRadius, type SkeletonThumbnailProps } from './Skeleton';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
+export { EmptyStateIllustration, type EmptyStateIllustrationProps, type EmptyStateIllustrationVariant } from './EmptyStateIllustration';
 
 // Images & icons
 export { Icon, type IconProps, type IconTone } from './Icon';

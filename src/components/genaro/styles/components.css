@@ -386,6 +386,55 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 .p-empty__heading { margin:0; font-size:var(--fs-title); line-height:var(--lh-title); font-weight:var(--fw-semibold); }
 .p-empty__body { font-size:var(--fs-body); line-height:var(--lh-body); font-weight:var(--fw-regular); }
 .p-empty__footer { font-size:var(--fs-caption); line-height:var(--lh-caption); color:var(--text-secondary); }
+/* Compact sits inside a Card, so the card draws the surface. */
+.p-empty--compact { padding:var(--space-400) var(--space-200) var(--space-600); background:transparent; border-radius:0; box-shadow:none; }
+/* EmptyStateIllustration: a ghosted miniature of the screen, the first item landing in place on a 4.6s loop. */
+.p-illo { --cycle: 4.6s; }
+.p-illo .p-illo__frame { opacity: 0; animation: p-illo-fade 260ms ease-out forwards; }
+.p-illo__in { opacity: 0; animation: p-illo-in 460ms cubic-bezier(0.23, 1, 0.32, 1) var(--d, 0ms) forwards; }
+@keyframes p-illo-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.p-illo__ghost { opacity: 0.85; }
+.p-illo__slot { opacity: 0; animation: p-illo-slot var(--cycle) ease-in-out 700ms infinite; }
+@keyframes p-illo-slot { 0%, 8% { opacity: 1; } 20%, 80% { opacity: 0; } 92%, 100% { opacity: 1; } }
+.p-illo__land { opacity: 0; transform-box: fill-box; transform-origin: center; animation: p-illo-land var(--cycle) cubic-bezier(0.23, 1, 0.32, 1) 700ms infinite; }
+.p-illo__land.p-illo__glide { animation-name: p-illo-glide; }
+.p-illo__land.p-illo__pop { animation-name: p-illo-pop; }
+@keyframes p-illo-land { 0%, 6% { opacity: 0; transform: translateY(10px); } 20%, 80% { opacity: 1; transform: none; } 90%, 100% { opacity: 0; transform: translateY(-3px); } }
+@keyframes p-illo-glide { 0%, 6% { opacity: 0; transform: translate(-6px, -14px) rotate(-5deg); } 22%, 80% { opacity: 1; transform: none; } 90%, 100% { opacity: 0; transform: translateY(-3px); } }
+@keyframes p-illo-pop { 0%, 6% { opacity: 0; transform: scale(0.88); } 20%, 80% { opacity: 1; transform: none; } 90%, 100% { opacity: 0; transform: scale(0.96); } }
+.p-illo__drop { opacity: 0; animation: p-illo-drop var(--cycle) cubic-bezier(0.23, 1, 0.32, 1) calc(700ms + var(--d)) infinite; }
+@keyframes p-illo-drop { 0%, 4% { opacity: 0; transform: translateY(-8px); } 16%, 78% { opacity: 1; transform: none; } 88%, 100% { opacity: 0; transform: none; } }
+.p-illo__tick { stroke-dasharray: 1; stroke-dashoffset: 1; animation: p-illo-tick var(--cycle) cubic-bezier(0.65, 0, 0.35, 1) calc(600ms + var(--d)) infinite; }
+@keyframes p-illo-tick { 0% { stroke-dashoffset: 1; } 10%, 80% { stroke-dashoffset: 0; } 90%, 100% { stroke-dashoffset: 1; } }
+.p-illo__progress { transform-box: fill-box; transform-origin: left center; transform: scaleX(0); animation: p-illo-progress var(--cycle) cubic-bezier(0.23, 1, 0.32, 1) 600ms infinite; }
+@keyframes p-illo-progress { 0% { transform: scaleX(0); } 12% { transform: scaleX(0.2); } 30% { transform: scaleX(0.4); } 48% { transform: scaleX(0.6); } 66% { transform: scaleX(0.8); } 80% { transform: scaleX(1); } 92%, 100% { transform: scaleX(0); } }
+.p-illo__filter { animation: p-illo-filter var(--cycle) cubic-bezier(0.23, 1, 0.32, 1) calc(400ms + var(--d)) infinite both; }
+@keyframes p-illo-filter { 0%, 18% { opacity: 1; transform: none; } 34%, 82% { opacity: 0.14; transform: translateX(8px); } 96%, 100% { opacity: 1; transform: none; } }
+.p-illo__sweep { opacity: 0; animation: p-illo-fade 300ms ease-out 700ms forwards, p-illo-sweep var(--cycle) ease-in-out 700ms infinite; }
+@keyframes p-illo-sweep { 0%, 100% { transform: translate(-48px, -6px); } 50% { transform: translate(34px, 2px); } }
+.p-illo__shackle { animation: p-illo-shackle 520ms cubic-bezier(0.34, 1.56, 0.64, 1) 650ms both; }
+@keyframes p-illo-shackle { from { transform: translateY(-7px); } }
+.p-illo__lock { opacity: 0; animation: p-illo-in 420ms cubic-bezier(0.23, 1, 0.32, 1) 400ms forwards; }
+.p-illo__ring, .p-illo__ping { transform-box: fill-box; transform-origin: center; animation: p-illo-ping 2.4s cubic-bezier(0.23, 1, 0.32, 1) 1.2s infinite both; }
+.p-illo__ring { animation-name: p-illo-ring; }
+@keyframes p-illo-ring { 0% { transform: scale(0.7); opacity: 0.9; } 70%, 100% { transform: scale(1.35); opacity: 0; } }
+.p-illo__adrift { opacity: 0; transform-box: fill-box; transform-origin: center; animation: p-illo-in 460ms cubic-bezier(0.23, 1, 0.32, 1) 300ms forwards, p-illo-adrift 4s ease-in-out 800ms infinite; }
+@keyframes p-illo-adrift { 0%, 100% { transform: translate(6px, -10px) rotate(-3deg); opacity: 1; } 50% { transform: translate(9px, -14px) rotate(-4.5deg); opacity: 1; } }
+.p-illo__retry { transform-box: fill-box; transform-origin: center; animation: p-illo-spin 2.2s linear 600ms infinite; }
+.p-illo__grow { transform-box: fill-box; transform-origin: center bottom; animation: p-illo-grow 700ms cubic-bezier(0.23, 1, 0.32, 1) var(--d) both; }
+@keyframes p-illo-grow { from { transform: scaleY(0); } }
+
+@keyframes p-illo-fade { to { opacity: 1; } }
+@keyframes p-illo-ping { 0% { transform: scale(1); opacity: 0.9; } 70%, 100% { transform: scale(2.2); opacity: 0; } }
+@keyframes p-illo-spin { to { transform: rotate(360deg); } }
+.p-illo { display: block; margin: 0 auto var(--space-400); overflow: visible; }
+@media (prefers-reduced-motion: reduce) {
+  .p-illo, .p-illo * { animation: none !important; }
+  .p-illo__in, .p-illo__land, .p-illo__drop, .p-illo__lock, .p-illo__adrift, .p-illo__sweep, .p-illo .p-illo__frame { opacity: 1; transform: none; }
+  .p-illo__slot { opacity: 0; }
+  .p-illo__tick { stroke-dashoffset: 0; }
+  .p-illo__progress { transform: scaleX(1); }
+}
 
 /* ChoiceList */
 .p-choicelist { border:0; margin:0; padding:0; min-width:0; font-family:var(--font-sans); font-size:var(--fs-body); line-height:var(--lh-body); font-weight:var(--fw-regular); color:var(--text); }

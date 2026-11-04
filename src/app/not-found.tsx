@@ -1,4 +1,4 @@
-import { EmptyState } from "@/components/genaro";
+import { EmptyState, EmptyStateIllustration } from "@/components/genaro";
 
 /**
  * Any URL with no page. Without this Next renders its own 404 in system-ui;
@@ -8,8 +8,7 @@ export default function NotFound() {
   return (
     <main className="grid min-h-dvh place-items-center bg-(--bg) p-6">
       <div className="w-full max-w-md">
-        <EmptyState
-          icon="SearchMinor"
+        <EmptyState illustration={<EmptyStateIllustration variant="notFound" />}
           heading="Page not found"
           action={{ content: "Go to home", url: "/dashboard" }}
         >

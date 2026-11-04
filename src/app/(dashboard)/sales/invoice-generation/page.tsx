@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  ShieldX,
   Car,
   User,
   FileText,
@@ -51,6 +50,8 @@ import {
   Card,
   Layout,
   Page,
+  EmptyState,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -66,7 +67,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { EmptyState } from "@/components/shared/empty-state";
 import { VehiclePicker } from "@/components/shared/vehicle-picker";
 import { formatCurrency } from "@/lib/utils";
 import { isValidUkPhone } from "@/lib/formatters";
@@ -728,15 +728,11 @@ function InvoiceGenerationForm() {
 
   if (!allowed) {
     return (
-      <EmptyState
-        icon={ShieldX}
-        title="You don't have access"
-        description={
-          editing
-            ? "Editing invoices requires the Edit Invoice capability."
-            : "Generating invoices requires the Generate Invoice capability."
-        }
-      />
+      <EmptyState illustration={<EmptyStateIllustration variant="lock" />} heading="You don't have access">
+        {editing
+          ? "Editing invoices requires the Edit Invoice capability."
+          : "Generating invoices requires the Generate Invoice capability."}
+      </EmptyState>
     );
   }
 

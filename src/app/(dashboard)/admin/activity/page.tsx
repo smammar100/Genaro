@@ -34,7 +34,7 @@ import type {
   User,
   Vehicle,
 } from "@/lib/types";
-import { Button, Card, EmptyState, Page } from "@/components/genaro";
+import { Button, Card, EmptyState, Page, EmptyStateIllustration } from "@/components/genaro";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   FilterBar,
@@ -282,7 +282,7 @@ export default function ActivityLogPage() {
       {!groups ? (
         <Skeleton className="h-72" />
       ) : groups.length === 0 ? (
-        <EmptyState icon={<History />} heading="No activity">
+        <EmptyState illustration={<EmptyStateIllustration variant="timeline" />} heading="No activity">
           Once people start using the system, every action lands here.
         </EmptyState>
       ) : (
