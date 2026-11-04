@@ -65,11 +65,6 @@ export function DashboardMotsExpiring({ due, today: todayKey }: { due: Vehicle[]
     <Card
       className="h-full"
       title="MOTs expiring soon"
-      actions={
-        <Button variant="plain" url="/vehicles">
-          View all
-        </Button>
-      }
     >
       {/* No dividers between rows: spacing separates them, as in Appointments. */}
       <ul className="-mx-2 flex list-none flex-col gap-1">
