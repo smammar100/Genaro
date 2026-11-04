@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, Check, Globe, Rocket, X } from "lucide-react";
+import { AlertCircle, Check, Globe, X } from "lucide-react";
 import { toast } from "@/lib/toast";
 import type { Listing, Vehicle } from "@/lib/types";
 import { listingService } from "@/lib/services/listing-service";
 import { dvlaService } from "@/lib/services/dvla-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
-import { Button, EmptyState, ProgressBar } from "@/components/genaro";
+import { Button, EmptyState, ProgressBar, EmptyStateIllustration } from "@/components/genaro";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Panel, Pill } from "./primitives";
 import { OverviewStats } from "./overview-stats";
@@ -129,8 +129,7 @@ function EmptyOverview({
   onNavigate?: (tab: string) => void;
 }) {
   return (
-    <EmptyState
-      icon={<Rocket />}
+    <EmptyState illustration={<EmptyStateIllustration variant="checklist" />}
       heading="New to stock, let's get it sale-ready"
       action={{
         content: "Start inspection",

@@ -17,6 +17,7 @@ import {
   Page,
   SkeletonBodyText,
   SkeletonThumbnail,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { DaysInStockChip } from "@/components/shared/days-in-stock-chip";
 import {
@@ -204,8 +205,7 @@ export default function VehicleDetailPage({
   if (vehicle === null) {
     return (
       <Page fullWidth>
-        <EmptyState
-          icon="ProductsMinor"
+        <EmptyState illustration={<EmptyStateIllustration variant="notFound" />}
           heading="Vehicle not found"
           action={{ content: `Back to ${back.label}`, url: back.href }}
         >

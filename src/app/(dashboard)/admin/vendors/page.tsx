@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Handshake, Store } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { vendorService } from "@/lib/services/vendor-service";
 import { dealerPartnerService } from "@/lib/services/dealer-partner-service";
@@ -29,6 +28,7 @@ import {
   Tabs,
   TextField,
   type BadgeTone,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "@/lib/toast";
@@ -485,7 +485,7 @@ function GaragesTab({
       ) : !rows ? (
         <TableSkeleton />
       ) : rows.length === 0 ? (
-        <EmptyState icon={<Store />} heading="No garages yet">
+        <EmptyState illustration={<EmptyStateIllustration variant="list" />} heading="No garages yet">
           Add the garages and parts suppliers you work with.
         </EmptyState>
       ) : (
@@ -898,7 +898,7 @@ function DealerPartnersTab({
       ) : !rows ? (
         <TableSkeleton />
       ) : rows.length === 0 ? (
-        <EmptyState icon={<Handshake />} heading="No dealer partners yet">
+        <EmptyState illustration={<EmptyStateIllustration variant="list" />} heading="No dealer partners yet">
           Add the trade partners who supply you stock. (Requires database
           migration 0002.)
         </EmptyState>

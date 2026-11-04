@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ExternalLink } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { warrantyService } from "@/lib/services/warranty-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
@@ -10,7 +9,7 @@ import { claimService } from "@/lib/services/claim-service";
 import type { Vehicle, Warranty, WarrantyClaim } from "@/lib/types";
 import { useRealtimeTable } from "@/hooks/use-realtime-table";
 import { effectiveWarrantyStatus } from "@/lib/warranty-status";
-import { EmptyState, Page } from "@/components/genaro";
+import { EmptyState, Page, EmptyStateIllustration } from "@/components/genaro";
 import { KpiStrip } from "@/components/warranties/kpi-strip";
 import {
   FilterChips,
@@ -164,7 +163,7 @@ export default function ExternalWarrantiesPage() {
         loading={!rows}
       >
         {rows && rows.length === 0 ? (
-          <EmptyState className="rounded-none shadow-none" heading="No external warranties" icon={<ExternalLink />}>
+          <EmptyState illustration={<EmptyStateIllustration variant={query ? "search" : "list"} />} className="rounded-none shadow-none" heading="No external warranties">
             {query
               ? "Try a different search term or clear the filter."
               : "Third-party warranties show up here once they're sold with a vehicle."}

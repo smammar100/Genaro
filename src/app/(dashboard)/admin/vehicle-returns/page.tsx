@@ -7,7 +7,6 @@ import {
   Check,
   Clock,
   FileText,
-  Undo2,
   User,
   X,
   type LucideIcon,
@@ -46,6 +45,7 @@ import {
   Page,
   TextField,
   type BadgeTone,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -782,8 +782,7 @@ export default function ReturnsPage() {
       {!rows ? (
         <Skeleton className="h-72" />
       ) : rows.length === 0 ? (
-        <EmptyState
-          icon={<Undo2 />}
+        <EmptyState illustration={<EmptyStateIllustration variant="list" plates />}
           heading="No returns or cancellations yet"
           action={{ content: "Create return", onAction: () => setOpen(true) }}
         >

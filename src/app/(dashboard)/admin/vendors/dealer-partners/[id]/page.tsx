@@ -25,6 +25,7 @@ import {
   Page,
   SkeletonBodyText,
   TextField,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { AddVehicleModal } from "@/components/vehicles/add-vehicle-modal";
 import {
@@ -220,7 +221,7 @@ export default function DealerPartnerDetailPage({
   if (loaded && !partner) {
     return (
       <Page fullWidth title="Dealer partner" backAction={BACK_ACTION}>
-        <EmptyState heading="Partner not found">
+        <EmptyState illustration={<EmptyStateIllustration variant="notFound" />} heading="Partner not found">
           This dealer partner doesn&apos;t exist or the table isn&apos;t
           migrated.
         </EmptyState>

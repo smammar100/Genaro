@@ -1,9 +1,8 @@
 "use client";
 
 import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
-import { ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { Card, EmptyState, TextField } from "@/components/genaro";
+import { Card, EmptyState, TextField, EmptyStateIllustration } from "@/components/genaro";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RemoveMemberDialog } from "@/components/admin/remove-member-dialog";
 import { EditRolesDialog } from "@/components/admin/edit-roles-dialog";
@@ -75,8 +74,7 @@ export const PermissionsGrid = forwardRef<PermissionsGridHandle>(
               <Skeleton className="h-72" />
             </div>
           ) : filtered.length === 0 ? (
-            <EmptyState
-              icon={<ShieldCheck />}
+            <EmptyState illustration={<EmptyStateIllustration variant="search" />}
               heading="No team members match"
             >
               Adjust the filter or add a new staff member.

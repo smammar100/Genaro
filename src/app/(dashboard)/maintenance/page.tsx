@@ -34,6 +34,7 @@ import {
   EmptyState,
   Page,
   useConfirm,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { QuickBookModal } from "@/components/calendar/quick-book-modal";
 import { EditJobDialog } from "@/components/maintenance/edit-job-dialog";
@@ -256,9 +257,8 @@ export default function MaintenancePage() {
         <KanbanSkeleton columns={COLUMNS.length} />
       ) : isEmpty ? (
         <Card padding="0">
-          <EmptyState
+          <EmptyState illustration={<EmptyStateIllustration variant="kanban" />}
             heading="No maintenance jobs yet"
-            icon={<Wrench className="fill-none" />}
             action={{ content: "Add job", onAction: () => setAddOpen(true) }}
           >
             Add a job, or add a vehicle to auto-create a pending one.

@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { appointmentService } from "@/lib/services/appointment-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import type { Appointment, Vehicle } from "@/lib/types";
-import { Button, Card, SkeletonBodyText } from "@/components/genaro";
+import { Button, Card, EmptyState, EmptyStateIllustration, SkeletonBodyText } from "@/components/genaro";
 
 function fmtTime(t: string): string {
   const [h, m] = t.split(":");
@@ -61,14 +61,16 @@ export function DashboardUpcomingAppointments() {
       {upcoming === null ? (
         <SkeletonBodyText lines={5} />
       ) : upcoming.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 px-2 py-6 text-center">
-          <p className="body-md text-(--text-secondary)">
-            No upcoming appointments
-          </p>
-          <Button variant="plain" url="/sales/appointments">
-            Book appointment
-          </Button>
-        </div>
+        <EmptyState
+          compact
+          illustration={<EmptyStateIllustration variant="calendar" size="small" />}
+          heading="No upcoming appointments"
+          footerContent={
+            <Button variant="plain" url="/sales/appointments">
+              Book appointment
+            </Button>
+          }
+        />
       ) : (
         // No dividers between rows: spacing separates them (rule 1).
         <ul className="flex list-none flex-col gap-1">

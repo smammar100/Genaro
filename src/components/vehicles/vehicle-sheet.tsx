@@ -20,7 +20,6 @@ import {
   Check,
   ChevronsUpDown,
   Download,
-  FileSpreadsheet,
   FunctionSquare,
   Plus,
   Search,
@@ -46,7 +45,6 @@ import {
 } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { EmptyState } from "@/components/shared/empty-state";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { VehicleImage } from "@/components/shared/vehicle-image";
 import { PHOTOS_ENABLED } from "@/lib/phase-one";
@@ -61,6 +59,7 @@ import {
   Page,
   Select,
   type PageSecondaryAction,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { SuggestInput } from "@/components/ui/suggest-input";
 import { SheetToolbar } from "@/components/master-sheet/sheet-toolbar";
@@ -2119,8 +2118,7 @@ export function VehicleSheet({
               <div className="flex min-h-0 flex-1 items-center justify-center py-10">
                 {emptyState ??
                   (filters.length > 0 || search.trim() !== "" ? (
-                    <GenaroEmptyState
-                      icon="SearchMinor"
+                    <GenaroEmptyState illustration={<EmptyStateIllustration variant="search" plates />}
                       heading="No cars match these filters"
                       action={{
                         content: "Clear filters",
@@ -2134,7 +2132,7 @@ export function VehicleSheet({
                       Remove a filter or change the search to see more cars.
                     </GenaroEmptyState>
                   ) : (
-                    <GenaroEmptyState icon="ProductsMinor" heading="No vehicles yet">
+                    <GenaroEmptyState illustration={<EmptyStateIllustration variant="list" plates />} heading="No vehicles yet">
                       Cars appear here as soon as they are added.
                     </GenaroEmptyState>
                   ))}
@@ -2351,11 +2349,9 @@ export function VehicleSheet({
         ) : filtered.length === 0 && emptyState ? (
           emptyState
         ) : filtered.length === 0 ? (
-          <EmptyState
-            icon={FileSpreadsheet}
-            title="No vehicles"
-            description="Add a vehicle or adjust your filters."
-          />
+          <GenaroEmptyState illustration={<EmptyStateIllustration variant="list" plates />} heading="No vehicles">
+            Add a vehicle or adjust your filters.
+          </GenaroEmptyState>
         ) : (
           <Card className="relative flex min-h-0 flex-1 flex-col p-0">
             {renderGrid(filtered)}

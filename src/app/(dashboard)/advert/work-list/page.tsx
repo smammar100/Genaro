@@ -31,6 +31,7 @@ import {
   Select,
   TextField,
   type BadgeTone,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { Switch } from "@/components/ui/switch";
 import { DaysInStockChip } from "@/components/shared/days-in-stock-chip";
@@ -602,7 +603,7 @@ export default function ListingsPage() {
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <EmptyState heading="No listings yet" icon="MarketingMinor">
+            <EmptyState illustration={<EmptyStateIllustration variant="list" plates />} heading="No listings yet">
               Mark a vehicle as ready, then create a listing.
             </EmptyState>
           ) : (
@@ -674,7 +675,7 @@ export default function ListingsPage() {
             <Skeleton className="h-[460px] rounded-(--radius-300)" />
           ) : !selected ? (
             <Card padding="0">
-              <EmptyState heading="No listing selected" icon="ViewMinor">
+              <EmptyState illustration={<EmptyStateIllustration variant="detail" />} heading="No listing selected">
                 Select a listing to preview its advert.
               </EmptyState>
             </Card>

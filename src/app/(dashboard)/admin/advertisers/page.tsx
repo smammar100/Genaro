@@ -13,6 +13,7 @@ import {
   Pagination,
   SkeletonBodyText,
   type BadgeTone,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import type { AdvertiserRecord } from "@/lib/types";
 
@@ -191,7 +192,7 @@ export default function AdvertisersPage() {
           {loadError}
         </Banner>
       ) : advertisers.length === 0 ? (
-        <EmptyState heading="No advertisers yet">
+        <EmptyState illustration={<EmptyStateIllustration variant="list" />} heading="No advertisers yet">
           {canSync ? "Run a sync to pull them from AutoTrader." : undefined}
         </EmptyState>
       ) : (

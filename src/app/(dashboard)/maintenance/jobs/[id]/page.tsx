@@ -33,6 +33,7 @@ import {
   TextField,
   useConfirm,
   type BadgeTone,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { EditJobDialog } from "@/components/maintenance/edit-job-dialog";
@@ -170,9 +171,8 @@ export default function MaintenanceJobDetailPage({
     return (
       <Page fullWidth title="Maintenance job" backAction={backAction}>
         <Card padding="0">
-          <EmptyState
+          <EmptyState illustration={<EmptyStateIllustration variant="notFound" />}
             heading="Job not found"
-            icon="CircleAlertMajor"
             action={{ content: "Back to maintenance", url: "/maintenance" }}
           >
             It may have been deleted, or the link is out of date.

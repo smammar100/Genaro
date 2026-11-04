@@ -36,6 +36,7 @@ import {
   SplitButton,
   TextField,
   useConfirm,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { DealStageBadge } from "@/components/sales/status-badges";
@@ -175,7 +176,7 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
   if (missing) {
     return (
       <Page title="Deal" backAction={{ content: "Sales pipeline", url: "/sales/pipeline" }}>
-        <EmptyState heading="This deal isn't here any more" action={{ content: "Open the pipeline", url: "/sales/pipeline" }}>
+        <EmptyState illustration={<EmptyStateIllustration variant="notFound" />} heading="This deal isn't here any more" action={{ content: "Open the pipeline", url: "/sales/pipeline" }}>
           It may have been removed, or the link is from another company.
         </EmptyState>
       </Page>

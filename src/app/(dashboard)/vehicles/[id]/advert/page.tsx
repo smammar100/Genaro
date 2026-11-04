@@ -12,6 +12,7 @@ import {
   Page,
   SkeletonBodyText,
   SkeletonDisplayText,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { AdvertEditor } from "@/components/advert/advert-editor";
 
@@ -65,8 +66,7 @@ export default function VehicleAdvertPage({
   if (vehicle === null) {
     return (
       <Page fullWidth>
-        <EmptyState
-          icon="ProductsMinor"
+        <EmptyState illustration={<EmptyStateIllustration variant="notFound" />}
           heading="Vehicle not found"
           action={{ content: "Back to all vehicles", url: "/vehicles" }}
         >

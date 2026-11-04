@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { ClipboardCheck } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import { inspectionService } from "@/lib/services/inspection-service";
@@ -23,6 +22,7 @@ import {
   SkeletonBox,
   Tabs,
   type BadgeTone,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { cn, formatDate } from "@/lib/utils";
@@ -162,13 +162,12 @@ export default function MaintenanceInspectionListPage() {
         <SkeletonBox height={288} />
       ) : tabRows.length === 0 ? (
         <Card padding="0">
-          <EmptyState
+          <EmptyState illustration={<EmptyStateIllustration variant="checklist" />}
             heading={
               mode === "pending"
                 ? "No vehicles awaiting inspection"
                 : "No completed inspections yet"
             }
-            icon={<ClipboardCheck className="fill-none" />}
           >
             {mode === "pending"
               ? "All current stock has cleared the inspection step."

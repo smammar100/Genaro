@@ -13,6 +13,7 @@ import {
   TextField,
   type IndexTableHeading,
   type SortDirection,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -234,16 +235,14 @@ export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
         ) : shown.length === 0 ? (
           <Card>
             {vehicles && vehicles.length === 0 ? (
-              <EmptyState
-                icon="ProductsMinor"
+              <EmptyState illustration={<EmptyStateIllustration variant="list" plates />}
                 heading="No vehicles in stock"
                 action={{ content: "Add vehicle", onAction: onAddVehicle }}
               >
                 Add a vehicle by its registration to start tracking it.
               </EmptyState>
             ) : (
-              <EmptyState
-                icon="SearchMinor"
+              <EmptyState illustration={<EmptyStateIllustration variant="search" plates />}
                 heading="No vehicles found"
                 action={{
                   content: "Clear search",

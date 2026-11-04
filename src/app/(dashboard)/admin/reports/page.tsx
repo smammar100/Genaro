@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { BarChart3, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import { vehicleService } from "@/lib/services/vehicle-service";
@@ -24,6 +24,7 @@ import {
   EmptyState,
   Grid,
   Page,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 import { Label } from "@/components/ui/label";
 import {
@@ -424,7 +425,7 @@ export default function ReportsPage() {
   if (!allowed) {
     return (
       <Page fullWidth title="Reports & analytics">
-        <EmptyState icon={<BarChart3 />} heading="Access restricted">
+        <EmptyState illustration={<EmptyStateIllustration variant="lock" />} heading="Access restricted">
           You don&rsquo;t have permission to view reports.
         </EmptyState>
       </Page>

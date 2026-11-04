@@ -41,6 +41,7 @@ import {
   SkeletonBox,
   Tooltip,
   useConfirm,
+  EmptyStateIllustration,
 } from "@/components/genaro";
 // TODO(genaro): Genaro has no date or time field, so date and time inputs
 // keep the app's own picker until it has one.
@@ -343,9 +344,8 @@ export default function WorkshopPage() {
         <SkeletonBox height={256} />
       ) : isEmpty ? (
         <Card padding="0">
-          <EmptyState
+          <EmptyState illustration={<EmptyStateIllustration variant="list" />}
             heading="No workshop jobs"
-            icon={<Wrench className="fill-none" />}
             action={{ content: "Add workshop job", onAction: openAdd }}
           >
             Track customer walk-in service appointments here.

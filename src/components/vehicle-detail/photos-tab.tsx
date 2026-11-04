@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import { DragHandle } from "@/components/shared/drag-handle";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge, Button, EmptyState } from "@/components/genaro";
+import { Badge, Button, EmptyState, EmptyStateIllustration } from "@/components/genaro";
 import {
   Dialog,
   DialogContent,
@@ -389,8 +389,7 @@ export function PhotosTab({ vehicle, onVehicleRefetch }: PhotosTabProps) {
           ) : photos.length === 0 ? (
             // Already inside the panel's card, so the empty state drops its
             // own card chrome; the dashed edge marks the drop target.
-            <EmptyState
-              icon={<ImagePlus />}
+            <EmptyState illustration={<EmptyStateIllustration variant="gallery" />}
               heading="No photos yet"
               action={{
                 content: "Upload photos",
