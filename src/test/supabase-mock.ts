@@ -42,6 +42,7 @@ const CHAIN_METHODS = [
   "gt",
   "lt",
   "is",
+  "like",
   "order",
   "limit",
   "range",

@@ -91,6 +91,7 @@ interface SaleRow {
 /** Group key for sales with no date. */
 const NO_DATE = "none";
 const saleMonth = (r: SaleRow): string => r.date?.slice(0, 7) ?? NO_DATE;
+const saleYear = (r: SaleRow): string => r.date?.slice(0, 4) ?? NO_DATE;
 const groupLabel = (key: string): string =>
   key === NO_DATE ? "Date not recorded" : monthLabel(key);
 
@@ -269,12 +270,18 @@ export default function DealsPage() {
     { key: "completed", dir: "desc" },
   );
 
-  // Monthly grouping — the client reviews completed sales month by month.
-  const { groups, isCollapsed, toggle } = useRowGroups(
-    sorted,
-    saleMonth,
-    groupLabel,
-  );
+  // Grouped by year, then month: each year opens on its months, closed, and a
+  // month opens on its sales (bug list 2026-11-04). A search opens every
+  // month, so the matching car is on screen.
+  const searching = filters.search.trim() !== "";
+  const { groups: years, isCollapsed: isYearCollapsed, toggle: toggleYear } =
+    useRowGroups(sorted, saleYear, groupLabel);
+  const { groups: months, isCollapsed: isMonthClosed, toggle: toggleMonth } =
+    useRowGroups(sorted, saleMonth, groupLabel, { defaultCollapsed: true });
+  const isMonthCollapsed = (key: string): boolean =>
+    !searching && isMonthClosed(key);
+  const monthsOf = (year: string) =>
+    (months ?? []).filter((m) => m.key.slice(0, 4) === year.slice(0, 4));
 
   // Not memoized: the Invoice column closes over downloadingId so its spinner
   // stays current. The table is small, so rebuilding the column list is cheap.
@@ -420,7 +427,7 @@ export default function DealsPage() {
         />
       )}
 
-      {!closed || !groups ? (
+      {!closed || !years ? (
         <Card>
           <SkeletonBodyText lines={8} />
         </Card>
@@ -428,7 +435,7 @@ export default function DealsPage() {
         <EmptyState heading="No completed sales yet" icon={<Handshake />}>
           Move a pipeline card to Completed sale, or mark a car sold on the master sheet, to see it here.
         </EmptyState>
-      ) : groups.length === 0 ? (
+      ) : years.length === 0 ? (
         <EmptyState heading="No deals match your filters" icon={<Handshake />}>
           Try widening the date range or clearing a filter.
         </EmptyState>
@@ -442,27 +449,59 @@ export default function DealsPage() {
               onSort={onSort}
             />
             <tbody>
-              {groups.map((g) => (
-                <Fragment key={g.key}>
-                  <DataGridGroupHeaderRow
-                    label={g.label}
-                    count={g.rows.length}
-                    collapsed={isCollapsed(g.key)}
-                    onToggle={() => toggle(g.key)}
-                    span={cols.length}
-                  />
-                  {!isCollapsed(g.key) &&
-                    g.rows.map((r, i) => (
-                      <DataGridRow
-                        key={r.id}
-                        row={r}
-                        cols={cols}
-                        index={i}
-                        onClick={openSale}
-                      />
-                    ))}
-                </Fragment>
-              ))}
+              {years.map((y) => {
+                // Undated sheet sales have no months: one closed group.
+                const undated = y.key === NO_DATE;
+                const yearOpen = undated
+                  ? !isMonthCollapsed(NO_DATE)
+                  : !isYearCollapsed(y.key);
+                return (
+                  <Fragment key={y.key}>
+                    <DataGridGroupHeaderRow
+                      label={y.label}
+                      count={y.rows.length}
+                      collapsed={!yearOpen}
+                      onToggle={() =>
+                        undated ? toggleMonth(NO_DATE) : toggleYear(y.key)
+                      }
+                      span={cols.length}
+                    />
+                    {yearOpen &&
+                      (undated
+                        ? y.rows.map((r, i) => (
+                            <DataGridRow
+                              key={r.id}
+                              row={r}
+                              cols={cols}
+                              index={i}
+                              onClick={openSale}
+                            />
+                          ))
+                        : monthsOf(y.key).map((m) => (
+                            <Fragment key={m.key}>
+                              <DataGridGroupHeaderRow
+                                level={1}
+                                label={m.label}
+                                count={m.rows.length}
+                                collapsed={isMonthCollapsed(m.key)}
+                                onToggle={() => toggleMonth(m.key)}
+                                span={cols.length}
+                              />
+                              {!isMonthCollapsed(m.key) &&
+                                m.rows.map((r, i) => (
+                                  <DataGridRow
+                                    key={r.id}
+                                    row={r}
+                                    cols={cols}
+                                    index={i}
+                                    onClick={openSale}
+                                  />
+                                ))}
+                            </Fragment>
+                          )))}
+                  </Fragment>
+                );
+              })}
             </tbody>
           </DataGridTable>
         </DataGridShell>
