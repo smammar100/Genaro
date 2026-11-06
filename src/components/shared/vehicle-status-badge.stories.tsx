@@ -3,8 +3,10 @@ import { VEHICLE_STATUSES } from "@/lib/constants";
 import { VehicleStatusBadge } from "./status-badge";
 
 /**
- * A vehicle's stock status, from Received to Sold, as a Badge whose tone is
- * fixed per status so it reads the same on every page. Use it wherever a
+ * A vehicle's stock status, from Received to Sold, as a Badge that reads the
+ * same on every page: every status has the same weight, a pip says how far
+ * along the car is (empty, half, full), and a tone appears only on the states
+ * that need someone (in prep) or are good to go (ready, listed). Use it wherever a
  * vehicle's status shows; in a data grid use `VehicleStatusCell`. For a deal's
  * stage use `SalesStageBadge`.
  */
@@ -29,8 +31,8 @@ type Story = StoryObj<typeof meta>;
 export const Listed: Story = {};
 
 /**
- * A car just bought in, before anyone has inspected it. Informational: nothing
- * is late yet.
+ * A car just bought in, before anyone has inspected it. Neutral with an empty
+ * pip: nothing has been done yet, and nothing is late.
  * @summary just bought in ("Received")
  */
 export const Received: Story = {
@@ -62,8 +64,8 @@ export const Ready: Story = {
 };
 
 /**
- * A car held for a customer who's paid a deposit. The strong fill sets it
- * apart from the plain info of Received.
+ * A car held for a customer who's paid a deposit: info tone with a full pip.
+ * Same weight as every other status, so a list of mostly Received cars stays calm.
  * @summary held on a deposit ("Reserved")
  */
 export const Reserved: Story = {

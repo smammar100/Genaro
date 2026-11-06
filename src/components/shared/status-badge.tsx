@@ -7,6 +7,7 @@ import type {
   SalesStage,
   VehicleStatus,
 } from "@/lib/types";
+import { Badge as GenaroBadge, type BadgeProgress, type BadgeTone } from "@/components/genaro";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
@@ -53,7 +54,26 @@ interface VehicleStatusBadgeProps {
 }
 
 /**
- * A vehicle's stock status (Received, Listed, Sold…) as a Badge in that status's tone.
+ * One weight for every stock status (docs/vehicles.md): Reserved no longer shouts over Received.
+ * The pip says how far along the car is (nothing done yet, under way, ready); the tone marks only
+ * the states that need someone or are good to go.
+ */
+const VEHICLE_STATUS_LOOK: Record<VehicleStatus, { tone: BadgeTone; progress: BadgeProgress }> = {
+  received: { tone: "neutral", progress: "incomplete" },
+  inspection_pending: { tone: "neutral", progress: "incomplete" },
+  being_prepared: { tone: "attention", progress: "partiallyComplete" },
+  photos_pending: { tone: "attention", progress: "partiallyComplete" },
+  photos_ready: { tone: "attention", progress: "partiallyComplete" },
+  ready: { tone: "success", progress: "complete" },
+  listed: { tone: "success", progress: "complete" },
+  reserved: { tone: "info", progress: "complete" },
+  sold: { tone: "neutral", progress: "complete" },
+  returned: { tone: "neutral", progress: "complete" },
+};
+
+/**
+ * A vehicle's stock status (Received, Listed, Sold…) as a Badge: a pip for how far along it is,
+ * a tone only where it matters.
  * @import import { VehicleStatusBadge } from "@/components/shared/status-badge";
  */
 export function VehicleStatusBadge({
@@ -62,12 +82,12 @@ export function VehicleStatusBadge({
   withChevron,
 }: VehicleStatusBadgeProps) {
   const meta = VEHICLE_STATUSES.find((s) => s.value === status);
-  if (!meta) return <Badge variant="neutral">{status}</Badge>;
+  const look = VEHICLE_STATUS_LOOK[status] ?? { tone: "neutral" as BadgeTone, progress: "incomplete" as BadgeProgress };
   return (
-    <ToneBadge color={meta.color} className={className}>
-      {meta.label}
+    <GenaroBadge tone={look.tone} progress={look.progress} className={className}>
+      {meta?.label ?? status}
       {withChevron && <ChevronDown aria-hidden className="-mr-0.5 size-3" />}
-    </ToneBadge>
+    </GenaroBadge>
   );
 }
 
