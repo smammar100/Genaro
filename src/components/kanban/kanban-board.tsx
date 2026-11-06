@@ -504,7 +504,8 @@ export function KanbanBoard<T>({
                 key={c.id}
                 {...dropZone(c.id)}
                 className={cn(
-                  "rounded-(--radius-200) transition-colors duration-150 [&_.p-btn__label]:flex [&_.p-btn__label]:flex-1 [&_.p-btn__label]:justify-between [&_.p-btn__label]:gap-2",
+                  // `\_` keeps the underscores in `.p-btn__label`; Tailwind reads a bare `_` as a space.
+                  String.raw`rounded-(--radius-200) transition-colors duration-150 [&_.p-btn\_\_label]:flex [&_.p-btn\_\_label]:flex-1 [&_.p-btn\_\_label]:justify-between [&_.p-btn\_\_label]:gap-2`,
                   isTarget(c.id) && "bg-(--bg-surface-info) ring-1 ring-(--border-info)",
                 )}
               >
