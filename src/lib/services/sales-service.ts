@@ -127,25 +127,23 @@ export const salesService = {
     input: CreateInput,
   ): Promise<{ deal: SalesDeal; existing: boolean }> {
     const supabase = createClient();
-    // Dedupe: never open a second ACTIVE (non-lost) deal for the same vehicle
-    // (or the same lead). Return the existing deal so the caller can still
-    // navigate to it — prevents duplicate pipeline cards / two leads on one car.
-    const orFilter = input.leadId
-      ? `vehicle_id.eq.${input.vehicleId},lead_id.eq.${input.leadId}`
-      : `vehicle_id.eq.${input.vehicleId}`;
-    // Select an array (not maybeSingle) so >1 active deal never throws — just
-    // take the most recently updated existing deal.
-    const { data: existingRows } = await supabase
-      .from("sales_deals")
-      .select(SELECT)
-      .eq("company_id", input.companyId)
-      .neq("stage", "lost")
-      .or(orFilter)
-      .order("updated_at", { ascending: false })
-      .limit(1);
-    const existing = (existingRows ?? [])[0];
-    if (existing)
-      return { deal: existing as unknown as SalesDeal, existing: true };
+    // A car takes any number of leads, each with its own deal (call
+    // 2026-11-06: a lead doesn't reserve or sell the car). Only a lead's own
+    // open deal is reused, so one lead never gets two cards.
+    if (input.leadId) {
+      // An array, not maybeSingle, so a second active deal never throws.
+      const { data: existingRows } = await supabase
+        .from("sales_deals")
+        .select(SELECT)
+        .eq("company_id", input.companyId)
+        .eq("lead_id", input.leadId)
+        .neq("stage", "lost")
+        .order("updated_at", { ascending: false })
+        .limit(1);
+      const existing = (existingRows ?? [])[0];
+      if (existing)
+        return { deal: existing as unknown as SalesDeal, existing: true };
+    }
 
     const { data, error } = await supabase
       .from("sales_deals")
@@ -276,6 +274,13 @@ export const salesService = {
       (await behaviourOf(existingDeal.stage)) === "won";
     const undoingSale = wasWon && behaviour !== "won";
 
+    // Many leads can share a car, but only one deal holds it: refuse a
+    // deposit or a sale while another deal has the car reserved or sold.
+    if (existingDeal && (behaviour === "reserved" || behaviour === "won")) {
+      const holder = await dealHoldingCar(existingDeal.companyId, existingDeal.vehicleId, id);
+      if (holder) throw new Error(heldMessage(holder));
+    }
+
     const updates: TableUpdate<"sales_deals"> = { stage };
     if (behaviour === "won") {
       updates.completion_date = sale?.dateSold ?? new Date().toISOString().slice(0, 10);
@@ -365,8 +370,11 @@ export const salesService = {
       } else if (behaviour === "reserved") {
         await reserveVehicle(v, actorId);
       } else if (behaviour === "lost") {
-        // Deal fell through — release the reservation back to the forecourt.
-        await releaseVehicle(v, actorId);
+        // Deal fell through: the reservation goes back to the forecourt,
+        // unless the car is held by another customer's deal.
+        if (!(await dealHoldingCar(v.companyId, v.id, id))) {
+          await releaseVehicle(v, actorId);
+        }
       }
     }
     return deal;
@@ -376,8 +384,8 @@ export const salesService = {
    * Point a deal (and its lead) at a different car — the customer came in
    * for one and is buying another (call 2026-10-24). A reservation follows
    * the deal: the old car goes back on sale and the new one is reserved. A
-   * completed sale can't be moved, and neither can a deal onto a car another
-   * open deal already holds.
+   * completed sale can't be moved, and a deposit can't move onto a car
+   * another deal has reserved or sold.
    */
   async changeVehicle(
     id: UUID,
@@ -396,18 +404,11 @@ export const salesService = {
       throw new Error("This sale is complete, so its vehicle can't be changed.");
     }
 
-    const { data: clash } = await supabase
-      .from("sales_deals")
-      .select("id, customerName:customer_name")
-      .eq("company_id", deal.companyId)
-      .eq("vehicle_id", vehicleId)
-      .neq("stage", "lost")
-      .neq("id", id)
-      .limit(1);
-    if (clash && clash.length > 0) {
-      throw new Error(
-        `That car is already on an open deal for ${clash[0].customerName}.`,
-      );
+    // Other leads on the new car don't matter; a deposit can't move onto a
+    // car another customer's deal already holds.
+    if (behaviour === "reserved") {
+      const holder = await dealHoldingCar(deal.companyId, vehicleId, id);
+      if (holder) throw new Error(heldMessage(holder));
     }
 
     const [from, to] = await Promise.all([
@@ -516,6 +517,50 @@ async function unsellVehicle(
     description: `${v.registration} sale undone: back to ${status === "reserved" ? "reserved" : "available"}`,
     metadata: { dealId },
   });
+}
+
+/** Another customer's deal that has the car reserved or sold. */
+interface CarHolder {
+  customerName: string;
+  behaviour: "reserved" | "won";
+}
+
+/**
+ * The deal, other than `exceptDealId`, that holds the car: one in a stage
+ * that reserves it (deposit taken) or sold it. Null when the car only has
+ * leads on it, which never hold it.
+ */
+async function dealHoldingCar(
+  companyId: UUID,
+  vehicleId: UUID,
+  exceptDealId: UUID,
+): Promise<CarHolder | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("sales_deals")
+    .select("id, customerName:customer_name, stage")
+    .eq("company_id", companyId)
+    .eq("vehicle_id", vehicleId)
+    .neq("stage", "lost")
+    .neq("id", exceptDealId);
+  if (error) throw error;
+  const rows = (data ?? []) as unknown as { customerName: string; stage: string }[];
+  if (rows.length === 0) return null;
+  const stages = await pipelineStageService.getAll(companyId);
+  for (const row of rows) {
+    const behaviour =
+      stages.find((s) => s.slug === row.stage)?.behaviour ?? FALLBACK_BEHAVIOUR[row.stage] ?? "open";
+    if (behaviour === "reserved" || behaviour === "won") {
+      return { customerName: row.customerName, behaviour };
+    }
+  }
+  return null;
+}
+
+function heldMessage(holder: CarHolder): string {
+  return holder.behaviour === "won"
+    ? `This car is already sold to ${holder.customerName}.`
+    : `This car is already reserved for ${holder.customerName}. Mark their deal lost first.`;
 }
 
 /** Reserve the car so it stops showing as available everywhere. */
