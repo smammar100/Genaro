@@ -285,7 +285,11 @@ export default function ReturnsPage() {
         company ? salesService.getAll(company.id) : Promise.resolve([]),
       ]);
       const orig = sales[0] ?? null;
-      const deal = deals.find((d) => d.vehicleId === v.id) ?? null;
+      // A car can have several deals; the sold one has a completion date.
+      const deal =
+        deals.find((d) => d.vehicleId === v.id && d.completionDate) ??
+        deals.find((d) => d.vehicleId === v.id) ??
+        null;
 
       if (orig) {
         form.setValue("originalInvoiceId", orig.id);

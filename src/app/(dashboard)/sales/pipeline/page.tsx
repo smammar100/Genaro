@@ -262,17 +262,11 @@ export default function SalesPipelinePage() {
   /**
    * A lead taken here opens its deal in New lead straight away (call
    * 2026-10-31: leads are created from the pipeline now, not the leads page).
-   * A car carries one open deal at a time, so a car already in play is
-   * refused before anything is written.
+   * A car can have any number of leads (call 2026-11-06): a lead doesn't
+   * reserve or sell it, so another customer's deal on the car is no bar.
    */
   async function createLead(lead: NewLead) {
     if (!user || !company) return;
-    const busy = deals?.find((d) => d.vehicleId === lead.vehicle.id && d.stage !== "lost");
-    if (busy) {
-      throw new Error(
-        `${lead.vehicle.registration} already has an open deal for ${busy.customerName}. Pick another car, or work that deal.`,
-      );
-    }
     const channel = channels.find((c) => c.id === lead.leadChannelId);
     const slug = channel?.slug as LeadSource | undefined;
     const source: LeadSource = slug && LEAD_SOURCES.includes(slug) ? slug : "other";

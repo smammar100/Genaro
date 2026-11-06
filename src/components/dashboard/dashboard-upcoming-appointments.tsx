@@ -14,13 +14,19 @@ function fmtTime(t: string): string {
   return `${hh % 12 || 12}:${m} ${period}`;
 }
 
-/** Weekday + date for the calendar chip, split so the chip can band them. */
-function chipParts(iso: string): { wd: string; dd: string } {
+/** Three letters every month, Jan to Dec: en-GB would write September "Sept". */
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/**
+ * A date's parts: month over the day in the calendar chip, the weekday under
+ * the time (6 Nov 2026).
+ */
+export function dateParts(iso: string): { month: string; day: string; weekday: string } {
   const [y, mo, d] = iso.split("-").map(Number);
-  const dt = new Date(y, mo - 1, d);
   return {
-    wd: dt.toLocaleDateString("en-GB", { weekday: "short" }),
-    dd: String(d),
+    month: MONTHS[mo - 1],
+    day: String(d),
+    weekday: new Date(y, mo - 1, d).toLocaleDateString("en-GB", { weekday: "short" }),
   };
 }
 
@@ -76,16 +82,17 @@ export function DashboardUpcomingAppointments() {
         <ul className="flex list-none flex-col gap-1">
           {upcoming.map((a) => {
             const v = vehicles.find((x) => x.id === a.vehicleId);
-            const { wd, dd } = chipParts(a.date);
+            const { month, day, weekday } = dateParts(a.date);
             return (
               <li className="flex items-center gap-3 py-1.5" key={a.id}>
-                {/* Calendar chip: weekday band over the date. */}
+                {/* Calendar chip: month band over the day. The band is a
+                    caption's full 16px line, so the month isn't clipped. */}
                 <span className="flex w-9 shrink-0 flex-col overflow-hidden rounded-(--radius-200) border border-(--border) bg-(--bg-surface)">
-                  <span className="grid h-3.5 place-items-center bg-(--bg-surface-secondary) text-caption font-semibold text-(--text-secondary)">
-                    {wd}
+                  <span className="body-sm grid h-4 place-items-center bg-(--bg-surface-secondary) text-(--text-secondary)">
+                    {month}
                   </span>
                   <span className="heading-sm grid h-6 place-items-center text-(--text) tabular-nums">
-                    {dd}
+                    {day}
                   </span>
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">
@@ -96,8 +103,10 @@ export function DashboardUpcomingAppointments() {
                     {v ? `${v.registration} · ${v.make} ${v.model}` : "—"}
                   </span>
                 </span>
-                <span className="body-sm shrink-0 whitespace-nowrap text-(--text-secondary) tabular-nums">
-                  {fmtTime(a.time)}
+                {/* The time, with its weekday right below it. */}
+                <span className="body-sm flex shrink-0 flex-col items-end whitespace-nowrap text-(--text-secondary) tabular-nums">
+                  <span>{fmtTime(a.time)}</span>
+                  <span>{weekday}</span>
                 </span>
               </li>
             );

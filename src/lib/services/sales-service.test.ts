@@ -8,10 +8,16 @@
  *   collection_delivery → vehicle reserved, live listing → reserved
  *   lost                → reserved vehicle released back to listed;
  *                         reserved listing → live, anything else → draft
- * plus the create() dedupe (never a second active deal per vehicle/lead).
+ * plus the create() dedupe (never a second active deal for one lead) and the
+ * rule that a car takes any number of leads but only one deal holds it.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createSupabaseMock, stepArgs, type SupabaseMock } from "@/test/supabase-mock";
+import {
+  createSupabaseMock,
+  stepArgs,
+  type QueryCall,
+  type SupabaseMock,
+} from "@/test/supabase-mock";
 import { makeListing, makeSalesDeal, makeVehicle } from "@/test/factories";
 import type { Listing, SalesStage, Vehicle } from "@/lib/types";
 
@@ -49,14 +55,35 @@ vi.mock("./lead-service", () => ({ leadService: leadMocks }));
 
 import { salesService } from "./sales-service";
 
+/** Another customer's deal on the same car, as the holder probe reads it. */
+interface OtherDeal {
+  id: string;
+  customerName: string;
+  stage: string;
+}
+
+/** The query for the car's other deals: it leaves out the deal itself. */
+const isHolderProbe = (call: QueryCall) =>
+  call.table === "sales_deals" &&
+  call.steps.some((s) => s.method === "neq" && s.args[0] === "id");
+
+const updateCall = () =>
+  db.current.calls.find((c) => c.table === "sales_deals" && c.steps.some((s) => s.method === "update"));
+
 function setup(opts: {
   stage: SalesStage;
   vehicle?: Partial<Vehicle>;
   listing?: Partial<Listing> | null;
+  /** Other deals on the car. */
+  others?: OtherDeal[];
+  /** The company's stage catalogue; empty falls back to the shipped stages. */
+  stages?: { slug: string; behaviour: string }[];
 }) {
   const deal = makeSalesDeal({ stage: opts.stage });
   db.current = createSupabaseMock((call) => {
+    if (isHolderProbe(call)) return { data: opts.others ?? [], error: null };
     if (call.table === "sales_deals") return { data: deal, error: null };
+    if (call.table === "pipeline_stages") return { data: opts.stages ?? [], error: null };
     return undefined;
   });
   vehicleMocks.getById.mockResolvedValue(makeVehicle(opts.vehicle));
@@ -171,6 +198,8 @@ describe("updateStage → out of completed_sale (the sale is undone)", () => {
     const before = makeSalesDeal({ stage: "completed_sale", completionDate: "2026-06-28" });
     const after = makeSalesDeal({ stage: opts.to, completionDate: null });
     db.current = createSupabaseMock((call) => {
+      // No other deals on the car.
+      if (isHolderProbe(call)) return { data: [], error: null };
       if (call.table === "sales_deals") {
         const writing = call.steps.some((s) => s.method === "update");
         return { data: writing ? after : before, error: null };
@@ -332,6 +361,115 @@ describe("updateStage → lost (release reservation)", () => {
   });
 });
 
+describe("several deals on one car: any number of leads, one deal holds it", () => {
+  const lead = (customerName: string, stage = "new_lead"): OtherDeal => ({
+    id: `deal-${customerName}`,
+    customerName,
+    stage,
+  });
+
+  it("takes a deposit on a car that other customers only have leads on", async () => {
+    setup({
+      stage: "deposit_taken",
+      vehicle: { status: "listed" },
+      listing: { status: "live" },
+      others: [lead("Faysal Ahmed"), lead("Akash Patel", "contacted")],
+    });
+    await salesService.updateStage("deal-0001", "deposit_taken", "user-9");
+    expect(stepArgs(updateCall()!, "update")).toEqual([{ stage: "deposit_taken" }]);
+    expect(vehicleMocks.changeStatus).toHaveBeenCalledWith("veh-0001", "reserved", "user-9");
+  });
+
+  it("asks only about the car's other live deals: not this one, not lost ones", async () => {
+    setup({ stage: "deposit_taken", vehicle: { status: "listed" } });
+    await salesService.updateStage("deal-0001", "deposit_taken", "user-9");
+    const probe = db.current.calls.find(isHolderProbe)!;
+    expect(probe.steps.filter((s) => s.method === "eq").map((s) => s.args)).toEqual([
+      ["company_id", "co-0001"],
+      ["vehicle_id", "veh-0001"],
+    ]);
+    expect(probe.steps.filter((s) => s.method === "neq").map((s) => s.args)).toEqual([
+      ["stage", "lost"],
+      ["id", "deal-0001"],
+    ]);
+  });
+
+  it.each(["deposit_taken", "collection_delivery"] as const)(
+    "refuses %s while another customer's deposit holds the car, writing nothing",
+    async (stage) => {
+      setup({
+        stage,
+        vehicle: { status: "reserved" },
+        others: [lead("Faysal Ahmed", "deposit_taken")],
+      });
+      await expect(salesService.updateStage("deal-0001", stage, "user-9")).rejects.toThrow(
+        "This car is already reserved for Faysal Ahmed. Mark their deal lost first.",
+      );
+      expect(updateCall()).toBeUndefined();
+      expect(vehicleMocks.changeStatus).not.toHaveBeenCalled();
+      expect(vehicleMocks.update).not.toHaveBeenCalled();
+    },
+  );
+
+  it("refuses to sell a car another customer has already bought", async () => {
+    setup({ stage: "completed_sale", others: [lead("Neda Rabiei", "completed_sale")] });
+    await expect(
+      salesService.updateStage("deal-0001", "completed_sale", "user-9"),
+    ).rejects.toThrow("This car is already sold to Neda Rabiei.");
+    expect(updateCall()).toBeUndefined();
+    expect(vehicleMocks.update).not.toHaveBeenCalled();
+  });
+
+  it("refuses to sell a car another customer has reserved", async () => {
+    setup({ stage: "completed_sale", others: [lead("Faysal Ahmed", "collection_delivery")] });
+    await expect(
+      salesService.updateStage("deal-0001", "completed_sale", "user-9"),
+    ).rejects.toThrow("already reserved for Faysal Ahmed");
+    expect(updateCall()).toBeUndefined();
+  });
+
+  it("reads a renamed or added stage's behaviour from the company's catalogue", async () => {
+    setup({
+      stage: "deposit_taken",
+      others: [lead("Faysal Ahmed", "holding_fee")],
+      stages: [{ slug: "holding_fee", behaviour: "reserved" }],
+    });
+    await expect(
+      salesService.updateStage("deal-0001", "deposit_taken", "user-9"),
+    ).rejects.toThrow("already reserved for Faysal Ahmed");
+  });
+
+  it("moving between open stages never asks about other deals", async () => {
+    setup({ stage: "contacted", others: [lead("Faysal Ahmed", "deposit_taken")] });
+    await salesService.updateStage("deal-0001", "contacted", "user-9");
+    expect(db.current.calls.some(isHolderProbe)).toBe(false);
+  });
+
+  it("a lost lead leaves another customer's reservation alone", async () => {
+    setup({
+      stage: "lost",
+      vehicle: { status: "reserved" },
+      listing: { status: "reserved" },
+      others: [lead("Faysal Ahmed", "deposit_taken")],
+    });
+    await salesService.updateStage("deal-0001", "lost", "user-9");
+    expect(vehicleMocks.changeStatus).not.toHaveBeenCalled();
+    expect(listingMocks.setStatusForVehicle).not.toHaveBeenCalled();
+  });
+
+  it("a lost deposit frees the car when the others are only leads", async () => {
+    setup({
+      stage: "lost",
+      vehicle: { status: "reserved" },
+      listing: { status: "reserved" },
+      others: [lead("Akash Patel")],
+    });
+    await salesService.updateStage("deal-0001", "lost", "user-9");
+    expect(vehicleMocks.changeStatus).toHaveBeenCalledWith("veh-0001", "listed", "user-9");
+    expect(listingMocks.setStatusForVehicle).toHaveBeenCalledWith("veh-0001", "live");
+  });
+});
+
 describe("updateStage → informational stages", () => {
   it("contacted changes nothing beyond the stage column", async () => {
     setup({ stage: "contacted", listing: { status: "live" } });
@@ -356,7 +494,10 @@ describe("create — active-deal dedupe", () => {
     sellingAgent: "user-2",
   };
 
-  it("returns the existing active deal instead of inserting a duplicate", async () => {
+  const inserted = () =>
+    db.current.calls.find((c) => c.steps.some((s) => s.method === "insert"));
+
+  it("returns the lead's own open deal instead of inserting a duplicate", async () => {
     const existing = makeSalesDeal({ stage: "offer_made" });
     db.current = createSupabaseMock((call) => {
       if (call.table === "sales_deals") return { data: [existing], error: null };
@@ -364,13 +505,43 @@ describe("create — active-deal dedupe", () => {
     });
     const res = await salesService.create(input);
     expect(res).toEqual({ deal: existing, existing: true });
-    // Dedupe filter excludes lost deals and ORs vehicle + lead.
+    // The probe looks for this lead's live deals only, never the car's.
     const probe = db.current.calls[0];
-    expect(stepArgs(probe, "neq")).toEqual(["stage", "lost"]);
-    expect(stepArgs(probe, "or")).toEqual([
-      "vehicle_id.eq.veh-0001,lead_id.eq.lead-0001",
+    expect(probe.steps.filter((s) => s.method === "eq").map((s) => s.args)).toEqual([
+      ["company_id", "co-0001"],
+      ["lead_id", "lead-0001"],
     ]);
-    expect(db.current.calls.some((c) => c.steps.some((s) => s.method === "insert"))).toBe(false);
+    expect(stepArgs(probe, "neq")).toEqual(["stage", "lost"]);
+    expect(stepArgs(probe, "or")).toBeUndefined();
+    expect(inserted()).toBeUndefined();
+  });
+
+  it("opens a second customer's deal on a car that already has one (bug list 2026-11-06)", async () => {
+    // Faysal's deal is on veh-0001. Daniel's new lead has no deal of its own,
+    // so the probe for his lead finds nothing and his deal is inserted.
+    const daniel = { ...input, leadId: "lead-0002", customerName: "Daniel Okafor" };
+    const created = makeSalesDeal({ id: "deal-0002", leadId: "lead-0002", customerName: "Daniel Okafor" });
+    db.current = createSupabaseMock((call) => {
+      if (call.steps.some((s) => s.method === "insert")) return { data: created, error: null };
+      const byLead = call.steps.some((s) => s.method === "eq" && s.args[0] === "lead_id");
+      return { data: byLead ? [] : [makeSalesDeal({ customerName: "Faysal Ahmed" })], error: null };
+    });
+    const res = await salesService.create(daniel);
+    expect(res).toEqual({ deal: created, existing: false });
+    expect(stepArgs(inserted()!, "insert")?.[0]).toMatchObject({
+      vehicle_id: "veh-0001",
+      lead_id: "lead-0002",
+      customer_name: "Daniel Okafor",
+      stage: "new_lead",
+    });
+  });
+
+  it("without a lead, inserts straight away", async () => {
+    db.current = createSupabaseMock(() => ({ data: makeSalesDeal({ leadId: null }), error: null }));
+    const res = await salesService.create({ ...input, leadId: null });
+    expect(res.existing).toBe(false);
+    expect(db.current.calls).toHaveLength(1);
+    expect(inserted()).toBeDefined();
   });
 
   it("inserts a new deal at stage new_lead when none is active", async () => {
@@ -402,11 +573,12 @@ describe("changeVehicle — the customer buys a different car", () => {
 
   /**
    * sales_deals answers three queries: the deal lookup (maybeSingle), the
-   * clash probe (limit) and the update. `clash` is what the probe finds.
+   * probe for the new car's other deals, and the update. `others` is what
+   * the probe finds on the new car.
    */
   function setupSwap(opts: {
     stage: SalesStage;
-    clash?: { id: string; customerName: string }[];
+    others?: OtherDeal[];
     oldVehicle?: Partial<Vehicle>;
     newVehicle?: Partial<Vehicle>;
     listing?: Partial<Listing>;
@@ -418,7 +590,7 @@ describe("changeVehicle — the customer buys a different car", () => {
       if (methods.includes("update")) {
         return { data: { ...deal, vehicleId: NEW }, error: null };
       }
-      if (methods.includes("limit")) return { data: opts.clash ?? [], error: null };
+      if (isHolderProbe(call)) return { data: opts.others ?? [], error: null };
       return { data: deal, error: null };
     });
     vehicleMocks.getById.mockImplementation(async (id: string) =>
@@ -435,9 +607,6 @@ describe("changeVehicle — the customer buys a different car", () => {
     listingMocks.getForVehicle.mockResolvedValue(makeListing(opts.listing));
     return deal;
   }
-
-  const updateCall = () =>
-    db.current.calls.find((c) => c.steps.some((s) => s.method === "update"));
 
   it("moves an open deal and its lead to the new car, leaving statuses alone", async () => {
     setupSwap({ stage: "offer_made" });
@@ -477,18 +646,48 @@ describe("changeVehicle — the customer buys a different car", () => {
     expect(leadMocks.update).not.toHaveBeenCalled();
   });
 
-  it("refuses a car another open deal already holds, naming the customer", async () => {
+  it("moves an open deal onto a car other customers have deals on", async () => {
     setupSwap({
       stage: "offer_made",
-      clash: [{ id: "deal-0002", customerName: "Imran Qureshi" }],
+      others: [{ id: "deal-0002", customerName: "Imran Qureshi", stage: "deposit_taken" }],
+    });
+    const res = await salesService.changeVehicle("deal-0001", NEW, "user-9");
+    expect(res.vehicleId).toBe(NEW);
+    // An open deal doesn't hold a car, so the new car's deals aren't asked about.
+    expect(db.current.calls.some(isHolderProbe)).toBe(false);
+  });
+
+  it("moves a deposit onto a car that only has leads on it", async () => {
+    setupSwap({
+      stage: "deposit_taken",
+      others: [{ id: "deal-0002", customerName: "Imran Qureshi", stage: "new_lead" }],
+      oldVehicle: { status: "reserved" },
+      newVehicle: { status: "listed" },
+      listing: { status: "reserved" },
+    });
+    await salesService.changeVehicle("deal-0001", NEW, "user-9");
+    expect(stepArgs(updateCall()!, "update")).toEqual([{ vehicle_id: NEW }]);
+    expect(vehicleMocks.changeStatus).toHaveBeenCalledWith(NEW, "reserved", "user-9");
+  });
+
+  it("refuses to move a deposit onto a car another deal has reserved, naming the customer", async () => {
+    setupSwap({
+      stage: "deposit_taken",
+      others: [{ id: "deal-0002", customerName: "Imran Qureshi", stage: "collection_delivery" }],
     });
     await expect(salesService.changeVehicle("deal-0001", NEW, "user-9")).rejects.toThrow(
-      "already on an open deal for Imran Qureshi",
+      "This car is already reserved for Imran Qureshi",
     );
     expect(updateCall()).toBeUndefined();
-    // The probe ignores lost deals and this deal itself.
-    const probe = db.current.calls.find((c) => c.steps.some((s) => s.method === "limit"));
-    expect(probe!.steps.filter((s) => s.method === "neq").map((s) => s.args)).toEqual([
+    expect(leadMocks.update).not.toHaveBeenCalled();
+    expect(vehicleMocks.changeStatus).not.toHaveBeenCalled();
+    // The probe is for the new car, leaving out this deal and lost ones.
+    const probe = db.current.calls.find(isHolderProbe)!;
+    expect(probe.steps.filter((s) => s.method === "eq").map((s) => s.args)).toContainEqual([
+      "vehicle_id",
+      NEW,
+    ]);
+    expect(probe.steps.filter((s) => s.method === "neq").map((s) => s.args)).toEqual([
       ["stage", "lost"],
       ["id", "deal-0001"],
     ]);

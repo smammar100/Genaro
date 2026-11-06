@@ -68,6 +68,19 @@ const EMPTY: Form = {
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/**
+ * What the banner says when saving fails. Supabase rejects with a plain
+ * object, not an Error, so its message is read off the object; the bare
+ * fallback hid three real failures (bug list 2026-11-06).
+ */
+export function failureMessage(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  const message = typeof e === "object" && e !== null ? (e as { message?: unknown }).message : null;
+  return typeof message === "string" && message
+    ? `Couldn't create the lead: ${message}`
+    : "Couldn't create the lead.";
+}
+
 const hasContent = (f: Form): boolean =>
   Boolean(
     f.customerName.trim() ||
@@ -195,7 +208,7 @@ export function CreateLeadModal({
       writeDraft(draftKey, null);
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't create the lead.");
+      setError(failureMessage(e));
     } finally {
       setSaving(false);
     }
