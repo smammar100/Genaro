@@ -56,7 +56,12 @@ import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import { toast } from "@/lib/toast";
 import { locationLabel } from "@/lib/locations";
 import { useCompanyLocations } from "@/hooks/use-company-locations";
-import { enquirySourceForChannel, enquirySourceOptions, unsaleConfirmOptions } from "@/lib/sale-confirm";
+import {
+  enquirySourceForChannel,
+  enquirySourceOptions,
+  lostConfirmOptions,
+  unsaleConfirmOptions,
+} from "@/lib/sale-confirm";
 
 interface Loaded {
   deal: SalesDeal;
@@ -257,16 +262,13 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
     await load();
   }
 
-  // The deal fell through: its car goes back on sale, so ask first.
+  // The deal fell through, so ask first. The car goes back on sale only when
+  // this deal's deposit is what reserves it.
   async function markLost(slug: string) {
-    const ok = await confirm({
-      title: `Mark ${deal.customerName}'s deal as lost?`,
-      description: vehicle
-        ? `${vehicle.registration} goes back on sale. You can move the deal back later.`
-        : "You can move the deal back later.",
-      confirmText: "Mark as lost",
-      destructive: true,
-    });
+    const releasesCar = behaviour === "reserved" && vehicle?.status === "reserved";
+    const ok = await confirm(
+      lostConfirmOptions(deal.customerName, vehicle?.registration ?? null, releasesCar),
+    );
     if (ok) await move(slug);
   }
 
