@@ -4,6 +4,7 @@ import * as React from "react";
 import { PanelLeftOpen } from "lucide-react";
 import { Button, Frame } from "@/components/genaro";
 import { SidebarProvider, useSidebar } from "@/components/fluid/sidebar";
+import { MessagesDock } from "@/components/messages/messages-dock";
 import { AdminTopBar } from "./admin-top-bar";
 import { useSidebarDefaultOpen } from "./sidebar-preference";
 
@@ -34,6 +35,7 @@ export function AdminShell({
     return (
       <Frame height="100dvh" topBar={<AdminTopBar />}>
         {page}
+        <MessagesDock />
       </Frame>
     );
   }
@@ -53,6 +55,8 @@ export function AdminShell({
         <main className="p-frame__main">{page}</main>
         <ShowSidebarButton />
       </div>
+      {/* Team messages: the round button bottom right, on every page. */}
+      <MessagesDock />
     </SidebarProvider>
   );
 }

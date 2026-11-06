@@ -102,6 +102,8 @@ const [query, setQuery] = React.useState('');
 | `inputMode` | `'decimal' \| 'numeric' \| 'email' \| …` | — | Mobile keyboard hint. |
 | `magic` | `boolean` | — | Sidekick state. |
 | `id` | `string` | generated | |
+| `onKeyDown` | `(event) => void` | — | Keys pressed in the field. A message box sends on Enter and keeps Shift+Enter for a new line; call `preventDefault()` to stop the key. |
+| `onPaste` | `(event) => void` | — | Something pasted into the field, such as photos in `event.clipboardData.files`. |
 
 ## Server Components
 Client component (`'use client'`), but it works uncontrolled from a Server Component: pass `name` and `defaultValue` inside `<form action={serverAction}>`. `value` + `onChange`, `onClearButtonClick` and `labelAction.onAction` need a Client Component.

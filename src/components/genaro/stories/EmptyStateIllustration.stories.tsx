@@ -104,17 +104,38 @@ export const InACard: Story = {
 
 /**
  * Every variant, one per kind of screen.
- * @summary all twelve variants
+ * @summary all thirteen variants
  */
 export const AllVariants: Story = {
   render: () => (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-      {(["list", "kanban", "calendar", "gallery", "checklist", "timeline", "search", "lock", "notFound", "error", "chart", "detail"] as const).map((v) => (
+      {(["list", "kanban", "calendar", "gallery", "checklist", "timeline", "search", "lock", "notFound", "error", "chart", "detail", "chat"] as const).map((v) => (
         <div key={v} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
           <EmptyStateIllustration variant={v} size="small" plates={v === "list"} />
           <span className="body-sm" style={{ color: "var(--text-secondary)" }}>{v}</span>
         </div>
       ))}
+    </div>
+  ),
+};
+
+/**
+ * The messages dock before anyone has written: a conversation, ghosted, with
+ * your first message landing, a reg plate in it. Small, because it sits in
+ * the dock's window.
+ * @summary no messages yet, in the messages dock
+ */
+export const NoMessages: Story = {
+  render: () => (
+    <div style={{ width: 360 }}>
+      <EmptyState
+        compact
+        illustration={<EmptyStateIllustration variant="chat" size="small" />}
+        heading="No messages yet"
+        action={{ content: "New message" }}
+      >
+        Message a teammate about a car, start a group for a job, or post to Everyone.
+      </EmptyState>
     </div>
   ),
 };
