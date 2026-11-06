@@ -103,8 +103,8 @@ export function AdminNavigation({
  * Spacing follows one set of measures (25 Oct 2026): 12px around the rail
  * (the group and footer's p-3), 8px inside a row before its icon (the
  * library's pl-2), 18px icons, 10px from icon to label, 32px rows (sub-rows
- * too), and the same spacing between every row: no extra gap between
- * groups (6 Nov 2026; it was 20px). A sub-menu's rule sits under
+ * too), and the same 2px between every row: no extra gap between groups
+ * (6 Nov 2026; it was 20px). A sub-menu's rule sits under
  * the parent's icon and its labels line up with the parent's label at
  * 8 + 18 + 10 = 36px: ml 17 + 1px rule + pl 10 + the sub-row's own pl 8.
  */
@@ -120,7 +120,9 @@ const NAV_SKIN = cn(
 
 function Row({ row, onToggle }: { row: NavRow; onToggle?: () => void }) {
   return (
-    <SidebarMenuItem>
+    // The same 2px between every row, so the selected row's pill and bevel
+    // never sit on the row below (6 Nov 2026).
+    <SidebarMenuItem className="not-first:mt-0.5">
       {row.pages ? (
         // A section opens to its pages; it is only "open", the highlight
         // belongs to its page.
