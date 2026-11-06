@@ -1,5 +1,14 @@
 /* Page defaults: the app background, text color and Geist. In base layer so utilities can override. */
 @layer base {
   html { -webkit-text-size-adjust: 100%; }
+
+  /* Phones (emil-mobile-native). No gray flash on tap: every control has its own :active state instead. The app
+     scrolls inside its frame, so the page itself never rubber-bands or pulls to refresh. */
+  html { -webkit-tap-highlight-color: transparent; }
+  html, body { overscroll-behavior: none; }
+  /* Fire taps at once: these never double-tap to zoom, so the browser needn't wait to see. */
+  a, button, input, select, textarea, label, summary, [role="button"] { touch-action: manipulation; }
+  /* A long press on a control shouldn't select its label or pop the link callout. Content text stays selectable. */
+  button, [role="button"], [role="tab"], [role="menuitem"], [role="option"] { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: var(--fs-body); line-height: var(--lh-body); font-weight: var(--fw-regular); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 }

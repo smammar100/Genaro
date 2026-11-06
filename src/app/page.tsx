@@ -15,7 +15,7 @@ export default function RootPage() {
   }, [user, loading, router]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <div className="flex min-h-svh items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <Skeleton className="h-8 w-32" />
         <Skeleton className="h-4 w-48" />

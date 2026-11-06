@@ -149,7 +149,7 @@ export function PermissionsGridTable({
                     <div
                       className={cn(
                         "ml-auto hidden shrink-0 items-center gap-0.5",
-                        "group-focus-within/member:flex group-hover/member:flex",
+                        "group-focus-within/member:flex group-hover/member:flex pointer-coarse:flex",
                       )}
                     >
                       {onEditRoles && editable && (

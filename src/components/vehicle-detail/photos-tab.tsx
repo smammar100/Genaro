@@ -468,13 +468,13 @@ export function PhotosTab({ vehicle, onVehicleRefetch }: PhotosTabProps) {
                         isCover && "left-auto right-9",
                         isSel
                           ? "border-(--bg-fill-brand) bg-(--bg-fill-brand) text-(--text-brand-on-bg-fill)"
-                          : "border-(--border) bg-(--bg-surface) opacity-0 group-hover:opacity-100",
+                          : "border-(--border) bg-(--bg-surface) opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-coarse:opacity-100",
                       )}
                       aria-label="Select photo"
                     >
                       {isSel && <Check className="size-3" strokeWidth={3} />}
                     </button>
-                    <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition group-hover:opacity-100">
+                    <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 pointer-coarse:opacity-100">
                       {!isCover && (
                         <Button
                           size="micro"
@@ -533,7 +533,7 @@ export function PhotosTab({ vehicle, onVehicleRefetch }: PhotosTabProps) {
                         className="h-full w-full object-cover"
                         loading="lazy"
                       />
-                      <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition group-hover:opacity-100">
+                      <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 pointer-coarse:opacity-100">
                         <Button
                           size="micro"
                           icon={<Images />}

@@ -69,7 +69,7 @@ export default function DashboardLayout({
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/20 px-4">
+      <div className="flex min-h-dvh items-center justify-center bg-muted/20 px-4">
         <div className="w-full max-w-md rounded-(--radius-300) bg-(--bg-surface) p-6 shadow-(--shadow-100)">
           <div className="mb-3 flex items-center gap-2 text-destructive">
             <AlertCircle className="h-5 w-5" />

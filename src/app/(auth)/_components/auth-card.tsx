@@ -27,7 +27,7 @@ export function AuthCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-(--bg) px-4 py-12">
+    <div className="flex min-h-svh items-center justify-center bg-(--bg) px-4 py-12">
       <Card className="w-full max-w-[400px] gap-0 p-8">
         <div className={centered ? "mb-6 text-center" : "mb-6"}>
           <div

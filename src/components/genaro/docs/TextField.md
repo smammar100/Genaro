@@ -100,6 +100,7 @@ const [query, setQuery] = React.useState('');
 | `connectedLeft` / `connectedRight` | `ReactNode` | — | Controls on the same row, 8px apart (a unit `Select`, a `Button`). |
 | `autoComplete` | `string` | `'off'` | Set real tokens (`email`, `postal-code`, `tel`) for customer data. |
 | `inputMode` | `'decimal' \| 'numeric' \| 'email' \| …` | — | Mobile keyboard hint. |
+| `enterKeyHint` | `'send' \| 'search' \| 'done' \| 'next' \| 'go' \| …` | — | What a phone keyboard's return key says. The label only: a message box that sends on Enter says `send`. |
 | `magic` | `boolean` | — | Sidekick state. |
 | `id` | `string` | generated | |
 | `onKeyDown` | `(event) => void` | — | Keys pressed in the field. A message box sends on Enter and keeps Shift+Enter for a new line; call `preventDefault()` to stop the key. |

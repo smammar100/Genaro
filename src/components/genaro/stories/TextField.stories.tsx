@@ -209,7 +209,8 @@ export const Disabled: Story = {
 
 /**
  * A message box: Enter sends and Shift+Enter starts a new line (onKeyDown),
- * and photos pasted into it are picked up (onPaste). The team messages dock
+ * photos pasted into it are picked up (onPaste), and a phone keyboard's
+ * return key says Send (enterKeyHint). The team messages dock
  * uses this.
  * @summary a message box: Enter sends, paste adds photos
  */
@@ -218,6 +219,7 @@ export const MessageBox: Story = {
     label: "Message Raza Jafri",
     labelHidden: true,
     multiline: 2,
+    enterKeyHint: "send",
     placeholder: "Message",
     value: "Can someone take LS68 NYY to the wash bay before 11?",
     onKeyDown: fn(),

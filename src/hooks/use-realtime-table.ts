@@ -50,16 +50,29 @@ export function useRealtimeTable(opts: {
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let disposed = false;
     let subscribedOnce = false;
+    // Each subscription gets its own number. Removing a channel makes it
+    // report CLOSED too, and that must not look like a drop: only the
+    // current channel's statuses count. The number also goes in the topic,
+    // because Supabase hands back a still-closing channel of the same name.
+    let generation = 0;
 
     const handleEvent = () => {
       if (invalidatePrefix) invalidate(invalidatePrefix);
       onChangeRef.current?.();
     };
 
+    const resubscribe = () => {
+      if (disposed) return;
+      const old = channel;
+      subscribe();
+      if (old) void supabase.removeChannel(old);
+    };
+
     const subscribe = () => {
       if (disposed) return;
+      const mine = ++generation;
       channel = supabase
-        .channel(`realtime-${table}-${companyId}`)
+        .channel(`realtime-${table}-${companyId}-${mine}`)
         .on(
           "postgres_changes",
           {
@@ -71,6 +84,7 @@ export function useRealtimeTable(opts: {
           handleEvent,
         )
         .subscribe((status) => {
+          if (disposed || mine !== generation) return;
           // Changes made while the channel was down are not replayed, so a
           // reconnect (tab back in focus, network back) refetches once to
           // pick up anything that landed in the gap.
@@ -89,11 +103,7 @@ export function useRealtimeTable(opts: {
             status === "CLOSED"
           ) {
             if (retryTimer) clearTimeout(retryTimer);
-            retryTimer = setTimeout(() => {
-              if (disposed) return;
-              if (channel) void supabase.removeChannel(channel);
-              subscribe();
-            }, 2000);
+            retryTimer = setTimeout(resubscribe, 2000);
           }
         });
     };
@@ -110,11 +120,7 @@ export function useRealtimeTable(opts: {
       )
         return;
       if (retryTimer) clearTimeout(retryTimer);
-      retryTimer = setTimeout(() => {
-        if (disposed) return;
-        if (channel) void supabase.removeChannel(channel);
-        subscribe();
-      }, 500);
+      retryTimer = setTimeout(resubscribe, 500);
     };
     window.addEventListener("focus", onWake);
     window.addEventListener("online", onWake);
