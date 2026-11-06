@@ -4,8 +4,9 @@ import path from "node:path";
 /**
  * Two projects:
  *  - unit:      node env, pure logic + services (src/lib/**, src/app/api/**)
- *  - component: jsdom env, React components (src/components/**) and hooks
- *               (src/hooks/**), both of which need a DOM to render into
+ *  - component: jsdom env, React components (src/components/**), hooks
+ *               (src/hooks/**) and a page's own client components
+ *               (src/app/**\/*.test.tsx), all of which need a DOM
  */
 export default defineConfig({
   resolve: {
@@ -32,7 +33,7 @@ export default defineConfig({
           environment: "jsdom",
           // Hooks had no test path at all before GEN-68 — a `src/hooks`
           // test file simply wasn't picked up by either project.
-          include: ["src/components/**/*.test.tsx", "src/hooks/**/*.test.ts"],
+          include: ["src/components/**/*.test.tsx", "src/hooks/**/*.test.ts", "src/app/**/*.test.tsx"],
           setupFiles: ["src/test/setup-component.ts"],
         },
       },

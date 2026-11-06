@@ -393,6 +393,7 @@ export type Database = {
       }
       daily_jobs: {
         Row: {
+          assigned_to: string | null
           company_id: string
           completed_at: string | null
           completed_by: string | null
@@ -409,6 +410,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           company_id: string
           completed_at?: string | null
           completed_by?: string | null
@@ -425,6 +427,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           company_id?: string
           completed_at?: string | null
           completed_by?: string | null
@@ -441,6 +444,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "daily_jobs_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "daily_jobs_company_id_fkey"
             columns: ["company_id"]
