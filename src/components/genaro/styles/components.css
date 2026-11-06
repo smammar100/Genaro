@@ -30,6 +30,8 @@
 .p-btn:focus-visible { outline:var(--border-width-050) solid var(--border-focus); outline-offset:var(--border-width-025); }
 .p-btn .p-icon { margin:calc(-1 * var(--space-050)) 0; }
 .p-btn--micro { min-height:24px; padding:var(--space-050) var(--space-200); }
+/* A micro button's icon is 16px, the size of the text beside it; the 20px default filled the whole 24px button (docs/vehicles.md). */
+.p-btn--micro .p-icon { width:var(--space-400); height:var(--space-400); }
 .p-btn--large { min-height:32px; padding:var(--space-150) var(--space-300); font-size:var(--fs-body); line-height:var(--lh-body); }
 .p-btn--full { display:flex; width:100%; }
 .p-btn--align-left { justify-content:flex-start; }
@@ -771,9 +773,13 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 .p-indextable__media { width:1%; padding-top:var(--space-150) !important; padding-bottom:var(--space-150) !important; }
 .p-indextable__media .p-thumb { display:flex; }
 .p-indextable td { height:52px; box-sizing:border-box; }
-.p-indextable--condensed td { height:32px; }
+/* Condensed rows hold 32px: without the tighter padding a 24px badge grew the row back to ~50px. Two classes, so the
+   app bridge's table padding (genaro-bridge.css) can't undo it. */
+.p-indextable.p-indextable--condensed td { height:32px; padding-block:var(--space-100); }
 .p-indextable__primary { font-weight:var(--fw-semibold); color:var(--text); }
 .p-indextable th.p-num, .p-indextable td.p-num { text-align:right; }
+/* In a right-aligned column the sort arrow goes on the label's left, so the label lines up with the numbers under it. */
+.p-indextable th.p-num .p-indextable__sort { flex-direction:row-reverse; }
 
 /* ================= Batch 3 ================= */
 /* Grid — 6 columns xs–md, 12 columns lg–xl, 16px gutters (the file's Column Grid) */

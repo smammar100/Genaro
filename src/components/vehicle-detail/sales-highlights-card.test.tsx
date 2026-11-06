@@ -29,7 +29,7 @@ describe("SalesHighlightsCard", () => {
     );
     expect(value("Mileage")).toBe("68,500 mi");
     expect(value("Service history")).toBe("Full");
-    expect(value("MOT until")).toBe("29 Sept 2027");
+    expect(value("MOT until")).toBe("29 Sep 2027");
     expect(value("Previous owners")).toBe("2");
     expect(screen.queryByText("Due soon")).toBeNull();
   });
