@@ -157,7 +157,9 @@ function PriorityPicker({ job, onChange }: { job: DailyJob; onChange: (p: DailyJ
       active={open}
       onClose={() => setOpen(false)}
       activator={
-        <Button variant="tertiary" size="micro" ariaExpanded={open} accessibilityLabel={`Priority: ${meta.label}. Change priority`} onClick={() => setOpen((o) => !o)}>
+        // -ml-2 takes back the button's 8px padding, so the badge lines up
+        // with the column's heading and a done job's plain badge.
+        <Button variant="tertiary" size="micro" className="-ml-2" ariaExpanded={open} accessibilityLabel={`Priority: ${meta.label}. Change priority`} onClick={() => setOpen((o) => !o)}>
           <Badge tone={meta.tone}>{meta.label}</Badge>
         </Button>
       }
@@ -316,7 +318,8 @@ export function DaySheet() {
                 id: job.id,
                 cells: [
                   <div key="job" className="flex min-w-[180px] flex-col gap-1 whitespace-normal">
-                    <span className="flex min-w-0 items-start gap-2">
+                    {/* On the plate's baseline, so a title sits level with the reg however it wraps. */}
+                    <span className="flex min-w-0 items-baseline gap-2">
                       {job.registration ? <RegPlate registration={job.registration} size="sm" className="shrink-0" /> : null}
                       <span className="body-md min-w-0">
                         <span className={`dj-title${completed ? " dj-title--done" : ""}`}>{job.title}</span>
@@ -340,44 +343,43 @@ export function DaySheet() {
                       <Badge tone="attention" progress="incomplete">Pending</Badge>
                     )}
                   </span>,
+                  // Every row's button takes the same 96px at the column's
+                  // right edge, under the Action heading. The poster's delete
+                  // sits to its left, only where there is one.
                   <div key="action" className="flex items-center justify-end gap-1">
-                    {completed ? (
-                      <Button
-                        variant="tertiary"
-                        size="micro"
-                        accessibilityLabel={`Mark "${job.title}" pending again`}
-                        onClick={() => void apply(job.id, { status: "pending", completedBy: null, completedAt: null }, () => dailyJobService.reopen(job.id), "Couldn't reopen the job.")}
-                      >
-                        Undo
-                      </Button>
-                    ) : (
-                      <span className="flex w-24">
-                        {job.pickedUpBy ? (
-                          <Button
-                            size="micro"
-                            fullWidth
-                            accessibilityLabel={`Mark "${job.title}" completed`}
-                            onClick={() => void apply(job.id, { status: "completed", completedBy: me, completedAt: new Date().toISOString() }, () => dailyJobService.complete(job.id, me), "Couldn't mark the job completed.")}
-                          >
-                            Complete
-                          </Button>
-                        ) : (
-                          <Button
-                            size="micro"
-                            fullWidth
-                            accessibilityLabel={`Pick up "${job.title}"`}
-                            onClick={() => void apply(job.id, { pickedUpBy: me, pickedUpAt: new Date().toISOString() }, () => dailyJobService.pickUp(job.id, me), "Couldn't pick up the job.")}
-                          >
-                            Pick up
-                          </Button>
-                        )}
-                      </span>
-                    )}
-                    {/* The poster can take back a job nobody has finished. The slot is kept so the column lines up. */}
-                    <span className="flex w-7 justify-end">
-                      {!completed && job.createdBy === me ? (
-                        <Button variant="tertiary" size="micro" icon={<Trash2 />} accessibilityLabel={`Delete "${job.title}"`} onClick={() => void remove(job)} />
-                      ) : null}
+                    {!completed && job.createdBy === me ? (
+                      <Button variant="tertiary" size="micro" icon={<Trash2 />} accessibilityLabel={`Delete "${job.title}"`} onClick={() => void remove(job)} />
+                    ) : null}
+                    <span className="flex w-24">
+                      {completed ? (
+                        <Button
+                          variant="tertiary"
+                          size="micro"
+                          fullWidth
+                          accessibilityLabel={`Mark "${job.title}" pending again`}
+                          onClick={() => void apply(job.id, { status: "pending", completedBy: null, completedAt: null }, () => dailyJobService.reopen(job.id), "Couldn't reopen the job.")}
+                        >
+                          Undo
+                        </Button>
+                      ) : job.pickedUpBy ? (
+                        <Button
+                          size="micro"
+                          fullWidth
+                          accessibilityLabel={`Mark "${job.title}" completed`}
+                          onClick={() => void apply(job.id, { status: "completed", completedBy: me, completedAt: new Date().toISOString() }, () => dailyJobService.complete(job.id, me), "Couldn't mark the job completed.")}
+                        >
+                          Complete
+                        </Button>
+                      ) : (
+                        <Button
+                          size="micro"
+                          fullWidth
+                          accessibilityLabel={`Pick up "${job.title}"`}
+                          onClick={() => void apply(job.id, { pickedUpBy: me, pickedUpAt: new Date().toISOString() }, () => dailyJobService.pickUp(job.id, me), "Couldn't pick up the job.")}
+                        >
+                          Pick up
+                        </Button>
+                      )}
                     </span>
                   </div>,
                 ],
