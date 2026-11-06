@@ -206,3 +206,21 @@ export const Disabled: Story = {
     helpText: "Available once the customer has reserved the vehicle.",
   },
 };
+
+/**
+ * A message box: Enter sends and Shift+Enter starts a new line (onKeyDown),
+ * and photos pasted into it are picked up (onPaste). The team messages dock
+ * uses this.
+ * @summary a message box: Enter sends, paste adds photos
+ */
+export const MessageBox: Story = {
+  args: {
+    label: "Message Raza Jafri",
+    labelHidden: true,
+    multiline: 2,
+    placeholder: "Message",
+    value: "Can someone take LS68 NYY to the wash bay before 11?",
+    onKeyDown: fn(),
+    onPaste: fn(),
+  },
+};

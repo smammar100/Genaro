@@ -918,6 +918,48 @@ export interface DailyJob {
 }
 
 // ============================================================
+// TEAM MESSAGES (migration 0065, docs/messages.md)
+// ============================================================
+
+/** Everyone: the whole company. Direct: two people. Group: three or more, or a named chat. */
+export type ConversationKind = "everyone" | "direct" | "group";
+export type AttachmentKind = "photo" | "file";
+
+/** A conversation as the dock lists it: members, last message, unread count. */
+export interface TeamConversation {
+  id: UUID;
+  kind: ConversationKind;
+  /** A group's own name; null for direct chats, Everyone and unnamed groups. */
+  name: string | null;
+  memberIds: UUID[];
+  lastMessageAt: ISODateTime | null;
+  lastBody: string | null;
+  lastAuthorId: UUID | null;
+  lastPhotos: number;
+  lastFiles: number;
+  unread: number;
+}
+
+export interface TeamAttachment {
+  id: UUID;
+  kind: AttachmentKind;
+  /** <company>/<conversation>/<message>/<file> in the message-attachments bucket. */
+  storagePath: string;
+  name: string;
+  sizeBytes: number;
+  mimeType: string;
+}
+
+export interface TeamMessage {
+  id: UUID;
+  conversationId: UUID;
+  authorId: UUID;
+  body: string;
+  createdAt: ISODateTime;
+  attachments: TeamAttachment[];
+}
+
+// ============================================================
 // WARRANTIES & CLAIMS
 // ============================================================
 

@@ -1,0 +1,32 @@
+/* Team messages dock (docs/messages.md). */
+
+/* The window and the peek open from the button, bottom right. */
+.messages-dock-in {
+  transform-origin: bottom right;
+  animation: messages-dock-in 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@keyframes messages-dock-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* A message you send lands with a short rise. */
+.messages-arrive {
+  animation: messages-arrive 220ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@keyframes messages-arrive {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Photos dim a touch under the pointer and press in when tapped. */
+.messages-photo { transition: filter 150ms ease-out, transform 150ms ease-out; }
+@media (hover: hover) {
+  .messages-photo:hover { filter: brightness(0.94); }
+}
+.messages-photo:active { transform: scale(0.98); }
+
+@media (prefers-reduced-motion: reduce) {
+  .messages-dock-in, .messages-arrive { animation: none; }
+  .messages-photo, .messages-photo:active { transition: none; transform: none; }
+}

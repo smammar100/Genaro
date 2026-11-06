@@ -263,6 +263,97 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_members: {
+        Row: {
+          company_id: string
+          conversation_id: string
+          joined_at: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          conversation_id: string
+          joined_at?: string
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          conversation_id?: string
+          joined_at?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_members_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_members_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          last_message_at: string | null
+          name: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          last_message_at?: string | null
+          name?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          last_message_at?: string | null
+          name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_field_definitions: {
         Row: {
           archived_at: string | null
@@ -1707,6 +1798,106 @@ export type Database = {
           },
         ]
       }
+      message_attachments: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          kind: string
+          message_id: string
+          mime_type: string
+          name: string
+          size_bytes: number
+          storage_path: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          message_id: string
+          mime_type?: string
+          name: string
+          size_bytes: number
+          storage_path: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          message_id?: string
+          mime_type?: string
+          name?: string
+          size_bytes?: number
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_attachments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          author_id: string
+          body: string
+          company_id: string
+          conversation_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          author_id: string
+          body?: string
+          company_id: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          company_id?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string
@@ -3116,6 +3307,25 @@ export type Database = {
     Functions: {
       auth_has_any_capability: { Args: { caps: string[] }; Returns: boolean }
       current_company_id: { Args: never; Returns: string }
+      mark_conversation_read: {
+        Args: { p_conversation_id: string }
+        Returns: undefined
+      }
+      my_conversations: {
+        Args: never
+        Returns: {
+          id: string
+          kind: string
+          last_author_id: string | null
+          last_body: string | null
+          last_files: number
+          last_message_at: string | null
+          last_photos: number
+          member_ids: string[] | null
+          name: string | null
+          unread: number
+        }[]
+      }
       next_cc_invoice_number: {
         Args: { p_company_id: string }
         Returns: string
@@ -3125,6 +3335,15 @@ export type Database = {
         Returns: string
       }
       next_stock_seq: { Args: { p_company_id: string }; Returns: string }
+      send_message: {
+        Args: {
+          p_attachments?: Json
+          p_body: string
+          p_conversation_id: string
+          p_message_id: string
+        }
+        Returns: string
+      }
       set_user_permissions: {
         Args: {
           p_capabilities: string[]
@@ -3132,6 +3351,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: undefined
+      }
+      start_conversation: {
+        Args: { p_member_ids: string[]; p_name?: string | null }
+        Returns: string
       }
     }
     Enums: {

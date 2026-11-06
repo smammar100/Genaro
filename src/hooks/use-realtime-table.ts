@@ -49,6 +49,7 @@ export function useRealtimeTable(opts: {
     let channel: ReturnType<typeof supabase.channel> | null = null;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let disposed = false;
+    let subscribedOnce = false;
 
     const handleEvent = () => {
       if (invalidatePrefix) invalidate(invalidatePrefix);
@@ -70,6 +71,14 @@ export function useRealtimeTable(opts: {
           handleEvent,
         )
         .subscribe((status) => {
+          // Changes made while the channel was down are not replayed, so a
+          // reconnect (tab back in focus, network back) refetches once to
+          // pick up anything that landed in the gap.
+          if (status === "SUBSCRIBED") {
+            if (subscribedOnce) handleEvent();
+            subscribedOnce = true;
+            return;
+          }
           // The realtime socket drops on idle timeout / network blips with
           // no built-in recovery — that's why live data went stale until a
           // hard reload. Tear down and re-subscribe on a short backoff so

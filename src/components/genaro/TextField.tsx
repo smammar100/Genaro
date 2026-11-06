@@ -43,6 +43,13 @@ export interface TextFieldProps {
   /** Sidekick is writing into this field (purple halo + sweep). */
   magic?: boolean;
   id?: string;
+  /**
+   * Keys pressed in the field, e.g. a message box that sends on Enter and
+   * keeps Shift+Enter for a new line. Call `preventDefault()` to stop the key.
+   */
+  onKeyDown?: (event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  /** Something pasted into the field, such as photos (`event.clipboardData.files`). */
+  onPaste?: (event: React.ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 }
 
 /**
@@ -84,6 +91,8 @@ export function TextField(props: TextFieldProps) {
     'aria-invalid': error ? true : undefined,
     'aria-describedby': error && typeof error !== 'boolean' ? `${id}-error` : helpText ? `${id}-help` : undefined,
     autoComplete: autoComplete || 'off',
+    onKeyDown: props.onKeyDown,
+    onPaste: props.onPaste,
   };
   const field = multiline ? (
     <textarea {...shared} rows={typeof multiline === 'number' ? multiline : 3} />

@@ -6,7 +6,7 @@ import { cx } from './utils';
 
 export type EmptyStateIllustrationVariant =
   | 'list' | 'kanban' | 'calendar' | 'gallery' | 'checklist' | 'timeline'
-  | 'search' | 'lock' | 'notFound' | 'error' | 'chart' | 'detail';
+  | 'search' | 'lock' | 'notFound' | 'error' | 'chart' | 'detail' | 'chat';
 
 const W = 220;
 const H = 140;
@@ -311,10 +311,47 @@ function Detail() {
   );
 }
 
+/**
+ * A conversation: a teammate's message and a reply, ghosted, then your first
+ * message lands as a brand bubble carrying a reg plate, above the message box.
+ */
+function Chat() {
+  return (
+    <Frame toolbar={false}>
+      <g className="p-illo__in" style={d(40)}>
+        <circle cx={24} cy={22} r={6} fill="var(--bg-fill-tertiary)" />
+        <Bar x={36} y={17} w={58} h={6} fill="var(--bg-fill-tertiary-active)" />
+        <Bar x={36} y={26} w={34} h={4} fill="var(--bg-fill-tertiary)" />
+      </g>
+      <g className="p-illo__in p-illo__ghost" style={d(120)}>
+        <circle cx={22} cy={48} r={5} fill="var(--bg-fill-tertiary)" />
+        <rect x={32} y={38} width={96} height={18} rx={9} fill="var(--bg-fill-secondary)" />
+        <Bar x={41} y={45} w={62} h={4} fill="var(--bg-fill-tertiary)" />
+      </g>
+      <g className="p-illo__in p-illo__ghost" style={d(180)}>
+        <rect x={130} y={60} width={72} height={14} rx={7} fill="var(--bg-fill-tertiary)" />
+        <Bar x={139} y={65} w={44} h={4} fill="var(--bg-fill-secondary)" />
+      </g>
+      <Slot x={94} y={79} w={110} h={22} r={11} />
+      <g className="p-illo__land">
+        <rect x={96} y={81} width={106} height={18} rx={9} fill="var(--bg-fill-brand)" />
+        {/* The first message is about a car: its plate, then the words. */}
+        <rect x={104} y={85} width={26} height={10} rx={2} fill="var(--color-plate)" />
+        <Bar x={136} y={88} w={54} h={4} fill="var(--bg-surface)" />
+      </g>
+      <g className="p-illo__in" style={d(240)}>
+        <rect x={16} y={110} width={188} height={16} rx={8} fill="var(--bg-surface)" stroke="var(--border)" />
+        <Bar x={26} y={116} w={60} h={4} fill="var(--bg-fill-tertiary)" />
+        <circle cx={194} cy={118} r={5} fill="var(--bg-fill-brand)" />
+      </g>
+    </Frame>
+  );
+}
+
 const VARIANTS: Record<EmptyStateIllustrationVariant, (props: { plates: boolean }) => ReactNode> = {
   list: List, kanban: Kanban, calendar: Calendar, gallery: Gallery, checklist: Checklist,
   timeline: Timeline, search: Search, lock: Lock, notFound: NotFound, error: ErrorTpl,
-  chart: Chart, detail: Detail,
+  chart: Chart, detail: Detail, chat: Chat,
 };
 
 export interface EmptyStateIllustrationProps {

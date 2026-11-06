@@ -28,6 +28,7 @@ import { EmptyState, EmptyStateIllustration } from '@/components/genaro';
 | `error` | Something went wrong | One row turns critical; retry turns |
 | `chart` | Reports and performance | Bars grow under the dashed line |
 | `detail` | A single record (a listing) | The Live pill appears |
+| `chat` | Messages and conversations | Your first message lands, carrying a reg plate |
 
 ## Example
 
@@ -45,7 +46,7 @@ import { EmptyState, EmptyStateIllustration } from '@/components/genaro';
 
 | Prop | Type | Default | Notes |
 |---|---|---|---|
-| `variant` | `'list' \| 'kanban' \| 'calendar' \| 'gallery' \| 'checklist' \| 'timeline' \| 'search' \| 'lock' \| 'notFound' \| 'error' \| 'chart' \| 'detail'` | — | The kind of screen that is empty. |
+| `variant` | `'list' \| 'kanban' \| 'calendar' \| 'gallery' \| 'checklist' \| 'timeline' \| 'search' \| 'lock' \| 'notFound' \| 'error' \| 'chart' \| 'detail' \| 'chat'` | — | The kind of screen that is empty. |
 | `size` | `'medium' \| 'small'` | `'medium'` | 280px on a page, 200px in a card. |
 | `plates` | `boolean` | `false` | Leads each list row with a reg plate. |
 | `className` | `string` | — | Extra classes on the `svg` (layout only). |
