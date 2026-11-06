@@ -21,6 +21,30 @@ export function unsaleConfirmOptions(
   };
 }
 
+/**
+ * Asked before an open deal is marked lost. Only a deal whose deposit
+ * reserves the car puts it back on sale; a lead never holds the car, and a
+ * car reserved by another customer's deal stays theirs (bug list
+ * 2026-11-06), so for those the car is left as it is.
+ */
+export function lostConfirmOptions(
+  customerName: string,
+  registration: string | null,
+  releasesCar: boolean,
+): ConfirmOptions {
+  const effect = !registration
+    ? ""
+    : releasesCar
+      ? `${registration} goes back on sale. `
+      : `${registration} stays as it is. `;
+  return {
+    title: `Mark ${customerName}'s deal as lost?`,
+    description: `${effect}You can move the deal back later.`,
+    confirmText: "Mark as lost",
+    destructive: true,
+  };
+}
+
 /** Lead channels whose master sheet wording isn't just their label in capitals. */
 const SHEET_SOURCE: Record<string, string> = {
   autotrader: "AUTO TRADER",

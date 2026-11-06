@@ -259,7 +259,6 @@ export function CreateLeadModal({
           <Labelled
             id={pickerId}
             label="Vehicle"
-            helpText="Search by reg. The lead opens a deal on this car in New lead."
             error={show("vehicle")}
           >
             <VehiclePicker
