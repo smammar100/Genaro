@@ -101,11 +101,28 @@ function DayStepper({ day, today, onChange }: { day: string; today: string; onCh
   );
 }
 
-function QuickAdd({ onAdd }: { onAdd: (title: string, priority: DailyJobPriority, reg: string) => Promise<boolean> }) {
+/** A staff member a job can be assigned to. */
+interface Staff {
+  id: string;
+  name: string;
+}
+
+/** Shown for a job nobody was given: anyone can pick it up. */
+const OPEN_LABEL = "Open (unassigned)";
+
+function QuickAdd({
+  staff,
+  onAdd,
+}: {
+  staff: Staff[];
+  onAdd: (title: string, priority: DailyJobPriority, reg: string, assignedTo: string | null) => Promise<boolean>;
+}) {
   const [title, setTitle] = useState("");
   const [reg, setReg] = useState("");
   const [tried, setTried] = useState(false);
   const [priority, setPriority] = useState<DailyJobPriority>("normal");
+  // "" is open: the poster gives it to nobody in particular.
+  const [assignee, setAssignee] = useState("");
   const [saving, setSaving] = useState(false);
   const err = tried ? registrationError(reg) : undefined;
   async function submit(e: FormEvent) {
@@ -116,13 +133,14 @@ function QuickAdd({ onAdd }: { onAdd: (title: string, priority: DailyJobPriority
       return;
     }
     setSaving(true);
-    const ok = await onAdd(title.trim(), priority, reg);
+    const ok = await onAdd(title.trim(), priority, reg, assignee || null);
     setSaving(false);
     if (!ok) return;
     setTitle("");
     setReg("");
     setTried(false);
     setPriority("normal");
+    setAssignee("");
   }
   return (
     <form onSubmit={submit} className="flex flex-wrap items-start gap-2">
@@ -139,6 +157,27 @@ function QuickAdd({ onAdd }: { onAdd: (title: string, priority: DailyJobPriority
           options={PRIORITIES.map((p) => ({ label: p.label, value: p.value }))}
           value={priority}
           onChange={(v) => setPriority(v as DailyJobPriority)}
+        />
+      </div>
+      <div className="w-60">
+        <Select
+          label="Assign to"
+          labelInline
+          options={[
+            { label: OPEN_LABEL, value: "" },
+            // The avatar is decoration: the option's label already says the name.
+            ...staff.map((s) => ({
+              label: s.name,
+              value: s.id,
+              media: (
+                <span aria-hidden>
+                  <Avatar name={s.name} size="xs" />
+                </span>
+              ),
+            })),
+          ]}
+          value={assignee}
+          onChange={setAssignee}
         />
       </div>
       <Button variant="primary" submit disabled={!title.trim()} loading={saving}>
@@ -172,6 +211,67 @@ function PriorityPicker({ job, onChange }: { job: DailyJob; onChange: (p: DailyJ
   );
 }
 
+/** Who the job is for: an avatar and first name, or Open. */
+function Assignee({ name }: { name: string | null }) {
+  if (!name) return <span className="body-sm text-(--text-secondary)">Open</span>;
+  return (
+    <span className="flex min-w-0 items-center gap-1.5" title={name}>
+      {/* Decoration: the first name beside it is what's read out. */}
+      <span aria-hidden>
+        <Avatar name={name} size="xs" />
+      </span>
+      <span className="body-sm text-(--text)">{firstName(name)}</span>
+    </span>
+  );
+}
+
+/**
+ * The Assigned to cell: anyone can change who an open job is for, as with
+ * priority. A finished job just says who it was for.
+ */
+function AssigneePicker({
+  job,
+  staff,
+  nameOf,
+  onChange,
+}: {
+  job: DailyJob;
+  staff: Staff[];
+  nameOf: (id: string | null) => string;
+  onChange: (userId: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const name = job.assignedTo ? nameOf(job.assignedTo) : null;
+  if (job.status === "completed") return <Assignee name={name} />;
+  return (
+    <Popover
+      active={open}
+      onClose={() => setOpen(false)}
+      activator={
+        // -ml-2 takes back the button's padding, so it lines up with the heading.
+        <Button
+          variant="tertiary"
+          size="micro"
+          className="-ml-2"
+          ariaExpanded={open}
+          accessibilityLabel={`Assigned to: ${name ?? "nobody, open to anyone"}. Change who it's assigned to`}
+          onClick={() => setOpen((o) => !o)}
+        >
+          <Assignee name={name} />
+        </Button>
+      }
+    >
+      <ActionList
+        onActionAnyItem={() => setOpen(false)}
+        items={[
+          { content: OPEN_LABEL, active: !job.assignedTo, onAction: () => onChange(null) },
+          ...staff.map((s) => ({ content: s.name, active: job.assignedTo === s.id, onAction: () => onChange(s.id) })),
+        ]}
+      />
+    </Popover>
+  );
+}
+
 export function DaySheet() {
   const { user, company } = useAuth();
   const today = dayKey(new Date());
@@ -179,6 +279,8 @@ export function DaySheet() {
   const [jobs, setJobs] = useState<DailyJob[] | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [people, setPeople] = useState<Map<string, string>>(new Map());
+  // Who a job can be assigned to: active staff, by name.
+  const [staff, setStaff] = useState<Staff[]>([]);
   const { confirm, confirmDialog } = useConfirm();
 
   // The day lives in the address (?date=), so a sheet can be linked to.
@@ -197,7 +299,15 @@ export function DaySheet() {
 
   useEffect(() => {
     if (!company) return;
-    void authService.getUsersForCompany(company.id).then((users: User[]) => setPeople(new Map(users.map((u) => [u.id, u.name]))));
+    void authService.getUsersForCompany(company.id).then((users: User[]) => {
+      setPeople(new Map(users.map((u) => [u.id, u.name])));
+      setStaff(
+        users
+          .filter((u) => u.active)
+          .map((u) => ({ id: u.id, name: u.name }))
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      );
+    });
   }, [company]);
 
   useEffect(() => {
@@ -232,10 +342,18 @@ export function DaySheet() {
     }
   }
 
-  async function add(title: string, priority: DailyJobPriority, reg: string): Promise<boolean> {
+  async function add(title: string, priority: DailyJobPriority, reg: string, assignedTo: string | null): Promise<boolean> {
     if (!company || !user) return false;
     try {
-      const saved = await dailyJobService.add({ companyId: company.id, jobDate: day, title, registration: reg, priority, createdBy: user.id });
+      const saved = await dailyJobService.add({
+        companyId: company.id,
+        jobDate: day,
+        title,
+        registration: reg,
+        priority,
+        createdBy: user.id,
+        assignedTo,
+      });
       setJobs((all) => [...(all ?? []), saved]);
       return true;
     } catch {
@@ -285,7 +403,7 @@ export function DaySheet() {
       <Card padding="0">
         {past ? null : (
           <div className="p-3">
-            <QuickAdd onAdd={add} />
+            <QuickAdd staff={staff} onAdd={add} />
           </div>
         )}
         {!sorted ? (
@@ -302,7 +420,14 @@ export function DaySheet() {
           <IndexTable
             className="dj-sheet rounded-none shadow-none"
             selectable={false}
-            headings={[{ title: "Job" }, { title: "Priority" }, { title: "Posted by" }, { title: "Status" }, { title: "Action", alignment: "end" }]}
+            headings={[
+              { title: "Job" },
+              { title: "Priority" },
+              { title: "Posted by" },
+              { title: "Assigned to" },
+              { title: "Status" },
+              { title: "Action", alignment: "end" },
+            ]}
             rows={sorted.map((job) => {
               const completed = job.status === "completed";
               const poster = nameOf(job.createdBy);
@@ -334,6 +459,13 @@ export function DaySheet() {
                     onChange={(p) => void apply(job.id, { priority: p }, () => dailyJobService.setPriority(job.id, p), "Couldn't change the priority.")}
                   />,
                   <span key="posted">{posted}</span>,
+                  <AssigneePicker
+                    key="assigned"
+                    job={job}
+                    staff={staff}
+                    nameOf={nameOf}
+                    onChange={(to) => void apply(job.id, { assignedTo: to }, () => dailyJobService.assign(job.id, to), "Couldn't change who the job is assigned to.")}
+                  />,
                   <span key="status">
                     {completed ? (
                       <Badge tone="success" progress="complete">{`Done by ${job.completedBy === me ? "you" : firstName(nameOf(job.completedBy))}`}</Badge>

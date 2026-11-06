@@ -908,6 +908,8 @@ export interface DailyJob {
   priority: DailyJobPriority;
   status: DailyJobStatus;
   createdBy: UUID;
+  /** Who the poster gave the job to; null is open to anyone (0064). */
+  assignedTo: UUID | null;
   pickedUpBy: UUID | null;
   pickedUpAt: ISODateTime | null;
   completedBy: UUID | null;

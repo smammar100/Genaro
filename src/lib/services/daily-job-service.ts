@@ -13,6 +13,7 @@ const SELECT = `
   priority,
   status,
   createdBy:created_by,
+  assignedTo:assigned_to,
   pickedUpBy:picked_up_by,
   pickedUpAt:picked_up_at,
   completedBy:completed_by,
@@ -65,6 +66,8 @@ export const dailyJobService = {
     registration?: string;
     priority: DailyJobPriority;
     createdBy: UUID;
+    /** A staff member, or null to leave the job open to anyone. */
+    assignedTo?: UUID | null;
   }): Promise<DailyJob> {
     const supabase = createClient();
     const { data, error } = await supabase
@@ -76,6 +79,7 @@ export const dailyJobService = {
         registration: input.registration ? formatRegistration(input.registration) : null,
         priority: input.priority,
         created_by: input.createdBy,
+        assigned_to: input.assignedTo ?? null,
       })
       .select(SELECT)
       .single();
@@ -86,6 +90,11 @@ export const dailyJobService = {
 
   async setPriority(id: UUID, priority: DailyJobPriority): Promise<DailyJob> {
     return update(id, { priority });
+  },
+
+  /** Give the job to a staff member, or null to open it to anyone. Doesn't pick it up. */
+  async assign(id: UUID, userId: UUID | null): Promise<DailyJob> {
+    return update(id, { assigned_to: userId });
   },
 
   async pickUp(id: UUID, userId: UUID): Promise<DailyJob> {
@@ -115,6 +124,7 @@ async function update(
   id: UUID,
   patch: {
     priority?: DailyJobPriority;
+    assigned_to?: UUID | null;
     status?: "pending" | "completed";
     picked_up_by?: UUID | null;
     picked_up_at?: string | null;
