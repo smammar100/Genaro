@@ -1,16 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Page } from "@/components/genaro";
+import { Button, Page } from "@/components/genaro";
 import { VehicleIndex } from "@/components/vehicles/vehicle-index";
 import { AddVehicleModal } from "@/components/vehicles/add-vehicle-modal";
 import { usePermissions } from "@/hooks/use-permissions";
 
 /**
- * All vehicles — a Genaro index page: the one primary action (Add vehicle,
- * which opens the reg + mileage dialog), a secondary link to the Master
- * sheet, and the cars still in the business as a table or cards. Sold cars
- * and cars returned to their owner live on the master sheet.
+ * All vehicles — a Genaro index page: a link to the Master sheet and the cars still in the
+ * business as one dense table (docs/vehicles.md). Sold cars and cars returned to their owner live
+ * on the master sheet. On a computer the sidebar's Add vehicle is the page's one primary action;
+ * below lg the sidebar is a drawer, so the header brings Add vehicle back.
  */
 export default function VehiclesPage() {
   const [addOpen, setAddOpen] = useState(false);
@@ -23,14 +23,20 @@ export default function VehiclesPage() {
       title="All vehicles"
       subtitle={
         canSeeMasterSheet
-          ? "Every car still for sale, including those in inspection or prep. Sold cars and cars returned to their owner are on the master sheet."
-          : "Every car still for sale, including those in inspection or prep."
+          ? "Every car still in the business, prep included. Sold and returned cars are on the master sheet."
+          : "Every car still in the business, prep included."
       }
-      primaryAction={{ content: "Add vehicle", onAction: () => setAddOpen(true) }}
       secondaryActions={
         canSeeMasterSheet
           ? [{ content: "Master sheet", url: "/admin/master-sheet" }]
           : undefined
+      }
+      controls={
+        <span className="lg:hidden">
+          <Button variant="primary" icon="PlusMinor" onClick={() => setAddOpen(true)}>
+            Add vehicle
+          </Button>
+        </span>
       }
     >
       <VehicleIndex onAddVehicle={() => setAddOpen(true)} />

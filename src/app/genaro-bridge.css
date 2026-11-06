@@ -181,6 +181,11 @@ table tbody tr[aria-selected="true"] > td {
 .p-datatable td {
   padding: var(--space-300) var(--space-400);
 }
+/* A condensed IndexTable keeps its 32px rows (docs/vehicles.md): this file sits
+   outside the layer Genaro's own rule is in, so the padding above would undo it. */
+.p-indextable.p-indextable--condensed td {
+  padding-block: var(--space-100);
+}
 [data-slot="table"] th:first-child,
 [data-slot="table"] td:first-child {
   padding-inline-start: var(--space-400);

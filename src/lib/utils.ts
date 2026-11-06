@@ -45,10 +45,13 @@ const DATE_FMT_UTC = new Intl.DateTimeFormat("en-GB", {
   timeZone: "UTC",
 });
 
+/** en-GB writes September "Sept" beside "Dec" and "Nov"; every month gets three letters here. */
+const threeLetterMonths = (s: string) => s.replace(/\bSept\b/, "Sep");
+
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
-  if (DATE_ONLY_RE.test(iso)) return DATE_FMT_UTC.format(new Date(iso));
-  return DATE_FMT.format(new Date(iso));
+  if (DATE_ONLY_RE.test(iso)) return threeLetterMonths(DATE_FMT_UTC.format(new Date(iso)));
+  return threeLetterMonths(DATE_FMT.format(new Date(iso)));
 }
 
 const DATETIME_FMT = new Intl.DateTimeFormat("en-GB", {
@@ -74,8 +77,8 @@ const DATETIME_FMT_UTC = new Intl.DateTimeFormat("en-GB", {
 export function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return "—";
   // Date-only input has no time component — format in UTC so the day is stable.
-  if (DATE_ONLY_RE.test(iso)) return DATETIME_FMT_UTC.format(new Date(iso));
-  return DATETIME_FMT.format(new Date(iso));
+  if (DATE_ONLY_RE.test(iso)) return threeLetterMonths(DATETIME_FMT_UTC.format(new Date(iso)));
+  return threeLetterMonths(DATETIME_FMT.format(new Date(iso)));
 }
 
 const TIME_FMT = new Intl.DateTimeFormat("en-GB", {
