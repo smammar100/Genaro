@@ -146,7 +146,10 @@ function SidebarSheet({ side, open, onClose, children }: SidebarSheetProps) {
                 data-mobile="true"
                 data-side={side}
                 className={cn(
-                  "fixed inset-y-0 z-50 flex flex-col overflow-hidden outline-none",
+                  // Full height on a phone, so its content pads out of the notch and the home
+                  // indicator (emil-mobile-native), and out of a side notch in landscape.
+                  "fixed inset-y-0 z-50 flex flex-col overflow-hidden outline-none pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]",
+                  side === "left" ? "pl-[env(safe-area-inset-left,0px)]" : "pr-[env(safe-area-inset-right,0px)]",
                   !visible && "pointer-events-none",
                   side === "left" ? "left-0" : "right-0",
                   surfaceClasses(level, 3)

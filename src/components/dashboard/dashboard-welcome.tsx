@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, Page, TextField } from "@/components/genaro";
 import { useAuth } from "@/contexts/auth-context";
+import { useAutoFocus } from "@/hooks/use-auto-focus";
 
 /** The four stages a car passes through, in the order the sidebar lists them. */
 const LIFECYCLE = ["Arrives", "Inspected", "Prepped", "Sold"];
@@ -30,6 +31,8 @@ export function DashboardWelcome() {
   const [reg, setReg] = React.useState("");
   const [mileage, setMileage] = React.useState("");
   const [going, setGoing] = React.useState(false);
+  // Ready to type on a computer; on a phone the keyboard waits for a tap.
+  const regRef = useAutoFocus<HTMLInputElement>();
 
   // Same normalisation and bounds the Add Vehicle dialog applies, so the two
   // entry points accept exactly the same registrations.
@@ -96,13 +99,16 @@ export function DashboardWelcome() {
                   GB
                 </span>
                 <input
+                  ref={regRef}
                   value={reg}
                   onChange={(e) => setReg(e.target.value.toUpperCase())}
                   placeholder="AK69 HZH"
                   aria-label="Registration"
                   autoComplete="off"
                   spellCheck={false}
-                  autoFocus
+                  // A phone keyboard opens in capitals and its return key says Search.
+                  autoCapitalize="characters"
+                  enterKeyHint="search"
                   className="w-40 bg-transparent text-center font-code text-subtitle font-semibold text-(--text-caution-on-bg-fill) outline-none placeholder:text-(--text-caution-on-bg-fill)/40"
                 />
               </div>

@@ -313,8 +313,10 @@
     text-underline-offset: 0.2em;
     transition: text-decoration-color 80ms ease-out;
   }
-  :where(.typeset a:hover):not(:where(.typeset .not-typeset, .typeset .not-typeset *)) {
-    text-decoration-color: currentColor;
+  @media (hover: hover) and (pointer: fine) {
+    :where(.typeset a:hover):not(:where(.typeset .not-typeset, .typeset .not-typeset *)) {
+      text-decoration-color: currentColor;
+    }
   }
   :where(.typeset ul, .typeset ol):not(:where(.typeset .not-typeset, .typeset .not-typeset *)) {
     padding-left: calc(var(--typeset-indent) - 4px);
@@ -383,14 +385,18 @@
     cursor: pointer;
     transition: border-color 80ms ease-out;
   }
-  :where(.typeset input[type=checkbox]:not(:disabled):hover):not(:where(.typeset .not-typeset, .typeset .not-typeset *)) {
-    border-color: color-mix(in oklab, var(--foreground, currentColor) 40%, transparent);
+  @media (hover: hover) and (pointer: fine) {
+    :where(.typeset input[type=checkbox]:not(:disabled):hover):not(:where(.typeset .not-typeset, .typeset .not-typeset *)) {
+      border-color: color-mix(in oklab, var(--foreground, currentColor) 40%, transparent);
+    }
   }
   :where(.typeset input[type=checkbox]:checked):not(:where(.typeset .not-typeset, .typeset .not-typeset *)) {
     border-color: transparent;
   }
-  :where(.typeset input[type=checkbox]:checked:not(:disabled):hover):not(:where(.typeset .not-typeset, .typeset .not-typeset *)) {
-    border-color: color-mix(in oklab, var(--foreground, currentColor) 40%, transparent);
+  @media (hover: hover) and (pointer: fine) {
+    :where(.typeset input[type=checkbox]:checked:not(:disabled):hover):not(:where(.typeset .not-typeset, .typeset .not-typeset *)) {
+      border-color: color-mix(in oklab, var(--foreground, currentColor) 40%, transparent);
+    }
   }
   :where(.typeset input[type=checkbox]:disabled):not(:where(.typeset .not-typeset, .typeset .not-typeset *)) {
     cursor: default;

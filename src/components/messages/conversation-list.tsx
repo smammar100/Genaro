@@ -47,7 +47,7 @@ export function ConversationList({
     return (
       <>
         <DockHeader title="Messages" onClose={onClose} actions={<Button variant="tertiary" icon={<SquarePen />} accessibilityLabel="New message" onClick={onNew} />} />
-        <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-3 pb-6">
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto overscroll-contain px-3 pb-6">
           <EmptyState
             compact
             illustration={<EmptyStateIllustration variant="chat" size="small" />}
@@ -67,7 +67,7 @@ export function ConversationList({
       <div className="px-3 pb-2">
         <TextField label="Search messages" labelHidden prefix="SearchMinor" placeholder="Search" value={query} onChange={setQuery} clearButton onClearButtonClick={() => setQuery("")} />
       </div>
-      <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 pb-2 *:shrink-0">
+      <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain px-2 pb-2 *:shrink-0">
         {conversations === null ? (
           <li className="body-sm p-3 text-(--text-secondary)">Loading your messages…</li>
         ) : !list.length ? (
@@ -151,7 +151,7 @@ export function NewConversation({ teammates, onStarted, onBack, onClose }: { tea
         }}
       >
         <TextField label="Find a teammate" labelHidden prefix="SearchMinor" placeholder="Find a teammate" value={query} onChange={setQuery} clearButton onClearButtonClick={() => setQuery("")} />
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {shown.length ? (
             <ChoiceList title="Teammates" titleHidden allowMultiple choices={shown.map((t) => ({ label: t.name, value: t.id }))} selected={picked} onChange={setPicked} />
           ) : (

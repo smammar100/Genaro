@@ -101,7 +101,7 @@ export function MessagesDock() {
   return (
     <>
       {peek && !open ? (
-        <div className="messages-dock-in fixed bottom-[84px] right-6 z-40 w-[320px] max-w-[calc(100vw-3rem)]">
+        <div className="messages-dock-in messages-above fixed z-40 w-[320px] max-w-[calc(100vw-3rem)]">
           <Card padding="0">
             <Button variant="tertiary" fullWidth textAlign="left" onClick={() => openConversation(peek.id)}>
               <span className="flex w-full min-w-0 items-start gap-3 p-1 text-left">
@@ -125,7 +125,7 @@ export function MessagesDock() {
         <div
           role="dialog"
           aria-label="Messages"
-          className="messages-dock-in fixed bottom-[84px] right-6 z-40 flex h-[min(620px,calc(100dvh-10rem))] w-[min(392px,calc(100vw-3rem))] flex-col overflow-hidden rounded-(--radius-400) bg-(--bg-surface) shadow-(--shadow-600)"
+          className="messages-dock-in messages-above messages-window fixed z-40 flex w-[min(392px,calc(100vw-3rem))] flex-col overflow-hidden rounded-(--radius-400) bg-(--bg-surface) shadow-(--shadow-600)"
           onKeyDown={(e) => {
             if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("[role=dialog][aria-modal=true]")) close();
           }}
@@ -159,7 +159,7 @@ export function MessagesDock() {
       ) : null}
 
       {/* The round chat button; the unread count sits on its corner. */}
-      <div ref={launcher} className="fixed bottom-6 right-6 z-40">
+      <div ref={launcher} className="messages-corner fixed z-40">
         <Button
           variant="primary"
           size="large"

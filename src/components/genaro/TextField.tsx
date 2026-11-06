@@ -36,6 +36,11 @@ export interface TextFieldProps {
   connectedRight?: React.ReactNode;
   autoComplete?: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
+  /**
+   * What a phone keyboard's return key says: `send` for a message box that sends on Enter,
+   * `search`, `done`, `next` or `go`. It changes the label only, not what Enter does.
+   */
+  enterKeyHint?: React.HTMLAttributes<HTMLInputElement>['enterKeyHint'];
   /** Form field name — lets the value post with a <form> or Server Action. */
   name?: string;
   required?: boolean;
@@ -91,6 +96,7 @@ export function TextField(props: TextFieldProps) {
     'aria-invalid': error ? true : undefined,
     'aria-describedby': error && typeof error !== 'boolean' ? `${id}-error` : helpText ? `${id}-help` : undefined,
     autoComplete: autoComplete || 'off',
+    enterKeyHint: props.enterKeyHint,
     onKeyDown: props.onKeyDown,
     onPaste: props.onPaste,
   };

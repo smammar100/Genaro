@@ -71,7 +71,7 @@ export function Toaster(): React.ReactElement {
     <div
       role="region"
       aria-label="Notifications"
-      className="pointer-events-none fixed inset-x-0 bottom-6 z-[100] flex flex-col items-center gap-2 px-4"
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--space-600)+env(safe-area-inset-bottom,0px))] z-[100] flex flex-col items-center gap-2 px-4"
     >
       {list.map((t) => (
         <div

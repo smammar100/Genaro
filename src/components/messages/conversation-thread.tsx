@@ -198,7 +198,7 @@ export function ConversationThread({
     return (
       <>
         <DockHeader title={n === 1 ? "Send a photo" : `Send ${n} photos`} subtitle={`To ${title}`} onBack={() => setStaging(false)} onClose={onClose} />
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 pb-3 *:shrink-0">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-3 pb-3 *:shrink-0">
           {composer.photos.map((p) => (
             <figure key={p.id} className="relative overflow-hidden rounded-(--radius-300) bg-(--bg-surface-secondary)">
               {/* eslint-disable-next-line @next/next/no-img-element -- a local preview */}
@@ -226,7 +226,7 @@ export function ConversationThread({
             composer.submitWith(send);
           }}
         >
-          <TextField label="Caption" labelHidden placeholder="Add a caption" value={composer.text} onChange={composer.setText} onKeyDown={composer.keyHandler(send)} onPaste={composer.onPaste} />
+          <TextField label="Caption" labelHidden enterKeyHint="send" placeholder="Add a caption" value={composer.text} onChange={composer.setText} onKeyDown={composer.keyHandler(send)} onPaste={composer.onPaste} />
           {composer.error ? <InlineError message={composer.error} /> : null}
           <div className="flex items-center gap-2">
             <Button disabled={n >= MAX_PHOTOS} onClick={() => pickFiles("image/*", (f) => composer.add(f, "photo"))}>
@@ -253,7 +253,7 @@ export function ConversationThread({
             const el = scroller.current;
             if (el && el.scrollHeight - el.scrollTop - el.clientHeight < 420) el.scrollTop = el.scrollHeight;
           }}
-          className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-2 *:shrink-0"
+          className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-3 pb-2 *:shrink-0"
           role="log"
           aria-live="polite"
           aria-label={`Messages in ${title}`}
@@ -340,6 +340,7 @@ export function ConversationThread({
                 label={`Message ${title}`}
                 labelHidden
                 multiline={composer.rows}
+                enterKeyHint="send"
                 placeholder="Message"
                 value={composer.text}
                 onChange={composer.setText}

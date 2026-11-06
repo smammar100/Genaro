@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
@@ -12,6 +12,8 @@ import { getInitialAuth } from "@/lib/auth-initial";
 import { AuthBoundary } from "@/components/layout/auth-boundary";
 import { SidebarPreference } from "@/components/layout/sidebar-preference";
 import { TitleTooltips } from "@/components/layout/title-tooltips";
+import { ThemeColor } from "@/components/layout/theme-color";
+import { tokenColor } from "@/lib/theme-colors";
 import { cookies } from "next/headers";
 
 // Type is Geist Sans, everywhere: one family, mono and plates included (call
@@ -26,6 +28,20 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "Car Capital UK",
   description: "Used-car dealership management platform",
+};
+
+// Phones (emil-mobile-native): paint under the notch and home indicator (the top
+// bar, sheets and toasts pad themselves back out with env(safe-area-inset-*)),
+// let the Android keyboard shrink the layout like iOS does so composers and
+// bottom buttons stay above it, and tint the status bar the top bar's colour.
+// Zoom stays on: inputs are 16px on touch, which is what stopped iOS zooming.
+// ThemeColor follows the theme and the page from here on.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
+  themeColor: tokenColor("bg-inverse", "light"),
 };
 
 // Root layout reads cookies via getInitialAuth() — every route is dynamic.
@@ -112,6 +128,7 @@ export default async function RootLayout({
           </SidebarPreference>
           <Toaster />
           <TitleTooltips />
+          <ThemeColor />
         </ThemeProvider>
         {/* Vercel sets VERCEL=1 on its builds and runtime; elsewhere (local,
             self-hosted `next start`) analytics has no endpoint to report to. */}
