@@ -45,46 +45,53 @@ const BUILT_IN_VIEWS: { label: string; location: VehicleLocation | null }[] = [
 ];
 
 /**
- * Table columns in order. `compare` sorts ascending; a descending sort flips
- * it. Arrived is the default, newest first.
+ * Table columns in order (Compact, docs/vehicles.md). `compare` sorts ascending; a descending
+ * sort flips it. Arrived is the default, newest first, though no column shows it.
  */
 const COLUMNS: {
   title: string;
   alignment?: "end";
+  media?: boolean;
   compare?: (a: Vehicle, b: Vehicle) => number;
 }[] = [
   { title: "Registration" },
-  { title: "Make", compare: (a, b) => byText(a.make, b.make) || byText(a.model, b.model) },
-  { title: "Model", compare: (a, b) => byText(a.model, b.model) || byText(a.make, b.make) },
+  { title: "Vehicle", compare: (a, b) => byText(a.make, b.make) || byText(a.model, b.model) },
   { title: "Fuel" },
   { title: "Status" },
   {
     title: "Location",
-    compare: (a, b) =>
-      byText(locationLabel(a.currentLocation), locationLabel(b.currentLocation)),
+    compare: (a, b) => byText(locationLabel(a.currentLocation), locationLabel(b.currentLocation)),
   },
   // Refreshed weekly from DVSA (call 2026-10-31); a car with none sorts last.
   {
-    title: "MOT expiry",
+    title: "MOT",
+    alignment: "end",
     compare: (a, b) => (a.motExpiry ?? "9999").localeCompare(b.motExpiry ?? "9999"),
   },
-  { title: "Arrived", compare: (a, b) => byNewest(b, a) },
-  { title: "Days in stock", compare: (a, b) => a.daysInStock - b.daysInStock },
+  { title: "In stock", alignment: "end", compare: (a, b) => a.daysInStock - b.daysInStock },
+  // The row's Move button; the heading is for screen readers only.
+  { title: "Actions", media: true },
 ];
 
 const column = (title: string) => COLUMNS.findIndex((c) => c.title === title);
 
-const HEADINGS: IndexTableHeading[] = COLUMNS.map(({ title, alignment, compare }) => ({
+const HEADINGS: IndexTableHeading[] = COLUMNS.map(({ title, alignment, media, compare }) => ({
   title,
   alignment,
+  media,
   sortable: Boolean(compare),
 }));
+
+/** The default sort: newest arrival first. It is not a column, so no heading shows it. */
+const ARRIVED = -1;
 
 interface Sort {
   index: number;
   direction: SortDirection;
 }
 
+/** Past this many days in stock a car's count takes the main text colour. */
+const AGING_DAYS = 90;
 
 const PAGE_SIZE = 50;
 
@@ -94,9 +101,9 @@ const TAB_PARAM = "tab";
 /**
  * All vehicles: the cars still in the business — not sold, not returned to
  * their owner, prep included (call 2026-10-24). Sold and returned cars live
- * on the master sheet. One table (after Click Dealer's advert work list) with
- * a tab per location, search, sorting headings and a Move button on each row:
- * it replaced the separate Locations page and the card view (call 2026-10-31).
+ * on the master sheet. One dense table (Compact, picked 2026-11-06 from three
+ * prototypes, docs/vehicles.md) with a tab per location, search, sorting
+ * headings and a Move button at the end of each row.
  */
 export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
   const { company, user } = useAuth();
@@ -121,7 +128,7 @@ export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
   // the company's own places have loaded.
   const view = picked ?? Math.max(0, VIEWS.findIndex((vw) => vw.location === tabParam));
   const [query, setQuery] = React.useState("");
-  const [sort, setSort] = React.useState<Sort>({ index: column("Arrived"), direction: "descending" });
+  const [sort, setSort] = React.useState<Sort>({ index: ARRIVED, direction: "descending" });
   const [page, setPage] = React.useState(0);
 
   const companyId = company?.id;
@@ -150,15 +157,20 @@ export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
   }, [companyId, loadStock]);
 
   const location = VIEWS[view]?.location ?? null;
-  // MOTs running out in under 60 days show in red, as on the dashboard.
-  const [motSoon] = React.useState(() => {
+  // Today and the 60-day line, read once: MOTs inside it show in red, as on the dashboard.
+  const [dates] = React.useState(() => {
     const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 60).toLocaleDateString("en-CA");
+    return {
+      today: d.toLocaleDateString("en-CA"),
+      soon: new Date(d.getFullYear(), d.getMonth(), d.getDate() + 60).toLocaleDateString("en-CA"),
+    };
   });
+  const motDue = (v: Vehicle) => Boolean(v.motExpiry && v.motExpiry.slice(0, 10) < dates.soon);
+
   const rows = React.useMemo(() => {
     if (!vehicles) return null;
     const q = query.trim().toLowerCase();
-    const compare = COLUMNS[sort.index].compare ?? byNewest;
+    const compare = COLUMNS[sort.index]?.compare ?? ((a: Vehicle, b: Vehicle) => byNewest(b, a));
     const sign = sort.direction === "ascending" ? 1 : -1;
     return vehicles
       .filter(
@@ -258,9 +270,11 @@ export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
           </Card>
         ) : (
           <IndexTable
+            condensed
             selectable={false}
+            primaryColumn={column("Vehicle")}
             headings={HEADINGS}
-            sortColumnIndex={sort.index}
+            sortColumnIndex={sort.index === ARRIVED ? undefined : sort.index}
             sortDirection={sort.direction}
             onSort={(index, direction) => {
               setSort({ index, direction });
@@ -268,58 +282,61 @@ export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
             }}
             pagination={pagination}
             onRowClick={(id) => router.push(vehicleDetailHref(id, pathname))}
-            rows={shown.map((v) => ({
-              id: v.id,
-              url: vehicleDetailHref(v.id, pathname),
-              cells: [
-                <RegPlate key="reg" registration={v.registration} size="sm" />,
-                titleCase(v.make),
-                titleCase(v.model),
-                capitalizeWords(v.fuelType) ?? "—",
-                <VehicleStatusBadge key="status" status={v.status} />,
-                // The row's Move button sits beside where the car is (call
-                // 2026-11-02), pushed to the cell's edge so the buttons line up
-                // down the column whatever the location's name.
-                <div key="location" className="flex w-full items-center justify-between gap-2">
+            rows={shown.map((v) => {
+              const expired = Boolean(v.motExpiry && v.motExpiry.slice(0, 10) < dates.today);
+              return {
+                id: v.id,
+                url: vehicleDetailHref(v.id, pathname),
+                cells: [
+                  <RegPlate key="reg" registration={v.registration} size="sm" />,
+                  // The car, with its year beside it in grey: one line, so the row stays 32px.
+                  <span key="car" className="flex min-w-0 items-baseline gap-2">
+                    <span className="truncate">{titleCase(`${v.make} ${v.model}`)}</span>
+                    {v.year ? <span className="font-normal text-(--text-secondary) tabular-nums">{v.year}</span> : null}
+                  </span>,
+                  <span key="fuel" className="text-(--text-secondary)">{capitalizeWords(v.fuelType) ?? "—"}</span>,
+                  <VehicleStatusBadge key="status" status={v.status} />,
                   <LocationBadge
+                    key="location"
                     location={v.currentLocation}
                     outForTestDrive={v.outForTestDrive}
                     testDriveExpectedBackAt={v.testDriveExpectedBackAt}
                     compact
-                  />
-                  {canMove ? (
-                    <Button
-                      size="micro"
-                      variant="tertiary"
-                      icon={<ArrowRightLeft />}
-                      accessibilityLabel={`Move ${v.registration}`}
-                      onClick={() => setMoving(v)}
-                    >
-                      Move
-                    </Button>
-                  ) : null}
-                </div>,
-                v.motExpiry ? (
+                  />,
+                  v.motExpiry ? (
+                    <span key="mot" className={cn("tabular-nums", motDue(v) ? "text-(--text-critical)" : "text-(--text-secondary)")}>
+                      {expired ? "Expired" : formatDate(v.motExpiry)}
+                    </span>
+                  ) : (
+                    <span key="mot" className="text-(--text-secondary)">—</span>
+                  ),
+                  // Days in stock, "14d", flush with its heading. Past 90 days it takes
+                  // the main text colour, so the cars that have sat longest stand out.
                   <span
-                    key="mot"
-                    className={cn("tabular-nums", v.motExpiry.slice(0, 10) < motSoon && "text-(--text-critical)")}
+                    key="days"
+                    className={cn("tabular-nums", v.daysInStock >= AGING_DAYS ? "text-(--text)" : "text-(--text-secondary)")}
                   >
-                    {formatDate(v.motExpiry)}
-                  </span>
-                ) : (
-                  "—"
-                ),
-                formatDate(v.receivedDate),
-                <span key="days" className="tabular-nums">
-                  {v.daysInStock}
-                </span>,
-              ],
-            }))}
+                    {`${v.daysInStock}d`}
+                  </span>,
+                  canMove ? (
+                    <span key="move" className="flex justify-end">
+                      <Button
+                        size="micro"
+                        variant="tertiary"
+                        icon={<ArrowRightLeft strokeWidth={1.75} />}
+                        accessibilityLabel={`Move ${v.registration}`}
+                        onClick={() => setMoving(v)}
+                      />
+                    </span>
+                  ) : null,
+                ],
+              };
+            })}
           />
         )}
 
         {rows !== null && vehicles ? (
-          <p className="body-sm text-(--text-secondary)">
+          <p className="body-sm text-(--text-secondary) tabular-nums">
             {rows.length} of {vehicles.length} vehicle{vehicles.length === 1 ? "" : "s"}
           </p>
         ) : null}
