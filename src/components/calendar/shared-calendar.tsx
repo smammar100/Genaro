@@ -8,7 +8,7 @@ import { maintenanceService } from "@/lib/services/maintenance-service";
 import { vehicleService } from "@/lib/services/vehicle-service";
 import { leadService } from "@/lib/services/lead-service";
 import type { Appointment, Lead, MaintenanceJob, UUID, Vehicle, WorkshopJob } from "@/lib/types";
-import { Card, SkeletonBodyText, SkeletonDisplayText } from "@/components/genaro";
+import { Card, Page, SkeletonBodyText, SkeletonDisplayText } from "@/components/genaro";
 import {
   ALL_KINDS,
   buildEvents,
@@ -41,6 +41,9 @@ import { TimeGrid } from "./time-grid";
  * for its details, then edit it or mark a job done. `kinds` scopes the
  * sources; `ctaLabel` and `lockCreateKind` tune the create action. Records are
  * deleted from their own module pages.
+ *
+ * It renders the route's whole Page, so its create action can be the page's
+ * one primary action in the header card (2026-11-07).
  */
 
 // Minimum hour-row heights. Rows grow to fill the card and scroll below these.
@@ -75,15 +78,21 @@ type FormState =
   | null;
 
 interface SharedCalendarProps {
+  /** The page title. */
+  title: string;
+  /** The line under the title. */
+  subtitle?: string;
   /** Which sources to load and show. Defaults to all three. */
   kinds?: Kind[];
-  /** Label for the primary create button. */
+  /** Label for the create action, the page header's primary button. */
   ctaLabel?: string;
   /** Lock the kind in the create form (single-source calendars). */
   lockCreateKind?: boolean;
 }
 
 export function SharedCalendar({
+  title,
+  subtitle,
   kinds: kindsProp = ALL_KINDS,
   ctaLabel = "New event",
   lockCreateKind = false,
@@ -244,8 +253,25 @@ export function SharedCalendar({
     }
   }
 
+  // The page's one primary action: a new event from the business's opening
+  // hour on the day in view (today in month view).
+  const page = (children: React.ReactNode) => (
+    <Page
+      title={title}
+      subtitle={subtitle}
+      fullWidth
+      primaryAction={{
+        content: ctaLabel,
+        disabled: !sources,
+        onAction: () => openCreate(toISO(view === "month" ? new Date() : anchor), decToHm(Math.ceil(hours.open))),
+      }}
+    >
+      {children}
+    </Page>
+  );
+
   if (!sources) {
-    return (
+    return page(
       <Card padding="0" className="h-[calc(100dvh-230px)] min-h-[560px]">
         <div className="flex items-center gap-3 border-b border-(--border-secondary) px-4 py-4">
           <div className="w-48">
@@ -255,7 +281,7 @@ export function SharedCalendar({
         <div className="p-4">
           <SkeletonBodyText lines={12} />
         </div>
-      </Card>
+      </Card>,
     );
   }
 
@@ -265,7 +291,7 @@ export function SharedCalendar({
       : null;
   const selectedKey = opened?.ev.key ?? null;
 
-  return (
+  return page(
     <>
       <Card padding="0" className="h-[calc(100dvh-230px)] min-h-[560px]">
         <div className="flex h-full min-h-0 flex-col outline-none" tabIndex={-1} onKeyDown={onKeyDown}>
@@ -273,11 +299,9 @@ export function SharedCalendar({
             label={viewLabel(view, anchor)}
             view={view}
             isToday={toISO(anchor) === todayISO}
-            ctaLabel={ctaLabel}
             onToday={goToday}
             onStep={step}
             onView={changeView}
-            onCreate={() => openCreate(toISO(view === "month" ? new Date() : anchor), decToHm(Math.ceil(hours.open)))}
           />
           <CalendarFilters
             kinds={kinds}
@@ -350,6 +374,6 @@ export function SharedCalendar({
           onSubmit={(fields) => void handleSubmit(fields)}
         />
       ) : null}
-    </>
+    </>,
   );
 }

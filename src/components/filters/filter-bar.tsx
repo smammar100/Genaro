@@ -1,10 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Search, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Select } from "@/components/genaro";
+import { Button, Select, TextField } from "@/components/genaro";
 import { cn } from "@/lib/utils";
 
 /*
@@ -121,6 +118,7 @@ export function FilterBar({
   selects = [],
   yearPresetCount = 4,
   now,
+  bare = false,
   className,
 }: {
   state: FilterState;
@@ -132,6 +130,8 @@ export function FilterBar({
   yearPresetCount?: number;
   /** Injected "today" so callers stay deterministic/testable; defaults to now. */
   now?: Date;
+  /** No box of its own: for a bar inside a page header card (Page `toolbar`). */
+  bare?: boolean;
   className?: string;
 }): React.ReactElement {
   const today = now ?? new Date();
@@ -170,19 +170,22 @@ export function FilterBar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card px-3 py-2",
+        "flex flex-wrap items-center gap-2",
+        bare ? "w-full" : "rounded-lg border border-border bg-card px-3 py-2",
         className,
       )}
     >
-      {/* search — grows, but capped so the filters keep their space */}
-      <div className="relative min-w-[180px] max-w-md flex-1">
-        <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-        <Input
+      {/* search — grows, but capped so the filters keep their space; on a
+          phone every control takes the full width, so they line up */}
+      <div className="w-full sm:w-auto sm:min-w-[180px] sm:max-w-md sm:flex-1">
+        <TextField
+          label="Search"
+          labelHidden
+          prefix="SearchMinor"
           value={state.search}
-          onChange={(e) => onChange({ ...state, search: e.target.value })}
+          onChange={(v) => onChange({ ...state, search: v })}
           placeholder={searchPlaceholder}
-          className="h-8 pl-7 text-caption"
-          aria-label="Search"
+          autoComplete="off"
         />
       </div>
 
@@ -190,8 +193,8 @@ export function FilterBar({
           year"), so it reads clearly in any state. The From/To fields only
           appear for a custom range. */}
       {dateLabel && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <div className="w-52">
+        <div className="flex w-full flex-wrap items-center gap-1.5 sm:w-auto">
+          <div className="w-full sm:w-52">
             <Select
               label={dateLabel}
               labelInline
@@ -204,33 +207,31 @@ export function FilterBar({
             />
           </div>
           {showCustom && (
-            <div className="flex items-center gap-1.5">
-              <span className="text-caption text-(--text-secondary)">from</span>
-              <Input
-                type="date"
-                aria-label={`${dateLabel} from`}
-                value={state.date.from ?? ""}
-                onChange={(e) =>
-                  onChange({
-                    ...state,
-                    date: { ...state.date, from: e.target.value || null },
-                  })
-                }
-                className="w-40"
-              />
-              <span className="text-caption text-(--text-secondary)">to</span>
-              <Input
-                type="date"
-                aria-label={`${dateLabel} to`}
-                value={state.date.to ?? ""}
-                onChange={(e) =>
-                  onChange({
-                    ...state,
-                    date: { ...state.date, to: e.target.value || null },
-                  })
-                }
-                className="w-40"
-              />
+            <div className="flex w-full items-center gap-1.5 sm:w-auto">
+              <span className="body-sm text-(--text-secondary)">from</span>
+              <div className="min-w-0 flex-1 sm:w-40 sm:flex-none">
+                <TextField
+                  type="date"
+                  label={`${dateLabel} from`}
+                  labelHidden
+                  value={state.date.from ?? ""}
+                  onChange={(v) =>
+                    onChange({ ...state, date: { ...state.date, from: v || null } })
+                  }
+                />
+              </div>
+              <span className="body-sm text-(--text-secondary)">to</span>
+              <div className="min-w-0 flex-1 sm:w-40 sm:flex-none">
+                <TextField
+                  type="date"
+                  label={`${dateLabel} to`}
+                  labelHidden
+                  value={state.date.to ?? ""}
+                  onChange={(v) =>
+                    onChange({ ...state, date: { ...state.date, to: v || null } })
+                  }
+                />
+              </div>
             </div>
           )}
         </div>
@@ -239,7 +240,7 @@ export function FilterBar({
       {/* select filters — the "all" option names the field, so the label is
           for screen readers only */}
       {selects.map((f) => (
-        <div key={f.key} className="w-44">
+        <div key={f.key} className="w-full sm:w-44">
           <Select
             label={f.label}
             labelHidden
@@ -259,17 +260,17 @@ export function FilterBar({
       ))}
 
       {hasActive && (
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="ml-auto h-8 gap-1 text-caption text-muted-foreground"
-          onClick={() =>
-            onChange({ search: "", date: { from: null, to: null }, selects: {} })
-          }
-        >
-          <X className="h-3.5 w-3.5" /> Clear
-        </Button>
+        <span className="sm:ml-auto">
+          <Button
+            variant="tertiary"
+            icon="CancelSmallMinor"
+            onClick={() =>
+              onChange({ search: "", date: { from: null, to: null }, selects: {} })
+            }
+          >
+            Clear filters
+          </Button>
+        </span>
       )}
     </div>
   );

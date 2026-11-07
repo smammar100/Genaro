@@ -11,7 +11,7 @@ import { Card } from '@/components/genaro';
 - `title` (`heading-sm`, rendered as an `<h2>`) and `actions` (usually plain Buttons) form a header row. The card's children stack 8px apart (`space-200`).
 - `background="subdued"` (`bg-surface-secondary`) for secondary content such as tips or summaries.
 - `padding="0"` for flush tables, lists and media. It also clips children to the rounded corners. `IndexTable`, `DataTable`, `ResourceList` and `MediaCard` are already flush cards, so don't wrap them in a Card.
-- When the Page is narrower than 768px, a flush card placed directly in the Page runs edge to edge.
+- When the Page is narrower than 768px, a flush card keeps the page's 16px margin and its rounded corners, lined up with the header card.
 - `roundedAbove="never"` for square corners.
 
 ## Examples

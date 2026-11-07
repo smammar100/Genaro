@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { vendorService } from "@/lib/services/vendor-service";
 import { dealerPartnerService } from "@/lib/services/dealer-partner-service";
 import { maintenanceService } from "@/lib/services/maintenance-service";
 import type {
+  Company,
   DealerPartner,
   MaintenanceJob,
   Vendor,
@@ -19,55 +20,340 @@ import {
   Card,
   Checkbox,
   EmptyState,
+  EmptyStateIllustration,
   IndexTable,
   Modal,
   Page,
   Select,
   SkeletonBodyText,
-  SkeletonDisplayText,
   Tabs,
   TextField,
   type BadgeTone,
-  EmptyStateIllustration,
+  type IndexTableHeading,
+  type PageSecondaryAction,
 } from "@/components/genaro";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 
-type VendorTab = "garages" | "partners";
+/* Garages and dealer partners share one list (decided from /proto/vendors,
+   docs/vendors.md): a filter and a search on top, and the columns each kind
+   had on its own tab. */
 
-const TABS: { id: VendorTab; content: string }[] = [
+type Filter = "all" | "garages" | "partners";
+
+const FILTERS: { id: Filter; content: string }[] = [
+  { id: "all", content: "All" },
   { id: "garages", content: "Garages" },
   { id: "partners", content: "Dealer partners" },
 ];
 
-export default function VendorsPage() {
-  const searchParams = useSearchParams();
-  // SPEC Point 6 (T6.5) — tab persists in the URL across refresh. The active
-  // tab is LOCAL state. We deliberately do NOT use router.replace() to switch
-  // it: replacing only the ?tab= query on the same route is unreliable in the
-  // App Router (it neither updates useSearchParams nor reliably preserves
-  // local state), which froze the controlled tabs when going back to
-  // Garages. Instead history.replaceState() reflects the tab into the URL
-  // bar with zero React/Next re-render, so local state stays authoritative
-  // and the switch is instant in both directions.
-  const [tab, setTab] = useState<VendorTab>(() =>
-    searchParams.get("tab") === "dealer-partners" ? "partners" : "garages",
-  );
-  // The "Add" action lives on the page header; each tab opens its own modal.
-  const [garageAdd, setGarageAdd] = useState(false);
-  const [partnerAdd, setPartnerAdd] = useState(false);
-  // "Delete all …" also lives on the header; the tab owns the rows and the
-  // confirmation, so the header only asks and learns how many rows there are.
-  const [deleteAllRequest, setDeleteAllRequest] = useState(0);
-  const [rowCount, setRowCount] = useState(0);
+const FILTER_URL: Record<Filter, string> = {
+  all: "/admin/vendors",
+  garages: "/admin/vendors?tab=garages",
+  partners: "/admin/vendors?tab=dealer-partners",
+};
 
-  function selectTab(v: VendorTab) {
-    setTab(v);
-    setRowCount(0);
-    window.history.replaceState(
-      null,
-      "",
-      v === "partners" ? "/admin/vendors?tab=dealer-partners" : "/admin/vendors",
+function filterFromParam(tab: string | null): Filter {
+  if (tab === "dealer-partners") return "partners";
+  if (tab === "garages") return "garages";
+  return "all";
+}
+
+type Column =
+  | "name"
+  | "phone"
+  | "speciality"
+  | "company"
+  | "jobs"
+  | "stock"
+  | "spent"
+  | "actions";
+
+/** Each filter keeps the columns its tab had; All shows both sets. */
+const COLUMNS: Record<Filter, Column[]> = {
+  all: ["name", "phone", "speciality", "company", "jobs", "stock", "spent", "actions"],
+  garages: ["name", "phone", "speciality", "jobs", "spent", "actions"],
+  partners: ["name", "phone", "company", "stock", "actions"],
+};
+
+const HEADING: Record<Column, IndexTableHeading> = {
+  name: { title: "Name" },
+  phone: { title: "Phone" },
+  speciality: { title: "Speciality" },
+  company: { title: "Company" },
+  jobs: { title: "Active jobs", alignment: "end" },
+  stock: { title: "Active stock", alignment: "end" },
+  spent: { title: "Total spent", alignment: "end" },
+  actions: { title: "Actions", alignment: "end" },
+};
+
+const partnerUrl = (id: string) => `/admin/vendors/dealer-partners/${id}`;
+
+type Row =
+  | { kind: "garage"; id: string; name: string; garage: VendorRow }
+  | { kind: "partner"; id: string; name: string; partner: PartnerRow };
+
+function searchText(r: Row): string {
+  return (
+    r.kind === "garage"
+      ? `${r.name} ${r.garage.phone} ${SPECIALITY_LABEL[r.garage.speciality]}`
+      : `${r.name} ${r.partner.phone ?? ""} ${r.partner.companyName ?? ""}`
+  ).toLowerCase();
+}
+
+export default function VendorsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { company } = useAuth();
+  // SPEC Point 6 (T6.5): the filter persists in the URL across refresh. It is
+  // LOCAL state, reflected into the URL with history.replaceState() rather
+  // than router.replace(): replacing only the ?tab= query on the same route is
+  // unreliable in the App Router (it neither updates useSearchParams nor
+  // reliably keeps local state), which once froze the tabs. replaceState()
+  // updates the address bar with no React/Next re-render, so the switch is
+  // instant both ways.
+  const [filter, setFilter] = useState<Filter>(() =>
+    filterFromParam(searchParams.get("tab")),
+  );
+  const [query, setQuery] = useState("");
+  const garages = useGarages(company);
+  const partners = usePartners(company);
+  const [garageDraft, setGarageDraft] = useState<DraftVendor | null>(null);
+  const [garageConfirm, setGarageConfirm] = useState<string[] | null>(null);
+  const [partnerDraft, setPartnerDraft] = useState<DraftPartner | null>(null);
+  const [partnerConfirm, setPartnerConfirm] = useState<string[] | null>(null);
+
+  function selectFilter(f: Filter) {
+    setFilter(f);
+    window.history.replaceState(null, "", FILTER_URL[f]);
+  }
+
+  const wantGarages = filter !== "partners";
+  const wantPartners = filter !== "garages";
+  const loading =
+    (wantGarages && !garages.rows && !garages.error) ||
+    (wantPartners && !partners.rows && !partners.error);
+  const loaded = (wantGarages && garages.rows) || (wantPartners && partners.rows);
+  const nothingYet = garages.rows?.length === 0 && partners.rows?.length === 0;
+  const searching = query.trim() !== "";
+
+  const rows = useMemo<Row[]>(() => {
+    const q = query.trim().toLowerCase();
+    const list: Row[] = [
+      ...(wantGarages ? (garages.rows ?? []) : []).map((g) => ({
+        kind: "garage" as const,
+        id: `garage-${g.id}`,
+        name: g.name,
+        garage: g,
+      })),
+      ...(wantPartners ? (partners.rows ?? []) : []).map((p) => ({
+        kind: "partner" as const,
+        id: `partner-${p.id}`,
+        name: p.name,
+        partner: p,
+      })),
+    ];
+    return list
+      .filter((r) => !q || searchText(r).includes(q))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [garages.rows, partners.rows, wantGarages, wantPartners, query]);
+
+  function count(f: Filter): number | undefined {
+    if (f === "garages") return garages.rows?.length;
+    if (f === "partners") return partners.rows?.length;
+    return garages.rows && partners.rows
+      ? garages.rows.length + partners.rows.length
+      : undefined;
+  }
+
+  function addGarage() {
+    setGarageDraft({ ...EMPTY_VENDOR });
+  }
+  function addPartner() {
+    setPartnerDraft({ ...EMPTY_PARTNER });
+  }
+  function editGarage(v: Vendor) {
+    setGarageDraft({
+      id: v.id,
+      name: v.name,
+      phone: v.phone,
+      speciality: v.speciality,
+      active: v.active,
+    });
+  }
+  function editPartner(p: DealerPartner) {
+    setPartnerDraft({
+      id: p.id,
+      name: p.name,
+      phone: p.phone ?? "",
+      companyName: p.companyName ?? "",
+      email: p.email ?? "",
+      companyAddress: p.companyAddress ?? "",
+      vatNumber: p.vatNumber ?? "",
+      active: p.active,
+    });
+  }
+
+  // The primary follows the filter; on All the other kind's Add sits beside
+  // it. "Delete all" shows on its own filter only, so a bulk delete is always
+  // scoped to one kind.
+  const primaryAction =
+    filter === "partners"
+      ? { content: "Add dealer partner", onAction: addPartner }
+      : { content: "Add garage", onAction: addGarage };
+  let secondaryActions: PageSecondaryAction[] | undefined;
+  if (filter === "all") {
+    secondaryActions = [{ content: "Add dealer partner", onAction: addPartner }];
+  } else if (filter === "garages" && garages.rows?.length) {
+    const ids = garages.rows.map((r) => r.id);
+    secondaryActions = [
+      { content: "Delete all garages", destructive: true, onAction: () => setGarageConfirm(ids) },
+    ];
+  } else if (filter === "partners" && partners.rows?.length) {
+    const ids = partners.rows.map((r) => r.id);
+    secondaryActions = [
+      { content: "Delete all dealer partners", destructive: true, onAction: () => setPartnerConfirm(ids) },
+    ];
+  }
+
+  // "—" means no value yet; a column that belongs to the other kind stays blank.
+  const dash = <span className="text-(--text-secondary)">—</span>;
+
+  function cell(r: Row, c: Column): React.ReactNode {
+    if (c === "name") {
+      const active = r.kind === "garage" ? r.garage.active : r.partner.active;
+      return <NameCell name={r.name} active={active} />;
+    }
+    if (c === "phone") {
+      const phone = r.kind === "garage" ? r.garage.phone : r.partner.phone;
+      return <span className="text-(--text-secondary)">{phone || "—"}</span>;
+    }
+    if (r.kind === "garage") {
+      const g = r.garage;
+      switch (c) {
+        case "speciality":
+          return (
+            <Badge tone={SPECIALITY_TONE[g.speciality]}>
+              {SPECIALITY_LABEL[g.speciality] ?? g.speciality}
+            </Badge>
+          );
+        case "jobs":
+          return <Figure value={g.activeCount} />;
+        case "spent":
+          return <Figure value={g.totalSpent} format={formatCurrency} />;
+        case "actions":
+          return (
+            <ActionMenu
+              accessibilityLabel={`Actions for ${g.name}`}
+              size="micro"
+              preferredAlignment="right"
+              sections={[
+                {
+                  items: [
+                    { content: "Edit garage", icon: "EditMinor", onAction: () => editGarage(g) },
+                  ],
+                },
+                {
+                  items: [
+                    {
+                      content: "Delete garage",
+                      icon: "DeleteMinor",
+                      destructive: true,
+                      onAction: () => setGarageConfirm([g.id]),
+                    },
+                  ],
+                },
+              ]}
+            />
+          );
+        default:
+          return null; // Company and Active stock are a partner's, not a garage's.
+      }
+    }
+    const p = r.partner;
+    switch (c) {
+      case "company":
+        return p.companyName || dash;
+      case "stock":
+        return <Figure value={p.activeStock} />;
+      case "actions":
+        return (
+          <ActionMenu
+            accessibilityLabel={`Actions for ${p.name}`}
+            size="micro"
+            preferredAlignment="right"
+            sections={[
+              {
+                items: [
+                  { content: "View dealer partner", icon: "ViewMinor", url: partnerUrl(p.id) },
+                  { content: "Edit dealer partner", icon: "EditMinor", onAction: () => editPartner(p) },
+                ],
+              },
+              {
+                items: [
+                  {
+                    content: "Delete dealer partner",
+                    icon: "DeleteMinor",
+                    destructive: true,
+                    onAction: () => setPartnerConfirm([p.id]),
+                  },
+                ],
+              },
+            ]}
+          />
+        );
+      default:
+        return null; // Speciality, Active jobs and Total spent are a garage's.
+    }
+  }
+
+  const columns = COLUMNS[filter];
+  const headings = columns.map((c) =>
+    c === "name" && filter === "partners" ? { title: "Contact" } : HEADING[c],
+  );
+
+  let body: React.ReactNode;
+  if (rows.length === 0 && searching) {
+    body = (
+      <EmptyState
+        compact
+        illustration={<EmptyStateIllustration variant="search" />}
+        heading="Nobody matches"
+        secondaryAction={{ content: "Clear search", onAction: () => setQuery("") }}
+      >
+        Try part of the name, the number, the company or a speciality such as
+        Tyres.
+      </EmptyState>
+    );
+  } else if (rows.length === 0) {
+    body =
+      filter === "partners" ? (
+        <EmptyState compact illustration={<EmptyStateIllustration variant="list" />} heading="No dealer partners yet">
+          Add the trade partners who supply you stock. (Requires database
+          migration 0002.)
+        </EmptyState>
+      ) : (
+        <EmptyState compact illustration={<EmptyStateIllustration variant="list" />} heading="No garages yet">
+          Add the garages and parts suppliers you work with.
+        </EmptyState>
+      );
+  } else {
+    body = (
+      <IndexTable
+        className="rounded-none shadow-none"
+        selectable={false}
+        onRowClick={(id) => {
+          const r = rows.find((x) => x.id === id);
+          if (r?.kind === "garage") editGarage(r.garage);
+          else if (r) router.push(partnerUrl(r.partner.id));
+        }}
+        headings={headings}
+        rows={rows.map((r) => ({
+          id: r.id,
+          url: r.kind === "partner" ? partnerUrl(r.partner.id) : undefined,
+          cells: columns.map((c) => cell(r, c)),
+        }))}
+      />
     );
   }
 
@@ -76,49 +362,70 @@ export default function VendorsPage() {
       title="Vendors"
       subtitle="The service garages you send work to and the trade partners who supply your stock."
       fullWidth
-      primaryAction={
-        tab === "garages"
-          ? { content: "Add garage", onAction: () => setGarageAdd(true) }
-          : {
-              content: "Add dealer partner",
-              onAction: () => setPartnerAdd(true),
-            }
-      }
-      secondaryActions={
-        rowCount > 0
-          ? [
-              {
-                content:
-                  tab === "garages"
-                    ? "Delete all garages"
-                    : "Delete all dealer partners",
-                destructive: true,
-                onAction: () => setDeleteAllRequest((n) => n + 1),
-              },
-            ]
-          : undefined
-      }
+      primaryAction={primaryAction}
+      secondaryActions={secondaryActions}
     >
-      <Tabs
-        tabs={TABS}
-        selected={tab === "partners" ? 1 : 0}
-        onSelect={(i) => selectTab(TABS[i]?.id ?? "garages")}
+      {wantGarages && garages.error ? (
+        <Banner tone="critical" action={{ content: "Retry", onAction: garages.retry }}>
+          Couldn&apos;t load garages.
+        </Banner>
+      ) : null}
+      {wantPartners && partners.error ? (
+        <Banner tone="critical" action={{ content: "Retry", onAction: partners.retry }}>
+          Couldn&apos;t load dealer partners.
+        </Banner>
+      ) : null}
+
+      {loading ? (
+        <Card>
+          <SkeletonBodyText lines={6} />
+        </Card>
+      ) : nothingYet ? (
+        <Card>
+          <EmptyState illustration={<EmptyStateIllustration variant="list" />} heading="No vendors yet">
+            Add the garages you send work to and the trade partners who supply
+            your stock.
+          </EmptyState>
+        </Card>
+      ) : loaded ? (
+        <Card padding="0">
+          <div className="flex flex-wrap items-center justify-between gap-2 p-2">
+            <Tabs
+              tabs={FILTERS.map((f) => ({ id: f.id, content: f.content, badge: count(f.id) }))}
+              selected={FILTERS.findIndex((f) => f.id === filter)}
+              onSelect={(i) => selectFilter(FILTERS[i]?.id ?? "all")}
+            />
+            <div className="w-full sm:w-72">
+              <TextField
+                label="Search vendors"
+                labelHidden
+                prefix="SearchMinor"
+                placeholder="Search name, company or speciality"
+                value={query}
+                onChange={setQuery}
+                clearButton
+                onClearButtonClick={() => setQuery("")}
+              />
+            </div>
+          </div>
+          {body}
+        </Card>
+      ) : null}
+
+      <GarageDialogs
+        garages={garages}
+        draft={garageDraft}
+        setDraft={setGarageDraft}
+        confirmIds={garageConfirm}
+        setConfirmIds={setGarageConfirm}
       />
-      {tab === "garages" ? (
-        <GaragesTab
-          addOpen={garageAdd}
-          setAddOpen={setGarageAdd}
-          deleteAllRequest={deleteAllRequest}
-          onRowCount={setRowCount}
-        />
-      ) : (
-        <DealerPartnersTab
-          addOpen={partnerAdd}
-          setAddOpen={setPartnerAdd}
-          deleteAllRequest={deleteAllRequest}
-          onRowCount={setRowCount}
-        />
-      )}
+      <PartnerDialogs
+        partners={partners}
+        draft={partnerDraft}
+        setDraft={setPartnerDraft}
+        confirmIds={partnerConfirm}
+        setConfirmIds={setPartnerConfirm}
+      />
     </Page>
   );
 }
@@ -180,57 +487,11 @@ interface VendorRow extends Vendor {
   totalSpent: number;
 }
 
-interface TabProps {
-  addOpen: boolean;
-  setAddOpen: (v: boolean) => void;
-  /** Goes up by one each time the header's "Delete all …" is pressed. */
-  deleteAllRequest: number;
-  /** Tells the header how many rows there are (it hides "Delete all" at 0). */
-  onRowCount: (n: number) => void;
-}
-
-function GaragesTab({
-  addOpen,
-  setAddOpen,
-  deleteAllRequest,
-  onRowCount,
-}: TabProps) {
-  const baseId = useId();
-  const nameId = `${baseId}-name`;
-  const phoneId = `${baseId}-phone`;
-  const specialityId = `${baseId}-speciality`;
-  const { company } = useAuth();
+/** The garages, each with its open jobs and what has been spent with it. */
+function useGarages(company: Company | null) {
   const [vendors, setVendors] = useState<Vendor[] | null>(null);
-  const [maintJobs, setMaintJobs] = useState<MaintenanceJob[]>([]);
-  const [draft, setDraft] = useState<DraftVendor | null>(null);
-  const [loadError, setLoadError] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [confirmIds, setConfirmIds] = useState<string[] | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  // The "Add garage" action lives on the page header; open a blank draft
-  // when it's pressed.
-  const [prevAddOpen, setPrevAddOpen] = useState(false);
-  if (addOpen !== prevAddOpen) {
-    setPrevAddOpen(addOpen);
-    if (addOpen) setDraft({ ...EMPTY_VENDOR });
-  }
-
-  // So is "Delete all garages": each press bumps the request, and we confirm
-  // every row.
-  const [seenDeleteAll, setSeenDeleteAll] = useState(deleteAllRequest);
-  if (deleteAllRequest !== seenDeleteAll) {
-    setSeenDeleteAll(deleteAllRequest);
-    if (vendors?.length) setConfirmIds(vendors.map((v) => v.id));
-  }
-
-  const vendorCount = vendors?.length ?? 0;
-  useEffect(() => onRowCount(vendorCount), [vendorCount, onRowCount]);
-
-  function closeDraft() {
-    setDraft(null);
-    setAddOpen(false);
-  }
+  const [jobs, setJobs] = useState<MaintenanceJob[]>([]);
+  const [error, setError] = useState(false);
 
   const load = useCallback(() => {
     if (!company) return;
@@ -240,13 +501,13 @@ function GaragesTab({
     ])
       .then(([v, m]) => {
         setVendors(v);
-        setMaintJobs(m);
+        setJobs(m);
       })
-      // Without this a failed read leaves the tab on an infinite skeleton;
+      // Without this a failed read leaves the list on an endless skeleton;
       // surface a retry instead.
       .catch(() => {
         setVendors(null);
-        setLoadError(true);
+        setError(true);
       });
   }, [company]);
 
@@ -258,30 +519,59 @@ function GaragesTab({
     if (!vendors) return null;
     const stats = new Map<string, { activeCount: number; totalSpent: number }>();
     for (const v of vendors) stats.set(v.id, { activeCount: 0, totalSpent: 0 });
-    for (const j of maintJobs) {
+    for (const j of jobs) {
       if (!j.vendorId) continue;
-      const sct = stats.get(j.vendorId);
-      if (!sct) continue;
-      if (j.status !== "completed") sct.activeCount++;
-      // "Total spent" is realised cost only: sum actualCost for completed
-      // jobs. In-progress estimates aren't money spent and would inflate the
-      // figure (and change it when jobs later complete).
-      if (j.status === "completed") sct.totalSpent += j.actualCost ?? 0;
+      const s = stats.get(j.vendorId);
+      if (!s) continue;
+      if (j.status !== "completed") s.activeCount++;
+      // "Total spent" is realised cost only: actualCost on completed jobs.
+      // In-progress estimates aren't money spent and would inflate the
+      // figure (and change it when the jobs complete).
+      if (j.status === "completed") s.totalSpent += j.actualCost ?? 0;
     }
     return vendors.map((v) => ({
       ...v,
       activeCount: stats.get(v.id)?.activeCount ?? 0,
       totalSpent: stats.get(v.id)?.totalSpent ?? 0,
     }));
-  }, [vendors, maintJobs]);
+  }, [vendors, jobs]);
 
-  const stats = useMemo(() => {
-    const activeJobs = rows?.reduce((a, r) => a + r.activeCount, 0) ?? 0;
-    const totalSpent = rows?.reduce((a, r) => a + r.totalSpent, 0) ?? 0;
-    const specialities = new Set(vendors?.map((v) => v.speciality)).size;
-    const activeGarages = vendors?.filter((v) => v.active).length ?? 0;
-    return { activeJobs, totalSpent, specialities, activeGarages };
-  }, [rows, vendors]);
+  return {
+    vendors,
+    rows,
+    error,
+    retry() {
+      setError(false);
+      load();
+    },
+    /** Re-reads the garages after a change (their jobs don't move). */
+    async refresh() {
+      if (!company) return;
+      const v = await vendorService.getAll(company.id).catch(() => null);
+      if (v) setVendors(v);
+    },
+  };
+}
+
+interface DialogProps<Draft> {
+  draft: Draft | null;
+  setDraft: (d: Draft | null) => void;
+  confirmIds: string[] | null;
+  setConfirmIds: (ids: string[] | null) => void;
+}
+
+function GarageDialogs({
+  garages,
+  draft,
+  setDraft,
+  confirmIds,
+  setConfirmIds,
+}: DialogProps<DraftVendor> & { garages: ReturnType<typeof useGarages> }) {
+  const baseId = useId();
+  const { company } = useAuth();
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const vendors = garages.vendors;
 
   async function handleSave() {
     if (!company || !draft) return;
@@ -299,16 +589,17 @@ function GaragesTab({
         speciality: draft.speciality,
         active: draft.active,
       });
-      setVendors(await vendorService.getAll(company.id));
+      await garages.refresh();
       toast.success(draft.id ? "Garage updated" : "Garage added");
-      closeDraft();
+      setDraft(null);
+    } catch {
+      toast.error("Couldn't save the garage. Try again.");
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete(ids: string[]) {
-    if (!company) return;
     setDeleting(true);
     const blocked: string[] = [];
     let deleted = 0;
@@ -326,7 +617,7 @@ function GaragesTab({
     } finally {
       setDeleting(false);
       setConfirmIds(null);
-      setVendors(await vendorService.getAll(company.id).catch(() => vendors));
+      await garages.refresh();
     }
     if (deleted > 0) {
       toast.success(deleted === 1 ? "Garage deleted" : `${deleted} garages deleted`);
@@ -340,54 +631,18 @@ function GaragesTab({
     }
   }
 
-  function editGarage(row: Vendor) {
-    setDraft({
-      id: row.id,
-      name: row.name,
-      phone: row.phone,
-      speciality: row.speciality,
-      active: row.active,
-    });
-  }
-
   const confirmName =
     confirmIds?.length === 1
       ? vendors?.find((v) => v.id === confirmIds[0])?.name
       : undefined;
   const confirmCount = confirmIds?.length ?? 0;
-  const confirmingAll = confirmCount > 1 && confirmCount === vendorCount;
+  const confirmingAll = confirmCount > 1 && confirmCount === (vendors?.length ?? 0);
 
   return (
     <>
-      <KpiStrip
-        loading={!vendors}
-        tiles={[
-          {
-            label: "Garages",
-            value: vendors ? String(vendors.length) : "—",
-            sub: `${stats.activeGarages} active`,
-          },
-          {
-            label: "Active jobs",
-            value: String(stats.activeJobs),
-            sub: "In progress",
-          },
-          {
-            label: "Total spent",
-            value: formatCurrency(stats.totalSpent),
-            sub: "All-time",
-          },
-          {
-            label: "Specialities",
-            value: String(stats.specialities),
-            sub: "Covered",
-          },
-        ]}
-      />
-
       <Modal
         open={draft !== null}
-        onClose={closeDraft}
+        onClose={() => setDraft(null)}
         title={draft?.id ? "Edit garage" : "Add garage"}
         size="small"
         primaryAction={{
@@ -402,31 +657,31 @@ function GaragesTab({
                   content: "Delete garage",
                   onAction: () => {
                     setConfirmIds([draft.id as string]);
-                    closeDraft();
+                    setDraft(null);
                   },
                 },
               ]
             : []),
-          { content: "Cancel", onAction: closeDraft },
+          { content: "Cancel", onAction: () => setDraft(null) },
         ]}
       >
         {draft && (
           <div className="flex flex-col gap-3">
             <TextField
-              id={nameId}
+              id={`${baseId}-name`}
               label="Name"
               value={draft.name}
               onChange={(v) => setDraft({ ...draft, name: v })}
             />
             <TextField
-              id={phoneId}
+              id={`${baseId}-phone`}
               label="Phone"
               type="tel"
               value={draft.phone}
               onChange={(v) => setDraft({ ...draft, phone: v })}
             />
             <Select
-              id={specialityId}
+              id={`${baseId}-speciality`}
               label="Speciality"
               options={SPECIALITY_OPTIONS}
               value={draft.speciality}
@@ -468,88 +723,6 @@ function GaragesTab({
             : `They come off your list of garages for good. Any that jobs, invoices or car moves point to can't be deleted and will stay. Mark those inactive instead.`}
         </p>
       </Modal>
-
-      {loadError && !rows ? (
-        <Banner
-          tone="critical"
-          action={{
-            content: "Retry",
-            onAction: () => {
-              setLoadError(false);
-              load();
-            },
-          }}
-        >
-          Couldn&apos;t load garages.
-        </Banner>
-      ) : !rows ? (
-        <TableSkeleton />
-      ) : rows.length === 0 ? (
-        <EmptyState illustration={<EmptyStateIllustration variant="list" />} heading="No garages yet">
-          Add the garages and parts suppliers you work with.
-        </EmptyState>
-      ) : (
-        <IndexTable
-          selectable={false}
-          onRowClick={(id) => {
-            const row = rows.find((r) => r.id === id);
-            if (row) editGarage(row);
-          }}
-          headings={[
-            { title: "Name" },
-            { title: "Phone" },
-            { title: "Speciality" },
-            { title: "Active jobs", alignment: "end" },
-            { title: "Total spent", alignment: "end" },
-            { title: "Actions", alignment: "end" },
-          ]}
-          rows={rows.map((row) => ({
-            id: row.id,
-            cells: [
-              <NameCell key="name" name={row.name} active={row.active} />,
-              <span key="phone" className="text-(--text-secondary)">
-                {row.phone || "—"}
-              </span>,
-              <Badge key="speciality" tone={SPECIALITY_TONE[row.speciality]}>
-                {SPECIALITY_LABEL[row.speciality] ?? row.speciality}
-              </Badge>,
-              <Figure key="jobs" value={row.activeCount} />,
-              <Figure
-                key="spent"
-                value={row.totalSpent}
-                format={formatCurrency}
-              />,
-              <ActionMenu
-                key="actions"
-                accessibilityLabel={`Actions for ${row.name}`}
-                size="micro"
-                preferredAlignment="right"
-                sections={[
-                  {
-                    items: [
-                      {
-                        content: "Edit garage",
-                        icon: "EditMinor",
-                        onAction: () => editGarage(row),
-                      },
-                    ],
-                  },
-                  {
-                    items: [
-                      {
-                        content: "Delete garage",
-                        icon: "DeleteMinor",
-                        destructive: true,
-                        onAction: () => setConfirmIds([row.id]),
-                      },
-                    ],
-                  },
-                ]}
-              />,
-            ],
-          }))}
-        />
-      )}
     </>
   );
 }
@@ -584,62 +757,11 @@ interface PartnerRow extends DealerPartner {
   activeStock: number;
 }
 
-function DealerPartnersTab({
-  addOpen,
-  setAddOpen,
-  deleteAllRequest,
-  onRowCount,
-}: TabProps) {
-  const baseId = useId();
-  const contactNameId = `${baseId}-contact-name`;
-  const phoneId = `${baseId}-phone`;
-  const emailId = `${baseId}-email`;
-  const companyNameId = `${baseId}-company-name`;
-  const companyAddressId = `${baseId}-company-address`;
-  const vatNumberId = `${baseId}-vat-number`;
-  const { company } = useAuth();
+/** The dealer partners, each with how many of their cars are in stock. */
+function usePartners(company: Company | null) {
   const [partners, setPartners] = useState<DealerPartner[] | null>(null);
   const [counts, setCounts] = useState<Map<string, number>>(new Map());
-  const [draft, setDraft] = useState<DraftPartner | null>(null);
-  const [loadError, setLoadError] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [confirmIds, setConfirmIds] = useState<string[] | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  // The "Add dealer partner" action lives on the page header.
-  const [prevAddOpen, setPrevAddOpen] = useState(false);
-  if (addOpen !== prevAddOpen) {
-    setPrevAddOpen(addOpen);
-    if (addOpen) setDraft({ ...EMPTY_PARTNER });
-  }
-
-  // So does "Delete all dealer partners" (see GaragesTab).
-  const [seenDeleteAll, setSeenDeleteAll] = useState(deleteAllRequest);
-  if (deleteAllRequest !== seenDeleteAll) {
-    setSeenDeleteAll(deleteAllRequest);
-    if (partners?.length) setConfirmIds(partners.map((p) => p.id));
-  }
-
-  const partnerCount = partners?.length ?? 0;
-  useEffect(() => onRowCount(partnerCount), [partnerCount, onRowCount]);
-
-  function editPartner(p: DealerPartner) {
-    setDraft({
-      id: p.id,
-      name: p.name,
-      phone: p.phone ?? "",
-      companyName: p.companyName ?? "",
-      email: p.email ?? "",
-      companyAddress: p.companyAddress ?? "",
-      vatNumber: p.vatNumber ?? "",
-      active: p.active,
-    });
-  }
-
-  function closeDraft() {
-    setDraft(null);
-    setAddOpen(false);
-  }
+  const [error, setError] = useState(false);
 
   const reload = useCallback(() => {
     if (!company) return Promise.resolve();
@@ -653,7 +775,7 @@ function DealerPartnersTab({
       })
       .catch(() => {
         setPartners(null);
-        setLoadError(true);
+        setError(true);
       });
   }, [company]);
 
@@ -663,20 +785,34 @@ function DealerPartnersTab({
 
   const rows = useMemo<PartnerRow[] | null>(() => {
     if (!partners) return null;
-    return partners.map((p) => ({
-      ...p,
-      activeStock: counts.get(p.id) ?? 0,
-    }));
+    return partners.map((p) => ({ ...p, activeStock: counts.get(p.id) ?? 0 }));
   }, [partners, counts]);
 
-  const stats = useMemo(() => {
-    const activeStock = rows?.reduce((a, r) => a + r.activeStock, 0) ?? 0;
-    const activeCount = partners?.filter((p) => p.active).length ?? 0;
-    const companies = new Set(
-      partners?.map((p) => p.companyName).filter(Boolean),
-    ).size;
-    return { activeStock, activeCount, companies };
-  }, [rows, partners]);
+  return {
+    partners,
+    counts,
+    rows,
+    error,
+    reload,
+    retry() {
+      setError(false);
+      void reload();
+    },
+  };
+}
+
+function PartnerDialogs({
+  partners: data,
+  draft,
+  setDraft,
+  confirmIds,
+  setConfirmIds,
+}: DialogProps<DraftPartner> & { partners: ReturnType<typeof usePartners> }) {
+  const baseId = useId();
+  const { company } = useAuth();
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { partners, counts } = data;
 
   async function handleSave() {
     if (!company || !draft) return;
@@ -704,11 +840,11 @@ function DealerPartnersTab({
         );
         return;
       }
-      await reload();
-      toast.success(
-        draft.id ? "Dealer partner updated" : "Dealer partner added",
-      );
-      closeDraft();
+      await data.reload();
+      toast.success(draft.id ? "Dealer partner updated" : "Dealer partner added");
+      setDraft(null);
+    } catch {
+      toast.error("Couldn't save the dealer partner. Try again.");
     } finally {
       setSaving(false);
     }
@@ -731,7 +867,7 @@ function DealerPartnersTab({
     } finally {
       setDeleting(false);
       setConfirmIds(null);
-      await reload();
+      await data.reload();
     }
     if (deleted > 0) {
       toast.success(
@@ -754,7 +890,7 @@ function DealerPartnersTab({
     0,
   );
   const confirmCount = confirmIds?.length ?? 0;
-  const confirmingAll = confirmCount > 1 && confirmCount === partnerCount;
+  const confirmingAll = confirmCount > 1 && confirmCount === (partners?.length ?? 0);
   const carsLine =
     linkedCars === 0
       ? "Any cars you bought from them stay on record but no longer show a supplier."
@@ -762,61 +898,35 @@ function DealerPartnersTab({
 
   return (
     <>
-      <KpiStrip
-        loading={!partners}
-        tiles={[
-          {
-            label: "Dealer partners",
-            value: partners ? String(partners.length) : "—",
-            sub: `${stats.activeCount} active`,
-          },
-          {
-            label: "Active stock",
-            value: String(stats.activeStock),
-            sub: "Listed",
-          },
-          {
-            label: "Active",
-            value: String(stats.activeCount),
-            sub: partners ? `Of ${partners.length}` : "—",
-          },
-          {
-            label: "Companies",
-            value: String(stats.companies),
-            sub: "Linked",
-          },
-        ]}
-      />
-
       <Modal
         open={draft !== null}
-        onClose={closeDraft}
+        onClose={() => setDraft(null)}
         title={draft?.id ? "Edit dealer partner" : "Add dealer partner"}
         primaryAction={{
           content: "Save dealer partner",
           loading: saving,
           onAction: () => void handleSave(),
         }}
-        secondaryActions={[{ content: "Cancel", onAction: closeDraft }]}
+        secondaryActions={[{ content: "Cancel", onAction: () => setDraft(null) }]}
       >
         {draft && (
           <div className="flex flex-col gap-3">
             <TextField
-              id={contactNameId}
+              id={`${baseId}-contact-name`}
               label="Contact name"
               value={draft.name}
               onChange={(v) => setDraft({ ...draft, name: v })}
             />
             <div className="grid gap-3 sm:grid-cols-2">
               <TextField
-                id={phoneId}
+                id={`${baseId}-phone`}
                 label="Phone"
                 type="tel"
                 value={draft.phone}
                 onChange={(v) => setDraft({ ...draft, phone: v })}
               />
               <TextField
-                id={emailId}
+                id={`${baseId}-email`}
                 label="Email"
                 type="email"
                 value={draft.email}
@@ -824,19 +934,19 @@ function DealerPartnersTab({
               />
             </div>
             <TextField
-              id={companyNameId}
+              id={`${baseId}-company-name`}
               label="Company name"
               value={draft.companyName}
               onChange={(v) => setDraft({ ...draft, companyName: v })}
             />
             <TextField
-              id={companyAddressId}
+              id={`${baseId}-company-address`}
               label="Company address"
               value={draft.companyAddress}
               onChange={(v) => setDraft({ ...draft, companyAddress: v })}
             />
             <TextField
-              id={vatNumberId}
+              id={`${baseId}-vat-number`}
               label="VAT number"
               value={draft.vatNumber}
               onChange={(v) => setDraft({ ...draft, vatNumber: v })}
@@ -861,9 +971,7 @@ function DealerPartnersTab({
         size="small"
         primaryAction={{
           content:
-            confirmCount === 1
-              ? "Delete dealer partner"
-              : "Delete dealer partners",
+            confirmCount === 1 ? "Delete dealer partner" : "Delete dealer partners",
           destructive: true,
           loading: deleting,
           onAction: () => void handleDelete(confirmIds ?? []),
@@ -881,83 +989,6 @@ function DealerPartnersTab({
           mark {confirmCount === 1 ? "them" : "those"} inactive instead.
         </p>
       </Modal>
-
-      {loadError && !rows ? (
-        <Banner
-          tone="critical"
-          action={{
-            content: "Retry",
-            onAction: () => {
-              setLoadError(false);
-              void reload();
-            },
-          }}
-        >
-          Couldn&apos;t load dealer partners.
-        </Banner>
-      ) : !rows ? (
-        <TableSkeleton />
-      ) : rows.length === 0 ? (
-        <EmptyState illustration={<EmptyStateIllustration variant="list" />} heading="No dealer partners yet">
-          Add the trade partners who supply you stock. (Requires database
-          migration 0002.)
-        </EmptyState>
-      ) : (
-        <IndexTable
-          selectable={false}
-          headings={[
-            { title: "Contact" },
-            { title: "Phone" },
-            { title: "Company" },
-            { title: "Active stock", alignment: "end" },
-            { title: "Actions", alignment: "end" },
-          ]}
-          rows={rows.map((row) => ({
-            id: row.id,
-            url: `/admin/vendors/dealer-partners/${row.id}`,
-            cells: [
-              <NameCell key="name" name={row.name} active={row.active} />,
-              <span key="phone" className="text-(--text-secondary)">
-                {row.phone || "—"}
-              </span>,
-              row.companyName || "—",
-              <Figure key="stock" value={row.activeStock} />,
-              <ActionMenu
-                key="actions"
-                accessibilityLabel={`Actions for ${row.name}`}
-                size="micro"
-                preferredAlignment="right"
-                sections={[
-                  {
-                    items: [
-                      {
-                        content: "View dealer partner",
-                        icon: "ViewMinor",
-                        url: `/admin/vendors/dealer-partners/${row.id}`,
-                      },
-                      {
-                        content: "Edit dealer partner",
-                        icon: "EditMinor",
-                        onAction: () => editPartner(row),
-                      },
-                    ],
-                  },
-                  {
-                    items: [
-                      {
-                        content: "Delete dealer partner",
-                        icon: "DeleteMinor",
-                        destructive: true,
-                        onAction: () => setConfirmIds([row.id]),
-                      },
-                    ],
-                  },
-                ]}
-              />,
-            ],
-          }))}
-        />
-      )}
     </>
   );
 }
@@ -965,46 +996,6 @@ function DealerPartnersTab({
 // ────────────────────────────────────────────────────────────────────────────
 // Shared helpers
 // ────────────────────────────────────────────────────────────────────────────
-
-interface KpiTile {
-  label: string;
-  value: string;
-  sub: string;
-}
-
-/**
- * Four-tile summary — the Genaro stat-tiles pattern: one flush card, tiles
- * split by hairlines, 2 × 2 on narrow screens.
- */
-function KpiStrip({ tiles, loading }: { tiles: KpiTile[]; loading: boolean }) {
-  return (
-    <Card padding="0">
-      <div className="grid grid-cols-2 lg:grid-cols-4 [&>*]:border-(--border-secondary) [&>*:nth-child(even)]:border-l [&>*:nth-child(n+3)]:border-t lg:[&>*:nth-child(n+2)]:border-l lg:[&>*:nth-child(n+3)]:border-t-0">
-        {tiles.map((t) => (
-          <div key={t.label} className="flex flex-col gap-1 p-4">
-            <div className="body-sm text-(--text-secondary)">{t.label}</div>
-            {loading ? (
-              <SkeletonDisplayText size="small" />
-            ) : (
-              <div className="heading-lg tabular-nums text-(--text)">
-                {t.value}
-              </div>
-            )}
-            <div className="body-sm text-(--text-secondary)">{t.sub}</div>
-          </div>
-        ))}
-      </div>
-    </Card>
-  );
-}
-
-function TableSkeleton() {
-  return (
-    <Card>
-      <SkeletonBodyText lines={6} />
-    </Card>
-  );
-}
 
 /** A row's name, flagged only when it's inactive (active is the norm). */
 function NameCell({ name, active }: { name: string; active: boolean }) {

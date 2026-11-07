@@ -416,17 +416,20 @@ export default function DealsPage() {
       subtitle="Your completed sales history, including earlier sales from the master sheet. Deals still in progress live on the sales pipeline."
       fullWidth
       secondaryActions={[{ content: "View pipeline", url: "/sales/pipeline" }]}
+      // The search and filters sit in the header card, under the title.
+      toolbar={
+        closed && closed.length > 0 ? (
+          <FilterBar
+            bare
+            state={filters}
+            onChange={setFilters}
+            searchPlaceholder="Search reg, make/model, customer…"
+            dateLabel="Completed"
+            selects={sourceFilters}
+          />
+        ) : undefined
+      }
     >
-
-      {closed && closed.length > 0 && (
-        <FilterBar
-          state={filters}
-          onChange={setFilters}
-          searchPlaceholder="Search reg, make/model, customer…"
-          dateLabel="Completed"
-          selects={sourceFilters}
-        />
-      )}
 
       {!closed || !years ? (
         <Card>
