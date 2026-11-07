@@ -1,6 +1,5 @@
 "use client";
 
-import { Page } from "@/components/genaro";
 import { SharedCalendar } from "@/components/calendar/shared-calendar";
 
 /**
@@ -10,12 +9,9 @@ import { SharedCalendar } from "@/components/calendar/shared-calendar";
  */
 export default function MasterCalendarPage() {
   return (
-    <Page
+    <SharedCalendar
       title="Master calendar"
       subtitle="Every customer appointment, workshop walk-in and maintenance due in one shared view. Click a slot to book or an event to open it."
-      fullWidth
-    >
-      <SharedCalendar />
-    </Page>
+    />
   );
 }

@@ -1,4 +1,3 @@
-import { Page } from "@/components/genaro";
 import { SharedCalendar } from "@/components/calendar/shared-calendar";
 
 /**
@@ -7,12 +6,12 @@ import { SharedCalendar } from "@/components/calendar/shared-calendar";
  */
 export default function MaintenanceCalendarPage() {
   return (
-    <Page
+    <SharedCalendar
       title="Maintenance calendar"
       subtitle="All maintenance and inspection jobs on one calendar, each marked with its status. Click a slot to add or an event to open it."
-      fullWidth
-    >
-      <SharedCalendar kinds={["maint"]} ctaLabel="Add job" lockCreateKind />
-    </Page>
+      kinds={["maint"]}
+      ctaLabel="Add job"
+      lockCreateKind
+    />
   );
 }

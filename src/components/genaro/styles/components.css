@@ -654,7 +654,11 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 .p-page { max-width:998px; margin:0 auto; padding:0 var(--space-600); font-family:var(--font-sans); color:var(--text); box-sizing:border-box; }
 .p-page--narrow { max-width:662px; }
 .p-page--full { max-width:none; }
-.p-page__header { display:flex; align-items:flex-start; justify-content:space-between; gap:var(--space-400); padding:var(--space-600) 0; }
+/* The page header is a card of its own (2026-11-07): title, subtitle and actions on the card surface, set apart from the content below. */
+.p-page__header { display:flex; align-items:flex-start; justify-content:space-between; gap:var(--space-400); padding:var(--space-400); margin:var(--space-600) 0 var(--space-400);
+  background:var(--bg-surface); border-radius:var(--border-radius-card); box-shadow:var(--shadow-100); }
+.p-page__header--toolbar { flex-wrap:wrap; }
+.p-page__toolbar { flex:1 0 100%; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:var(--space-300); min-width:0; }
 .p-page__titlewrap { display:flex; align-items:flex-start; gap:var(--space-100); min-width:0; }
 .p-page__titleline { display:flex; align-items:center; flex-wrap:wrap; gap:var(--space-200); min-height:28px; }
 .p-page__title { margin:0; font-size:var(--fs-display); line-height:var(--lh-display); font-weight:var(--fw-semibold); }
@@ -842,6 +846,11 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
   .p-topbar__logo, .p-topbar__kbd, .p-topbar__username, .p-topbar__sidekick { display:none; }
   .p-topbar__user { padding:var(--space-050); }
   .p-topbar__csb .p-csb__msg span { display:none; }
+  /* On a phone the bar's buttons are bare icons, like a native app's bar: grey squares beside the search field read
+     as four boxes in a row. Their 44px touch area stays (see Touch below); the fill shows only while pressed. */
+  .p-topbar__right { gap:0; }
+  .p-topbar__iconbtn, .p-topbar__user { background:transparent; }
+  .p-topbar__iconbtn:active, .p-topbar__user:active { background:var(--bg-fill-inverse); }
 }
 
 /* Tooltip — left / right tails */
@@ -953,28 +962,22 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 
 /* Page — small screens (the file's Small screen=True page header) */
 .p-page { container-type:inline-size; container-name:p-page; padding:0; }
-.p-page__header, .p-page__content { padding-left:var(--space-600); padding-right:var(--space-600); }
+.p-page__content { padding-left:var(--space-600); padding-right:var(--space-600); }
+.p-page__header { margin-left:var(--space-600); margin-right:var(--space-600); }
 @container p-page (max-width: 767px) {
-  .p-page__header, .p-page__content { padding-left:var(--space-400); padding-right:var(--space-400); }
-  .p-page__header { flex-direction:column; align-items:stretch; gap:var(--space-300); padding-top:var(--space-400); padding-bottom:var(--space-400); }
+  .p-page__content { padding-left:var(--space-400); padding-right:var(--space-400); }
+  .p-page__header { flex-direction:column; align-items:stretch; gap:var(--space-300); margin:var(--space-400); }
   .p-page__actions { flex-wrap:wrap; }
-  .p-page__content > .p-card--flush, .p-page__content > .p-indextable, .p-page__content > form > .p-card--flush, .p-page__content > form > .p-indextable { border-radius:0; margin-left:calc(-1 * var(--space-400)); margin-right:calc(-1 * var(--space-400)); }
+  /* Flush cards and tables used to bleed to the screen's edges here; with the header a card of its own (2026-11-07)
+     they keep the same 16px margin and rounded corners, so everything on the page lines up. */
 }
 
-/* IndexTable — small-screen rows (the file's Small screen row) */
+/* IndexTable — small screens. Rows used to stack one cell per line below 490px, which turned a wide table into a
+   pile of unlabelled values; the table keeps its columns and scrolls sideways instead (2026-11-07). A sideways swipe
+   stays in the table rather than going back a page. */
 .p-indextable { container-type:inline-size; container-name:p-indextable; }
+.p-indextable__scroll { overscroll-behavior-x:contain; }
 @container p-indextable (max-width: 489px) {
-  .p-indextable table, .p-indextable tbody { display:block; }
-  .p-indextable thead { display:none; }
-  .p-indextable tbody tr { display:grid; grid-template-columns:auto auto minmax(0, 1fr); column-gap:var(--space-300); row-gap:var(--space-100);
-    padding:var(--space-300); border-bottom:var(--border-width-025) solid var(--border-secondary); background:var(--bg-surface); }
-  @media (hover: hover) and (pointer: fine) { .p-indextable tbody tr:hover, .p-indextable tbody tr:hover td { background:var(--bg-surface-hover); } }
-  .p-indextable tbody tr.p-indextable__row--selected, .p-indextable tbody tr.p-indextable__row--selected td { background:var(--bg-surface-selected); }
-  .p-indextable td { display:block; height:auto; padding:0 !important; border:0; background:transparent; grid-column:3; white-space:normal; text-align:left; }
-  .p-indextable td.p-indextable__check { grid-column:1; grid-row:1 / span 8; width:auto; }
-  .p-indextable td.p-indextable__media { grid-column:2; grid-row:1 / span 8; width:auto; }
-  .p-indextable td.p-num { text-align:left; }
-  .p-indextable td:not(.p-indextable__primary):not(.p-indextable__check):not(.p-indextable__media) { color:var(--text-secondary); }
   .p-indextable__filters .p-tabs { overflow-x:auto; }
 }
 .p-indextable--bulk { padding-bottom:76px; }
@@ -987,7 +990,8 @@ a.p-page__secondary, a.p-actionlist__item { text-decoration:none; box-sizing:bor
 .p-toast-layer { position:fixed; left:0; right:0; bottom:calc(var(--space-800) + env(safe-area-inset-bottom, 0px)); z-index:520; display:flex; justify-content:center; padding:0 var(--space-400); pointer-events:none; }
 .p-toast-layer > .p-toast { pointer-events:auto; }
 .p-modal:focus { outline:none; }
-button.p-link { padding:0; border:0; background:none; }
+/* A link-styled button reads like a link: no padding, and its text starts where the text around it does (a button centres by default). */
+button.p-link { padding:0; border:0; background:none; text-align:inherit; }
 a.p-pagination__btn { color:inherit; box-sizing:border-box; }
 .p-popover__panel--above { top:auto; bottom:calc(100% + var(--space-100)); }
 .p-resitem__link { color:inherit; text-decoration:none; border-radius:var(--radius-100); }
@@ -1097,11 +1101,13 @@ a.p-toast__action { text-decoration:none; }
    Switch above; micro and plain buttons keep their size and get a taller hit area instead. iOS zooms the page into any
    field under 16px and never zooms back, so fields use 16px there (the touch-field exception in the type rules). */
 @media (pointer: coarse) {
-  .p-btn:not(.p-btn--plain, .p-btn--micro) { min-height:44px; }
+  .p-btn:not(.p-btn--plain, .p-btn--micro), .p-page__secondary { min-height:44px; }
+  .p-page__secondary--icon { min-width:44px; justify-content:center; }
   .p-btn--icon-only:not(.p-btn--plain, .p-btn--micro) { min-width:44px; }
   .p-btn--micro::before, .p-btn--plain::before { content:""; position:absolute; inset:min(0px, calc(50% - 22px)); }
   .p-topbar__iconbtn { min-width:44px; min-height:44px; align-items:center; justify-content:center; }
   .p-topbar__user { height:44px; }
+  .p-topbar__search { height:40px; }
   .p-tag__remove { position:relative; }
   .p-tag__remove::before { content:""; position:absolute; inset:calc(-1 * var(--space-100)); }
   .p-field { min-height:44px; }

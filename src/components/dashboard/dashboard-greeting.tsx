@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/genaro";
+import { Button, Card } from "@/components/genaro";
 import { useAuth } from "@/contexts/auth-context";
 import { AddVehicleModal } from "@/components/vehicles/add-vehicle-modal";
 
@@ -12,9 +12,9 @@ function salutation(hour: number): string {
 }
 
 /**
- * The dashboard's page header, in the Genaro Page-header anatomy: the
- * greeting as the title (heading-lg) and Add vehicle as the page's one
- * primary action. Export came off (call 2026-10-31): it only opened the
+ * The dashboard's page header, in the Genaro Page-header anatomy and, like
+ * every Page header, a card of its own (2026-11-07): the greeting as the
+ * title (heading-lg) and Add vehicle as the page's one primary action. Export came off (call 2026-10-31): it only opened the
  * master sheet, which exports itself.
  *
  * It is drawn here rather than through `Page title/primaryAction` because the
@@ -36,21 +36,23 @@ export function DashboardGreeting() {
   return (
     // Greeting left, actions right. The panel's top bar already names the
     // page (its <h1>); the KPI card carries the numbers.
-    <div className="flex flex-wrap items-center justify-between gap-4">
-      <h2 className="heading-lg min-h-7 text-(--text)">
-        {hour !== null &&
-          `${salutation(hour)}${firstName ? `, ${firstName}` : ""}`}
-      </h2>
-      <span id="tour-add-vehicle" className="inline-flex">
-        <Button
-          variant="primary"
-          icon="PlusMinor"
-          onClick={() => setAddOpen(true)}
-        >
-          Add vehicle
-        </Button>
-      </span>
-      <AddVehicleModal open={addOpen} onOpenChange={setAddOpen} />
-    </div>
+    <Card>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h2 className="heading-lg min-h-7 text-(--text)">
+          {hour !== null &&
+            `${salutation(hour)}${firstName ? `, ${firstName}` : ""}`}
+        </h2>
+        <span id="tour-add-vehicle" className="inline-flex">
+          <Button
+            variant="primary"
+            icon="PlusMinor"
+            onClick={() => setAddOpen(true)}
+          >
+            Add vehicle
+          </Button>
+        </span>
+        <AddVehicleModal open={addOpen} onOpenChange={setAddOpen} />
+      </div>
+    </Card>
   );
 }

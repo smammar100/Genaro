@@ -42,6 +42,11 @@ export interface PageProps {
   controls?: React.ReactNode;
   /** Previous / next record (detail pages). */
   pagination?: PaginationProps;
+  /**
+   * A row at the foot of the header card, under the title and actions: controls
+   * that set what the whole page shows, such as a date switcher and its counts.
+   */
+  toolbar?: React.ReactNode;
   /** Index pages: use the full width. */
   fullWidth?: boolean;
   /** Settings pages: 662px. Default detail width is 998px. */
@@ -51,16 +56,16 @@ export interface PageProps {
 }
 
 /**
- * Page header (title, actions, back, pagination) plus the width-constrained content column.
+ * Page header (title, actions, back, pagination) in a card of its own, plus the width-constrained content column.
  * @import import { Page } from "@/components/genaro";
  */
 export function Page({
-  title, subtitle, titleMetadata, titlePicker, backAction, primaryAction, secondaryActions, controls, pagination, fullWidth, narrowWidth, children, className,
+  title, subtitle, titleMetadata, titlePicker, backAction, primaryAction, secondaryActions, controls, pagination, toolbar, fullWidth, narrowWidth, children, className,
 }: PageProps) {
   return (
     <div className={cx('p-page', fullWidth && 'p-page--full', narrowWidth && 'p-page--narrow', className)}>
       {title || backAction ? (
-        <div className="p-page__header">
+        <div className={cx('p-page__header', toolbar != null && 'p-page__header--toolbar')}>
           <div className="p-page__titlewrap">
             {backAction ? (
               <Button variant="tertiary" icon="ArrowLeftMinor" accessibilityLabel={backAction.content || 'Back'} onClick={backAction.onAction} url={backAction.url} testId={backAction.testId} id={backAction.id} />
@@ -110,6 +115,7 @@ export function Page({
             ) : null}
             {pagination ? <Pagination {...pagination} /> : null}
           </div>
+          {toolbar != null ? <div className="p-page__toolbar">{toolbar}</div> : null}
         </div>
       ) : null}
       <div className="p-page__content">{children}</div>

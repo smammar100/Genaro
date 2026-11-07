@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Clock, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { Badge, Button, ButtonGroup } from "@/components/genaro";
 import { fmtHour, type BusinessHours, type Kind, type ViewKey } from "@/lib/calendar-model";
 import { cn } from "@/lib/utils";
@@ -12,26 +12,22 @@ const VIEWS: { key: ViewKey; label: string; shortcut: string }[] = [
   { key: "month", label: "Month", shortcut: "M" },
 ];
 
-/** Today, back and forward, the range, the view switch and the create action. */
+/** Today, back and forward, the range and the view switch. The create action is the page header's primary button. */
 export function CalendarToolbar({
   label,
   view,
   isToday,
-  ctaLabel,
   onToday,
   onStep,
   onView,
-  onCreate,
 }: {
   label: string;
   view: ViewKey;
   /** Day view is showing today. */
   isToday: boolean;
-  ctaLabel: string;
   onToday: () => void;
   onStep: (dir: -1 | 1) => void;
   onView: (view: ViewKey) => void;
-  onCreate: () => void;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-(--border-secondary) px-4 py-3">
@@ -69,9 +65,6 @@ export function CalendarToolbar({
             </Button>
           ))}
         </ButtonGroup>
-        <Button variant="primary" icon={<Plus className="size-4" />} onClick={onCreate}>
-          {ctaLabel}
-        </Button>
       </div>
     </div>
   );

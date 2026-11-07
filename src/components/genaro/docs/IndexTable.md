@@ -12,7 +12,7 @@ import { IndexTable } from '@/components/genaro';
 - `rows` are `{ id, cells, url }`, with one cell per heading. The primary cell is semibold; it defaults to the first non-media column, or you can set `primaryColumn`. When a row has a `url`, that cell links to the detail page (`/orders/1020`).
 - Status cells use Badge: product status is Active = `success`, Draft = `info`, Archived = neutral; payment and fulfillment badges get `progress` pips.
 - Rows are 52px tall (32px with `condensed`). Hover uses `bg-surface-hover` and selection `bg-surface-selected`.
-- The table scrolls horizontally when its columns overflow. When the table itself is narrower than 490px, each row stacks: checkbox and thumbnail on the left, the other cells beside them.
+- The table scrolls sideways when its columns overflow, a phone included: rows keep their columns rather than stacking one value per line, so each value stays under its heading.
 - Rows are selectable by default; `selectable={false}` removes the checkboxes. While rows are selected, the heading row shows "N selected". If you pass `promotedBulkActions` or `bulkActions`, a bulk-actions bar floats at the bottom of the card. `bulkActions` as `MenuItem[]` puts those items in a menu that opens above the ••• button.
 - The top bar only renders when you pass `tabs` or `filters`. It holds the tabs, a search and filter button, and a sort button. The search button swaps the tabs for the `Filters` bar and a Cancel button.
 - `onSortButtonClick` handles the sort button beside the search button, for example by opening a Popover of sort options. `canCreateNewView` shows a "+" after the tabs, which calls `onCreateNewView`.

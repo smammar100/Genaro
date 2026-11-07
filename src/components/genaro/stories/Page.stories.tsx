@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { fn } from "storybook/test";
 import {
   Badge,
+  Button,
   Card,
   DescriptionList,
   IndexTable,
@@ -62,9 +63,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Every route returns one Page: its title, its one primary action and its
- * content, 998px wide.
- * @summary the title, one primary action and the content
+ * Every route returns one Page: its title and its one primary action in the
+ * header card, then its content, 998px wide.
+ * @summary the header card, one primary action and the content
  */
 export const Default: Story = {};
 
@@ -199,6 +200,38 @@ export const WithControls: Story = {
     children: (
       <Card title="New leads">
         <p className="body-md">12 deals, £148,320.00 in total.</p>
+      </Card>
+    ),
+  },
+};
+
+/**
+ * Controls that set what the whole page shows, such as Daily jobs' date
+ * switcher, sit in a row at the foot of the header card, with the day's
+ * counts on the right.
+ * @summary a date switcher row inside the header card
+ */
+export const WithToolbar: Story = {
+  args: {
+    title: "Daily jobs",
+    subtitle: "Post the day's jobs for the team. Anyone can add one, pick one up and mark it completed.",
+    fullWidth: true,
+    primaryAction: { content: "Add job", onAction: fn() },
+    toolbar: (
+      <>
+        <div className="flex items-center gap-2">
+          <Button icon="ChevronLeftMinor" accessibilityLabel="Previous day" onClick={fn()} />
+          <Button disclosure onClick={fn()}>
+            Today, Saturday 7 November
+          </Button>
+          <Button icon="ChevronRightMinor" accessibilityLabel="Next day" onClick={fn()} />
+        </div>
+        <span className="body-sm tabular-nums text-(--text-secondary)">6 to pick up · 0 picked up · 0 done</span>
+      </>
+    ),
+    children: (
+      <Card title="Jobs">
+        <p className="body-md">Take OY67 RKJ to the car wash.</p>
       </Card>
     ),
   },

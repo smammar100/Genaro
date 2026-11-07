@@ -1,6 +1,5 @@
 "use client";
 
-import { Page } from "@/components/genaro";
 import { SharedCalendar } from "@/components/calendar/shared-calendar";
 
 /**
@@ -10,16 +9,12 @@ import { SharedCalendar } from "@/components/calendar/shared-calendar";
  */
 export default function AppointmentsPage() {
   return (
-    <Page
+    <SharedCalendar
       title="Appointments"
       subtitle="All booked customer test drives and viewings. Schedule new ones and see what is coming up."
-      fullWidth
-    >
-      <SharedCalendar
-        kinds={["appt"]}
-        ctaLabel="Book appointment"
-        lockCreateKind
-      />
-    </Page>
+      kinds={["appt"]}
+      ctaLabel="Book appointment"
+      lockCreateKind
+    />
   );
 }

@@ -105,6 +105,9 @@ export function AdminTopBar({
       : []),
   ];
 
+  // On a phone the field is about 130px wide at the 16px touch size, so the
+  // full placeholder ended mid-word; "Search" fits.
+  const narrow = React.useSyncExternalStore(subscribeNarrow, isNarrow, () => false);
   const sidebarLabel = navigationOpen ? "Hide sidebar" : "Show sidebar";
   const logo = (
     <span className="flex min-w-0 items-center gap-2">
@@ -158,7 +161,7 @@ export function AdminTopBar({
           <TopBar
             logo={logo}
             storeName={user?.name || handle || "Account"}
-            searchPlaceholder="Search vehicles and pages"
+            searchPlaceholder={narrow ? "Search" : "Search vehicles and pages"}
             searchId="tour-search"
             onSearchFocus={() => {
               // Blur first: the palette's dialog returns focus to whatever
@@ -185,4 +188,14 @@ export function AdminTopBar({
       ) : null}
     </Popover>
   );
+}
+
+const NARROW = "(max-width: 767px)";
+function subscribeNarrow(onChange: () => void) {
+  const query = window.matchMedia(NARROW);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+function isNarrow() {
+  return window.matchMedia(NARROW).matches;
 }

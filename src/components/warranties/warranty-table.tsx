@@ -144,7 +144,8 @@ export function WarrantyTable({
           { title: "Remaining" },
           { title: "Claims", alignment: "end" as const },
           { title: "Status" },
-          { title: "Actions" },
+          // Right-aligned, so each row's button lines up under the heading.
+          { title: "Actions", alignment: "end" as const },
         ]
       : [
           { title: "Vehicle" },
@@ -154,7 +155,7 @@ export function WarrantyTable({
           { title: "Purchase" },
           { title: "Cost", alignment: "end" as const },
           { title: "Status" },
-          { title: "Actions" },
+          { title: "Actions", alignment: "end" as const },
         ];
 
   return (
@@ -294,7 +295,6 @@ function RowActions({
       >
         <Button
           size="micro"
-          variant="tertiary"
           onClick={() => onFileClaim?.(row)}
           disabled={!canClaim}
         >

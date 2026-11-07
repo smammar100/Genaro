@@ -1,7 +1,7 @@
 "use client";
 
 import "./daily-jobs.css";
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type KeyboardEvent } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import {
   ActionList,
@@ -14,6 +14,8 @@ import {
   EmptyState,
   EmptyStateIllustration,
   IndexTable,
+  Modal,
+  Page,
   Popover,
   Select,
   SkeletonBodyText,
@@ -48,8 +50,10 @@ const addDays = (key: string, n: number) => {
   d.setDate(d.getDate() + n);
   return dayKey(d);
 };
-function dayLabel(key: string, today: string): string {
-  const name = fromKey(key).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+/** "Today, Saturday 7 November"; `short` gives "Today, Sat 7 Nov" for a phone. */
+function dayLabel(key: string, today: string, short = false): string {
+  const len = short ? "short" : "long";
+  const name = fromKey(key).toLocaleDateString("en-GB", { weekday: len, day: "numeric", month: len });
   if (key === today) return `Today, ${name}`;
   if (key === addDays(today, 1)) return `Tomorrow, ${name}`;
   if (key === addDays(today, -1)) return `Yesterday, ${name}`;
@@ -71,27 +75,31 @@ function DayStepper({ day, today, onChange }: { day: string; today: string; onCh
   const [open, setOpen] = useState(false);
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button icon={<ChevronLeft />} accessibilityLabel="Previous day" onClick={() => onChange(addDays(day, -1))} />
-      <Popover
-        active={open}
-        onClose={() => setOpen(false)}
-        sectioned
-        activator={
-          <Button icon={<CalendarDays />} disclosure ariaExpanded={open} onClick={() => setOpen((o) => !o)}>
-            {dayLabel(day, today)}
-          </Button>
-        }
-      >
-        <DatePicker
-          key={day}
-          selected={fromKey(day)}
-          onChange={(r) => {
-            onChange(dayKey(r.start));
-            setOpen(false);
-          }}
-        />
-      </Popover>
-      <Button icon={<ChevronRight />} accessibilityLabel="Next day" onClick={() => onChange(addDays(day, 1))} />
+      {/* Arrows and date stay on one line; only "Back to today" wraps. */}
+      <div className="flex items-center gap-2">
+        <Button icon={<ChevronLeft />} accessibilityLabel="Previous day" onClick={() => onChange(addDays(day, -1))} />
+        <Popover
+          active={open}
+          onClose={() => setOpen(false)}
+          sectioned
+          activator={
+            <Button icon={<CalendarDays />} disclosure ariaExpanded={open} onClick={() => setOpen((o) => !o)}>
+              <span className="max-sm:hidden">{dayLabel(day, today)}</span>
+              <span className="sm:hidden">{dayLabel(day, today, true)}</span>
+            </Button>
+          }
+        >
+          <DatePicker
+            key={day}
+            selected={fromKey(day)}
+            onChange={(r) => {
+              onChange(dayKey(r.start));
+              setOpen(false);
+            }}
+          />
+        </Popover>
+        <Button icon={<ChevronRight />} accessibilityLabel="Next day" onClick={() => onChange(addDays(day, 1))} />
+      </div>
       {day !== today ? (
         <Button variant="plain" onClick={() => onChange(today)}>
           Back to today
@@ -110,11 +118,26 @@ interface Staff {
 /** Shown for a job nobody was given: anyone can pick it up. */
 const OPEN_LABEL = "Open (unassigned)";
 
-function QuickAdd({
+/** "Today, Saturday 7 November" -> "today, Saturday 7 November", to follow "For". */
+const inSentence = (label: string) => label.replace(/^(Today|Tomorrow|Yesterday)/, (w) => w.toLowerCase());
+
+/**
+ * Posting a job: the page header's Add job opens this. Job, reg (optional,
+ * checked on submit), priority and who it's for; Enter in a field posts it.
+ * It closes once the job is on the sheet and starts empty and Open next time.
+ */
+function AddJobModal({
+  open,
+  day,
   staff,
+  onClose,
   onAdd,
 }: {
+  open: boolean;
+  /** The day the job goes on, as the date switcher says it. */
+  day: string;
   staff: Staff[];
+  onClose: () => void;
   onAdd: (title: string, priority: DailyJobPriority, reg: string, assignedTo: string | null) => Promise<boolean>;
 }) {
   const [title, setTitle] = useState("");
@@ -125,8 +148,16 @@ function QuickAdd({
   const [assignee, setAssignee] = useState("");
   const [saving, setSaving] = useState(false);
   const err = tried ? registrationError(reg) : undefined;
-  async function submit(e: FormEvent) {
-    e.preventDefault();
+
+  function close() {
+    setTitle("");
+    setReg("");
+    setTried(false);
+    setPriority("normal");
+    setAssignee("");
+    onClose();
+  }
+  async function submit() {
     if (!title.trim() || saving) return;
     if (registrationError(reg)) {
       setTried(true);
@@ -135,34 +166,53 @@ function QuickAdd({
     setSaving(true);
     const ok = await onAdd(title.trim(), priority, reg, assignee || null);
     setSaving(false);
-    if (!ok) return;
-    setTitle("");
-    setReg("");
-    setTried(false);
-    setPriority("normal");
-    setAssignee("");
+    if (ok) close();
   }
+  // The buttons are in the modal's footer, outside the form, so Enter in a
+  // text field posts the job here.
+  function onKeyDown(e: KeyboardEvent<HTMLFormElement>) {
+    if (e.key === "Enter" && (e.target as HTMLElement).tagName === "INPUT") {
+      e.preventDefault();
+      void submit();
+    }
+  }
+
   return (
-    <form onSubmit={submit} className="flex flex-wrap items-start gap-2">
-      <div className="min-w-[220px] flex-1">
-        <TextField label="New job" labelHidden placeholder="Add a job, e.g. Take it to the car wash" value={title} onChange={setTitle} autoComplete="off" />
-      </div>
-      <div className="w-36">
-        <TextField label="Reg" labelHidden placeholder="Reg (optional)" value={reg} onChange={(v) => setReg(v.toUpperCase())} error={err} autoComplete="off" />
-      </div>
-      <div className="w-28">
-        <Select
-          label="Priority"
-          labelHidden
-          options={PRIORITIES.map((p) => ({ label: p.label, value: p.value }))}
-          value={priority}
-          onChange={(v) => setPriority(v as DailyJobPriority)}
-        />
-      </div>
-      <div className="w-60">
+    <Modal
+      open={open}
+      onClose={close}
+      title="Add job"
+      primaryAction={{ content: "Add job", onAction: () => void submit(), loading: saving, disabled: !title.trim() }}
+      secondaryActions={[{ content: "Cancel", onAction: close }]}
+    >
+      <form
+        onSubmit={(e: FormEvent) => {
+          e.preventDefault();
+          void submit();
+        }}
+        onKeyDown={onKeyDown}
+        className="flex flex-col gap-4"
+      >
+        <p className="body-md text-(--text-secondary)">{`For ${inSentence(day)}. Anyone on the team can pick it up.`}</p>
+        <TextField label="Job" placeholder="e.g. Take it to the car wash" value={title} onChange={setTitle} autoComplete="off" />
+        <div className="grid grid-cols-2 gap-3">
+          <TextField
+            label="Reg (optional)"
+            placeholder="OY67 RKJ"
+            value={reg}
+            onChange={(v) => setReg(v.toUpperCase())}
+            error={err}
+            autoComplete="off"
+          />
+          <Select
+            label="Priority"
+            options={PRIORITIES.map((p) => ({ label: p.label, value: p.value }))}
+            value={priority}
+            onChange={(v) => setPriority(v as DailyJobPriority)}
+          />
+        </div>
         <Select
           label="Assign to"
-          labelInline
           options={[
             { label: OPEN_LABEL, value: "" },
             // The avatar is decoration: the option's label already says the name.
@@ -179,11 +229,8 @@ function QuickAdd({
           value={assignee}
           onChange={setAssignee}
         />
-      </div>
-      <Button variant="primary" submit disabled={!title.trim()} loading={saving}>
-        Add job
-      </Button>
-    </form>
+      </form>
+    </Modal>
   );
 }
 
@@ -281,6 +328,7 @@ export function DaySheet() {
   const [people, setPeople] = useState<Map<string, string>>(new Map());
   // Who a job can be assigned to: active staff, by name.
   const [staff, setStaff] = useState<Staff[]>([]);
+  const [adding, setAdding] = useState(false);
   const { confirm, confirmDialog } = useConfirm();
 
   // The day lives in the address (?date=), so a sheet can be linked to.
@@ -384,16 +432,25 @@ export function DaySheet() {
   const past = day < today;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <DayStepper day={day} today={today} onChange={changeDay} />
-        {sorted ? (
-          <span className="body-sm text-(--text-secondary) tabular-nums">
-            {open} to pick up · {picked} picked up · {done} done
-          </span>
-        ) : null}
-      </div>
-
+    // The page header carries the day: the date switcher and its counts under
+    // the title, and Add job as the page's one primary action (2026-11-07).
+    // Past days are read-only.
+    <Page
+      title="Daily jobs"
+      subtitle="Post the day's jobs for the team. Anyone can add one, pick one up and mark it completed."
+      fullWidth
+      primaryAction={{ content: "Add job", disabled: past, onAction: () => setAdding(true) }}
+      toolbar={
+        <>
+          <DayStepper day={day} today={today} onChange={changeDay} />
+          {sorted ? (
+            <span className="body-sm text-(--text-secondary) tabular-nums">
+              {open} to pick up · {picked} picked up · {done} done
+            </span>
+          ) : null}
+        </>
+      }
+    >
       {loadError ? (
         <Banner tone="critical" title="Couldn't load this day's jobs">
           Check your connection, then reload the page.
@@ -401,11 +458,6 @@ export function DaySheet() {
       ) : null}
 
       <Card padding="0">
-        {past ? null : (
-          <div className="p-3">
-            <QuickAdd staff={staff} onAdd={add} />
-          </div>
-        )}
         {!sorted ? (
           loadError ? null : (
             <div className="p-4">
@@ -414,7 +466,7 @@ export function DaySheet() {
           )
         ) : sorted.length === 0 ? (
           <EmptyState compact illustration={<EmptyStateIllustration variant="checklist" />} heading={past ? "No jobs were posted for this day" : "No jobs for this day yet"}>
-            {past ? "Pick another day, or go back to today." : "Add the first one above. Anyone on the team can pick it up."}
+            {past ? "Pick another day, or go back to today." : "Use Add job to post the first one. Anyone on the team can pick it up."}
           </EmptyState>
         ) : (
           <IndexTable
@@ -520,7 +572,8 @@ export function DaySheet() {
           />
         )}
       </Card>
+      <AddJobModal open={adding} day={dayLabel(day, today)} staff={staff} onClose={() => setAdding(false)} onAdd={add} />
       {confirmDialog}
-    </div>
+    </Page>
   );
 }

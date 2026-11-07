@@ -82,7 +82,10 @@ function cell(title: string, column: string): HTMLElement {
   const headings = screen.getAllByRole("columnheader").map((h) => h.textContent?.trim());
   return rowFor(title).cells[headings.indexOf(column)];
 }
-const assignField = () => screen.getByRole("combobox", { name: "Assign to" });
+/** The Add job modal, opened from the page header's Add job. */
+const dialog = () => screen.getByRole("dialog", { name: "Add job" });
+const openAddJob = () => fireEvent.click(screen.getByRole("button", { name: "Add job" }));
+const assignField = () => within(dialog()).getByRole("combobox", { name: "Assign to" });
 
 async function renderSheet() {
   render(<DaySheet />);
@@ -94,6 +97,7 @@ async function renderSheet() {
 describe("posting a job", () => {
   it("offers Open first, then active staff by name; anyone who has left isn't offered", async () => {
     await renderSheet();
+    openAddJob();
     expect(assignField()).toHaveTextContent("Open (unassigned)");
     fireEvent.click(assignField());
     // What's read out: the avatars beside the names are hidden as decoration.
@@ -114,8 +118,9 @@ describe("posting a job", () => {
 
   it("posts an open job when nobody is chosen", async () => {
     await renderSheet();
-    fireEvent.change(screen.getByLabelText("New job"), { target: { value: "Collect the Astra" } });
-    fireEvent.click(screen.getByRole("button", { name: "Add job" }));
+    openAddJob();
+    fireEvent.change(within(dialog()).getByLabelText("Job"), { target: { value: "Collect the Astra" } });
+    fireEvent.click(within(dialog()).getByRole("button", { name: "Add job" }));
     await waitFor(() => expect(svc.add).toHaveBeenCalled());
     expect(svc.add).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Collect the Astra", assignedTo: null, createdBy: "user-abbas" }),
@@ -124,15 +129,28 @@ describe("posting a job", () => {
 
   it("posts a job for the staff member chosen, then starts the next one open again", async () => {
     await renderSheet();
-    fireEvent.change(screen.getByLabelText("New job"), { target: { value: "Collect the Astra" } });
+    openAddJob();
+    fireEvent.change(within(dialog()).getByLabelText("Job"), { target: { value: "Collect the Astra" } });
     fireEvent.click(assignField());
     fireEvent.click(screen.getByRole("option", { name: "Raza Jafri" }));
     expect(assignField()).toHaveTextContent("Raza Jafri");
-    fireEvent.click(screen.getByRole("button", { name: "Add job" }));
+    fireEvent.click(within(dialog()).getByRole("button", { name: "Add job" }));
     await waitFor(() => expect(svc.add).toHaveBeenCalledWith(expect.objectContaining({ assignedTo: "user-raza" })));
-    // The new job lands on the sheet, for Raza.
+    // The new job lands on the sheet, for Raza, and the modal closes.
     await waitFor(() => expect(cell("Collect the Astra", "Assigned to")).toHaveTextContent("Raza"));
-    await waitFor(() => expect(assignField()).toHaveTextContent("Open (unassigned)"));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Add job" })).toBeNull());
+    // The next one starts open again.
+    openAddJob();
+    expect(assignField()).toHaveTextContent("Open (unassigned)");
+  });
+
+  it("posts with Enter from the job field", async () => {
+    await renderSheet();
+    openAddJob();
+    const field = within(dialog()).getByLabelText("Job");
+    fireEvent.change(field, { target: { value: "Wash the Corsa" } });
+    fireEvent.keyDown(field, { key: "Enter" });
+    await waitFor(() => expect(svc.add).toHaveBeenCalledWith(expect.objectContaining({ title: "Wash the Corsa" })));
   });
 });
 
