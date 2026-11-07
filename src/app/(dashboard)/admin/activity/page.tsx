@@ -34,8 +34,7 @@ import type {
   User,
   Vehicle,
 } from "@/lib/types";
-import { Button, Card, EmptyState, Page, EmptyStateIllustration } from "@/components/genaro";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button, Card, EmptyState, Page, EmptyStateIllustration, SkeletonBodyText } from "@/components/genaro";
 import {
   FilterBar,
   matchesFilterState,
@@ -271,93 +270,112 @@ export default function ActivityLogPage() {
       subtitle="A company-wide audit trail of every action taken across the system. Filter by category, user or date."
       fullWidth
     >
-      <FilterBar
-        state={filters}
-        onChange={setFilters}
-        searchPlaceholder="Search description, reg, user…"
-        dateLabel="Activity"
-        selects={selectFilters}
-      />
+      {/* The filters head the log's own card: one block, filters over the
+          entries they narrow. */}
+      <Card className="gap-6">
+        <FilterBar
+          bare
+          state={filters}
+          onChange={setFilters}
+          searchPlaceholder="Search description, reg, user…"
+          dateLabel="Activity"
+          selects={selectFilters}
+        />
 
-      {!groups ? (
-        <Skeleton className="h-72" />
-      ) : groups.length === 0 ? (
-        <EmptyState illustration={<EmptyStateIllustration variant="timeline" />} heading="No activity">
-          Once people start using the system, every action lands here.
-        </EmptyState>
-      ) : (
-        <Card className="gap-6">
-          {groups.map(([label, items]) => (
-            <div key={label}>
-              <h2 className="mb-3 text-body font-semibold text-(--text-secondary)">
-                {label}
-              </h2>
-              <ol className="flex flex-col">
-                {items.map((e, i) => {
-                  const user = userById.get(e.userId);
-                  const vehicle = e.vehicleId
-                    ? vehicleById.get(e.vehicleId)
-                    : undefined;
-                  const meta = actionMeta(e.actionType);
-                  const Icon = meta.icon;
-                  const last = i === items.length - 1;
-                  return (
-                    <li key={e.id} className="flex gap-3">
-                      {/* icon node + connecting rail */}
-                      <div className="flex flex-col items-center">
-                        <span
+        {!groups ? (
+          <SkeletonBodyText lines={8} />
+        ) : groups.length === 0 ? (
+          entries?.length ? (
+            <EmptyState
+              compact
+              illustration={<EmptyStateIllustration variant="search" />}
+              heading="No activity matches"
+              secondaryAction={{
+                content: "Clear filters",
+                onAction: () =>
+                  setFilters({ search: "", date: { from: null, to: null }, selects: {} }),
+              }}
+            >
+              Try another date, action or user.
+            </EmptyState>
+          ) : (
+            <EmptyState compact illustration={<EmptyStateIllustration variant="timeline" />} heading="No activity">
+              Once people start using the system, every action lands here.
+            </EmptyState>
+          )
+        ) : (
+          groups.map(([label, items]) => (
+              <div key={label}>
+                <h2 className="mb-3 text-body font-semibold text-(--text-secondary)">
+                  {label}
+                </h2>
+                <ol className="flex flex-col">
+                  {items.map((e, i) => {
+                    const user = userById.get(e.userId);
+                    const vehicle = e.vehicleId
+                      ? vehicleById.get(e.vehicleId)
+                      : undefined;
+                    const meta = actionMeta(e.actionType);
+                    const Icon = meta.icon;
+                    const last = i === items.length - 1;
+                    return (
+                      <li key={e.id} className="flex gap-3">
+                        {/* icon node + connecting rail */}
+                        <div className="flex flex-col items-center">
+                          <span
+                            className={cn(
+                              "z-10 grid h-8 w-8 shrink-0 place-items-center rounded-full ring-4 ring-(--bg-surface)",
+                              NODE_TINT,
+                            )}
+                          >
+                            <Icon className="h-4 w-4" />
+                          </span>
+                          {!last && (
+                            <span className="w-px flex-1 bg-(--border)" />
+                          )}
+                        </div>
+                        <div
                           className={cn(
-                            "z-10 grid h-8 w-8 shrink-0 place-items-center rounded-full ring-4 ring-(--bg-surface)",
-                            NODE_TINT,
+                            "flex flex-1 items-start justify-between gap-3 pt-1",
+                            last ? "pb-0" : "pb-5",
                           )}
                         >
-                          <Icon className="h-4 w-4" />
-                        </span>
-                        {!last && (
-                          <span className="w-px flex-1 bg-(--border)" />
-                        )}
-                      </div>
-                      <div
-                        className={cn(
-                          "flex flex-1 items-start justify-between gap-3 pt-1",
-                          last ? "pb-0" : "pb-5",
-                        )}
-                      >
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2 text-body">
-                            <span>{e.description}</span>
-                            {vehicle && (
-                              <Link
-                                href={vehicleDetailHref(vehicle.id, pathname)}
-                                className="rounded bg-(--bg-fill-secondary) px-1.5 py-0.5 font-code text-caption text-(--text) hover:text-(--text-link)"
-                              >
-                                {vehicle.registration}
-                              </Link>
-                            )}
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2 text-body">
+                              <span>{e.description}</span>
+                              {vehicle && (
+                                <Link
+                                  href={vehicleDetailHref(vehicle.id, pathname)}
+                                  className="rounded bg-(--bg-fill-secondary) px-1.5 py-0.5 font-code text-caption text-(--text) hover:text-(--text-link)"
+                                >
+                                  {vehicle.registration}
+                                </Link>
+                              )}
+                            </div>
+                            <div className="mt-0.5 text-caption text-(--text-secondary)">
+                              {actionLabel(e.actionType)} · {user?.name ?? "—"}
+                            </div>
                           </div>
-                          <div className="mt-0.5 text-caption text-(--text-secondary)">
-                            {actionLabel(e.actionType)} · {user?.name ?? "—"}
-                          </div>
+                          <span className="shrink-0 text-caption text-(--text-secondary)">
+                            {formatRelativeTime(e.createdAt)}
+                          </span>
                         </div>
-                        <span className="shrink-0 text-caption text-(--text-secondary)">
-                          {formatRelativeTime(e.createdAt)}
-                        </span>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
-          ))}
-          {nextCursor && (
-            <div className="flex justify-center border-t border-(--border-secondary) pt-4">
-              <Button onClick={() => void loadMore()} loading={loadingMore}>
-                Load older activity
-              </Button>
-            </div>
-          )}
-        </Card>
-      )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+          ))
+        )}
+        {/* Also under "No activity matches": older entries may match. */}
+        {nextCursor && groups && (
+          <div className="flex justify-center border-t border-(--border-secondary) pt-4">
+            <Button onClick={() => void loadMore()} loading={loadingMore}>
+              Load older activity
+            </Button>
+          </div>
+        )}
+      </Card>
       {nextCursor &&
         (filters.search.trim() !== "" ||
           filters.date.from !== null ||
