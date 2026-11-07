@@ -89,42 +89,34 @@ export const authService = {
   },
 
   /**
-   * Upload your own profile picture (0068) and set it on your user: it shows
-   * wherever your initials did. Squared off and shrunk first; returns its
+   * Upload your own profile picture and set it on your user: it shows
+   * wherever your initials did. Shrunk to a small JPEG here, then stored by
+   * /api/profile/avatar (which makes the bucket if 0068 hasn't). Returns its
    * public address.
    */
-  async uploadOwnAvatar(file: File, user: Pick<User, "id" | "companyId">): Promise<string> {
+  async uploadOwnAvatar(file: File): Promise<string> {
     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
       throw new Error("Use a PNG, JPG or WebP picture.");
     }
     if (file.size > 12 * 1024 * 1024) throw new Error("That picture is over 12 MB.");
     const { default: imageCompression } = await import("browser-image-compression");
     const small = await imageCompression(file, { maxSizeMB: 0.2, maxWidthOrHeight: 256, useWebWorker: true, fileType: "image/jpeg" });
-    const path = `${user.companyId}/${user.id}/avatar.jpg`;
-    const supabase = createClient();
-    const { error: upErr } = await supabase.storage
-      .from("avatars")
-      .upload(path, small, { contentType: "image/jpeg", upsert: true });
-    if (upErr) {
-      throw new Error(
-        /bucket not found/i.test(upErr.message)
-          ? "Profile pictures need database update 0068. Apply it, then try again."
-          : upErr.message,
-      );
-    }
-    // Cache-bust, so a new picture shows at once where the old one was.
-    const url = `${supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
-    const { error } = await supabase.from("users").update({ avatar_url: url }).eq("id", user.id);
-    if (error) throw error;
+    const form = new FormData();
+    form.append("file", new File([small], "avatar.jpg", { type: "image/jpeg" }));
+    const res = await fetch("/api/profile/avatar", { method: "POST", body: form });
+    const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+    if (!res.ok || !body.url) throw new Error(body.error ?? "Couldn't save the picture.");
     invalidate(NS);
-    return url;
+    return body.url;
   },
 
   /** Back to initials. */
-  async clearOwnAvatar(userId: UUID): Promise<void> {
-    const supabase = createClient();
-    const { error } = await supabase.from("users").update({ avatar_url: null }).eq("id", userId);
-    if (error) throw error;
+  async clearOwnAvatar(): Promise<void> {
+    const res = await fetch("/api/profile/avatar", { method: "DELETE" });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(body.error ?? "Couldn't remove the picture.");
+    }
     invalidate(NS);
   },
 

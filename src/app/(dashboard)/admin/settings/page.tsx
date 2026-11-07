@@ -306,7 +306,7 @@ function ProfileSection() {
     if (!file || !user) return;
     setPicturing(true);
     try {
-      await authService.uploadOwnAvatar(file, user);
+      await authService.uploadOwnAvatar(file);
       await revalidate({ force: true });
       toast.success("Picture updated");
     } catch (err) {
@@ -320,7 +320,7 @@ function ProfileSection() {
     if (!user) return;
     setPicturing(true);
     try {
-      await authService.clearOwnAvatar(user.id);
+      await authService.clearOwnAvatar();
       await revalidate({ force: true });
       toast.success("Picture removed");
     } catch (err) {
