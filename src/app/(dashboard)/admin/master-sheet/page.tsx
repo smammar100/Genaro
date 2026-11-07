@@ -401,6 +401,11 @@ const FILTER_FIELDS: FilterField[] = [
   { key: "totalBuyingPrice", label: "Total buying price", kind: "num" },
   { key: "sellingPrice", label: "Selling price", kind: "num" },
   { key: "sheetProfit", label: "S - P", kind: "num", get: sheetProfit },
+  // Dates: before, after, between (the tablecn filters, 2026-11-07).
+  { key: "invoiceDate", label: "Invoice date", kind: "date" },
+  { key: "receivedDate", label: "Vehicle receiving date", kind: "date" },
+  { key: "motExpiry", label: "MOT expiry", kind: "date" },
+  { key: "dateSold", label: "Date sold", kind: "date" },
 ];
 
 /** Columns per section, for the tab badges. */

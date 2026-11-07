@@ -1,49 +1,27 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
-import { Columns3, Filter } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Columns3 } from "lucide-react";
 import {
   Button,
-  Combobox,
   Popover,
-  Select,
-  Tag,
+  TableFilterMenu,
   TextField,
+  type TableFilterField,
+  type TableFilterRule,
+  type TableJoin,
 } from "@/components/genaro";
 
-type Option = { value: string; label: string };
-
-/** The number fields' operators, whose value is typed as a number. */
-const NUMBER_OPS = ["gte", "lte", "eq"];
-
-interface SheetFilterBuilder {
-  fields: Option[];
-  field: string;
-  onFieldChange: (field: string) => void;
-  ops: Option[];
-  op: string;
-  onOpChange: (op: string) => void;
-  value: string;
-  /** The field's own values. Given, "is" and "is not" pick from them. */
-  valueOptions?: Option[];
-  onValueChange: (value: string) => void;
-  /** Adds the condition (and closes the panel when it was valid). */
-  onAdd: () => void;
-}
-
 interface SheetToolbarProps {
-  /** "21 of 72 shown". */
-  columnsLabel: string;
-  /** The column picker, shown in a popover from the columns button. */
+  /** The filterable columns and the rules on them (TableFilterMenu). */
+  filterFields: TableFilterField[];
+  rules: TableFilterRule[];
+  join: TableJoin;
+  onFiltersChange: (rules: TableFilterRule[], join: TableJoin) => void;
+  /** How many columns the person hid, shown on the Columns button. */
+  hiddenColumns: number;
+  /** The column picker, shown in a popover from the Columns button. */
   columnsPanel: ReactNode;
-  /** Applied conditions, shown as removable tags under the toolbar. */
-  filters: { id: number; label: string }[];
-  onRemoveFilter: (id: number) => void;
-  /** Removes every applied filter at once. */
-  onClearFilters: () => void;
-  filterOpen: boolean;
-  onFilterOpenChange: (open: boolean) => void;
-  builder: SheetFilterBuilder;
   search: string;
   onSearchChange: (value: string) => void;
   /** Extra controls before the search field. */
@@ -51,136 +29,66 @@ interface SheetToolbarProps {
 }
 
 /**
- * The one toolbar row inside the sheet's card: columns, filter and search
- * (Airtable-style), with the applied filters as tags beneath it.
+ * The one toolbar row inside the sheet's card, after tablecn's advanced
+ * toolbar (2026-11-07): Filter opens its list of rules and Columns picks the
+ * columns, side by side; the search, at the other end, finds a car by reg,
+ * stock ID or make. Sorting is in each column header's menu (the Sort button
+ * came off at the user's request).
  */
 export function SheetToolbar({
-  columnsLabel,
+  filterFields,
+  rules,
+  join,
+  onFiltersChange,
+  hiddenColumns,
   columnsPanel,
-  filters,
-  onRemoveFilter,
-  onClearFilters,
-  filterOpen,
-  onFilterOpenChange,
-  builder,
   search,
   onSearchChange,
   actions,
 }: SheetToolbarProps) {
   const [columnsOpen, setColumnsOpen] = useState(false);
-  const filterLabel =
-    filters.length === 0
-      ? "Filter"
-      : `${filters.length} ${filters.length === 1 ? "filter" : "filters"}`;
-
-  function submit(e: FormEvent) {
-    e.preventDefault();
-    builder.onAdd();
-  }
-
   return (
-    <div className="flex flex-col gap-2 border-b border-(--border-secondary) px-3 py-2">
-      <div className="flex flex-wrap items-center gap-1">
-        <Popover
-          active={columnsOpen}
-          onClose={() => setColumnsOpen(false)}
-          activator={
-            <Button
-              variant="tertiary"
-              icon={<Columns3 className="size-4" />}
-              ariaExpanded={columnsOpen}
-              onClick={() => setColumnsOpen((open) => !open)}
-            >
-              {columnsLabel}
-            </Button>
-          }
-        >
-          {columnsPanel}
-        </Popover>
-        <Popover
-          active={filterOpen}
-          onClose={() => onFilterOpenChange(false)}
-          sectioned
-          activator={
-            <Button
-              variant="tertiary"
-              icon={<Filter className="size-4" />}
-              pressed={filters.length > 0}
-              ariaExpanded={filterOpen}
-              onClick={() => onFilterOpenChange(!filterOpen)}
-            >
-              {filterLabel}
-            </Button>
-          }
-        >
-          <form onSubmit={submit} className="flex w-72 flex-col gap-3">
-            <p className="heading-sm">Add condition</p>
-            <Select
-              label="Field"
-              options={builder.fields}
-              value={builder.field}
-              onChange={builder.onFieldChange}
-            />
-            <Select
-              label="Operator"
-              options={builder.ops}
-              value={builder.op}
-              onChange={builder.onOpChange}
-            />
-            {builder.valueOptions && builder.op !== "contains" ? (
-              <Combobox
-                label="Value"
-                placeholder="Search or pick a value"
-                options={builder.valueOptions}
-                value={builder.value}
-                onChange={(value) => builder.onValueChange(value)}
-                emptyState="No car has that value."
-              />
-            ) : (
-              <TextField
-                label="Value"
-                type={NUMBER_OPS.includes(builder.op) ? "number" : "text"}
-                value={builder.value}
-                onChange={(value) => builder.onValueChange(value)}
-                autoComplete="off"
-              />
-            )}
-            <div className="flex justify-end gap-2">
-              <Button onClick={() => onFilterOpenChange(false)}>Cancel</Button>
-              <Button variant="primary" submit disabled={!builder.value.trim()}>
-                Add filter
-              </Button>
-            </div>
-          </form>
-        </Popover>
-        <div className="ml-auto flex items-center gap-2">
-          {actions}
-          <div className="w-64">
-            <TextField
-              label="Search"
-              labelHidden
-              prefix="SearchMinor"
-              placeholder="Search reg, stock, make"
-              value={search}
-              onChange={(value) => onSearchChange(value)}
-              clearButton
-              onClearButtonClick={() => onSearchChange("")}
-            />
-          </div>
-        </div>
-      </div>
-      {filters.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          {filters.map((f) => (
-            <Tag key={f.id} onRemove={() => onRemoveFilter(f.id)}>
-              {f.label}
-            </Tag>
-          ))}
-          <Button variant="tertiary" size="micro" onClick={onClearFilters}>
-            Clear all
+    // A phone keeps Filter and Columns on the first line and gives the search
+    // the whole second line.
+    <div className="flex flex-wrap items-center gap-2 p-2">
+      <TableFilterMenu fields={filterFields} rules={rules} join={join} onChange={onFiltersChange} />
+      <Popover
+        active={columnsOpen}
+        onClose={() => setColumnsOpen(false)}
+        activator={
+          <Button
+            variant="tertiary"
+            icon={<Columns3 className="size-4" />}
+            pressed={hiddenColumns > 0}
+            ariaExpanded={columnsOpen}
+            onClick={() => setColumnsOpen((open) => !open)}
+            accessibilityLabel={
+              hiddenColumns > 0
+                ? `Columns: ${hiddenColumns} hidden`
+                : "Columns: choose which show"
+            }
+          >
+            Columns
+            {hiddenColumns > 0 ? <span className="p-tablemenu__count">{hiddenColumns}</span> : null}
           </Button>
-        </div>
-      )}
+        }
+      >
+        {columnsPanel}
+      </Popover>
+      <span className="flex-1" />
+      {actions}
+      <div className="order-last w-full sm:order-none sm:w-64">
+        <TextField
+          label="Search"
+          labelHidden
+          prefix="SearchMinor"
+          placeholder="Search reg, stock, make"
+          value={search}
+          onChange={(value) => onSearchChange(value)}
+          clearButton
+          onClearButtonClick={() => onSearchChange("")}
+        />
+      </div>
     </div>
   );
 }

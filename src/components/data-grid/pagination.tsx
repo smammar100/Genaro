@@ -1,101 +1,90 @@
 "use client";
 
-import * as React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Button, Select } from "@/components/genaro";
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
+const count = (n: number) => n.toLocaleString("en-GB");
 
 /**
- * Pagination controls. Shows row range ("Showing 26-50 of 114"), a rows-
- * per-page select, and prev/next buttons.
- *
- * Designed to sit at the bottom of a table card. The consumer owns the page
- * and page-size state.
+ * The pager at the foot of a table card, after tablecn's (2026-11-07). Which
+ * rows show (and how many are ticked) on the left; rows per page, page X of Y
+ * and the arrows on the right. First and last page join the arrows from a
+ * tablet up; a single page shows no arrows at all. On a phone the range and
+ * the arrows share the first line, rows per page and the page count the
+ * second. The consumer owns the page and page-size state.
  */
 export function DataGridPagination({
   page,
   pageSize,
+  pageSizes = PAGE_SIZE_OPTIONS,
   totalPages,
   total,
+  selected = 0,
   onPageChange,
   onPageSizeChange,
 }: {
   page: number;
   pageSize: number;
+  /** The rows-per-page choices. */
+  pageSizes?: number[];
   totalPages: number;
   total: number;
+  /** Rows ticked, shown beside the range when any are. */
+  selected?: number;
   onPageChange: (next: number) => void;
+  /** Shows the rows-per-page list. */
   onPageSizeChange?: (next: number) => void;
 }) {
   const firstRow = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const lastRow = Math.min(total, page * pageSize);
-
+  const first = page <= 1;
+  const last = page >= totalPages;
+  const icon = "size-4";
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-(--bg-surface-secondary) px-3 py-2 text-body">
-      <div className="flex items-center gap-3 text-(--text-secondary)">
-        <span className="tabular-nums">
-          {total === 0
-            ? "No rows"
-            : `Showing ${firstRow}-${lastRow} of ${total}`}
-        </span>
+    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 px-3 py-2">
+      <p className="body-md tabular-nums text-(--text-secondary)">
+        {total === 0 ? (
+          "No rows"
+        ) : (
+          <>
+            <span className="max-sm:hidden">Showing </span>
+            {count(firstRow)}–{count(lastRow)} of {count(total)}
+            {selected > 0 ? ` · ${count(selected)} selected` : ""}
+          </>
+        )}
+      </p>
+      {totalPages > 1 ? (
+        <div className="flex items-center gap-1 sm:order-last">
+          <span className="max-sm:hidden">
+            <Button variant="tertiary" icon={<ChevronsLeft className={icon} />} accessibilityLabel="First page" title="First page" disabled={first} onClick={() => onPageChange(1)} />
+          </span>
+          <Button variant="tertiary" icon={<ChevronLeft className={icon} />} accessibilityLabel="Previous page" title="Previous page" disabled={first} onClick={() => onPageChange(page - 1)} />
+          <Button variant="tertiary" icon={<ChevronRight className={icon} />} accessibilityLabel="Next page" title="Next page" disabled={last} onClick={() => onPageChange(page + 1)} />
+          <span className="max-sm:hidden">
+            <Button variant="tertiary" icon={<ChevronsRight className={icon} />} accessibilityLabel="Last page" title="Last page" disabled={last} onClick={() => onPageChange(totalPages)} />
+          </span>
+        </div>
+      ) : null}
+      <div className="flex items-center justify-between gap-6 max-sm:w-full sm:ml-auto">
         {onPageSizeChange && (
-          <div className="flex items-center gap-1.5">
-            <span>Rows per page</span>
-            <Select
-              value={String(pageSize)}
-              onValueChange={(v) => onPageSizeChange(Number(v))}
-            >
-              <SelectTrigger size="sm" className="h-7 min-h-7 w-[72px] min-w-0 bg-card">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PAGE_SIZE_OPTIONS.map((size) => (
-                  <SelectItem key={size} value={String(size)}>
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex items-center gap-2">
+            <span className="body-md text-(--text-secondary)">Rows per page</span>
+            <div className="w-20">
+              <Select
+                label="Rows per page"
+                labelHidden
+                options={pageSizes.map((size) => ({ value: String(size), label: String(size) }))}
+                value={String(pageSize)}
+                onChange={(v) => onPageSizeChange(Number(v))}
+              />
+            </div>
           </div>
         )}
-      </div>
-
-      <div className="flex items-center gap-2">
-        <span className="tabular-nums text-(--text-secondary)">
-          Page <span className="text-foreground">{page}</span> of{" "}
-          <span className="text-foreground">{totalPages}</span>
+        <span className="body-md tabular-nums text-(--text-secondary)">
+          Page <span className="text-(--text)">{count(page)}</span> of{" "}
+          <span className="text-(--text)">{count(totalPages)}</span>
         </span>
-        {/* Shopify index-table pager: a joined pair of small arrow buttons. */}
-        <div className="flex items-center overflow-hidden rounded-(--radius-200) border border-(--border) bg-(--bg-surface)">
-          <button
-            type="button"
-            aria-label="Previous"
-            title="Previous"
-            onClick={() => onPageChange(Math.max(1, page - 1))}
-            disabled={page <= 1}
-            className="flex h-7 w-8 items-center justify-center text-(--icon) transition-colors hover:bg-(--bg-fill-transparent-hover) hover:text-(--icon-hover) disabled:pointer-events-none disabled:text-(--icon-disabled)"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <span aria-hidden className="h-7 w-px bg-(--border)" />
-          <button
-            type="button"
-            aria-label="Next"
-            title="Next"
-            onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-            disabled={page >= totalPages}
-            className="flex h-7 w-8 items-center justify-center text-(--icon) transition-colors hover:bg-(--bg-fill-transparent-hover) hover:text-(--icon-hover) disabled:pointer-events-none disabled:text-(--icon-disabled)"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
       </div>
     </div>
   );

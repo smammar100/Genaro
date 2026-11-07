@@ -89,5 +89,24 @@ export { DescriptionList, type DescriptionListProps } from './DescriptionList';
 
 // Lists & tables
 export { IndexTable, type IndexTableProps, type IndexTableHeading, type IndexTableRow, type SortDirection } from './IndexTable';
+export { TableFilterMenu, type TableFilterMenuProps } from './TableFilterMenu';
+export { TableSortMenu, type TableSortMenuProps } from './TableSortMenu';
+export {
+  applyTableFilters,
+  applyTableSort,
+  countTableValues,
+  defaultTableRule,
+  isTableRuleActive,
+  matchesTableRule,
+  tableRuleId,
+  withTableOperator,
+  type TableFilterField,
+  type TableFilterOperator,
+  type TableFilterOption,
+  type TableFilterRule,
+  type TableFilterVariant,
+  type TableJoin,
+  type TableSortRule,
+} from './tableRules';
 export { DataTable, type DataTableProps } from './DataTable';
 export { ResourceList, ResourceItem, type ResourceListProps, type ResourceListItem, type ResourceItemProps } from './ResourceList';
