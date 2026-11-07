@@ -84,7 +84,16 @@ export function Popover({ activator, active, onClose, children, preferredAlignme
       // the viewport edge, and scroll inside it (long lists such as a
       // 70-column picker would otherwise run off the bottom, unreachable).
       const EDGE = 12;
-      if (preferredPosition === 'above') {
+      // Open the other way when the panel doesn't fit its own side and the
+      // other has more room: a list under a field low on a phone opened off
+      // the bottom of the screen (2026-11-07).
+      const below = window.innerHeight - r.bottom - GAP - EDGE;
+      const above = r.top - GAP - EDGE;
+      st.maxHeight = 'none';
+      const needed = panel.scrollHeight;
+      let up = preferredPosition === 'above';
+      if (up ? needed > above && below > above : needed > below && above > below) up = !up;
+      if (up) {
         st.top = 'auto';
         st.bottom = `${window.innerHeight - r.top + GAP}px`;
         st.maxHeight = `${Math.max(160, r.top - GAP - EDGE)}px`;

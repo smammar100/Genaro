@@ -22,7 +22,6 @@ import {
   Download,
   FunctionSquare,
   Plus,
-  Search,
   SlidersHorizontal,
   X,
 } from "lucide-react";
@@ -60,6 +59,15 @@ import {
   Select,
   type PageSecondaryAction,
   EmptyStateIllustration,
+  ActionList,
+  Popover as GenaroPopover,
+  applyTableFilters,
+  applyTableSort,
+  countTableValues,
+  type TableFilterField,
+  type TableFilterRule,
+  type TableJoin,
+  type TableSortRule,
 } from "@/components/genaro";
 import { SuggestInput } from "@/components/ui/suggest-input";
 import { SheetToolbar } from "@/components/master-sheet/sheet-toolbar";
@@ -70,12 +78,9 @@ import { optionLabel } from "@/lib/master-sheet";
 import { byText } from "@/lib/stock";
 import { affectsCostTotals, withDerivedCosts } from "@/lib/vehicle-costs";
 import {
-  cycleSort,
-  sortRows,
   toSortableDate,
   toSortableNumber,
   toSortableText,
-  type SortState,
 } from "@/lib/table-sort";
 
 /* ------------------------------------------------------------------ *
@@ -236,6 +241,8 @@ function CellInput({
 }
 
 const PAGE_SIZE = 50;
+/** The pager's rows-per-page choices. */
+const PAGE_SIZES = [25, 50, 100, 200];
 
 // Column-resize bounds (GEN-20). Columns never shrink below MIN so a header
 // stays clickable, nor grow past MAX so one column can't run off the screen.
@@ -257,9 +264,9 @@ const colWidthsKey = (csvName: string): string =>
 const colHiddenKey = (csvName: string): string =>
   `cc.vehicle-sheet.col-hidden.${csvName}`;
 
-/* ---- Filtering (Master Sheet "Variation C" filter-chip bar) -------------- */
+/* ---- Filtering (after tablecn's advanced toolbar, 2026-11-07) ------------- */
 
-export type FilterKind = "text" | "num";
+export type FilterKind = "text" | "num" | "date";
 export interface FilterField {
   /** A Vehicle field, or — with `get` — any id unique among the fields. */
   key: keyof Vehicle | (string & {});
@@ -267,72 +274,32 @@ export interface FilterField {
   kind: FilterKind;
   /** Read a derived value instead of `v[key]` (e.g. "Sold month"). */
   get?: (v: Vehicle) => unknown;
-  /** Stored value → the words the user types (e.g. `automatic` → "AUTO"). */
+  /** Stored value → the words the grid shows (e.g. `automatic` → "AUTO"). */
   options?: { value: string; label: string }[];
-  /** A short set of values (a month, a vehicle type): no "contains". */
+  /** A short set of values (a month, a vehicle type): picked from a list. */
   fixed?: boolean;
 }
 
-interface FilterCond {
-  id: number;
-  key: FilterField["key"];
-  label: string;
-  kind: FilterKind;
-  op: string;
-  value: string;
-  get?: (v: Vehicle) => unknown;
-  options?: { value: string; label: string }[];
-}
-
-const TEXT_OPS = [
-  { v: "is", l: "is" },
-  { v: "not", l: "is not" },
-  { v: "contains", l: "contains" },
-];
-// In words: "Mileage at least 50000" reads where "≥" made people stop.
-const NUM_OPS = [
-  { v: "gte", l: "at least" },
-  { v: "lte", l: "at most" },
-  { v: "eq", l: "equals" },
-];
 /**
- * The operators a field offers. A field with a fixed set of values (vehicle
- * type, fuel, location) is one of them or not, so it has no "contains".
+ * The rule engine's variant for a field: numbers and dates compare, a field
+ * with a fixed set of values is picked from a list with counts, the rest is
+ * text ("contains", "is").
  */
-function opsFor(field: FilterField | undefined) {
-  if (field?.kind === "num") return NUM_OPS;
-  return field?.options || field?.fixed ? TEXT_OPS.filter((o) => o.v !== "contains") : TEXT_OPS;
+function variantOf(f: FilterField): TableFilterField["variant"] {
+  if (f.kind === "num") return "number";
+  if (f.kind === "date") return "date";
+  return f.options || f.fixed ? "select" : "text";
 }
 
-/** The operators as the builder's list shows them: sentence case. */
-const opOptions = (field: FilterField | undefined) =>
-  opsFor(field).map((o) => ({ value: o.v, label: o.l.charAt(0).toUpperCase() + o.l.slice(1) }));
-function opLabel(op: string): string {
-  return [...TEXT_OPS, ...NUM_OPS].find((o) => o.v === op)?.l ?? op;
-}
-function kindOf(fields: FilterField[], key: FilterField["key"]): FilterKind {
-  return fields.find((f) => f.key === key)?.kind ?? "text";
-}
-function matchCond(c: FilterCond, v: Vehicle): boolean {
-  const stored = c.get ? c.get(v) : v[c.key as keyof Vehicle];
-  // Match on what the user sees ("AUTO"), not the stored value ("automatic").
-  const raw = c.options ? (optionLabel(c.options, stored) ?? stored) : stored;
-  if (c.kind === "num") {
-    const n = typeof raw === "number" ? raw : Number(raw);
-    const fv = Number(c.value);
-    // An unparseable filter value can't constrain anything — keep the row.
-    if (Number.isNaN(fv)) return true;
-    // A null/NaN row value can't satisfy a numeric comparison — exclude it.
-    if (raw === null || raw === undefined || Number.isNaN(n)) return false;
-    if (c.op === "gte") return n >= fv;
-    if (c.op === "lte") return n <= fv;
-    return n === fv;
-  }
-  const s = String(raw ?? "").toLowerCase();
-  const fv = c.value.toLowerCase();
-  if (c.op === "contains") return s.includes(fv);
-  if (c.op === "not") return s !== fv;
-  return s === fv;
+/**
+ * What a field holds for a car, as the grid shows it ("AUTO", not
+ * "automatic"): rules compare what people see. Text is trimmed so a stray
+ * space in the sheet doesn't make a second "FORECOURT".
+ */
+function fieldValue(f: FilterField, v: Vehicle): unknown {
+  const stored = f.get ? f.get(v) : v[f.key as keyof Vehicle];
+  const shown = f.options ? (optionLabel(f.options, stored) ?? stored) : stored;
+  return typeof shown === "string" ? shown.trim() : shown;
 }
 
 const STATUS_TONE: Record<VehicleStatus, string> = {
@@ -666,15 +633,20 @@ export interface SheetSectionContext {
 const sectionKey = (csvName: string): string =>
   `cc.vehicle-sheet.section.${csvName}`;
 
-/** sessionStorage key for a sheet's filters, search, sort and page. */
-const viewKey = (csvName: string): string => `cc.vehicle-sheet.view.${csvName}`;
+/**
+ * sessionStorage key for a sheet's filters, search, sort and page. "v2" since
+ * the rules became tablecn-style (2026-11-07); older entries are ignored.
+ */
+const viewKey = (csvName: string): string => `cc.vehicle-sheet.view.v2.${csvName}`;
 
-/** What `viewKey` holds: the filters by field key (their getters are code). */
+/** What `viewKey` holds. Rules name their field by key (the getters are code). */
 interface SavedView {
-  filters?: { key: string; op: string; value: string }[];
+  rules?: TableFilterRule[];
+  join?: TableJoin;
+  sorting?: TableSortRule[];
   search?: string;
-  sort?: SortState | null;
   page?: number;
+  pageSize?: number;
 }
 
 /**
@@ -801,18 +773,10 @@ export function VehicleSheet({
   const [partners, setPartners] = useState<DealerPartner[]>([]);
   const [quick, setQuick] = useState<QuickAdd>({ ...EMPTY_QUICK_ADD });
   const [adding, setAdding] = useState(false);
-  // Filter-chip bar (Variation C) state.
-  const [filters, setFilters] = useState<FilterCond[]>([]);
+  // Filter rules (column, condition, value), joined by "and" or "or".
+  const [rules, setRules] = useState<TableFilterRule[]>([]);
+  const [join, setJoin] = useState<TableJoin>("and");
   const [search, setSearch] = useState("");
-  const [builderOpen, setBuilderOpen] = useState(false);
-  const [bField, setBField] = useState<FilterField["key"]>(
-    filterFields[0]?.key ?? "make",
-  );
-  const [bOp, setBOp] = useState(
-    (filterFields[0]?.kind ?? "text") === "num" ? "gte" : "is",
-  );
-  const [bValue, setBValue] = useState("");
-  const filterId = useRef(1);
 
   // Which edges of the grid have more content beyond them. Drives the scroll
   // shadows (GEN-69) — recomputed on scroll and whenever the container or its
@@ -1216,8 +1180,13 @@ export function VehicleSheet({
     return out;
   }, [cols, sections, workbook]);
 
-  /** Active column sort, or null for the grid's natural order (GEN-92). */
-  const [sort, setSort] = useState<SortState | null>(null);
+  /** Sort rules, first rule first; none keeps the grid's natural order (GEN-92). */
+  const [sorting, setSorting] = useState<TableSortRule[]>([]);
+  /** Rows per page, from the pager's list. */
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
+  /** The column whose header menu is open. */
+  const [headerMenu, setHeaderMenu] = useState<string | null>(null);
+  const sortOf = (c: ColDef) => sorting.find((x) => x.field === colKey(c));
 
   // Filters, search, sort and page survive leaving the sheet: opening a car
   // and coming back used to drop them (call 2026-10-31). Kept per browser tab
@@ -1234,27 +1203,16 @@ export function VehicleSheet({
       const raw = sessionStorage.getItem(viewKey(csvName));
       if (raw) {
         const saved = JSON.parse(raw) as SavedView;
-        const restored = (saved.filters ?? []).flatMap((f): FilterCond[] => {
-          const fld = filterFields.find((x) => String(x.key) === f.key);
-          if (!fld) return [];
-          return [
-            {
-              id: filterId.current++,
-              key: fld.key,
-              label: fld.label,
-              kind: fld.kind,
-              get: fld.get,
-              options: fld.options,
-              op: f.op,
-              value: f.value,
-            },
-          ];
-        });
+        // Rules on a field the sheet no longer offers are dropped.
+        const known = new Set(filterFields.map((f) => String(f.key)));
         // Post-mount restore, same as the hidden columns above.
-        setFilters(restored);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setRules((saved.rules ?? []).filter((r) => known.has(r.field)));
+        setJoin(saved.join === "or" ? "or" : "and");
         setSearch(saved.search ?? "");
-        setSort(saved.sort ?? null);
+        setSorting(saved.sorting ?? []);
         setPage(saved.page ?? 1);
+        if (saved.pageSize && PAGE_SIZES.includes(saved.pageSize)) setPageSize(saved.pageSize);
       }
     } catch {
       // Unreadable entry: start with no filters.
@@ -1263,50 +1221,50 @@ export function VehicleSheet({
   }, [csvName, filterFields]);
   useEffect(() => {
     if (!viewRestored) return;
-    const view: SavedView = {
-      filters: filters.map((f) => ({ key: String(f.key), op: f.op, value: f.value })),
-      search,
-      sort,
-      page,
-    };
+    const view: SavedView = { rules, join, sorting, search, page, pageSize };
     try {
       sessionStorage.setItem(viewKey(csvName), JSON.stringify(view));
     } catch {
       // Blocked storage: the view still holds until the page is left.
     }
-  }, [viewRestored, csvName, filters, search, sort, page]);
+  }, [viewRestored, csvName, rules, join, sorting, search, page, pageSize]);
 
   /**
-   * The picked field's own values, for the filter's Value dropdown: people
-   * pick "FORECOURT" rather than type it (call 2026-10-31). Shown as the grid
-   * shows them, which is what `matchCond` compares. Text fields only; numbers
-   * keep a typed value.
+   * The filter fields as the rule engine sees them. A list field offers the
+   * values the cars hold, with how many hold each: people pick "FORECOURT"
+   * rather than type it (call 2026-10-31).
    */
-  const bValueOptions = useMemo(() => {
-    const fld = filterFields.find((f) => f.key === bField);
-    if (!fld || fld.kind === "num" || !vehicles) return undefined;
-    const seen = new Set<string>();
-    for (const v of vehicles) {
-      const stored = fld.get ? fld.get(v) : v[fld.key as keyof Vehicle];
-      const shown = fld.options ? (optionLabel(fld.options, stored) ?? stored) : stored;
-      const text = shown === null || shown === undefined ? "" : String(shown).trim();
-      if (text) seen.add(text);
-    }
-    return [...seen].sort(byText).map((text) => ({ value: text, label: text }));
-  }, [filterFields, bField, vehicles]);
+  const tableFields = useMemo<TableFilterField[]>(
+    () =>
+      filterFields.map((f) => {
+        const variant = variantOf(f);
+        const base = { id: String(f.key), label: f.label, variant };
+        if (variant !== "select") return base;
+        const counts = countTableValues(vehicles ?? [], (v) => fieldValue(f, v));
+        return {
+          ...base,
+          options: [...counts.keys()].sort(byText).map((value) => ({ value, label: value, count: counts.get(value) })),
+        };
+      }),
+    [filterFields, vehicles],
+  );
+  const fieldByKey = useMemo(() => new Map(filterFields.map((f) => [String(f.key), f])), [filterFields]);
+  const cellOf = useCallback(
+    (v: Vehicle, key: string) => {
+      const f = fieldByKey.get(key);
+      return f ? fieldValue(f, v) : undefined;
+    },
+    [fieldByKey],
+  );
 
   const filtered = useMemo(() => {
     if (!vehicles) return null;
     const q = search.trim().toLowerCase();
-    return vehicles.filter((v) => {
-      if (q) {
-        const hay =
-          `${v.registration} ${v.stockId} ${v.make} ${v.model}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
-      return filters.every((c) => matchCond(c, v));
-    });
-  }, [vehicles, search, filters]);
+    const found = q
+      ? vehicles.filter((v) => `${v.registration} ${v.stockId} ${v.make} ${v.model}`.toLowerCase().includes(q))
+      : vehicles;
+    return applyTableFilters(found, rules, join, tableFields, cellOf);
+  }, [vehicles, search, rules, join, tableFields, cellOf]);
 
   /**
    * Sorted view of `filtered` (GEN-92). Sorting sits between filtering and
@@ -1314,13 +1272,12 @@ export function VehicleSheet({
    * clicking "Web price" must surface the cheapest car in the filter, not the
    * cheapest of the 25 currently on screen.
    */
+  const colByKey = useMemo(() => new Map(allCols.map((c) => [colKey(c), c])), [allCols]);
   const sorted = useMemo(() => {
     if (!filtered) return null;
-    if (!sort) return filtered;
-    const col = allCols.find((c) => colKey(c) === sort.column);
-    if (!col) return filtered;
-    return sortRows(filtered, (v) => sortValueFor(col, v), sort.direction);
-  }, [filtered, sort, allCols]);
+    const active = sorting.filter((s) => colByKey.has(s.field));
+    return applyTableSort(filtered, active, (v, key) => sortValueFor(colByKey.get(key)!, v));
+  }, [filtered, sorting, colByKey]);
 
   // Keep the selection confined to currently-visible rows. Without this,
   // "select all" + a later filter/search change would keep counting (and
@@ -1337,46 +1294,21 @@ export function VehicleSheet({
     }
   }
 
-  function addFilter() {
-    const fld = filterFields.find((f) => f.key === bField);
-    if (!fld || !bValue.trim()) return;
-    setFilters((prev) => [
-      ...prev,
-      {
-        id: filterId.current++,
-        key: fld.key,
-        label: fld.label,
-        kind: fld.kind,
-        get: fld.get,
-        options: fld.options,
-        op: bOp,
-        value: bValue.trim(),
-      },
-    ]);
-    setBValue("");
-    setBuilderOpen(false);
-    setPage(1);
-  }
-
-  function removeFilter(id: number) {
-    setFilters((prev) => prev.filter((f) => f.id !== id));
-    setPage(1);
-  }
-
   function clearFilters() {
-    setFilters([]);
+    setRules([]);
+    setJoin("and");
     setPage(1);
   }
 
   const totalPages = sorted
-    ? Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+    ? Math.max(1, Math.ceil(sorted.length / pageSize))
     : 1;
   const safePage = Math.min(page, totalPages);
   const pagedRows = useMemo(() => {
     if (!sorted) return null;
-    const start = (safePage - 1) * PAGE_SIZE;
-    return sorted.slice(start, start + PAGE_SIZE);
-  }, [sorted, safePage]);
+    const start = (safePage - 1) * pageSize;
+    return sorted.slice(start, start + pageSize);
+  }, [sorted, safePage, pageSize]);
 
   /** Sums for the totals row, over every filtered row (not just this page). */
   const totals = useMemo(() => {
@@ -1654,61 +1586,110 @@ export function VehicleSheet({
                   )}
                   style={c.sticky ? { left: stickyLeft(c) } : undefined}
                   aria-sort={
-                    sort?.column === colKey(c)
-                      ? sort.direction === "asc"
-                        ? "ascending"
-                        : "descending"
-                      : "none"
+                    sortOf(c) ? (sortOf(c)!.desc ? "descending" : "ascending") : "none"
                   }
                 >
-                  {/* Click to sort: asc → desc → unsorted (GEN-92). */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSort((prev) => cycleSort(prev, colKey(c)))
+                  {/* Click for the column's menu: sort it either way, clear
+                      its sort or hide it, after tablecn's column header
+                      (2026-11-07). This is where the sheet sorts: its Sort
+                      button came off at the user's request. */}
+                  <GenaroPopover
+                    fullWidth
+                    active={headerMenu === colKey(c)}
+                    onClose={() => setHeaderMenu(null)}
+                    activator={
+                      <button
+                        type="button"
+                        aria-haspopup="menu"
+                        aria-expanded={headerMenu === colKey(c)}
+                        onClick={() =>
+                          setHeaderMenu((open) => (open === colKey(c) ? null : colKey(c)))
+                        }
+                        aria-label={
+                          workbook && isComputedCol(c)
+                            ? `${c.label} (calculated): sort or hide`
+                            : `${c.label}: sort or hide`
+                        }
+                        title={
+                          workbook && isComputedCol(c)
+                            ? `${c.label} · calculated from other columns`
+                            : c.label
+                        }
+                        className={cn(
+                          "flex w-full min-w-0 cursor-pointer items-center gap-1 pr-1 text-left text-caption hover:text-foreground",
+                          // Sheets with sections carry the client's long Excel
+                          // headers ("BCA ESSENTIAL CHECK / BCA ASSURED
+                          // CHARGE"): let them wrap to two lines, not clip.
+                          sections ? "min-h-10 py-1" : "h-8",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "min-w-0 text-foreground",
+                            sections ? "line-clamp-2" : "truncate",
+                          )}
+                        >
+                          {c.label}
+                        </span>
+                        {workbook && isComputedCol(c) && (
+                          <FunctionSquare
+                            aria-hidden
+                            className="size-3.5 shrink-0 text-(--icon-secondary)"
+                          />
+                        )}
+                        {sortOf(c) ? (
+                          sortOf(c)!.desc ? (
+                            <ArrowDown aria-hidden className="size-3 shrink-0 text-primary" />
+                          ) : (
+                            <ArrowUp aria-hidden className="size-3 shrink-0 text-primary" />
+                          )
+                        ) : (
+                          <ChevronsUpDown aria-hidden className="size-3 shrink-0 text-muted-foreground/40" />
+                        )}
+                      </button>
                     }
-                    aria-label={
-                      workbook && isComputedCol(c)
-                        ? `Sort by ${c.label} (calculated)`
-                        : `Sort by ${c.label}`
-                    }
-                    title={
-                      workbook && isComputedCol(c)
-                        ? `${c.label} · calculated from other columns`
-                        : c.label
-                    }
-                    className={cn(
-                      "flex w-full min-w-0 cursor-pointer items-center gap-1 pr-1 text-left text-caption hover:text-foreground",
-                      // Sheets with sections carry the client's long Excel
-                      // headers ("BCA ESSENTIAL CHECK / BCA ASSURED
-                      // CHARGE"): let them wrap to two lines, not clip.
-                      sections ? "min-h-10 py-1" : "h-8",
-                    )}
                   >
-                    <span
-                      className={cn(
-                        "min-w-0 text-foreground",
-                        sections ? "line-clamp-2" : "truncate",
-                      )}
-                    >
-                      {c.label}
-                    </span>
-                    {workbook && isComputedCol(c) && (
-                      <FunctionSquare
-                        aria-hidden
-                        className="size-3.5 shrink-0 text-(--icon-secondary)"
-                      />
-                    )}
-                    {sort?.column === colKey(c) ? (
-                      sort.direction === "asc" ? (
-                        <ArrowUp className="size-3 shrink-0 text-primary" />
-                      ) : (
-                        <ArrowDown className="size-3 shrink-0 text-primary" />
-                      )
-                    ) : (
-                      <ChevronsUpDown className="size-3 shrink-0 text-muted-foreground/40" />
-                    )}
-                  </button>
+                    <ActionList
+                      onActionAnyItem={() => setHeaderMenu(null)}
+                      sections={[
+                        {
+                          items: [
+                            {
+                              content: "Sort ascending",
+                              icon: "SortAscendingMajor",
+                              active: sortOf(c)?.desc === false,
+                              onAction: () => setSorting([{ field: colKey(c), desc: false }]),
+                            },
+                            {
+                              content: "Sort descending",
+                              icon: "SortDescendingMajor",
+                              active: sortOf(c)?.desc === true,
+                              onAction: () => setSorting([{ field: colKey(c), desc: true }]),
+                            },
+                            ...(sortOf(c)
+                              ? [
+                                  {
+                                    content: "Clear sort",
+                                    icon: "CancelSmallMinor" as const,
+                                    onAction: () =>
+                                      setSorting((prev) => prev.filter((x) => x.field !== colKey(c))),
+                                  },
+                                ]
+                              : []),
+                          ],
+                        },
+                        {
+                          items: [
+                            {
+                              content: "Hide column",
+                              icon: "HideMinor",
+                              onAction: () => toggle(colKey(c)),
+                            },
+                          ],
+                        },
+                      ]}
+                    />
+                  </GenaroPopover>
                   {/* Resize handle: a wide, easy-to-grab hit area (GEN-20)
                       straddling the right border, with a thin accent line
                       shown on hover. Drag to resize, double-click resets. */}
@@ -1740,7 +1721,7 @@ export function VehicleSheet({
           <tbody className="bg-card">
             {(pagedRows ?? []).map((v, idxOnPage) => {
               const isSelected = selected.has(v.id);
-              const idx = (safePage - 1) * PAGE_SIZE + idxOnPage;
+              const idx = (safePage - 1) * pageSize + idxOnPage;
               return (
                 <tr
                   key={v.id}
@@ -2001,7 +1982,7 @@ export function VehicleSheet({
           </tbody>
           {totals && (
             <TotalsRow
-              label={`${pluralize(list.length, "car", "cars")} · ${pluralize(filters.length, "filter", "filters")}`}
+              label={`${pluralize(list.length, "car", "cars")} · ${pluralize(rules.length, "filter", "filters")}`}
               labelSpan={1 + leadingSticky}
               cells={[
                 ...cols.slice(leadingSticky).map((c) => ({
@@ -2029,9 +2010,49 @@ export function VehicleSheet({
     rows: filtered,
   };
 
+  /** Filter, Columns and search, after tablecn's advanced toolbar (2026-11-07); sorting is in the column headers. */
+  const toolbar = (
+    <SheetToolbar
+      filterFields={tableFields}
+      rules={rules}
+      join={join}
+      onFiltersChange={(next, nextJoin) => {
+        setRules(next);
+        setJoin(nextJoin);
+        setPage(1);
+      }}
+      // The ones the person hid; a phone's own narrow-screen hiding doesn't count.
+      hiddenColumns={gridCols.filter((c) => !visible.has(colKey(c))).length}
+      columnsPanel={<div className="w-80">{columnsPanel}</div>}
+      search={search}
+      onSearchChange={(value) => {
+        setSearch(value);
+        setPage(1);
+      }}
+      actions={headerActions}
+    />
+  );
+
+  /** The pager under the grid: rows per page, page X of Y, first to last. */
+  const pager =
+    filtered && filtered.length > 0 ? (
+      <DataGridPagination
+        page={safePage}
+        pageSize={pageSize}
+        pageSizes={PAGE_SIZES}
+        totalPages={totalPages}
+        total={filtered.length}
+        selected={selected.size}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
+      />
+    ) : null;
+
   if (workbook) {
     const summaryLine = summary(filtered?.length ?? null, selected.size);
-    const bFieldDef = filterFields.find((f) => f.key === bField);
     return (
       <>
         {/* A Genaro Page bounded to the viewport under the top bar: the
@@ -2065,48 +2086,7 @@ export function VehicleSheet({
           {helper}
           {SectionHeader && <SectionHeader {...sectionContext} />}
           <GenaroCard padding="0" className="min-h-96 flex-1 gap-0">
-            <SheetToolbar
-              // "Columns", or "72 of 72" read as a count of cars (call 2026-10-31).
-              columnsLabel={`${cols.length} of ${gridCols.length} columns`}
-              columnsPanel={<div className="w-80">{columnsPanel}</div>}
-              filters={filters.map((f) => ({
-                id: f.id,
-                label: `${f.label} ${opLabel(f.op)} ${f.value}`,
-              }))}
-              onRemoveFilter={removeFilter}
-              onClearFilters={clearFilters}
-              filterOpen={builderOpen}
-              onFilterOpenChange={(open) => {
-                setBuilderOpen(open);
-                if (!open) setBValue("");
-              }}
-              builder={{
-                fields: filterFields.map((f) => ({
-                  value: String(f.key),
-                  label: f.label,
-                })),
-                field: String(bField),
-                onFieldChange: (key) => {
-                  setBField(key);
-                  // A value picked for the last field means nothing for this one.
-                  setBValue("");
-                  setBOp(kindOf(filterFields, key) === "num" ? "gte" : "is");
-                },
-                ops: opOptions(bFieldDef),
-                op: bOp,
-                onOpChange: setBOp,
-                value: bValue,
-                valueOptions: bValueOptions,
-                onValueChange: setBValue,
-                onAdd: addFilter,
-              }}
-              search={search}
-              onSearchChange={(value) => {
-                setSearch(value);
-                setPage(1);
-              }}
-              actions={headerActions}
-            />
+            {toolbar}
             {!filtered ? (
               <div className="p-4">
                 <Skeleton className="h-72" />
@@ -2117,13 +2097,13 @@ export function VehicleSheet({
               // nothing get a way back; an empty stock book gets the plain note.
               <div className="flex min-h-0 flex-1 items-center justify-center py-10">
                 {emptyState ??
-                  (filters.length > 0 || search.trim() !== "" ? (
+                  (rules.length > 0 || search.trim() !== "" ? (
                     <GenaroEmptyState illustration={<EmptyStateIllustration variant="search" plates />}
                       heading="No cars match these filters"
                       action={{
                         content: "Clear filters",
                         onAction: () => {
-                          setFilters([]);
+                          clearFilters();
                           setSearch("");
                           setPage(1);
                         },
@@ -2142,17 +2122,7 @@ export function VehicleSheet({
                 {renderGrid(filtered)}
               </div>
             )}
-            {filtered && filtered.length > PAGE_SIZE && (
-              <div className="border-t border-(--border-secondary)">
-                <DataGridPagination
-                  page={safePage}
-                  pageSize={PAGE_SIZE}
-                  totalPages={totalPages}
-                  total={filtered.length}
-                  onPageChange={setPage}
-                />
-              </div>
-            )}
+            {pager}
           </GenaroCard>
         </Page>
         {children}
@@ -2202,147 +2172,7 @@ export function VehicleSheet({
           </div>
         </div>
 
-        {/* Variation C — filter-chip bar: applied chips + add-condition builder */}
-        <div className="flex flex-col gap-2 rounded-xl border border-(--border) bg-card px-3 py-2 shadow-(--shadow-100)">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-body text-(--text-secondary)">
-              Filters
-            </span>
-            {filters.length === 0 && (
-              <span className="text-body text-muted-foreground">
-                No filters applied
-              </span>
-            )}
-            {filters.map((f) => (
-              <span
-                key={f.id}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-(--bg-fill-transparent-secondary) px-2 py-0.5 text-caption text-(--text)"
-              >
-                <span className="text-muted-foreground">{f.label}</span>
-                <span className="text-muted-foreground">{opLabel(f.op)}</span>
-                <span>{f.value}</span>
-                <button
-                  type="button"
-                  onClick={() => removeFilter(f.id)}
-                  aria-label={`Remove ${f.label} filter`}
-                  className="ml-0.5 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
-            <div className="ml-auto flex items-center gap-2">
-              {/* Plain search input — no "Search" label above it (GEN-40); the
-                  placeholder describes it and aria-label keeps it accessible. */}
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="search"
-                  aria-label="Search"
-                  placeholder="Search reg, stock, make…"
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setPage(1);
-                  }}
-                  className="h-8 w-56 rounded-lg pl-7 text-body"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => setBuilderOpen((o) => !o)}
-                className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-body text-(--text) hover:bg-(--bg-fill-transparent-hover)"
-              >
-                <Plus className="h-3.5 w-3.5" /> Add filter
-              </button>
-              {sections && !SectionHeader && (
-                // Section switcher (client ask: one grid, a column-group picker
-                // beside Add filter instead of more tabs).
-                <div
-                  role="radiogroup"
-                  aria-label="Section"
-                  className="inline-flex shrink-0 items-center gap-0.5"
-                >
-                  {[{ value: null, label: "All" }, ...sections].map((s) => {
-                    const on = section === s.value;
-                    return (
-                      <button
-                        key={s.value ?? "all"}
-                        type="button"
-                        role="radio"
-                        aria-checked={on}
-                        onClick={() => {
-                          pickSection(s.value);
-                          setPage(1);
-                        }}
-                        className={cn(
-                          "h-7 rounded-lg px-3 text-body transition-colors",
-                          on
-                            ? "bg-(--bg-fill-transparent-selected) font-semibold text-(--text)"
-                            : "text-(--text-secondary) hover:bg-(--bg-fill-transparent-hover)",
-                        )}
-                      >
-                        {s.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-          {builderOpen && (
-            <div className="flex flex-wrap items-center gap-2 rounded-lg bg-(--bg-surface-secondary) p-2">
-              <span className="text-body text-(--text-secondary)">
-                Add condition
-              </span>
-              <div className="w-44">
-                <Select
-                  label="Field"
-                  labelHidden
-                  options={filterFields.map((f) => ({ value: String(f.key), label: f.label }))}
-                  value={String(bField)}
-                  onChange={(next) => {
-                    const key = next as FilterField["key"];
-                    setBField(key);
-                    setBOp(kindOf(filterFields, key) === "num" ? "gte" : "is");
-                  }}
-                />
-              </div>
-              <div className="w-32">
-                <Select
-                  label="Operator"
-                  labelHidden
-                  options={opOptions(filterFields.find((f) => f.key === bField))}
-                  value={bOp}
-                  onChange={setBOp}
-                />
-              </div>
-              <Input
-                aria-label="Value"
-                placeholder="Value…"
-                value={bValue}
-                onChange={(e) => setBValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") addFilter();
-                }}
-                className="w-48"
-              />
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setBuilderOpen(false);
-                  setBValue("");
-                }}
-              >
-                Cancel
-              </Button>
-              <Button size="sm" onClick={addFilter}>
-                Add filter
-              </Button>
-            </div>
-          )}
-        </div>
+        <div className="rounded-xl bg-card shadow-(--shadow-100)">{toolbar}</div>
 
         {!filtered ? (
           <Skeleton className="h-72" />
@@ -2358,17 +2188,7 @@ export function VehicleSheet({
           </Card>
         )}
 
-        {filtered && filtered.length > PAGE_SIZE && (
-          <Card className="p-0">
-            <DataGridPagination
-              page={safePage}
-              pageSize={PAGE_SIZE}
-              totalPages={totalPages}
-              total={filtered.length}
-              onPageChange={setPage}
-            />
-          </Card>
-        )}
+        {pager && <Card className="p-0">{pager}</Card>}
       </div>
       {children}
     </>

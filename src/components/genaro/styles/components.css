@@ -1113,3 +1113,53 @@ a.p-toast__action { text-decoration:none; }
   .p-field { min-height:44px; }
   .p-field__input, input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]), textarea, select { font-size:16px; }
 }
+
+/* TableFilterMenu / TableSortMenu — tablecn's advanced toolbar in Genaro dress (2026-11-07): a Filter or Sort button
+   with a count, opening a list of rules. Rows wrap on a phone: the field beside its join word, the condition and
+   value under it. */
+.p-tablemenu__count { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 var(--space-100); margin-left:var(--space-050);
+  border-radius:var(--radius-full); background:var(--bg-fill-tertiary); color:var(--text); font-size:var(--fs-caption); line-height:var(--lh-caption); font-weight:var(--fw-medium); font-variant-numeric:tabular-nums; }
+.p-popover__panel:has(> .p-tablemenu) { max-width:none; }
+.p-tablemenu { display:flex; flex-direction:column; gap:var(--space-300); width:min(780px, calc(100vw - var(--space-800))); padding:var(--space-400); box-sizing:border-box; }
+.p-tablemenu--sort { width:min(460px, calc(100vw - var(--space-800))); }
+/* No rules yet: the panel is just its note and Add button, so it fits them rather than the width rule rows need. */
+.p-tablemenu--empty { width:auto; max-width:min(320px, calc(100vw - var(--space-800))); }
+.p-tablemenu__head { display:flex; flex-direction:column; gap:var(--space-050); }
+.p-tablemenu__title { margin:0; font-size:var(--fs-subtitle); line-height:var(--lh-subtitle); font-weight:var(--fw-semibold); color:var(--text); }
+.p-tablemenu__hint { margin:0; font-size:var(--fs-caption); line-height:var(--lh-caption); color:var(--text-secondary); }
+.p-tablemenu__rows { display:flex; flex-direction:column; gap:var(--space-200); margin:0; padding:0; list-style:none; max-height:min(50vh, 380px); overflow-y:auto; overscroll-behavior:contain; }
+.p-tablemenu__row { display:flex; align-items:center; gap:var(--space-200); }
+.p-tablemenu__join { width:84px; flex:none; font-size:var(--fs-body); line-height:var(--lh-body); color:var(--text-secondary); }
+.p-tablemenu__field { width:160px; flex:none; min-width:0; }
+.p-tablemenu--sort .p-tablemenu__field { flex:1 1 auto; width:auto; }
+.p-tablemenu__op { width:152px; flex:none; }
+.p-tablemenu--sort .p-tablemenu__op { width:144px; }
+.p-tablemenu__value { flex:1 1 240px; min-width:0; display:flex; align-items:center; gap:var(--space-200); }
+.p-tablemenu__value > * { flex:1 1 0; min-width:0; }
+.p-tablemenu__value > .p-tablemenu__and { flex:none; font-size:var(--fs-caption); line-height:var(--lh-caption); color:var(--text-secondary); }
+.p-tablemenu__remove { flex:none; }
+.p-tablemenu__foot { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-200); }
+@media (max-width: 639px) {
+  /* A phone stacks each rule: its join word (or the and/or list) beside the remove button, then the column, the
+     condition and the value, each the panel's full width so their edges line up. Rules sit apart by more than their
+     own controls do. */
+  .p-tablemenu__rows { gap:var(--space-400); }
+  .p-tablemenu__row { display:grid; grid-template-columns:minmax(0, 1fr) auto; grid-template-areas:"join remove" "field field" "op op" "value value"; row-gap:var(--space-200); }
+  .p-tablemenu--sort .p-tablemenu__rows { gap:var(--space-300); }
+  .p-tablemenu--sort .p-tablemenu__row { grid-template-columns:minmax(0, 1fr) auto; grid-template-areas:"field remove" "op op"; }
+  .p-tablemenu__join { grid-area:join; width:auto; justify-self:start; }
+  .p-tablemenu__join .p-select { min-width:96px; }
+  .p-tablemenu__field { grid-area:field; width:auto; }
+  .p-tablemenu__op, .p-tablemenu--sort .p-tablemenu__op { grid-area:op; width:auto; }
+  .p-tablemenu__value { grid-area:value; }
+  .p-tablemenu__remove { grid-area:remove; }
+}
+
+/* Touch: a Select sits beside text fields that use 16px there (iOS zooms into anything smaller), so its value uses
+   16px too; at 13px beside them it read as a different control (2026-11-07). */
+@media (pointer: coarse) {
+  .p-select__trigger, .p-select__trigger .p-select__value, .p-select__inline-label { font-size:16px; }
+}
+/* Tabs that scroll sideways (section tabs on a phone) scroll by swipe; the scrollbar drew a grey bar under them. */
+.p-tabs { scrollbar-width:none; }
+.p-tabs::-webkit-scrollbar { display:none; }
