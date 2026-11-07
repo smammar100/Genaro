@@ -18,7 +18,6 @@ import {
   resolveHours,
   stepAnchor,
   toISO,
-  viewLabel,
   weekOf,
   type CalEvent,
   type Kind,
@@ -29,7 +28,8 @@ import { CalendarFilters, CalendarToolbar } from "./calendar-toolbar";
 import { EventFormModal, EMPTY_FIELDS, fieldsForEvent, type FormFields } from "./event-form-modal";
 import { createEvent, updateEvent } from "./event-actions";
 import { KIND_META } from "./event-meta";
-import { EventPopover } from "./event-popover";
+import { EventDetails, EventPopover } from "./event-popover";
+import { MiniMonth } from "./mini-month";
 import { MonthGrid } from "./month-grid";
 import { TimeGrid } from "./time-grid";
 
@@ -46,9 +46,13 @@ import { TimeGrid } from "./time-grid";
  * one primary action in the header card (2026-11-07).
  */
 
-// Minimum hour-row heights. Rows grow to fill the card and scroll below these.
-const WEEK_HOUR_PX = 48;
-const DAY_HOUR_PX = 64;
+// Minimum hour-row heights: room for a half-hour card's line and a full
+// hour's name, time and plate (Untitled UI's roomier rows, 2026-11-07). Rows
+// grow to fill the card and scroll below these.
+const WEEK_HOUR_PX = 72;
+const DAY_HOUR_PX = 80;
+/** Day view keeps its side panel (mini month and details) from this width. */
+const WIDE = "(min-width: 1024px)";
 
 interface Sources {
   appts: Appointment[];
@@ -109,6 +113,8 @@ export function SharedCalendar({
   const [anchor, setAnchor] = useState<Date>(() => new Date());
   const [active, setActive] = useState<Set<Kind>>(() => new Set(kinds));
   const [opened, setOpened] = useState<{ ev: CalEvent; anchor: HTMLElement } | null>(null);
+  /** Day view on a wide screen: the event shown in the side panel, by key. */
+  const [focusedKey, setFocusedKey] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(null);
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -161,9 +167,18 @@ export function SharedCalendar({
   const defaultKind: Kind = kinds[0] ?? "appt";
 
   const closePopover = useCallback(() => setOpened(null), []);
-  const openEvent = useCallback((ev: CalEvent, el: HTMLElement) => {
-    setOpened((cur) => (cur?.ev.key === ev.key ? null : { ev, anchor: el }));
-  }, []);
+  const openEvent = useCallback(
+    (ev: CalEvent, el: HTMLElement) => {
+      // Day view on a wide screen shows the details in its side panel.
+      if (view === "day" && window.matchMedia(WIDE).matches) {
+        setOpened(null);
+        setFocusedKey(ev.key);
+        return;
+      }
+      setOpened((cur) => (cur?.ev.key === ev.key ? null : { ev, anchor: el }));
+    },
+    [view],
+  );
   const openDay = (d: Date) => {
     setOpened(null);
     setAnchor(d);
@@ -289,16 +304,26 @@ export function SharedCalendar({
     form?.mode === "create" && form.initial.time
       ? { date: form.initial.date, hour: hmToDec(form.initial.time) }
       : null;
-  const selectedKey = opened?.ev.key ?? null;
+  const selectedKey = opened?.ev.key ?? (view === "day" ? focusedKey : null);
+  // The side panel: the event picked on this day, else the day's next one,
+  // else its first.
+  const anchorISO = toISO(anchor);
+  const dayEvents = shown.filter((e) => e.date === anchorISO).sort((a, b) => a.start - b.start);
+  const panelEvent =
+    dayEvents.find((e) => e.key === focusedKey) ??
+    dayEvents.find((e) => anchorISO > todayISO || (anchorISO === todayISO && nowHour !== null && e.end > nowHour)) ??
+    dayEvents[0] ??
+    null;
+  const busyDates = new Set(shown.map((e) => e.date));
 
   return page(
     <>
       <Card padding="0" className="h-[calc(100dvh-230px)] min-h-[560px]">
         <div className="flex h-full min-h-0 flex-col outline-none" tabIndex={-1} onKeyDown={onKeyDown}>
           <CalendarToolbar
-            label={viewLabel(view, anchor)}
             view={view}
-            isToday={toISO(anchor) === todayISO}
+            anchor={anchor}
+            today={now}
             onToday={goToday}
             onStep={step}
             onView={changeView}
@@ -328,19 +353,51 @@ export function SharedCalendar({
               onOpenEvent={openEvent}
             />
           ) : (
-            <TimeGrid
-              days={view === "day" ? [anchor] : weekOf(anchor)}
-              events={shown}
-              hours={hours}
-              hourPx={view === "day" ? DAY_HOUR_PX : WEEK_HOUR_PX}
-              todayISO={todayISO}
-              nowHour={nowHour}
-              selectedKey={selectedKey}
-              draft={draft}
-              onOpenDay={openDay}
-              onOpenEvent={openEvent}
-              onCreateAt={(date, hour) => openCreate(date, decToHm(hour))}
-            />
+            <div className="flex min-h-0 flex-1">
+              <TimeGrid
+                days={view === "day" ? [anchor] : weekOf(anchor)}
+                events={shown}
+                hours={hours}
+                hourPx={view === "day" ? DAY_HOUR_PX : WEEK_HOUR_PX}
+                todayISO={todayISO}
+                nowHour={nowHour}
+                selectedKey={selectedKey}
+                draft={draft}
+                onOpenDay={openDay}
+                onOpenEvent={openEvent}
+                onCreateAt={(date, hour) => openCreate(date, decToHm(hour))}
+              />
+              {view === "day" ? (
+                // After Untitled UI's day view: a month to jump around in, and
+                // the day's event in full, beside the hours.
+                <aside
+                  aria-label="Day details"
+                  className="hidden w-80 shrink-0 flex-col overflow-y-auto border-l border-(--border-secondary) lg:flex"
+                >
+                  <MiniMonth
+                    selected={anchor}
+                    todayISO={todayISO}
+                    busy={busyDates}
+                    onPick={(d) => {
+                      setFocusedKey(null);
+                      setAnchor(d);
+                    }}
+                  />
+                  {panelEvent ? (
+                    <div className="shrink-0">
+                      <EventDetails
+                        ev={panelEvent}
+                        busy={busy}
+                        onEdit={(ev) => setForm({ mode: "edit", ev })}
+                        onMarkDone={(ev) => void markDone(ev)}
+                      />
+                    </div>
+                  ) : (
+                    <p className="px-4 pb-4 body-md text-(--text-secondary)">Nothing booked on this day. Click a time to add an event.</p>
+                  )}
+                </aside>
+              ) : null}
+            </div>
           )}
         </div>
       </Card>

@@ -21,6 +21,7 @@ import { SizeProvider } from "@/components/fluid/lib/size-context";
 import { cn } from "@/lib/utils";
 import type { SidebarGroup as NavGroup } from "./sidebar-config";
 import { navRows, type NavRow, type NavState } from "./nav";
+import { NavBranches } from "./nav-branches";
 
 /**
  * The admin sidebar, built on Fluid Functionalism's Sidebar: one hover
@@ -105,9 +106,10 @@ export function AdminNavigation({
  * (the group and footer's p-3), 8px inside a row before its icon (the
  * library's pl-2), 18px icons, 10px from icon to label, 32px rows (sub-rows
  * too), and the same 2px between every row: no extra gap between groups
- * (6 Nov 2026; it was 20px). A sub-menu's rule sits under
- * the parent's icon and its labels line up with the parent's label at
- * 8 + 18 + 10 = 36px: ml 17 + 1px rule + pl 10 + the sub-row's own pl 8.
+ * (6 Nov 2026; it was 20px). A sub-menu's branched lines (NavBranches,
+ * 7 Nov 2026) grow from under the parent's icon, and its labels line up with
+ * the parent's label at 8 + 18 + 10 = 36px: ml 17 + pl 11 + the sub-row's own
+ * pl 8. The branches take the place of the library's straight rule.
  */
 const NAV_SKIN = cn(
   "[--hover:var(--nav-bg-surface-hover)] [--active:var(--bg-surface)] [--muted-foreground:var(--text)]",
@@ -116,7 +118,7 @@ const NAV_SKIN = cn(
   "[&_[data-sidebar=menu-button]]:text-body [&_[data-sidebar=menu-sub-button]]:text-body",
   "[&_[data-sidebar=menu-button]]:gap-2.5 [&_[data-sidebar=menu-button]_svg]:size-[18px]",
   "[&_[data-sidebar=menu-sub-button]]:h-8",
-  "[&_[data-sidebar=menu-sub]]:ml-[17px] [&_[data-sidebar=menu-sub]]:pl-2.5",
+  "[&_[data-sidebar=menu-sub]]:ml-[17px] [&_[data-sidebar=menu-sub]]:pl-[11px] [&_[data-sidebar=menu-sub]]:border-l-0",
 );
 
 function Row({ row, onToggle }: { row: NavRow; onToggle?: () => void }) {
@@ -139,6 +141,7 @@ function Row({ row, onToggle }: { row: NavRow; onToggle?: () => void }) {
       {row.pages ? (
         // Inert while closed, so its links drop out of the tab order too.
         <SidebarMenuSub open={row.selected} inert={!row.selected}>
+          <NavBranches activeIndex={row.pages.findIndex((page) => page.selected)} />
           {row.pages.map((page) => (
             <SidebarMenuSubItem key={page.href}>
               <SidebarMenuSubButton isActive={page.selected} render={<Link href={page.href} id={page.id} />}>

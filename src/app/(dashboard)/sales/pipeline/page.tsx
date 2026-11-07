@@ -70,7 +70,7 @@ import {
   todayKey,
 } from "@/components/kanban/card-dates";
 import type { KanbanColumn, KanbanTone } from "@/components/kanban/stage-icon";
-import { formatCurrency, formatDateTime, titleCase } from "@/lib/utils";
+import { formatCurrency, formatDateTime, formatRegPlate, titleCase } from "@/lib/utils";
 import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import { toast } from "@/lib/toast";
 import { enquirySourceForChannel, enquirySourceOptions, unsaleConfirmOptions } from "@/lib/sale-confirm";
@@ -512,6 +512,10 @@ export default function SalesPipelinePage() {
           moved={movedDeal}
           onMove={(id, stage) => void handleMove(id, stage)}
           noun={{ one: "deal", many: "deals" }}
+          getLabel={(d) => {
+            const v = vehicleById.get(d.vehicleId);
+            return [d.customerName, v ? formatRegPlate(v.registration) : null].filter(Boolean).join(", ");
+          }}
           defaultHidden={stages.filter((s) => s.behaviour === "lost").map((s) => s.slug)}
           renderCard={(d, { column }) => {
             const v = vehicleById.get(d.vehicleId);

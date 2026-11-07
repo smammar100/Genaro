@@ -132,6 +132,19 @@ export function viewLabel(view: ViewKey, anchor: Date): string {
 }
 
 /**
+ * The calendar header's two lines (after Untitled UI, 2026-11-07): the month
+ * as the title, and under it the range in view: the whole month, the week's
+ * days, or the day itself.
+ */
+export function viewHeading(view: ViewKey, anchor: Date): { title: string; detail: string } {
+  const title = `${MONTHS[anchor.getMonth()]} ${anchor.getFullYear()}`;
+  if (view === "week") return { title, detail: weekLabel(weekOf(anchor)) };
+  if (view === "day") return { title, detail: `${DAY_NAMES[weekdayMon0(anchor)]} ${anchor.getDate()} ${MONTHS[anchor.getMonth()]}` };
+  const last = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0).getDate();
+  return { title, detail: `1 – ${last} ${MONTHS[anchor.getMonth()]} ${anchor.getFullYear()}` };
+}
+
+/**
  * The days a view draws. Month includes the spill-over days from the
  * neighbouring months, so counts match what is actually on screen.
  */

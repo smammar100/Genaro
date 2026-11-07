@@ -32,8 +32,8 @@ import {
 import type { ColumnDef, SelectionState } from "./types";
 import { DENSITY_ROW_HEIGHT, type Density } from "./density";
 
-/** Row height fallback (matches the legacy h-13 = 3.25rem). */
-const ROW_H = "var(--dg-row-h, 3.25rem)";
+/** Row height fallback: compact, 32px. */
+const ROW_H = "var(--dg-row-h, 2rem)";
 
 function alignFor(col: ColumnDef<unknown>): "left" | "right" | "center" {
   if (col.align) return col.align;
@@ -65,7 +65,9 @@ export function DataGridShell({ children, className, bare }: ShellProps) {
   }
   return (
     <Card className={cn("flex min-h-0 flex-col p-0", className)}>
-      <div className="relative min-h-0 flex-1 overflow-auto">{children}</div>
+      {/* Rounded like the card, so the scroll box clips the grey heading row
+          to the card's corners instead of painting square ones over them. */}
+      <div className="relative min-h-0 flex-1 overflow-auto rounded-[inherit]">{children}</div>
     </Card>
   );
 }
@@ -94,7 +96,7 @@ export function DataGridTable<T>({
   selection,
   trailing,
   fluid = true,
-  density = "normal",
+  density = "compact",
   children,
 }: TableProps<T>) {
   return (
@@ -301,6 +303,11 @@ interface RowProps<T> {
   rowId?: string;
   trailing?: boolean;
   onClick?: (row: T) => void;
+  /**
+   * Extra inset for the first cell, as a CSS length: rows inside a group sit
+   * under their group's label (DataGridGroupHeaderRow `level`).
+   */
+  indent?: string;
 }
 
 const INTERACTIVE_SELECTOR =
@@ -314,6 +321,7 @@ export function DataGridRow<T>({
   rowId,
   trailing,
   onClick,
+  indent,
 }: RowProps<T>) {
   const isSelected = rowId !== undefined && selection?.selected.has(rowId);
   const clickable = onClick !== undefined;
@@ -366,8 +374,10 @@ export function DataGridRow<T>({
           </div>
         </td>
       ) : null}
-      {cols.map((c) => {
+      {cols.map((c, ci) => {
         const align = alignFor(c as ColumnDef<unknown>);
+        // Inline, so the app's first-cell padding (genaro-bridge.css) can't undo it.
+        const inset = indent && ci === 0 && !selection ? { paddingInlineStart: indent } : undefined;
         return (
           <td
             key={c.key}
@@ -386,7 +396,7 @@ export function DataGridRow<T>({
               // under them during scroll.
               !c.sticky && "group-hover/row:bg-muted/40",
             )}
-            style={c.sticky ? { left: selection ? 40 : 0 } : undefined}
+            style={c.sticky ? { left: selection ? 40 : 0, ...inset } : inset}
           >
             <div
               className={cn(

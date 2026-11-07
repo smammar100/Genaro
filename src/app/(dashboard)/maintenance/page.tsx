@@ -277,6 +277,10 @@ export default function MaintenancePage() {
           onAdd={() => setAddOpen(true)}
           addLabel="Add job"
           noun={{ one: "job", many: "jobs" }}
+          getLabel={(j) => {
+            const v = vehicleById.get(j.vehicleId);
+            return [j.description, v ? formatRegPlate(v.registration) : null].filter(Boolean).join(", ");
+          }}
           renderCard={(j) => {
             const v = vehicleById.get(j.vehicleId);
             const vendor = j.vendorId ? vendorById.get(j.vendorId) : undefined;

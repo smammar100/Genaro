@@ -1,6 +1,6 @@
 # Checkbox
 
-Toggles a single option on or off; supports the indeterminate state for "select all".
+Toggles a single option on or off; supports the indeterminate state for "select all". Checking swells the fill out of the box on a spring and draws the tick in (after React Bits' Spring Check, 2026-11-07); RadioButton does the same with its dot.
 
 ```tsx
 import { Checkbox } from '@/components/genaro';
@@ -60,6 +60,7 @@ With an error:
 | `disabled` | `boolean` | — | |
 | `labelHidden` | `boolean` | — | Visually hides the label (e.g. row checkboxes in tables). |
 | `magic` | `boolean` | — | Sidekick state. |
+| `strike` | `boolean` | — | To-do lists: checking wipes a line through the label and greys it. Off for ordinary options. |
 | `id` | `string` | generated | |
 
 ## Server Components

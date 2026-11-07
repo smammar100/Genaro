@@ -18,7 +18,8 @@ export interface RadioButtonProps {
 }
 
 /**
- * One choice in a group; group radios with the same `name` (or use ChoiceList).
+ * One choice in a group; group radios with the same `name` (or use ChoiceList). Choosing it swells the fill out
+ * of the ring on a spring and springs the dot in, like Checkbox.
  * @import import { RadioButton } from "@/components/genaro";
  */
 export function RadioButton(props: RadioButtonProps) {
@@ -40,7 +41,9 @@ export function RadioButton(props: RadioButtonProps) {
             disabled={disabled}
             onChange={(e) => props.onChange?.(e.target.checked, id)}
           />
-          <span className="p-radio__ring" aria-hidden />
+          <span className="p-radio__ring" aria-hidden>
+            <span className="p-radio__fill" />
+          </span>
         </span>
         <span className={cx('p-choice__label', labelHidden && 'p-visually-hidden')}>{label}</span>
       </label>

@@ -6,7 +6,7 @@ import type { LucideIcon } from "lucide-react";
 import { Avatar } from "@/components/genaro";
 import { RegPlate } from "@/components/shared/reg-plate";
 import { cn } from "@/lib/utils";
-import { StageIcon, type KanbanColumn } from "./stage-icon";
+import type { KanbanColumn } from "./stage-icon";
 
 export type KanbanTextTone = "default" | "muted" | "caution" | "critical" | "success";
 
@@ -25,7 +25,7 @@ export interface KanbanCardProps {
   thumbnail?: React.ReactNode;
   /** The top line: the reg plate, as a `KanbanPlate`. */
   identity: React.ReactNode;
-  /** The job number or stock ID, after the vehicle's name. */
+  /** The job number or stock ID, beside the plate. */
   reference?: string;
   /** The vehicle's name, on the line under the plate. It wraps rather than truncates. */
   vehicle?: string;
@@ -77,13 +77,14 @@ const NOTE_TONE = {
 const WRAP_ANYWHERE = "[overflow-wrap:anywhere]";
 
 /**
- * The board's card surface: a white card with a soft drop and halo on the
- * board, a little more of both on hover, a focus-tinted ring when something
- * inside it has keyboard focus. Board cards built without `KanbanCard` (the
- * prep board's) use it so every board's cards match.
+ * The board's card surface (after React Bits' Kanban Board, 2026-11-07): a
+ * white card with a hairline border and a soft drop, rising a pixel with a
+ * little more of both on hover, and lifted while something inside it has
+ * keyboard focus. Board cards built without `KanbanCard` (the prep board's)
+ * use it so every board's cards match.
  */
 export const KANBAN_CARD_SURFACE =
-  "group/card relative flex min-w-0 flex-col overflow-clip rounded-(--radius-400) bg-(--bg-surface) shadow-(--kanban-card-shadow) transition-shadow duration-150 ease-out hover:shadow-(--kanban-card-shadow-hover) has-focus-visible:shadow-(--kanban-card-shadow-lift)";
+  "group/card relative flex min-w-0 flex-col overflow-clip rounded-(--radius-300) bg-(--bg-surface) shadow-(--kanban-card-shadow) transition-[box-shadow,translate] duration-150 ease-out hover:-translate-y-px hover:shadow-(--kanban-card-shadow-hover) has-focus-visible:shadow-(--kanban-card-shadow-lift) motion-reduce:hover:translate-y-0";
 
 /** A footer pill: an icon or avatar, then a short value, on a faint fill with no outline. */
 export const KANBAN_CHIP =
@@ -130,7 +131,6 @@ export function KanbanCard({
 }: KanbanCardProps) {
   const lines = (facts ?? []).filter((f): f is KanbanFact => Boolean(f));
   const NoteIcon = note?.icon;
-  const place = React.useContext(KanbanCardContext);
   return (
     <article
       data-kanban-card=""
@@ -152,13 +152,17 @@ export function KanbanCard({
           {menu}
         </div>
       ) : null}
-      <div className={cn("flex min-w-0 flex-col", compact ? "gap-1.5 p-3" : "gap-2 p-4")}>
+      <div className={cn("flex min-w-0 flex-col", compact ? "gap-1.5 p-3" : "gap-2 p-3")}>
         <div className={cn("flex min-w-0 items-center gap-2.5", menu && "pr-7")}>
           {thumbnail ? (
             // Not a target of its own: a press on the photo drags or opens the card.
             <span className="pointer-events-none shrink-0 select-none">{thumbnail}</span>
           ) : null}
           <div className="flex min-h-6 min-w-0 shrink-0 items-center">{identity}</div>
+          {/* The job number or stock ID sits beside the plate (2026-11-07). */}
+          {!compact && reference ? (
+            <span className="body-sm shrink-0 whitespace-nowrap tabular-nums text-(--text-secondary)">{reference}</span>
+          ) : null}
           {/* Compact: the vehicle shares the plate's line and ellipses, with
               the full name and reference on hover. */}
           {compact && vehicle ? (
@@ -171,25 +175,15 @@ export function KanbanCard({
           ) : null}
         </div>
 
-        <div className="flex min-w-0 items-start gap-1.5">
-          {place ? (
-            <StageIcon column={place.column} columns={place.columns} className="mt-[3px]" />
-          ) : null}
-          <div title={titleText} className={cn("body-md-semibold line-clamp-2 min-w-0 flex-1", WRAP_ANYWHERE)}>
-            {title}
-          </div>
+        {/* No status glyph before the title: the column's header already
+            says it (2026-11-07). */}
+        <div title={titleText} className={cn("body-md-semibold line-clamp-2 min-w-0", WRAP_ANYWHERE)}>
+          {title}
         </div>
 
-        {/* The reference shares the vehicle's line, which wraps, so neither
-            is ever cut to an ellipsis. */}
-        {!compact && (vehicle || reference) ? (
-          <p className={cn("body-sm flex flex-wrap items-center gap-x-2 gap-y-0.5 text-(--text-secondary)", WRAP_ANYWHERE)}>
-            {vehicle ? <span>{vehicle}</span> : null}
-            {vehicle && reference ? (
-              <span aria-hidden className="size-[3px] shrink-0 rounded-(--radius-full) bg-(--border-tertiary)" />
-            ) : null}
-            {reference ? <span className="whitespace-nowrap tabular-nums">{reference}</span> : null}
-          </p>
+        {/* The vehicle wraps rather than being cut to an ellipsis. */}
+        {!compact && vehicle ? (
+          <p className={cn("body-sm text-(--text-secondary)", WRAP_ANYWHERE)}>{vehicle}</p>
         ) : null}
 
         {lines.length > 0 ? (
@@ -234,7 +228,7 @@ export function KanbanCard({
         <div
           className={cn(
             "flex min-w-0 flex-wrap items-center gap-2 border-t border-(--border-secondary)",
-            compact ? "px-3 py-2" : "px-4 py-3",
+            compact ? "px-3 py-2" : "px-3 py-2.5",
           )}
         >
           {person ? (

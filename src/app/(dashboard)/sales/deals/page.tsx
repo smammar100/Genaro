@@ -28,6 +28,7 @@ import { vehicleDetailHref } from "@/lib/vehicle-nav";
 import {
   UserCell,
   DataGridGroupHeaderRow,
+  GROUP_INDENT,
   DataGridHeaderRow,
   DataGridRow,
   DataGridShell,
@@ -95,6 +96,9 @@ const saleMonth = (r: SaleRow): string => r.date?.slice(0, 7) ?? NO_DATE;
 const saleYear = (r: SaleRow): string => r.date?.slice(0, 4) ?? NO_DATE;
 const groupLabel = (key: string): string =>
   key === NO_DATE ? "Date not recorded" : monthLabel(key);
+/** Inside its year a month needs no year: "2026-07" → "July". */
+const monthName = (key: string): string =>
+  key === NO_DATE ? "Date not recorded" : (MONTHS[Number(key.slice(5, 7)) - 1] ?? key);
 
 export default function DealsPage() {
   const { company } = useAuth();
@@ -278,7 +282,7 @@ export default function DealsPage() {
   const { groups: years, isCollapsed: isYearCollapsed, toggle: toggleYear } =
     useRowGroups(sorted, saleYear, groupLabel);
   const { groups: months, isCollapsed: isMonthClosed, toggle: toggleMonth } =
-    useRowGroups(sorted, saleMonth, groupLabel, { defaultCollapsed: true });
+    useRowGroups(sorted, saleMonth, monthName, { defaultCollapsed: true });
   const isMonthCollapsed = (key: string): boolean =>
     !searching && isMonthClosed(key);
   const monthsOf = (year: string) =>
@@ -499,6 +503,7 @@ export default function DealsPage() {
                                     cols={cols}
                                     index={i}
                                     onClick={openSale}
+                                    indent={GROUP_INDENT[2]}
                                   />
                                 ))}
                             </Fragment>

@@ -11,5 +11,5 @@ export { DataGridPagination } from "./pagination";
 export { DataGridColumnsButton, useColumnVisibility } from "./columns-button";
 export { DataGridDensityToggle, useDensity } from "./density";
 export { useSort } from "./sort";
-export { DataGridGroupHeaderRow, useRowGroups } from "./grouping";
+export { DataGridGroupHeaderRow, GROUP_INDENT, useRowGroups } from "./grouping";
 export { AtIndicatorCell, UserCell, VehicleCell } from "./cells";

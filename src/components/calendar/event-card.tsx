@@ -45,38 +45,32 @@ function accessibleName(ev: CalEvent): string {
 function cardTone(ev: CalEvent, past: boolean, selected: boolean) {
   const meta = KIND_META[ev.kind];
   const status = eventStatus(ev);
-  if (selected) return { card: meta.selected, tint: "opacity-80", muted: "opacity-80", quiet: false, struck: false };
+  if (selected) return { card: cn(meta.selected, "ring-transparent"), tint: "", muted: "opacity-80", struck: false };
   if (status.struck) {
     return {
-      card: "border border-dashed border-(--border) bg-(--bg-surface) text-(--text-secondary) hover:bg-(--bg-surface-hover)",
+      card: "ring-(--border) bg-(--bg-surface) text-(--text-secondary) hover:bg-(--bg-surface-hover)",
       tint: "text-(--text-secondary)",
       muted: "text-(--text-secondary)",
-      quiet: true,
       struck: true,
     };
   }
   // Finished events keep their colour, so a mostly-past week still reads by
-  // source, but their text and accent bar step back.
+  // source, but their words step back.
   if (past || status.done) {
-    return {
-      card: cn(meta.surface, "text-(--text-secondary)"),
-      tint: "text-(--text-secondary)",
-      muted: "text-(--text-secondary)",
-      quiet: true,
-      struck: false,
-    };
+    return { card: cn(meta.surface, meta.ring), tint: "text-(--text-secondary)", muted: "text-(--text-secondary)", struck: false };
   }
-  return { card: cn(meta.surface, "text-(--text)"), tint: meta.tint, muted: "text-(--text-secondary)", quiet: false, struck: false };
+  return { card: cn(meta.surface, meta.ring), tint: meta.tint, muted: "text-(--text-secondary)", struck: false };
 }
 
 /**
- * An event on the day and week grids. The card sizes itself to its time slot
- * and container queries decide what fits. The time isn't on the card: the
- * card's place in the grid says it, and the tooltip spells it out (call
- * 2026-11-01). A half-hour slot gets one line: the name, plus the job and
- * plate when the card is wide (day view). From two lines it adds the plate
- * and an appointment's lead type; taller cards add the job and the car. Finished events keep their colour with quieter text, cancelled ones
- * are outlined and struck through, and the open event fills with its colour.
+ * An event on the day and week grids, after Untitled UI's calendar
+ * (2026-11-07): a tinted card with a 1px border a step darker, the name in
+ * the source's colour and the time under it. The card sizes itself to its
+ * slot and container queries decide what fits: a half-hour card is one line,
+ * the name with the time at its end; taller cards add the time on its own
+ * line, then the plate and lead type, the job and the car. Finished events
+ * keep their colour with quieter words, cancelled ones are outlined and
+ * struck through, and the open event fills with its colour.
  */
 export function TimeGridEvent({
   ev,
@@ -91,7 +85,6 @@ export function TimeGridEvent({
   style: React.CSSProperties;
   onOpen: OpenEvent;
 }) {
-  const meta = KIND_META[ev.kind];
   const status = eventStatus(ev);
   const tone = cardTone(ev, past, selected);
   const StatusIcon = status.Icon;
@@ -112,65 +105,58 @@ export function TimeGridEvent({
       onClick={(e) => onOpen(ev, e.currentTarget)}
       style={style}
       className={cn(
-        "absolute overflow-hidden rounded-(--radius-200) text-left transition-colors duration-100",
+        "absolute overflow-hidden rounded-(--radius-150) text-left ring-1 ring-inset transition-colors duration-100",
         "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--border-focus)",
         tone.card,
         selected && "z-20 shadow-(--shadow-300)",
       )}
     >
-      <span
-        aria-hidden
-        className={cn(
-          "absolute inset-y-[3px] left-[3px] w-[3px] rounded-(--radius-full)",
-          selected ? "bg-current opacity-50" : meta.accent,
-          tone.quiet && "opacity-40",
-        )}
-      />
-      <span className="absolute inset-0 flex flex-col py-[3px] pr-1.5 pl-2.5 [container-type:size]">
-        {/* Line 1: the name. On a wide one-line card the job and plate follow. */}
+      <span className="absolute inset-0 flex flex-col gap-0.5 px-2 py-1.5 [container-type:size]">
+        {/* Line 1: the name; on a one-line card the time sits at its end. */}
         <span className="flex min-w-0 items-center gap-1.5">
-          <span className={cn("min-w-0 truncate body-sm-semibold", tone.struck && "line-through")}>
+          <span className={cn("min-w-0 truncate body-sm-semibold", tone.tint, tone.struck && "line-through")}>
             {ev.title}
           </span>
-          {ev.job ? (
-            <span className={cn("hidden min-w-0 truncate body-sm [@container(min-width:320px)_and_(max-height:37.98px)]:inline", tone.muted)}>
-              {ev.job}
-            </span>
-          ) : null}
           <span className="ml-auto flex shrink-0 items-center gap-1.5">
-            {plate ? (
-              <span className="hidden [@container(min-width:320px)_and_(max-height:37.98px)]:inline-flex">{plate}</span>
-            ) : null}
+            <span className={cn("body-sm tabular-nums [@container(min-height:34px)]:hidden", tone.tint)}>
+              {fmtHour(ev.start)}
+            </span>
             {statusIcon}
           </span>
         </span>
 
-        {/* Line 2: the plate, the lead type and, when notable and there's room,
-            the status. A week column has room for the type alone
-            ("Collection"); a wide card names it ("Lead: Collection"); a
-            narrow one leaves it to the tooltip rather than clip it. */}
-        <span className={cn("hidden min-w-0 items-center gap-1.5 body-sm [@container(min-height:34px)]:flex", tone.tint)}>
-          {plate}
-          {ev.leadType ? (
-            <span className={cn("hidden min-w-0 truncate [@container(min-width:128px)]:inline", tone.muted)}>
-              <span className="[@container(min-width:200px)]:hidden">{LEAD_TYPE_LABELS[ev.leadType]}</span>
-              <span className="hidden [@container(min-width:200px)]:inline">{leadText(ev)}</span>
-            </span>
-          ) : null}
-          {status.flag ? (
-            <span className="hidden min-w-0 truncate [@container(min-width:240px)]:inline">{status.label}</span>
-          ) : null}
+        {/* Line 2: the time. */}
+        <span className={cn("hidden truncate body-sm tabular-nums [@container(min-height:34px)]:block", tone.tint)}>
+          {timeText(ev)}
         </span>
 
-        {/* Line 3: the job (walk-ins); line 4 the car. */}
+        {/* Line 3: the plate and, with room, the lead type and a notable
+            status. A week column has room for the type alone ("Collection");
+            a wide card names it ("Lead: Collection"). */}
+        {plate || ev.leadType ? (
+          <span className="hidden min-w-0 items-center gap-1.5 body-sm [@container(min-height:54px)]:flex">
+            {plate}
+            {ev.leadType ? (
+              <span className={cn("hidden min-w-0 truncate [@container(min-width:128px)]:inline", tone.muted)}>
+                <span className="[@container(min-width:200px)]:hidden">{LEAD_TYPE_LABELS[ev.leadType]}</span>
+                <span className="hidden [@container(min-width:200px)]:inline">{leadText(ev)}</span>
+              </span>
+            ) : null}
+            {status.flag ? (
+              <span className={cn("hidden min-w-0 truncate [@container(min-width:240px)]:inline", tone.muted)}>{status.label}</span>
+            ) : null}
+          </span>
+        ) : null}
+
+        {/* Line 4: the job (walk-ins); line 5 the car. */}
         {ev.job ? (
-          <span className={cn("hidden truncate body-sm [@container(min-height:50px)]:block", tone.muted)}>{ev.job}</span>
+          <span className={cn("hidden truncate body-sm [@container(min-height:72px)]:block", tone.muted)}>{ev.job}</span>
         ) : null}
         {ev.car ? (
           <span
             className={cn(
               "hidden truncate body-sm",
-              ev.job ? "[@container(min-height:68px)]:block" : "[@container(min-height:50px)]:block",
+              ev.job ? "[@container(min-height:90px)]:block" : "[@container(min-height:72px)]:block",
               tone.muted,
             )}
           >
@@ -182,7 +168,11 @@ export function TimeGridEvent({
   );
 }
 
-/** An event in a month cell: colour dot, start time and name. */
+/**
+ * An event in a month cell, as Untitled UI draws one: a tinted chip, the name
+ * and the start time at its end. The name wraps to a second line rather than
+ * being cut short (2026-11-07).
+ */
 export function MonthEventChip({
   ev,
   past,
@@ -195,9 +185,7 @@ export function MonthEventChip({
   onOpen: OpenEvent;
 }) {
   if (ev.allDay) return <AllDayChip ev={ev} past={past} selected={selected} onOpen={onOpen} />;
-  const meta = KIND_META[ev.kind];
-  const status = eventStatus(ev);
-  const quiet = past || status.done;
+  const tone = cardTone(ev, past, selected);
   return (
     <button
       type="button"
@@ -209,29 +197,20 @@ export function MonthEventChip({
         onOpen(ev, e.currentTarget);
       }}
       className={cn(
-        "flex w-full min-w-0 shrink-0 items-center gap-1.5 rounded-(--radius-150) px-1.5 py-0.5 text-left body-sm transition-colors",
+        "flex w-full min-w-0 shrink-0 items-start gap-1 rounded-(--radius-150) px-1.5 py-1 text-left body-sm ring-1 ring-inset transition-colors",
         "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--border-focus)",
-        selected ? meta.selected : "hover:bg-(--bg-surface-hover)",
+        tone.card,
       )}
     >
-      <span aria-hidden className={cn("size-2 shrink-0 rounded-(--radius-full)", selected ? "bg-current" : meta.accent, quiet && !selected && "opacity-40")} />
-      <span className={cn("shrink-0 tabular-nums", selected ? "opacity-80" : "text-(--text-secondary)")}>
-        {fmtHour(ev.start)}
-      </span>
-      <span
-        className={cn(
-          "min-w-0 flex-1 truncate",
-          !selected && (quiet ? "text-(--text-secondary)" : "text-(--text) body-sm-semibold"),
-          status.struck && "line-through",
-        )}
-      >
+      <span className={cn("line-clamp-2 min-w-0 flex-1 body-sm-semibold [overflow-wrap:anywhere]", tone.tint, tone.struck && "line-through")}>
         {ev.title}
       </span>
+      <span className={cn("shrink-0 tabular-nums", tone.tint)}>{fmtHour(ev.start)}</span>
     </button>
   );
 }
 
-/** Maintenance due on a day with no time booked: a filled pill with a wrench. */
+/** Maintenance due on a day with no time booked: a chip like the others, with a wrench for the time; the name wraps to two lines. */
 export function AllDayChip({
   ev,
   past,
@@ -243,9 +222,8 @@ export function AllDayChip({
   selected: boolean;
   onOpen: OpenEvent;
 }) {
-  const meta = KIND_META[ev.kind];
   const status = eventStatus(ev);
-  const quiet = past || status.done;
+  const tone = cardTone(ev, past, selected);
   const StatusIcon = status.Icon;
   return (
     <button
@@ -258,17 +236,13 @@ export function AllDayChip({
         onOpen(ev, e.currentTarget);
       }}
       className={cn(
-        "flex w-full min-w-0 shrink-0 items-center gap-1.5 rounded-(--radius-150) px-1.5 py-0.5 text-left body-sm transition-colors",
+        "flex w-full min-w-0 shrink-0 items-start gap-1.5 rounded-(--radius-150) px-1.5 py-1 text-left body-sm ring-1 ring-inset transition-colors",
         "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--border-focus)",
-        selected
-          ? meta.selected
-          : quiet
-            ? cn(meta.surface, "text-(--text-secondary)")
-            : cn(meta.surface, meta.tint),
+        tone.card,
       )}
     >
-      <Wrench aria-hidden className="size-3 shrink-0" />
-      <span className={cn("min-w-0 flex-1 truncate", !quiet && "body-sm-semibold")}>{ev.title}</span>
+      <Wrench aria-hidden className={cn("mt-0.5 size-3 shrink-0", tone.tint)} />
+      <span className={cn("line-clamp-2 min-w-0 flex-1 body-sm-semibold [overflow-wrap:anywhere]", tone.tint)}>{ev.title}</span>
       {status.flag ? <StatusIcon aria-hidden className={cn("size-3 shrink-0", !selected && status.iconTone)} /> : null}
     </button>
   );
