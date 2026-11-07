@@ -59,23 +59,23 @@ export const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
-export const DAY_NAMES = [
+const DAY_NAMES = [
   "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
 ];
 export const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-export const pad2 = (n: number): string => String(n).padStart(2, "0");
+const pad2 = (n: number): string => String(n).padStart(2, "0");
 export const toISO = (d: Date): string =>
   `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 export const fromISO = (iso: string): Date => new Date(`${iso}T00:00:00`);
-export const addDays = (d: Date, n: number): Date => {
+const addDays = (d: Date, n: number): Date => {
   const x = new Date(d);
   x.setDate(x.getDate() + n);
   return x;
 };
 /** Monday = 0 … Sunday = 6. */
 export const weekdayMon0 = (d: Date): number => (d.getDay() + 6) % 7;
-export const startOfWeek = (d: Date): Date => addDays(d, -weekdayMon0(d));
+const startOfWeek = (d: Date): Date => addDays(d, -weekdayMon0(d));
 export const weekOf = (d: Date): Date[] =>
   Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(d), i));
 
@@ -124,12 +124,6 @@ export function weekLabel(days: Date[]): string {
 /** "Saturday 26 September 2026". */
 export const dayLabel = (d: Date): string =>
   `${DAY_NAMES[weekdayMon0(d)]} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-
-export function viewLabel(view: ViewKey, anchor: Date): string {
-  if (view === "month") return `${MONTHS[anchor.getMonth()]} ${anchor.getFullYear()}`;
-  if (view === "week") return weekLabel(weekOf(anchor));
-  return dayLabel(anchor);
-}
 
 /**
  * The calendar header's two lines (after Untitled UI, 2026-11-07): the month
@@ -211,10 +205,10 @@ export function hourlyOptions(hours: BusinessHours): string[] {
 /* ---------------------------------------------------------------- events */
 
 // Customer appointments are booked in 1-hour slots (UAT 2026-07-09).
-export const APPT_DURATION = 1;
+const APPT_DURATION = 1;
 // Workshop and maintenance bookings store a start time but no duration, so
 // they show as half-hour markers rather than invented 1h or 2h blocks.
-export const MARKER_DURATION = 0.5;
+const MARKER_DURATION = 0.5;
 
 export function buildEvents(input: {
   appts: Appointment[];

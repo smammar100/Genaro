@@ -1,5 +1,4 @@
 export type { ColumnDef } from "./types";
-export { exportCsv } from "./csv";
 export {
   DataGridShell,
   DataGridTable,

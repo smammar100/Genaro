@@ -3,7 +3,7 @@ import { computeCostTotals, type VehicleCostInputs } from "./vehicle-costs";
 import { expenseAtPointOfSale } from "./master-sheet";
 
 /** VAT on a car's margin (call 2026-10-24). */
-export const MARGIN_VAT_RATE = 0.2;
+const MARGIN_VAT_RATE = 0.2;
 
 export interface CarMargin {
   /** What the car sold for, or its web price until it sells. */

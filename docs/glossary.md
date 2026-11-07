@@ -38,7 +38,6 @@ Terms used across the codebase, the UI, and these docs. UK-dealer-specific terms
 | **Realtime subscription** | A Supabase `postgres_changes` listener (`src/hooks/use-realtime-table.ts`) that invalidates the cache and re-renders consumers when rows mutate. |
 | **Mock fallback** | Compatibility code that serves seeded mock data when a Supabase or external API call fails — kept so the app stays usable in offline dev. The DVLA service uses this pattern. |
 | **DVLA proxy** | The Next.js API route `/api/dvla/lookup` that holds the `DVLA_API_KEY` and forwards arrival-form lookups to gov.uk. Keeps the key out of the browser. |
-| **Elevated surfaces** | The fluidfunctionalism design pattern adopted in May 2026. See [`reference/design-system.md`](./reference/design-system.md). |
 | **Master Sheet** | The admin spreadsheet view (`/admin/master-sheet`) that shows every vehicle in a wide, paginated table — the digital replacement for Bass Bhai's Excel file. |
 | **Master Calendar** | The admin calendar view (`/admin/master-calendar`) showing every appointment, maintenance job, and event in one place. |
 | **Pipeline** | Stage-based progression view. The Maintenance Pipeline shows vehicles by prep state; the Sales Pipeline shows deals by negotiation stage. |

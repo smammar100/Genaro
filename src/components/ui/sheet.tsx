@@ -113,26 +113,6 @@ function SheetPopup({
   );
 }
 
-export function SheetHeader({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">): React.ReactElement {
-  const defaultProps = {
-    className: cn(
-      "flex min-h-13 flex-col justify-center gap-1 px-4 py-3.5 pe-12 in-[[data-slot=sheet-popup]:has([data-slot=sheet-panel])]:border-b in-[[data-slot=sheet-popup]:has([data-slot=sheet-panel])]:border-border",
-      className,
-    ),
-    "data-slot": "sheet-header",
-  };
-
-  return useRender({
-    defaultTagName: "div",
-    props: mergeProps<"div">(defaultProps, props),
-    render,
-  });
-}
-
 export function SheetTitle({
   className,
   ...props
@@ -144,19 +124,6 @@ export function SheetTitle({
         className,
       )}
       data-slot="sheet-title"
-      {...props}
-    />
-  );
-}
-
-export function SheetDescription({
-  className,
-  ...props
-}: SheetPrimitive.Description.Props): React.ReactElement {
-  return (
-    <SheetPrimitive.Description
-      className={cn("text-muted-foreground text-body text-pretty", className)}
-      data-slot="sheet-description"
       {...props}
     />
   );

@@ -48,7 +48,7 @@ export const NEXT_STEP: Record<VehicleStatus, { label: string; tab: string } | n
 };
 
 /** The page title: model year plus make and model. */
-export function vehicleTitle(vehicle: Vehicle): string {
+function vehicleTitle(vehicle: Vehicle): string {
   return `${vehicle.year} ${titleCase(`${vehicle.make} ${vehicle.model}`)}`;
 }
 

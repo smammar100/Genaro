@@ -87,7 +87,7 @@ export const KANBAN_CARD_SURFACE =
   "group/card relative flex min-w-0 flex-col overflow-clip rounded-(--radius-300) bg-(--bg-surface) shadow-(--kanban-card-shadow) transition-[box-shadow,translate] duration-150 ease-out hover:-translate-y-px hover:shadow-(--kanban-card-shadow-hover) has-focus-visible:shadow-(--kanban-card-shadow-lift) motion-reduce:hover:translate-y-0";
 
 /** A footer pill: an icon or avatar, then a short value, on a faint fill with no outline. */
-export const KANBAN_CHIP =
+const KANBAN_CHIP =
   "body-sm inline-flex h-7 min-w-0 max-w-full items-center gap-1.5 rounded-(--radius-full) bg-(--bg-fill-transparent) px-2.5 text-(--text-secondary)";
 
 /**

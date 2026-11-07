@@ -8,7 +8,7 @@ import type { AttachmentKind, ConversationKind, TeamConversation, TeamMessage, U
  * membership and the attachment rules, so the limits below are also enforced
  * on the server.
  */
-export const BUCKET = "message-attachments";
+const BUCKET = "message-attachments";
 export const MAX_PHOTOS = 3;
 export const MAX_FILES = 3;
 export const MAX_BYTES = 5 * 1024 * 1024;

@@ -104,7 +104,7 @@ describe("updateSession — forged cookies never grant access", () => {
   });
 
   it("public paths pass through without a session", async () => {
-    for (const path of ["/login", "/forgot-password", "/reset-password", "/join/abc", "/prototype"]) {
+    for (const path of ["/login", "/forgot-password", "/reset-password", "/join/abc"]) {
       const res = await updateSession(requestWithCookie(path));
       expect(res.headers.get("location")).toBeNull();
     }

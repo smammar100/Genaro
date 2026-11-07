@@ -7,8 +7,6 @@ const PUBLIC_PATHS = [
   "/forgot-password",
   "/reset-password",
   "/join",
-  // The design prototype page, auth-free by design (.claude/skills/prototype).
-  "/prototype",
 ];
 
 const SUPABASE_ANON_KEY =

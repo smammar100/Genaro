@@ -9,11 +9,11 @@ const NS = "team:";
 const AUTH_NS = "auth:";
 
 /**
- * Note on Auth user lifecycle: invite / revoke / remove operations currently
- * only touch `public.users`. Creating or deleting the matching `auth.users`
- * row requires the service-role key and must run server-side — that lives
- * behind `/api/team/*` route handlers (TODO). Until those exist, use the
- * Supabase dashboard to issue/revoke logins.
+ * Note on Auth user lifecycle: this service reads and edits `public.users`.
+ * Creating, removing or resetting the matching `auth.users` login needs the
+ * service-role key, so it runs server-side in the `/api/team/*` routes
+ * (send-invite, create-with-password, accept-join, remove-member,
+ * reset-password, set-roles).
  */
 
 const SELECT = `

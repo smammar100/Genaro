@@ -30,26 +30,25 @@ import { useSize, useSizeVariant } from "@/components/fluid/lib/size-context";
 import { useIcon } from "@/components/fluid/lib/icon-context";
 import { useSurface, SurfaceProvider } from "@/components/fluid/lib/surface-context";
 import { surfaceClasses } from "@/components/fluid/lib/surface-classes";
-import { Button, type ButtonProps } from "@/components/fluid/button";
 import { Tooltip } from "@/components/fluid/tooltip";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-export const SIDEBAR_COOKIE_NAME = "sidebar_state";
-export const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
-export const SIDEBAR_WIDTH = "16rem";
-export const SIDEBAR_WIDTH_MOBILE = "18rem";
+const SIDEBAR_COOKIE_NAME = "sidebar_state";
+const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+const SIDEBAR_WIDTH = "16rem";
+const SIDEBAR_WIDTH_MOBILE = "18rem";
 /** Bare-key toggle defaults: "[" for a left sidebar, "]" for a right one.
  *  Bare (no ⌘/Ctrl) so the browser's history shortcuts stay untouched. */
-export const SIDEBAR_KEYBOARD_SHORTCUT = "[";
-export const SIDEBAR_KEYBOARD_SHORTCUT_RIGHT = "]";
+const SIDEBAR_KEYBOARD_SHORTCUT = "[";
+const SIDEBAR_KEYBOARD_SHORTCUT_RIGHT = "]";
 /** Drag-resize clamp for the built-in rail handle (px). */
-export const SIDEBAR_MIN_WIDTH = 160;
-export const SIDEBAR_MAX_WIDTH = 360;
+const SIDEBAR_MIN_WIDTH = 160;
+const SIDEBAR_MAX_WIDTH = 360;
 /** Dragging this far past the minimum width collapses the sidebar instead of
  *  bottoming out — the same "throw it at the edge to dismiss" affordance
  *  native apps use. */
-export const SIDEBAR_COLLAPSE_SLOP = 56;
+const SIDEBAR_COLLAPSE_SLOP = 56;
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
@@ -848,9 +847,7 @@ const SidebarShell = forwardRef<HTMLDivElement, SidebarShellProps>(
 );
 SidebarShell.displayName = "SidebarShell";
 
-// ─── SidebarTrigger ──────────────────────────────────────────────────────────
-
-export type SidebarTriggerProps = ButtonProps;
+// ─── SidebarRail ─────────────────────────────────────────────────────────────
 
 /** Keystroke chip rendered inside the (inverted) tooltip surface. */
 function ShortcutKbd({ children }: { children: ReactNode }) {
@@ -870,92 +867,6 @@ function useShortcutKey(): string {
     (side === "right" ? SIDEBAR_KEYBOARD_SHORTCUT_RIGHT : SIDEBAR_KEYBOARD_SHORTCUT)
   );
 }
-
-/** Ghost icon button calling toggleSidebar(). The icon mirrors the
- *  sidebar's side, and its tooltip names the action with the toggle
- *  keystroke by default. */
-const SidebarTrigger = forwardRef<HTMLButtonElement, SidebarTriggerProps>(
-  ({ onClick, size, children, ...props }, ref) => {
-    const {
-      toggleSidebar,
-      open,
-      openMobile,
-      isMobile,
-      side,
-      peek,
-      isPeeking,
-      schedulePeek,
-      cancelPeekTimer,
-    } = useSidebar();
-    const shortcutKey = useShortcutKey();
-    // With hover-peek enabled, the COLLAPSED trigger is a peek affordance
-    // too: resting on it floats the rail out exactly like the edge strip —
-    // same shared intent timer, so moving from the trigger into the peeked
-    // card (or back) cancels the pending dismissal.
-    const hoverPeek = peek === "hover" && !isMobile && !open;
-    const PanelLeftIcon = useIcon("panel-left");
-    const PanelRightIcon = useIcon("panel-right");
-    const TriggerIcon = side === "right" ? PanelRightIcon : PanelLeftIcon;
-    const iconSize = useSizeVariant() === "compact" ? ("icon-compact" as const) : ("icon" as const);
-    const collapsed = isMobile ? !openMobile : !open;
-
-    return (
-      <Tooltip
-        side="bottom"
-        content={
-          <span className="flex items-center gap-1.5">
-            {/* A flex row escapes the surface's text-box trim, so the label
-                re-applies it — otherwise the shortcut row would sit taller
-                than a tooltip without a chip. */}
-            <span className="[text-box:trim-both_cap_alphabetic]">
-              {collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            </span>
-            <ShortcutKbd>{shortcutKey}</ShortcutKbd>
-          </span>
-        }
-      >
-        <Button
-          ref={ref}
-          variant="ghost"
-          size={size ?? iconSize}
-          data-sidebar="trigger"
-          aria-label="Toggle Sidebar"
-          onClick={(event) => {
-            onClick?.(event);
-            toggleSidebar();
-          }}
-          onPointerEnter={
-            hoverPeek
-              ? (event: React.PointerEvent) => {
-                  if (event.pointerType !== "mouse") return;
-                  if (isPeeking) cancelPeekTimer();
-                  else schedulePeek();
-                }
-              : undefined
-          }
-          // While PEEKED the shell's geometric watcher owns dismissal — a
-          // leave fired here can be the peek card sliding over a stationary
-          // cursor (layout-driven boundary event, no accompanying move to
-          // disarm it), which would flicker the peek closed and open again.
-          // This leave only retires a pending intent timer.
-          onPointerLeave={
-            hoverPeek
-              ? () => {
-                  if (!isPeeking) cancelPeekTimer();
-                }
-              : undefined
-          }
-          {...props}
-        >
-          {children ?? <TriggerIcon />}
-        </Button>
-      </Tooltip>
-    );
-  }
-);
-SidebarTrigger.displayName = "SidebarTrigger";
-
-// ─── SidebarRail ─────────────────────────────────────────────────────────────
 
 export interface SidebarRailProps extends HTMLAttributes<HTMLButtonElement> {
   /** Pin the tooltip open/closed; `undefined` leaves it on hover. */
@@ -1093,112 +1004,8 @@ const SidebarRail = forwardRef<HTMLButtonElement, SidebarRailProps>(
 );
 SidebarRail.displayName = "SidebarRail";
 
-// ─── SidebarInset ────────────────────────────────────────────────────────────
-
-export type SidebarInsetProps = HTMLAttributes<HTMLElement>;
-
-const SidebarInset = forwardRef<HTMLElement, SidebarInsetProps>(
-  ({ className, ...props }, ref) => {
-    const shape = useShape();
-    return (
-      <main
-        ref={ref}
-        data-slot="sidebar-inset"
-        className={cn(
-          "relative flex min-h-0 w-full min-w-0 flex-1 flex-col bg-background",
-          "peer-data-[variant=inset]:m-2 peer-data-[variant=inset]:peer-data-[side=left]:ml-0 peer-data-[variant=inset]:peer-data-[side=right]:mr-0",
-          // With the rail collapsed away, restore the sidebar-side margin so
-          // the card keeps symmetric insets.
-          "peer-data-[variant=inset]:peer-data-[state=collapsed]:peer-data-[side=left]:ml-2 peer-data-[variant=inset]:peer-data-[state=collapsed]:peer-data-[side=right]:mr-2",
-          "transition-[margin] duration-80",
-          // Container radius follows the shape system (literal classes so
-          // Tailwind's scanner emits both).
-          shape.bgRadius >= 20
-            ? "peer-data-[variant=inset]:rounded-3xl"
-            : "peer-data-[variant=inset]:rounded-xl",
-          "peer-data-[variant=inset]:bg-surface-2 peer-data-[variant=inset]:shadow-surface-2",
-          className
-        )}
-        {...props}
-      />
-    );
-  }
-);
-SidebarInset.displayName = "SidebarInset";
-
-// ─── SidebarInput ────────────────────────────────────────────────────────────
-
-export type SidebarInputProps = React.InputHTMLAttributes<HTMLInputElement>;
-
-const SidebarInput = forwardRef<HTMLInputElement, SidebarInputProps>(
-  ({ className, ...props }, ref) => {
-    const shape = useShape();
-    const size = useSize();
-    return (
-      <input
-        ref={ref}
-        data-sidebar="input"
-        className={cn(
-          // Mirrors the InputGroup field ladder: transparent at rest,
-          // muted fill + border ring on hover, card fill when focused.
-          "w-full bg-transparent px-3 text-foreground placeholder:text-muted-foreground outline-none",
-          "ring-1 ring-transparent transition-[background-color,box-shadow] duration-80",
-          "hover:bg-muted/50 hover:ring-border",
-          "focus:bg-card focus:ring-border",
-          "focus-visible:ring-[color:var(--focus-ring,#6B97FF)]",
-          size.variant === "compact" ? "h-7" : "h-8",
-          size.text,
-          shape.input,
-          className
-        )}
-        {...props}
-      />
-    );
-  }
-);
-SidebarInput.displayName = "SidebarInput";
-
-// ─── SidebarHeader / SidebarFooter / SidebarSeparator ────────────────────────
-
+// Header, footer and group sections share this shape.
 export type SidebarSectionProps = HTMLAttributes<HTMLDivElement>;
-
-const SidebarHeader = forwardRef<HTMLDivElement, SidebarSectionProps>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      data-sidebar="header"
-      className={cn("flex shrink-0 flex-col gap-2 p-2", className)}
-      {...props}
-    />
-  )
-);
-SidebarHeader.displayName = "SidebarHeader";
-
-const SidebarFooter = forwardRef<HTMLDivElement, SidebarSectionProps>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      data-sidebar="footer"
-      className={cn("mt-auto flex shrink-0 flex-col gap-2 p-2", className)}
-      {...props}
-    />
-  )
-);
-SidebarFooter.displayName = "SidebarFooter";
-
-const SidebarSeparator = forwardRef<HTMLDivElement, SidebarSectionProps>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      data-sidebar="separator"
-      role="separator"
-      aria-orientation="horizontal"
-      className={cn("mx-2 h-px shrink-0 bg-border", className)}
-      {...props}
-    />
-  )
-);
-SidebarSeparator.displayName = "SidebarSeparator";
 
 // ─── SidebarGroup family ─────────────────────────────────────────────────────
 
@@ -1608,13 +1415,7 @@ SidebarGroupContent.displayName = "SidebarGroupContent";
 export {
   SidebarProvider,
   SidebarShell,
-  SidebarTrigger,
   SidebarRail,
-  SidebarInset,
-  SidebarInput,
-  SidebarHeader,
-  SidebarFooter,
-  SidebarSeparator,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupAction,
