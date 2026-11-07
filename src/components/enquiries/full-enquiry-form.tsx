@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
-import { Form } from "@/components/ui/form";
+import { FormProvider as Form } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Badge, Card } from "@/components/genaro";
 import { useAuth } from "@/contexts/auth-context";

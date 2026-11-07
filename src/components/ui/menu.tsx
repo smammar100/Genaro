@@ -98,50 +98,9 @@ function MenuItem({
   );
 }
 
-/**
- * A heading inside a menu that is not wrapped in a `MenuGroup`. Base UI's
- * GroupLabel throws outside a Menu.Group, so standalone headings ("Change
- * status") render as a plain, non-interactive label instead.
- */
-function MenuLabel({
-  className,
-  inset,
-  ...props
-}: React.ComponentProps<"div"> & {
-  inset?: boolean;
-}): React.ReactElement {
-  return (
-    <div
-      role="presentation"
-      className={cn(
-        "px-2 py-1.5 text-muted-foreground text-caption data-inset:ps-9 sm:data-inset:ps-8",
-        className,
-      )}
-      data-inset={inset}
-      data-slot="menu-label"
-      {...props}
-    />
-  );
-}
-
-function MenuSeparator({
-  className,
-  ...props
-}: MenuPrimitive.Separator.Props): React.ReactElement {
-  return (
-    <MenuPrimitive.Separator
-      className={cn("mx-2 my-1 h-px bg-border", className)}
-      data-slot="menu-separator"
-      {...props}
-    />
-  );
-}
-
 export {
   Menu as DropdownMenu,
   MenuTrigger as DropdownMenuTrigger,
   MenuPopup as DropdownMenuContent,
   MenuItem as DropdownMenuItem,
-  MenuLabel as DropdownMenuLabel,
-  MenuSeparator as DropdownMenuSeparator,
 };

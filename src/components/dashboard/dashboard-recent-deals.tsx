@@ -13,8 +13,8 @@ import { RegPlate } from "@/components/shared/reg-plate";
 import { DealStageBadge } from "@/components/sales/status-badges";
 import { titleCase } from "@/lib/utils";
 
-/** How many of the newest deals the table shows. */
-const SHOWN = 6;
+/** How many of the newest deals the table shows: five at most (2026-11-07). */
+const SHOWN = 5;
 
 /** "29 Oct" from a timestamp, in the viewer's time zone. */
 const dayMonth = (iso: string) =>

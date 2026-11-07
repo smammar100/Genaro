@@ -19,26 +19,6 @@ export function Dialog({ onOpenChange, ...props }: DialogPrimitive.Root.Props) {
 const DialogPortal: typeof DialogPrimitive.Portal =
   DialogPrimitive.Portal;
 
-export function DialogTrigger({
-  asChild,
-  children,
-  render,
-  ...props
-}: DialogPrimitive.Trigger.Props & {
-  asChild?: boolean;
-}): React.ReactElement {
-  const resolved = resolveRender(asChild, children, render);
-  return (
-    <DialogPrimitive.Trigger
-      data-slot="dialog-trigger"
-      render={resolved.render}
-      {...props}
-    >
-      {resolved.children}
-    </DialogPrimitive.Trigger>
-  );
-}
-
 function DialogBackdrop({
   className,
   ...props
@@ -71,7 +51,7 @@ function DialogViewport({
   );
 }
 
-export function DialogPopup({
+function DialogPopup({
   className,
   children,
   showCloseButton = true,

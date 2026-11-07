@@ -835,7 +835,7 @@ function MenuRowLabel({
 
 // ─── SidebarMenuButton ───────────────────────────────────────────────────────
 
-export const sidebarMenuButtonVariants = cva(
+const sidebarMenuButtonVariants = cva(
   // The trailing gutter is an exact reservation published by the row (see
   // rowGutter): --row-gutter at rest, --row-gutter-hover once hover-revealed
   // actions are showing. One rule per state instead of a class per
@@ -1189,51 +1189,6 @@ const SidebarMenuBadge = forwardRef<HTMLDivElement, SidebarMenuBadgeProps>(
 );
 SidebarMenuBadge.displayName = "SidebarMenuBadge";
 
-// ─── SidebarMenuSkeleton ─────────────────────────────────────────────────────
-
-export interface SidebarMenuSkeletonProps extends HTMLAttributes<HTMLDivElement> {
-  showIcon?: boolean;
-}
-
-// Deterministic width cycle (not Math.random) so server and client render the
-// same markup — a random width per render is a hydration mismatch.
-const SKELETON_WIDTHS = ["62%", "74%", "55%", "82%", "68%"];
-
-const SidebarMenuSkeleton = forwardRef<HTMLDivElement, SidebarMenuSkeletonProps>(
-  ({ className, showIcon = false, ...props }, ref) => {
-    const sizeClasses = useSize();
-    const id = useId();
-    let sum = 0;
-    for (let i = 0; i < id.length; i++) sum += id.charCodeAt(i);
-    const width = SKELETON_WIDTHS[sum % SKELETON_WIDTHS.length];
-    return (
-      <div
-        ref={ref}
-        data-sidebar="menu-skeleton"
-        className={cn(
-          "flex items-center gap-2 px-2",
-          sizeClasses.variant === "compact" ? "h-7" : "h-8",
-          className
-        )}
-        {...props}
-      >
-        {showIcon && (
-          <div
-            data-sidebar="menu-skeleton-icon"
-            className="size-4 shrink-0 animate-pulse rounded-md bg-hover"
-          />
-        )}
-        <div
-          data-sidebar="menu-skeleton-text"
-          className="h-4 flex-1 animate-pulse rounded-md bg-hover"
-          style={{ maxWidth: width }}
-        />
-      </div>
-    );
-  }
-);
-SidebarMenuSkeleton.displayName = "SidebarMenuSkeleton";
-
 // ─── SidebarMenuSub ──────────────────────────────────────────────────────────
 
 export interface SidebarMenuSubProps extends HTMLAttributes<HTMLUListElement> {
@@ -1436,7 +1391,6 @@ export {
   SidebarMenuAction,
   SidebarMenuActions,
   SidebarMenuBadge,
-  SidebarMenuSkeleton,
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,

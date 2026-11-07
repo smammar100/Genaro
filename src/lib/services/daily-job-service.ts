@@ -22,7 +22,7 @@ const SELECT = `
 `;
 
 /** "ls68nyy" → "LS68 NYY"; other shapes are kept as typed, upper-cased. */
-export function formatRegistration(reg: string): string | null {
+function formatRegistration(reg: string): string | null {
   const r = reg.replace(/\s+/g, "").toUpperCase();
   if (!r) return null;
   const current = r.match(/^([A-Z]{2}\d{2})([A-Z]{3})$/);

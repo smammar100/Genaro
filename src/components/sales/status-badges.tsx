@@ -1,6 +1,6 @@
 import { Badge, type BadgeProgress, type BadgeTone } from "@/components/genaro";
 import { salesStageLabel } from "@/lib/constants";
-import type { LeadStatus, StageBehaviour } from "@/lib/types";
+import type { StageBehaviour } from "@/lib/types";
 
 interface BadgeSpec {
   tone?: BadgeTone;
@@ -43,30 +43,6 @@ export function DealStageBadge({
   return (
     <Badge tone={spec.tone} progress={spec.progress}>
       {label ?? salesStageLabel(stage)}
-    </Badge>
-  );
-}
-
-export const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
-  new: "New",
-  contacted: "Contacted",
-  appointment_booked: "Appointment booked",
-  lost: "Lost",
-};
-
-const LEAD_STATUS: Record<LeadStatus, BadgeSpec> = {
-  new: { tone: "info", progress: "incomplete" },
-  contacted: { tone: "attention", progress: "partiallyComplete" },
-  appointment_booked: { tone: "success", progress: "complete" },
-  lost: { tone: "critical" },
-};
-
-/** A lead's follow-up status as a Genaro Badge. */
-export function LeadStatusBadge({ status }: { status: LeadStatus }) {
-  const spec = LEAD_STATUS[status] ?? {};
-  return (
-    <Badge tone={spec.tone} progress={spec.progress}>
-      {LEAD_STATUS_LABEL[status] ?? status}
     </Badge>
   );
 }
