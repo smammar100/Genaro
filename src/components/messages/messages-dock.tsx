@@ -12,6 +12,7 @@ import type { TeamConversation, UUID, User } from "@/lib/types";
 import { ConversationList, NewConversation, type Teammate } from "./conversation-list";
 import { ConversationThread } from "./conversation-thread";
 import { conversationTitle, firstName, previewOf } from "./message-parts";
+import { useTeamPictures } from "@/hooks/use-team-pictures";
 
 type View = { name: "list" } | { name: "new" } | { name: "thread"; id: UUID };
 
@@ -24,6 +25,7 @@ type View = { name: "list" } | { name: "new" } | { name: "thread"; id: UUID };
  */
 export function MessagesDock() {
   const { user, company } = useAuth();
+  const picture = useTeamPictures();
   const me = user?.id ?? null;
   const companyId = company?.id ?? null;
   const [open, setOpen] = useState(false);
@@ -106,7 +108,7 @@ export function MessagesDock() {
             <Button variant="tertiary" fullWidth textAlign="left" onClick={() => openConversation(peek.id)}>
               <span className="flex w-full min-w-0 items-start gap-3 p-1 text-left">
                 <span aria-hidden>
-                  <Avatar name={people.get(peek.lastAuthorId ?? "") ?? "Someone"} size="lg" />
+                  <Avatar name={people.get(peek.lastAuthorId ?? "") ?? "Someone"} size="lg" source={picture(peek.lastAuthorId)} />
                 </span>
                 <span className="flex min-w-0 flex-col">
                   <span className="body-md truncate font-semibold text-(--text)">

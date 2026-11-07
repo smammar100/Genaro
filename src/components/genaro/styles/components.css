@@ -655,7 +655,7 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 .p-page--narrow { max-width:662px; }
 .p-page--full { max-width:none; }
 /* The page header is a card of its own (2026-11-07): title, subtitle and actions on the card surface, set apart from the content below. */
-.p-page__header { display:flex; align-items:flex-start; justify-content:space-between; gap:var(--space-400); padding:var(--space-400); margin:var(--space-600) 0 var(--space-400);
+.p-page__header { display:flex; align-items:flex-start; justify-content:space-between; gap:var(--space-400); padding:var(--space-400); margin:var(--space-400) 0 var(--space-400);
   background:var(--bg-surface); border-radius:var(--border-radius-card); box-shadow:var(--shadow-100); }
 .p-page__header--toolbar { flex-wrap:wrap; }
 .p-page__toolbar { flex:1 0 100%; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:var(--space-300); min-width:0; }

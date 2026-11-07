@@ -38,7 +38,7 @@ export interface KanbanCardProps {
   /** Why the card is stuck (stalled, lost), as a tinted note. */
   note?: { icon: LucideIcon; text: string; tone: "caution" | "critical" };
   /** Footer chip: who owns the card, avatar and name; `empty` ("Unassigned") when nobody does. */
-  person?: { name?: string | null; empty: string };
+  person?: { name?: string | null; empty: string; /** Their profile picture (0068). */ picture?: string };
   /** Footer chip, right: the headline amount and, in a word, what kind it is ("estimate", "agreed"). */
   money?: { value: string; kind?: string; title?: string };
   /** The card's menu, top right: the record's own actions (edit, delete, view). */
@@ -244,7 +244,7 @@ export function KanbanCard({
               {/* The name is right beside it; the avatar is decoration. */}
               {person.name ? (
                 <span aria-hidden className="inline-flex shrink-0">
-                  <Avatar size="xs" name={person.name} />
+                  <Avatar size="xs" name={person.name} source={person.picture} />
                 </span>
               ) : null}
               <span className={cn("min-w-0 truncate", person.name && "text-(--text)")}>

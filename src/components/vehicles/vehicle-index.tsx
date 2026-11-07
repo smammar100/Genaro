@@ -21,7 +21,6 @@ import { vehicleService } from "@/lib/services/vehicle-service";
 import { vendorService } from "@/lib/services/vendor-service";
 import { teamService } from "@/lib/services/team-service";
 import {
-  VEHICLE_LOCATIONS,
   VEHICLE_LOCATION_LABELS,
   type User,
   type Vehicle,
@@ -35,14 +34,9 @@ import { RegPlate } from "@/components/shared/reg-plate";
 import { VehicleStatusBadge } from "@/components/shared/status-badge";
 import { LocationBadge } from "@/components/locations/location-badge";
 import { MoveDialog } from "@/components/locations/move-dialog";
-import { useCompanyLocations } from "@/hooks/use-company-locations";
+import { useBuiltInLocations, useCompanyLocations } from "@/hooks/use-company-locations";
 import { liveLocations, locationLabel } from "@/lib/locations";
 
-/** Location views: every active car, then one per place a car can be. */
-const BUILT_IN_VIEWS: { label: string; location: VehicleLocation | null }[] = [
-  { label: "All", location: null },
-  ...VEHICLE_LOCATIONS.map((l) => ({ label: VEHICLE_LOCATION_LABELS[l], location: l })),
-];
 
 /**
  * Table columns in order (Compact, docs/vehicles.md). `compare` sorts ascending; a descending
@@ -116,10 +110,13 @@ export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
   const [vendors, setVendors] = React.useState<Vendor[]>([]);
   const [users, setUsers] = React.useState<User[]>([]);
   const [moving, setMoving] = React.useState<Vehicle | null>(null);
-  // One tab per place, the company's own after the built-in ones.
+  // Every active car, then one tab per place: the built-in ones still in use,
+  // then the company's own.
   const custom = useCompanyLocations();
-  const VIEWS = [
-    ...BUILT_IN_VIEWS,
+  const builtIn = useBuiltInLocations();
+  const VIEWS: { label: string; location: VehicleLocation | null }[] = [
+    { label: "All", location: null },
+    ...builtIn.map((l) => ({ label: VEHICLE_LOCATION_LABELS[l], location: l })),
     ...liveLocations(custom).map((l) => ({ label: l.label, location: l.slug as VehicleLocation | null })),
   ];
   const [tabParam] = React.useState(() => searchParams.get(TAB_PARAM));

@@ -7,7 +7,6 @@ import type { InspectionChecklistItem } from "@/lib/types";
 import {
   Button,
   Card,
-  Layout,
   Modal,
   SkeletonBodyText,
   TextField,
@@ -15,8 +14,6 @@ import {
 import { CommitTextField } from "@/components/admin/commit-text-field";
 import { toast } from "@/lib/toast";
 
-const DESCRIPTION =
-  "The points on the vehicle inspection, in order. Renaming an item or its status options is safe at any time; inspections already recorded keep what was answered.";
 
 function parseStatusOptions(raw: string): string[] {
   return raw
@@ -151,19 +148,16 @@ export function InspectionChecklistSettings() {
 
   if (!items) {
     return (
-      <Layout>
-        <Layout.AnnotatedSection title="Inspection checklist" description={DESCRIPTION}>
+      <div className="flex flex-col gap-4">
           <Card>
             <SkeletonBodyText lines={6} />
           </Card>
-        </Layout.AnnotatedSection>
-      </Layout>
+      </div>
     );
   }
 
   return (
-    <Layout>
-      <Layout.AnnotatedSection title="Inspection checklist" description={DESCRIPTION}>
+    <div className="flex flex-col gap-4">
         <Card padding="0">
           <ul className="divide-y divide-(--border-secondary)">
             {items.map((item, i) => (
@@ -275,7 +269,6 @@ export function InspectionChecklistSettings() {
             point.
           </p>
         </Modal>
-      </Layout.AnnotatedSection>
-    </Layout>
+    </div>
   );
 }

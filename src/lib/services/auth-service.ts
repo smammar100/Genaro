@@ -88,6 +88,46 @@ export const authService = {
     invalidate(NS);
   },
 
+  /**
+   * Upload your own profile picture (0068) and set it on your user: it shows
+   * wherever your initials did. Squared off and shrunk first; returns its
+   * public address.
+   */
+  async uploadOwnAvatar(file: File, user: Pick<User, "id" | "companyId">): Promise<string> {
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      throw new Error("Use a PNG, JPG or WebP picture.");
+    }
+    if (file.size > 12 * 1024 * 1024) throw new Error("That picture is over 12 MB.");
+    const { default: imageCompression } = await import("browser-image-compression");
+    const small = await imageCompression(file, { maxSizeMB: 0.2, maxWidthOrHeight: 256, useWebWorker: true, fileType: "image/jpeg" });
+    const path = `${user.companyId}/${user.id}/avatar.jpg`;
+    const supabase = createClient();
+    const { error: upErr } = await supabase.storage
+      .from("avatars")
+      .upload(path, small, { contentType: "image/jpeg", upsert: true });
+    if (upErr) {
+      throw new Error(
+        /bucket not found/i.test(upErr.message)
+          ? "Profile pictures need database update 0068. Apply it, then try again."
+          : upErr.message,
+      );
+    }
+    // Cache-bust, so a new picture shows at once where the old one was.
+    const url = `${supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
+    const { error } = await supabase.from("users").update({ avatar_url: url }).eq("id", user.id);
+    if (error) throw error;
+    invalidate(NS);
+    return url;
+  },
+
+  /** Back to initials. */
+  async clearOwnAvatar(userId: UUID): Promise<void> {
+    const supabase = createClient();
+    const { error } = await supabase.from("users").update({ avatar_url: null }).eq("id", userId);
+    if (error) throw error;
+    invalidate(NS);
+  },
+
   async getUsersForCompany(companyId: UUID): Promise<User[]> {
     return withCache(`${NS}users:${companyId}`, async () => {
       const supabase = createClient();

@@ -600,7 +600,7 @@ export default function SalesPipelinePage() {
                     ? { icon: CircleX, tone: "critical", text: `Lost: ${d.notes.trim()}` }
                     : undefined
                 }
-                person={{ name: agent?.name, empty: "No agent" }}
+                person={{ name: agent?.name, picture: agent?.avatarUrl ?? undefined, empty: "No agent" }}
                 money={
                   value != null
                     ? {

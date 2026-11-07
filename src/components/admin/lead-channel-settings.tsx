@@ -8,7 +8,6 @@ import {
   Badge,
   Button,
   Card,
-  Layout,
   SkeletonBodyText,
   TextField,
 } from "@/components/genaro";
@@ -26,8 +25,6 @@ function slugify(label: string): string {
     .slice(0, 48);
 }
 
-const DESCRIPTION =
-  "Where your enquiries come from: the options on the Create Lead form, in this order. Hiding a channel keeps it off new leads without changing the ones already recorded against it.";
 
 /**
  * Settings > Lead Channels (GEN-117).
@@ -131,19 +128,16 @@ export function LeadChannelSettings() {
 
   if (!channels) {
     return (
-      <Layout>
-        <Layout.AnnotatedSection title="Lead channels" description={DESCRIPTION}>
+      <div className="flex flex-col gap-4">
           <Card>
             <SkeletonBodyText lines={6} />
           </Card>
-        </Layout.AnnotatedSection>
-      </Layout>
+      </div>
     );
   }
 
   return (
-    <Layout>
-      <Layout.AnnotatedSection title="Lead channels" description={DESCRIPTION}>
+    <div className="flex flex-col gap-4">
         <Card padding="0">
           <ul className="divide-y divide-(--border-secondary)">
             {channels.map((channel, i) => (
@@ -180,7 +174,6 @@ export function LeadChannelSettings() {
                   onCommit={(label) => handleRename(channel, label)}
                 />
 
-                {channel.isSystem ? <Badge>Built in</Badge> : null}
                 {!channel.enabled ? <Badge tone="attention">Hidden</Badge> : null}
 
                 <Button
@@ -221,7 +214,6 @@ export function LeadChannelSettings() {
             </Button>
           </div>
         </Card>
-      </Layout.AnnotatedSection>
-    </Layout>
+    </div>
   );
 }

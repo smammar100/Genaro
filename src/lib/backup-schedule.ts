@@ -2,10 +2,9 @@
  * When a data backup is due (GEN-90).
  *
  * Car Capital lost a full database once, and asked for a backup they take
- * themselves rather than one that happens silently — the export carries the
- * whole business, so a person should knowingly ask for it and receive it.
- * That makes the reminder the important half of the feature: without a nudge,
- * a manual backup is a backup nobody takes.
+ * themselves. Since 2026-11-07 one is also made every night and kept in the
+ * app (api/cron/backup), and those count here too, so the reminder only
+ * speaks up when the nightly backup has stopped and nobody has downloaded one.
  *
  * Framework-free so the interval rules can be unit-tested.
  */
@@ -76,7 +75,7 @@ export function getBackupStatus(
     message:
       daysSince === 0
         ? "Backed up today."
-        : `Last backup ${daysSince} day${daysSince === 1 ? "" : "s"} ago. Next due in ${daysUntilDue}.`,
+        : `Last backup ${daysSince} day${daysSince === 1 ? "" : "s"} ago. Next due in ${daysUntilDue} day${daysUntilDue === 1 ? "" : "s"}.`,
   };
 }
 

@@ -161,6 +161,7 @@ export function AdminTopBar({
           <TopBar
             logo={logo}
             storeName={user?.name || handle || "Account"}
+            userAvatarSource={user?.avatarUrl ?? undefined}
             searchPlaceholder={narrow ? "Search" : "Search vehicles and pages"}
             searchId="tour-search"
             onSearchFocus={() => {

@@ -11,7 +11,6 @@ import {
 } from "@/components/genaro";
 import { Input } from "@/components/ui/input";
 import {
-  VEHICLE_LOCATIONS,
   type LocationMovement,
   type UUID,
   type User,
@@ -21,7 +20,7 @@ import {
 } from "@/lib/types";
 import { locationService } from "@/lib/services/location-service";
 import { liveLocations, locationLabel } from "@/lib/locations";
-import { useCompanyLocations } from "@/hooks/use-company-locations";
+import { useBuiltInLocations, useCompanyLocations } from "@/hooks/use-company-locations";
 
 interface MoveDialogProps {
   open: boolean;
@@ -101,8 +100,9 @@ export function MoveDialog({
   const activeUsers = useMemo(() => users.filter((u) => u.active), [users]);
   // The built-in places, then the company's own from Settings → Locations.
   const custom = useCompanyLocations();
+  const builtIn = useBuiltInLocations();
   const destinations: VehicleLocation[] = [
-    ...VEHICLE_LOCATIONS,
+    ...builtIn,
     ...liveLocations(custom).map((l) => l.slug),
   ];
 

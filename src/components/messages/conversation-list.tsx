@@ -7,6 +7,7 @@ import { messageService } from "@/lib/services/message-service";
 import type { TeamConversation, UUID } from "@/lib/types";
 import { DockHeader } from "./conversation-thread";
 import { conversationTitle, previewOf, shortWhen } from "./message-parts";
+import { useTeamPictures } from "@/hooks/use-team-pictures";
 
 /** A teammate a conversation can include. */
 export interface Teammate {
@@ -15,7 +16,8 @@ export interface Teammate {
 }
 
 function ConversationMark({ c, title }: { c: TeamConversation; title: string }) {
-  if (c.kind === "direct") return <Avatar name={title} size="lg" />;
+  const picture = useTeamPictures();
+  if (c.kind === "direct") return <Avatar name={title} size="lg" source={picture(title)} />;
   return (
     <span className="grid size-8 shrink-0 place-items-center rounded-(--radius-750) bg-(--bg-surface-secondary) text-(--icon-secondary)">
       {c.kind === "everyone" ? <Hash className="size-4" aria-hidden /> : <Users className="size-4" aria-hidden />}

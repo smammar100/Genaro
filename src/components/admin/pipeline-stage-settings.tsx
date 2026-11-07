@@ -8,7 +8,6 @@ import {
   Badge,
   Button,
   Card,
-  Layout,
   Modal,
   Select,
   SkeletonBodyText,
@@ -43,8 +42,6 @@ const BEHAVIOUR_OPTIONS = (Object.keys(BEHAVIOUR_LABEL) as StageBehaviour[]).map
   (b) => ({ label: BEHAVIOUR_LABEL[b], value: b }),
 );
 
-const DESCRIPTION =
-  "The columns on the sales board, in order. Renaming a stage is safe at any time; deals keep their place.";
 
 /**
  * Settings › Sales Pipeline (GEN-65).
@@ -173,13 +170,11 @@ export function PipelineStageSettings() {
 
   if (!stages) {
     return (
-      <Layout>
-        <Layout.AnnotatedSection title="Pipeline stages" description={DESCRIPTION}>
+      <div className="flex flex-col gap-4">
           <Card>
             <SkeletonBodyText lines={6} />
           </Card>
-        </Layout.AnnotatedSection>
-      </Layout>
+      </div>
     );
   }
 
@@ -188,8 +183,7 @@ export function PipelineStageSettings() {
     .map((s) => ({ label: s.label, value: s.slug }));
 
   return (
-    <Layout>
-      <Layout.AnnotatedSection title="Pipeline stages" description={DESCRIPTION}>
+    <div className="flex flex-col gap-4">
         <Card padding="0">
           <ul className="divide-y divide-(--border-secondary)">
             {stages.map((stage, i) => (
@@ -323,7 +317,6 @@ export function PipelineStageSettings() {
             />
           </div>
         </Modal>
-      </Layout.AnnotatedSection>
-    </Layout>
+    </div>
   );
 }

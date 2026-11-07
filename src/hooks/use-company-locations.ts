@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { companyLocationService } from "@/lib/services/company-location-service";
-import type { CompanyLocation } from "@/lib/types";
+import { VEHICLE_LOCATIONS, type BuiltInLocation, type CompanyLocation } from "@/lib/types";
 import { rememberCompanyLocations } from "@/lib/locations";
 
 /**
@@ -31,4 +31,30 @@ export function useCompanyLocations(): CompanyLocation[] {
     };
   }, [company?.id]);
   return locations;
+}
+
+/**
+ * The built-in places still in use, in their order: the ones the company
+ * removed in Settings → Locations (0066) are left out. All five until loaded,
+ * and before 0066 is applied.
+ */
+export function useBuiltInLocations(): BuiltInLocation[] {
+  const { company } = useAuth();
+  const [hidden, setHidden] = useState<BuiltInLocation[]>([]);
+  useEffect(() => {
+    if (!company?.id) return;
+    let active = true;
+    companyLocationService
+      .getHidden(company.id)
+      .then((list) => {
+        if (active) setHidden(list);
+      })
+      .catch(() => {
+        // Offline or blocked: offer every built-in place, as before 0066.
+      });
+    return () => {
+      active = false;
+    };
+  }, [company?.id]);
+  return VEHICLE_LOCATIONS.filter((l) => !hidden.includes(l));
 }
