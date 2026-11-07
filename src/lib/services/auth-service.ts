@@ -88,6 +88,38 @@ export const authService = {
     invalidate(NS);
   },
 
+  /**
+   * Upload your own profile picture and set it on your user: it shows
+   * wherever your initials did. Shrunk to a small JPEG here, then stored by
+   * /api/profile/avatar (which makes the bucket if 0068 hasn't). Returns its
+   * public address.
+   */
+  async uploadOwnAvatar(file: File): Promise<string> {
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      throw new Error("Use a PNG, JPG or WebP picture.");
+    }
+    if (file.size > 12 * 1024 * 1024) throw new Error("That picture is over 12 MB.");
+    const { default: imageCompression } = await import("browser-image-compression");
+    const small = await imageCompression(file, { maxSizeMB: 0.2, maxWidthOrHeight: 256, useWebWorker: true, fileType: "image/jpeg" });
+    const form = new FormData();
+    form.append("file", new File([small], "avatar.jpg", { type: "image/jpeg" }));
+    const res = await fetch("/api/profile/avatar", { method: "POST", body: form });
+    const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+    if (!res.ok || !body.url) throw new Error(body.error ?? "Couldn't save the picture.");
+    invalidate(NS);
+    return body.url;
+  },
+
+  /** Back to initials. */
+  async clearOwnAvatar(): Promise<void> {
+    const res = await fetch("/api/profile/avatar", { method: "DELETE" });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(body.error ?? "Couldn't remove the picture.");
+    }
+    invalidate(NS);
+  },
+
   async getUsersForCompany(companyId: UUID): Promise<User[]> {
     return withCache(`${NS}users:${companyId}`, async () => {
       const supabase = createClient();

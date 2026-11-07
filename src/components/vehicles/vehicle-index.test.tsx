@@ -13,7 +13,11 @@ const perms = vi.hoisted(() => ({ move: true }));
 vi.mock("@/hooks/use-permissions", () => ({
   usePermissions: () => ({ isSuperUser: false, can: (c: string) => (c === "locations:move" ? perms.move : false) }),
 }));
-vi.mock("@/hooks/use-company-locations", () => ({ useCompanyLocations: () => [] }));
+vi.mock("@/hooks/use-company-locations", () => ({
+  useCompanyLocations: () => [],
+  // Every built-in place in use, none removed in Settings.
+  useBuiltInLocations: () => ["forecourt", "yard", "garage", "staff", "courtesy_car"],
+}));
 vi.mock("@/lib/services/vendor-service", () => ({ vendorService: { getAll: vi.fn(async () => []) } }));
 vi.mock("@/lib/services/team-service", () => ({ teamService: { getAll: vi.fn(async () => []) } }));
 const stock = vi.hoisted(() => ({ list: [] as unknown[] }));

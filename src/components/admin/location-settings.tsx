@@ -3,13 +3,12 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { companyLocationService } from "@/lib/services/company-location-service";
-import { VEHICLE_LOCATIONS, VEHICLE_LOCATION_LABELS, type CompanyLocation } from "@/lib/types";
+import { VEHICLE_LOCATIONS, VEHICLE_LOCATION_LABELS, type BuiltInLocation, type CompanyLocation } from "@/lib/types";
 import { liveLocations } from "@/lib/locations";
 import {
   Badge,
   Button,
   Card,
-  Layout,
   SkeletonBodyText,
   TextField,
   useConfirm,
@@ -17,18 +16,17 @@ import {
 import { CommitTextField } from "@/components/admin/commit-text-field";
 import { toast } from "@/lib/toast";
 
-const DESCRIPTION =
-  "Where your cars can be, beside the built-in places: a second yard, another showroom, a unit down the road. Your places show as tabs on All vehicles and as destinations when you move a car. A place can only be removed once no car is there; its name stays in the cars' history.";
 
 /**
- * Settings > Locations (call 2026-10-31): the company's own places for its
- * cars. The built-in ones carry rules (a garage needs a workshop, staff a
- * person), so they are listed but fixed; the company's own are plain places
- * it can add, rename and remove.
+ * Settings > Locations (call 2026-10-31): where the company's cars can be.
+ * The built-in places can be removed and restored (2026-11-07, 0066); the
+ * company's own can also be added and renamed. A place with a car in it
+ * can't be removed (the database refuses).
  */
 export function LocationSettings() {
   const { company } = useAuth();
   const [places, setPlaces] = useState<CompanyLocation[] | null>(null);
+  const [hidden, setHidden] = useState<BuiltInLocation[]>([]);
   const [busy, setBusy] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const { confirm, confirmDialog } = useConfirm();
@@ -39,6 +37,7 @@ export function LocationSettings() {
       .getAll(company.id)
       .then(setPlaces)
       .catch(() => setPlaces([]));
+    void companyLocationService.getHidden(company.id).then(setHidden).catch(() => setHidden([]));
   }, [company]);
 
   async function run(work: () => Promise<void>, success: string) {
@@ -46,7 +45,12 @@ export function LocationSettings() {
     setBusy(true);
     try {
       await work();
-      setPlaces(await companyLocationService.getAll(company.id));
+      const [all, gone] = await Promise.all([
+        companyLocationService.getAll(company.id),
+        companyLocationService.getHidden(company.id),
+      ]);
+      setPlaces(all);
+      setHidden(gone);
       toast.success(success);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't save that change");
@@ -72,6 +76,24 @@ export function LocationSettings() {
     void run(() => companyLocationService.rename(place.id, next), "Location renamed");
   }
 
+  async function handleRemoveBuiltIn(loc: BuiltInLocation) {
+    if (!company) return;
+    const label = VEHICLE_LOCATION_LABELS[loc];
+    const ok = await confirm({
+      title: `Remove ${label}?`,
+      description:
+        "It stops appearing as a tab and as somewhere to move a car, from any screen. Cars that were there keep it in their history, and you can restore it here. A place with a car in it can't be removed.",
+      confirmText: "Remove location",
+      destructive: true,
+    });
+    if (ok) void run(() => companyLocationService.hide(company.id, loc), `${label} removed`);
+  }
+
+  function handleRestore(loc: BuiltInLocation) {
+    if (!company) return;
+    void run(() => companyLocationService.restore(company.id, loc), `${VEHICLE_LOCATION_LABELS[loc]} restored`);
+  }
+
   async function handleRemove(place: CompanyLocation) {
     const ok = await confirm({
       title: `Remove ${place.label}?`,
@@ -84,8 +106,7 @@ export function LocationSettings() {
   }
 
   return (
-    <Layout>
-      <Layout.AnnotatedSection title="Locations" description={DESCRIPTION}>
+    <div className="flex flex-col gap-4">
         <Card padding="0">
           {places === null ? (
             <div className="p-4">
@@ -93,12 +114,35 @@ export function LocationSettings() {
             </div>
           ) : (
             <ul className="divide-y divide-(--border-secondary)">
-              {VEHICLE_LOCATIONS.map((loc) => (
-                <li key={loc} className="flex min-h-12 items-center gap-2 px-4 py-2">
-                  <span className="body-md min-w-0 flex-1">{VEHICLE_LOCATION_LABELS[loc]}</span>
-                  <Badge>Built in</Badge>
-                </li>
-              ))}
+              {VEHICLE_LOCATIONS.map((loc) => {
+                const removed = hidden.includes(loc);
+                const label = VEHICLE_LOCATION_LABELS[loc];
+                return (
+                  <li key={loc} className="flex min-h-12 items-center gap-2 px-4 py-2">
+                    <span className={removed ? "body-md min-w-0 flex-1 text-(--text-secondary)" : "body-md min-w-0 flex-1"}>
+                      {label}
+                    </span>
+                    {removed ? (
+                      <>
+                        <Badge>Removed</Badge>
+                        <Button size="micro" disabled={busy} onClick={() => handleRestore(loc)} accessibilityLabel={`Restore ${label}`}>
+                          Restore
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        size="micro"
+                        tone="critical"
+                        disabled={busy}
+                        onClick={() => void handleRemoveBuiltIn(loc)}
+                        accessibilityLabel={`Remove ${label}`}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </li>
+                );
+              })}
               {live.map((place) => (
                 <li key={place.id} className="flex items-center gap-2 px-3 py-2">
                   <CommitTextField
@@ -143,8 +187,7 @@ export function LocationSettings() {
             </Button>
           </div>
         </Card>
-      </Layout.AnnotatedSection>
       {confirmDialog}
-    </Layout>
+    </div>
   );
 }

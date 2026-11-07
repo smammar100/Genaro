@@ -62,6 +62,7 @@ import {
   lostConfirmOptions,
   unsaleConfirmOptions,
 } from "@/lib/sale-confirm";
+import { useTeamPictures } from "@/hooks/use-team-pictures";
 
 interface Loaded {
   deal: SalesDeal;
@@ -103,6 +104,7 @@ const row = (term: string, value: ReactNode) =>
  */
 export default function DealPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const picture = useTeamPictures();
   const pathname = usePathname();
   const { user, company } = useAuth();
   const [data, setData] = useState<Loaded | null>(null);
@@ -484,7 +486,7 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
                   const author = users.find((u) => u.id === n.userId)?.name ?? "Unknown";
                   return (
                     <li key={n.id} className="flex gap-3 py-2">
-                      <Avatar size="sm" name={author} />
+                      <Avatar size="sm" name={author} source={picture(n.userId)} />
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                           <span className="body-md-semibold">{author}</span>
@@ -500,7 +502,7 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
                 {/* What was said when the lead was taken, oldest of all. */}
                 {lead?.notes?.trim() ? (
                   <li className="flex gap-3 py-2">
-                    <Avatar size="sm" name={users.find((u) => u.id === lead.assignedTo)?.name ?? "Lead"} />
+                    <Avatar size="sm" name={users.find((u) => u.id === lead.assignedTo)?.name ?? "Lead"} source={picture(lead.assignedTo)} />
                     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                         <span className="body-md-semibold">With the lead</span>

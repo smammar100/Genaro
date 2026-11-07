@@ -372,8 +372,8 @@ export function titleFromPath(pathname: string): string {
 /** Routes outside the sidebar that still need gating. */
 const EXTRA_ROUTE_CAPS: Array<{ href: string; caps: Capability[] }> = [
   { href: "/inventory/add-vehicle", caps: ["inventory:add"] },
-  // /admin/settings is open to every signed-in user for the "My profile" tab;
-  // the page itself hides the company-wide tabs without admin:manage_settings.
+  // /admin/settings is open to every signed-in user for the "My profile" section;
+  // the page itself hides the company-wide sections without admin:manage_settings.
   {
     href: "/sales",
     caps: [

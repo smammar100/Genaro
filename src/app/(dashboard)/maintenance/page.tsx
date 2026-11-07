@@ -333,7 +333,7 @@ export default function MaintenancePage() {
                       }
                     : undefined
                 }
-                person={{ name: assignee?.name, empty: "Unassigned" }}
+                person={{ name: assignee?.name, picture: assignee?.avatarUrl ?? undefined, empty: "Unassigned" }}
                 money={
                   cost
                     ? {

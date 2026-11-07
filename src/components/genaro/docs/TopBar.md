@@ -8,7 +8,7 @@ import { TopBar } from '@/components/genaro';
 
 ## Use it for
 - The `topBar` of a `Frame`. Frame adds the hamburger (`onNavigationToggle`) and passes down its own `contextualSaveBar`, so you usually set only `logo`, `storeName` and the search props.
-- `logo` takes text or any node, such as an `<img>`. The logo area is 224px wide on desktop. `storeName` labels the store menu and supplies the avatar initials; it defaults to "Store".
+- `logo` takes text or any node, such as an `<img>`. The logo area is 224px wide on desktop. `storeName` labels the store menu and supplies the avatar initials; it defaults to "Store". `userAvatarSource` shows the person's profile picture in place of the initials.
 - Search: `searchPlaceholder` defaults to "Search". For a controlled field, pass `searchValue` and `onSearchChange` together. The field has no submit, so act on `onSearchChange`, for example by debouncing and then routing to your search page.
 - To use the field as the entry point to a command palette, pass `onSearchFocus` and open the palette there. Blur the field first (`document.activeElement.blur()`), or the dialog hands focus back to it on close and reopens itself. `searchId` puts an id on the field for anchors such as a tour step.
 - `unreadNotifications` adds a red dot (`bg-fill-critical`). `showSidekick={false}` hides the `SidekickMajor` button.

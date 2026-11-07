@@ -68,7 +68,8 @@ export function AdminNavigation({
           {canAddVehicle ? (
             // Adding a car is the most frequent job in the app, so it heads the
             // rail as a button rather than sitting among Inventory's pages.
-            <div className="px-3 pt-3">
+            // 16px under the top bar, level with the page header card beside it.
+            <div className="px-3 pt-4">
               <Button
                 variant="primary"
                 fullWidth

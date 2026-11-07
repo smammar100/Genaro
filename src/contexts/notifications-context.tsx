@@ -53,7 +53,7 @@ async function buildBackupReminder(
     type: status.urgency === "never" ? "warning" : "urgent",
     title: "Backup due",
     body: status.message,
-    link: "/admin/settings",
+    link: "/admin/settings?section=backup",
     read: false,
     createdAt: new Date().toISOString(),
   };

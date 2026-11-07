@@ -155,9 +155,10 @@ table tbody tr[aria-selected="true"] > td {
 /* A Page with no title has no header, and the kit only spaces the top
    through that header — so a title-less page (the dashboard, which leads
    with its greeting) sat flush against the top bar. Give its content the
-   header's top padding instead. */
+   header's top margin instead: 16px, level with the sidebar's first button
+   (2026-11-07). */
 .p-page > .p-page__content:first-child {
-  padding-top: var(--space-600);
+  padding-top: var(--space-400);
 }
 
 /* Breathing room for list tables — the app's ui Table and the Genaro

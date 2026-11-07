@@ -29,6 +29,7 @@ import { authService } from "@/lib/services/auth-service";
 import { dailyJobService, registrationError } from "@/lib/services/daily-job-service";
 import { toast } from "@/lib/toast";
 import type { DailyJob, DailyJobPriority, User } from "@/lib/types";
+import { useTeamPictures } from "@/hooks/use-team-pictures";
 
 const PRIORITIES: { value: DailyJobPriority; label: string; tone: BadgeTone }[] = [
   { value: "urgent", label: "Urgent", tone: "critical" },
@@ -140,6 +141,7 @@ function AddJobModal({
   onClose: () => void;
   onAdd: (title: string, priority: DailyJobPriority, reg: string, assignedTo: string | null) => Promise<boolean>;
 }) {
+  const picture = useTeamPictures();
   const [title, setTitle] = useState("");
   const [reg, setReg] = useState("");
   const [tried, setTried] = useState(false);
@@ -221,7 +223,7 @@ function AddJobModal({
               value: s.id,
               media: (
                 <span aria-hidden>
-                  <Avatar name={s.name} size="xs" />
+                  <Avatar name={s.name} size="xs" source={picture(s.id)} />
                 </span>
               ),
             })),
@@ -260,12 +262,13 @@ function PriorityPicker({ job, onChange }: { job: DailyJob; onChange: (p: DailyJ
 
 /** Who the job is for: an avatar and first name, or Open. */
 function Assignee({ name }: { name: string | null }) {
+  const picture = useTeamPictures();
   if (!name) return <span className="body-sm text-(--text-secondary)">Open</span>;
   return (
     <span className="flex min-w-0 items-center gap-1.5" title={name}>
       {/* Decoration: the first name beside it is what's read out. */}
       <span aria-hidden>
-        <Avatar name={name} size="xs" />
+        <Avatar name={name} size="xs" source={picture(name)} />
       </span>
       <span className="body-sm text-(--text)">{firstName(name)}</span>
     </span>
@@ -322,6 +325,7 @@ function AssigneePicker({
 export function DaySheet() {
   const { user, company } = useAuth();
   const today = dayKey(new Date());
+  const picture = useTeamPictures();
   const [day, setDay] = useState(today);
   const [jobs, setJobs] = useState<DailyJob[] | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -485,7 +489,7 @@ export function DaySheet() {
               const poster = nameOf(job.createdBy);
               const posted = (
                 <span className="flex min-w-0 items-center gap-1.5" title={`Posted by ${poster} at ${timeLabel(job.createdAt)}`}>
-                  <Avatar name={poster} size="xs" accessibilityLabel={poster} />
+                  <Avatar name={poster} size="xs" accessibilityLabel={poster} source={picture(job.createdBy)} />
                   <span className="body-sm text-(--text-secondary)">
                     {firstName(poster)} <span className="tabular-nums">· {timeLabel(job.createdAt)}</span>
                   </span>

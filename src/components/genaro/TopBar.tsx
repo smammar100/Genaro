@@ -13,6 +13,8 @@ export interface TopBarProps {
   logo?: React.ReactNode;
   /** Shown beside the avatar (right). */
   storeName?: string;
+  /** The signed-in person's profile picture; their initials show without it. */
+  userAvatarSource?: string;
   searchPlaceholder?: string;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
@@ -40,7 +42,7 @@ export interface TopBarProps {
  * @import import { TopBar } from "@/components/genaro";
  */
 export function TopBar({
-  logo, storeName, searchPlaceholder, searchValue, onSearchChange, onSearchFocus, searchId, onNavigationToggle, showSidekick, onSidekickClick, unreadNotifications,
+  logo, storeName, userAvatarSource, searchPlaceholder, searchValue, onSearchChange, onSearchFocus, searchId, onNavigationToggle, showSidekick, onSidekickClick, unreadNotifications,
   onNotificationsClick, onUserMenuClick, actions, contextualSaveBar, className,
 }: TopBarProps) {
   const frame = React.useContext(FrameContext);
@@ -92,7 +94,7 @@ export function TopBar({
               </button>
               <button type="button" className="p-topbar__user" onClick={onUserMenuClick}>
                 <span className="p-topbar__username">{storeName || 'Store'}</span>
-                <Avatar name={storeName || 'Store'} size="md" />
+                <Avatar name={storeName || 'Store'} source={userAvatarSource} size="md" />
               </button>
             </div>
           </>

@@ -359,7 +359,7 @@ function QueueTable({
             <MotBadge key="mot" motExpiry={vehicle.motExpiry} />,
             inspector ? (
               <span key="inspector" className="inline-flex items-center gap-2 text-(--text-secondary)">
-                <Avatar size="sm" name={inspector.name} />
+                <Avatar size="sm" name={inspector.name} source={inspector.avatarUrl ?? undefined} />
                 {inspector.name}
               </span>
             ) : (

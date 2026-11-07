@@ -47,7 +47,7 @@ export function PrepAssignee({
             id={buttonId}
             variant="tertiary"
             size="micro"
-            icon={<Avatar size="xs" name={assignee.name} />}
+            icon={<Avatar size="xs" name={assignee.name} source={assignee.avatarUrl ?? undefined} />}
             accessibilityLabel={`Assigned to ${assignee.name}. Change`}
             ariaExpanded={open}
             onClick={() => setOpen((o) => !o)}
@@ -77,7 +77,7 @@ export function PrepAssignee({
           options={users.map((u) => ({
             value: u.id,
             label: u.name,
-            media: <Avatar size="xs" name={u.name} />,
+            media: <Avatar size="xs" name={u.name} source={u.avatarUrl ?? undefined} />,
           }))}
           value={assignee?.id ?? ""}
           onChange={(id) => {

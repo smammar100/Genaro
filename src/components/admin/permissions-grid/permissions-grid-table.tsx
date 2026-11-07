@@ -122,6 +122,7 @@ export function PermissionsGridTable({
                     <Avatar
                       name={u.name}
                       initials={getInitials(u.name)}
+                      source={u.avatarUrl ?? undefined}
                       size="md"
                     />
                     <div className="flex min-w-0 flex-1 flex-col">

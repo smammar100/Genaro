@@ -19,10 +19,9 @@ import { Badge, Button, Card } from "@/components/genaro";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useCompanyLocations } from "@/hooks/use-company-locations";
+import { useBuiltInLocations, useCompanyLocations } from "@/hooks/use-company-locations";
 import { liveLocations, locationLabel } from "@/lib/locations";
 import {
-  VEHICLE_LOCATIONS,
   isCustomLocation,
   type BuiltInLocation,
   type CustomLocationKey,
@@ -182,6 +181,7 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
     setVehicle(vehicleProp);
   }
   const custom = useCompanyLocations();
+  const builtIn = useBuiltInLocations();
   const [movements, setMovements] = useState<LocationMovement[] | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -334,7 +334,7 @@ export function LocationTab({ vehicle: vehicleProp }: LocationTabProps) {
 
         {/* Presence strip — the 4 locations, current marked "Here now" */}
         <div className="flex flex-wrap gap-2">
-          {[...VEHICLE_LOCATIONS, ...liveLocations(custom).map((l) => l.slug)].map((loc) => {
+          {[...builtIn, ...liveLocations(custom).map((l) => l.slug)].map((loc) => {
             const meta = toneOf(loc);
             const Icon = isCustomLocation(loc) ? MapPin : LOCATION_ICON[loc];
             const on = loc === vehicle.currentLocation;
