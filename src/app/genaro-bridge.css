@@ -29,18 +29,20 @@
 [data-theme="light"],
 .light {
   --kanban-board: var(--bg-surface);
-  --kanban-lane-target: var(--bg-surface-secondary);
-  --kanban-card-shadow: 0 2px 4px 0 rgb(35 35 35 / 0.03), 0 1px 2px 0 rgb(35 35 35 / 0.04), 0 0 0 3px rgb(205 205 205 / 0.12), 0 0 0 1px color-mix(in srgb, var(--border-secondary) 70%, transparent);
-  --kanban-card-shadow-hover: 0 2px 4px 0 rgb(35 35 35 / 0.04), 0 1px 2px 0 rgb(35 35 35 / 0.05), 0 4px 12px 0 rgb(35 35 35 / 0.06), 0 0 0 3px rgb(205 205 205 / 0.18), 0 0 0 1px var(--border-secondary);
-  --kanban-card-shadow-lift: 0 0 0 1px color-mix(in srgb, var(--border-focus) 24%, transparent), 0 0 0 4px color-mix(in srgb, var(--border-focus) 16%, transparent), 0 2px 12px 0 rgb(35 35 35 / 0.08), 0 6px 16px 0 rgb(35 35 35 / 0.12);
+  --kanban-lane-rest: var(--bg-surface-secondary);
+  --kanban-lane-target: var(--bg-surface-tertiary);
+  --kanban-card-shadow: 0 0 0 1px var(--border-secondary), 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --kanban-card-shadow-hover: 0 0 0 1px var(--border), 0 2px 6px 0 rgb(0 0 0 / 0.07);
+  --kanban-card-shadow-lift: 0 0 0 1px var(--border-secondary), 0 16px 32px -12px rgb(0 0 0 / 0.28);
 }
 [data-theme="dark"],
 .dark {
-  --kanban-board: var(--bg-surface-secondary);
+  --kanban-board: var(--bg-surface);
+  --kanban-lane-rest: var(--bg-surface-secondary);
   --kanban-lane-target: var(--bg-surface-hover);
   --kanban-card-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 0 0 1px rgb(255 255 255 / 0.06), inset 0 1px 0 0 rgb(255 255 255 / 0.04);
   --kanban-card-shadow-hover: 0 4px 12px 0 rgb(0 0 0 / 0.45), 0 0 0 1px rgb(255 255 255 / 0.1), inset 0 1px 0 0 rgb(255 255 255 / 0.06);
-  --kanban-card-shadow-lift: 0 0 0 1px color-mix(in srgb, var(--border-focus) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--border-focus) 20%, transparent), 0 6px 16px 0 rgb(0 0 0 / 0.5);
+  --kanban-card-shadow-lift: 0 0 0 1px rgb(255 255 255 / 0.1), 0 16px 32px -12px rgb(0 0 0 / 0.6);
 }
 
 /* Genaro labels are sentence case; never shout. */
@@ -177,15 +179,20 @@ table tbody tr[aria-selected="true"] > td {
 .p-datatable th {
   padding-inline: var(--space-400);
 }
+/* Every table's rows are 32px (call 2026-11-07): the app is data heavy, so
+   tables stay dense, like All vehicles. 4px top and bottom keeps a 24px badge
+   inside 32px; taller content (two lines, a thumbnail) still grows its row.
+   This file sits outside Genaro's layer, so it sets the padding for good. */
 [data-slot="table"] td,
 .p-indextable td,
 .p-datatable td {
-  padding: var(--space-300) var(--space-400);
+  height: 32px;
+  padding: var(--space-100) var(--space-400);
 }
-/* A condensed IndexTable keeps its 32px rows (docs/vehicles.md): this file sits
-   outside the layer Genaro's own rule is in, so the padding above would undo it. */
-.p-indextable.p-indextable--condensed td {
-  padding-block: var(--space-100);
+/* The data grid sizes its rows itself (--dg-row-h, 32px by default), so its
+   cells add no padding of their own on top. */
+table[data-grid] tbody td {
+  padding-block: 0;
 }
 [data-slot="table"] th:first-child,
 [data-slot="table"] td:first-child {
@@ -240,6 +247,87 @@ table tbody tr[aria-selected="true"] > td {
 }
 .p-frame__nav .p-nav {
   width: 100%;
+}
+
+/* Sidebar sub-menus: branched lines (nav-branches.tsx, after React Bits'
+   Branched Menu, 2026-11-07). The trunk and branches in the border colour;
+   the accent draws from the section down to the open page and retracts from
+   the one you left. */
+.nav-branches path {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+.nav-branches__base {
+  /* Tertiary: the plain border colour all but vanishes on the nav's grey. */
+  stroke: var(--border-tertiary);
+  stroke-linecap: round;
+}
+.nav-branches__reach {
+  stroke: var(--text);
+  /* Butt caps: a round cap would leave a dot where a hidden line starts. */
+  stroke-linecap: butt;
+  transition: stroke-dashoffset 400ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-branches__reach {
+    transition: none;
+  }
+}
+
+/* The old-layer checkbox and radio (src/components/ui, base-ui) wear Genaro's
+   spring check (components.css, 2026-11-07): base-ui marks the state with
+   data-checked / data-indeterminate / data-disabled instead of :checked. The
+   fill covers the 1px border, so it starts a pixel outside. */
+[data-slot="checkbox"] .p-checkbox__fill,
+[data-slot="radio"] .p-radio__fill {
+  inset: -1px;
+}
+/* The checkbox's fill sits in base-ui's indicator (display: contents), which
+   has no radius to inherit, so it takes the box's own. */
+[data-slot="checkbox"] .p-checkbox__fill {
+  border-radius: var(--radius-100);
+}
+[data-slot="checkbox"][data-checked] .p-checkbox__fill,
+[data-slot="checkbox"][data-indeterminate] .p-checkbox__fill,
+[data-slot="radio"][data-checked] .p-radio__fill {
+  transform: scale(1);
+  transition: transform 420ms var(--p-choice-spring);
+}
+[data-slot="checkbox"] .p-checkbox__mark {
+  position: absolute;
+  inset: -1px;
+  width: auto;
+  height: auto;
+}
+[data-slot="checkbox"][data-checked] .p-checkbox__mark path,
+[data-slot="checkbox"][data-indeterminate] .p-checkbox__mark path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 220ms cubic-bezier(0.23, 1, 0.32, 1) 70ms;
+}
+[data-slot="checkbox"][data-disabled] .p-checkbox__fill {
+  background: var(--checkbox-bg-surface-disabled);
+}
+[data-slot="checkbox"][data-disabled] .p-checkbox__mark {
+  stroke: var(--checkbox-icon-disabled);
+}
+[data-slot="radio"][data-disabled] .p-radio__fill {
+  background: var(--bg-fill-brand-disabled);
+}
+[data-slot="radio-indicator"] {
+  transform: scale(0);
+  transition: transform 90ms ease-in;
+}
+[data-slot="radio-indicator"][data-checked] {
+  transform: scale(1);
+  transition: transform 380ms var(--p-choice-spring-soft) 80ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="checkbox"] *,
+  [data-slot="radio"] * {
+    transition-duration: 1ms !important;
+    transition-delay: 0s !important;
+  }
 }
 
 /* Section chevron (right when closed, down when open) sits at the row's end,

@@ -14,12 +14,15 @@ import {
 import { cn } from "@/lib/utils";
 import { MonthEventChip, type OpenEvent } from "./event-card";
 
-// A cell always has room for three lines: three events, or two and "N more".
-const FITS = 3;
+// A day shows up to four events, or three and "N more" (2026-11-07). Rows
+// grow to fit what their days hold, and stretch to fill the card when they
+// hold little.
+const FITS = 4;
 
 /**
- * Month view: Monday-first weeks, days from the neighbouring months dimmed,
- * today's date in a red pill. A day shows up to three events; a busier day
+ * Month view, after Untitled UI (2026-11-07): Monday-first weeks, the date
+ * at each cell's top left, today's in a brand-filled circle, days from the
+ * neighbouring months dimmed. A day shows up to three events; a busier day
  * shows two and "N more", which opens it in the day view, as does clicking
  * the date or an empty part of the cell.
  */
@@ -60,14 +63,16 @@ export function MonthGrid({
     <div className="flex min-h-0 flex-1 flex-col overflow-auto">
       <div className="grid min-w-[640px] shrink-0 grid-cols-7 border-b border-(--border-secondary)">
         {DOW.map((d, i) => (
-          <div key={d} className={cn("px-2 py-2 body-sm text-(--text-secondary)", i > 0 && "border-l border-(--border-secondary)")}>
+          <div key={d} className={cn("px-2 py-2 text-center body-sm text-(--text-secondary)", i > 0 && "border-l border-(--border-secondary)")}>
             {d}
           </div>
         ))}
       </div>
       <div
-        className="grid min-h-0 min-w-[640px] flex-1 grid-cols-7"
-        style={{ gridTemplateRows: `repeat(${weeks.length}, minmax(100px, 1fr))` }}
+        // At least the card's height, and taller when a week's days hold more
+        // than fits: the rows size to their days and the view scrolls.
+        className="grid min-w-[640px] flex-[1_0_auto] grid-cols-7"
+        style={{ gridTemplateRows: `repeat(${weeks.length}, auto)` }}
       >
         {cells.map((d, idx) => {
           const iso = toISO(d);
@@ -80,7 +85,7 @@ export function MonthGrid({
             <div
               key={iso}
               className={cn(
-                "relative flex min-h-0 min-w-0 flex-col gap-0.5 overflow-hidden p-1",
+                "relative flex min-h-[116px] min-w-0 flex-col gap-1 p-1.5 [&>*]:shrink-0",
                 idx % 7 > 0 && "border-l border-(--border-secondary)",
                 idx < lastRow && "border-b border-(--border-secondary)",
                 !inMonth && "bg-(--bg-surface-secondary)",
@@ -96,7 +101,7 @@ export function MonthGrid({
                 onClick={() => onOpenDay(d)}
                 className="absolute inset-0 transition-colors hover:bg-(--bg-surface-hover)"
               />
-              <div className="relative flex shrink-0 justify-end">
+              <div className="relative flex shrink-0 justify-start">
                 <button
                   type="button"
                   onClick={() => onOpenDay(d)}
@@ -104,7 +109,7 @@ export function MonthGrid({
                   className={cn(
                     "grid h-6 min-w-6 place-items-center rounded-(--radius-full) px-1.5 body-sm tabular-nums transition-colors",
                     isToday
-                      ? "bg-(--bg-fill-critical) body-sm-semibold text-(--text-critical-on-bg-fill) hover:bg-(--bg-fill-critical-hover)"
+                      ? "bg-(--bg-fill-brand) body-sm-semibold text-(--text-brand-on-bg-fill) hover:bg-(--bg-fill-brand-hover)"
                       : cn("hover:bg-(--bg-surface-selected)", inMonth ? "text-(--text)" : "text-(--text-disabled)"),
                   )}
                 >
@@ -125,9 +130,9 @@ export function MonthGrid({
                 <button
                   type="button"
                   onClick={() => onOpenDay(d)}
-                  className="relative self-start rounded-(--radius-100) px-1.5 body-sm-semibold text-(--text-secondary) hover:bg-(--bg-surface-selected)"
+                  className="relative self-start rounded-(--radius-100) px-1.5 body-sm text-(--text-secondary) hover:text-(--text)"
                 >
-                  {`${more} more`}
+                  {`${more} more…`}
                 </button>
               ) : null}
             </div>

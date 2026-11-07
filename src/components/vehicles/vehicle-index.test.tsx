@@ -1,5 +1,6 @@
 /** All vehicles (Compact, docs/vehicles.md): the columns, the In stock and MOT cells, search, Move. */
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as React from "react";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { Vehicle } from "@/lib/types";
 
@@ -23,7 +24,7 @@ vi.mock("@/lib/services/team-service", () => ({ teamService: { getAll: vi.fn(asy
 const stock = vi.hoisted(() => ({ list: [] as unknown[] }));
 vi.mock("@/lib/services/vehicle-service", () => ({ vehicleService: { getAll: vi.fn(async () => stock.list) } }));
 
-import { VehicleIndex } from "./vehicle-index";
+import { VehicleIndex, VehicleSearch } from "./vehicle-index";
 
 const car = (o: Partial<Vehicle>): Vehicle =>
   ({
@@ -57,8 +58,19 @@ beforeEach(() => {
   ];
 });
 
+/** The page's wiring: the header's search drives the table. */
+function AllVehicles() {
+  const [query, setQuery] = React.useState("");
+  return (
+    <>
+      <VehicleSearch value={query} onChange={setQuery} />
+      <VehicleIndex onAddVehicle={() => undefined} query={query} onQueryChange={setQuery} />
+    </>
+  );
+}
+
 const table = async () => {
-  render(<VehicleIndex onAddVehicle={() => undefined} />);
+  render(<AllVehicles />);
   await screen.findByText("Vauxhall Astra");
   return screen.getByRole("table");
 };

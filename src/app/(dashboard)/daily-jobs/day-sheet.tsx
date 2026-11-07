@@ -430,30 +430,18 @@ export function DaySheet() {
     }
   }
 
-  const done = sorted?.filter((j) => j.status === "completed").length ?? 0;
-  const picked = sorted?.filter((j) => j.status === "pending" && j.pickedUpBy).length ?? 0;
-  const open = (sorted?.length ?? 0) - done - picked;
   const past = day < today;
 
   return (
-    // The page header carries the day: the date switcher and its counts under
-    // the title, and Add job as the page's one primary action (2026-11-07).
+    // The page header carries the day: the date switcher under the title (no
+    // counts, 2026-11-07), and Add job as the page's one primary action.
     // Past days are read-only.
     <Page
       title="Daily jobs"
       subtitle="Post the day's jobs for the team. Anyone can add one, pick one up and mark it completed."
       fullWidth
       primaryAction={{ content: "Add job", disabled: past, onAction: () => setAdding(true) }}
-      toolbar={
-        <>
-          <DayStepper day={day} today={today} onChange={changeDay} />
-          {sorted ? (
-            <span className="body-sm text-(--text-secondary) tabular-nums">
-              {open} to pick up · {picked} picked up · {done} done
-            </span>
-          ) : null}
-        </>
-      }
+      toolbar={<DayStepper day={day} today={today} onChange={changeDay} />}
     >
       {loadError ? (
         <Banner tone="critical" title="Couldn't load this day's jobs">

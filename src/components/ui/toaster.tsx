@@ -1,13 +1,15 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Toast } from "@/components/genaro";
 
 /**
- * Toasts — the Genaro Toast (`p-toast`): bg-inverse at the bottom centre,
- * 13px inverse text, a close button; errors on the critical fill. Backed by a tiny
- * store we own end to end; src/lib/toast.ts is the public `toast.*` API.
+ * Toasts: Genaro's Toast (after React Bits' Swipe Toast, 2026-11-07) stacked
+ * at the bottom centre: the brand fill (dark in light mode, white in dark
+ * mode), a line burning down while the timer runs, swipe down to dismiss;
+ * errors on the critical fill. Backed by a tiny store we own end to end;
+ * src/lib/toast.ts is the public `toast.*` API. Each toast keeps its own
+ * timer, so hovering one pauses it.
  */
 type ToastVariant = "default" | "danger";
 
@@ -24,7 +26,6 @@ interface ToastItem extends ToastInput {
 
 let items: ToastItem[] = [];
 const listeners = new Set<(t: ToastItem[]) => void>();
-const timers = new Map<string, ReturnType<typeof setTimeout>>();
 let seq = 0;
 
 function emit(): void {
@@ -34,21 +35,15 @@ function emit(): void {
 /** Show a toast from anywhere; returns an id for `removeToast`. */
 export function addToast(input: ToastInput): string {
   const id = `t${++seq}`;
-  // Keep the stack short: Shopify shows one message at a time; three is the
-  // most that still reads as a stack rather than a wall.
+  // Keep the stack short: three is the most that still reads as a stack
+  // rather than a wall.
   items = [...items.slice(-2), { ...input, id }];
   emit();
-  if (input.autoDismiss && input.autoDismiss > 0) {
-    timers.set(id, setTimeout(() => removeToast(id), input.autoDismiss));
-  }
   return id;
 }
 
-/** Close a toast early. */
+/** Remove a toast at once (its own exit has already played, or isn't wanted). */
 export function removeToast(id: string): void {
-  const t = timers.get(id);
-  if (t) clearTimeout(t);
-  timers.delete(id);
   items = items.filter((i) => i.id !== id);
   emit();
 }
@@ -71,27 +66,16 @@ export function Toaster(): React.ReactElement {
     <div
       role="region"
       aria-label="Notifications"
-      className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--space-600)+env(safe-area-inset-bottom,0px))] z-[100] flex flex-col items-center gap-2 px-4"
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--space-600)+env(safe-area-inset-bottom,0px))] z-[100] flex flex-col items-center px-4 [&_.p-toast]:pointer-events-auto"
     >
       {list.map((t) => (
-        <div
+        <Toast
           key={t.id}
-          role={t.variant === "danger" ? "alert" : "status"}
-          className={cn(
-            "p-toast pointer-events-auto max-w-md animate-in fade-in slide-in-from-bottom-2",
-            t.variant === "danger" && "p-toast--error",
-          )}
-        >
-          <span className="min-w-0">{t.message}</span>
-          <button
-            type="button"
-            onClick={() => removeToast(t.id)}
-            aria-label="Dismiss"
-            className="p-toast__close grid size-5 shrink-0 place-items-center"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
+          content={t.message}
+          error={t.variant === "danger"}
+          duration={t.autoDismiss}
+          onDismiss={() => removeToast(t.id)}
+        />
       ))}
     </div>
   );

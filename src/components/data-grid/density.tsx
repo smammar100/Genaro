@@ -19,9 +19,12 @@ import { cn } from "@/lib/utils";
  */
 export type Density = "compact" | "normal" | "comfortable";
 
-/** Pixel row heights per density. `normal` matches the legacy h-13 (52px). */
+/**
+ * Pixel row heights per density. Compact (32px) is the default: the app is
+ * data heavy, so every table starts dense (call 2026-11-07).
+ */
 export const DENSITY_ROW_HEIGHT: Record<Density, string> = {
-  compact: "36px",
+  compact: "32px",
   normal: "52px",
   comfortable: "68px",
 };
@@ -33,7 +36,7 @@ const DENSITY_OPTIONS: { value: Density; label: string }[] = [
 ];
 
 /** Density state hook — pairs with `<DataGridDensityToggle>` + `DataGridTable`. */
-export function useDensity(initial: Density = "normal") {
+export function useDensity(initial: Density = "compact") {
   const [density, setDensity] = React.useState<Density>(initial);
   return { density, setDensity };
 }

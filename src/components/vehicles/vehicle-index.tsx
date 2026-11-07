@@ -89,6 +89,26 @@ const AGING_DAYS = 90;
 
 const PAGE_SIZE = 50;
 
+/**
+ * The All vehicles search, the page header's main control (call 2026-11-07):
+ * reg, stock ID, make or model.
+ */
+export function VehicleSearch({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <TextField
+      label="Search vehicles"
+      labelHidden
+      type="search"
+      prefix="SearchMinor"
+      placeholder="Search by reg, stock ID, make or model"
+      value={value}
+      onChange={onChange}
+      clearButton
+      onClearButtonClick={() => onChange("")}
+    />
+  );
+}
+
 /** The location tab in the URL, so old Locations links land on theirs. */
 const TAB_PARAM = "tab";
 
@@ -96,10 +116,20 @@ const TAB_PARAM = "tab";
  * All vehicles: the cars still in the business — not sold, not returned to
  * their owner, prep included (call 2026-10-24). Sold and returned cars live
  * on the master sheet. One dense table (Compact, picked 2026-11-06 from three
- * prototypes, docs/vehicles.md) with a tab per location, search, sorting
- * headings and a Move button at the end of each row.
+ * prototypes, docs/vehicles.md) with a tab per location, sorting headings and
+ * a Move button at the end of each row. The search sits in the page header
+ * (VehicleSearch, call 2026-11-07), so the page owns its text.
  */
-export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
+export function VehicleIndex({
+  onAddVehicle,
+  query,
+  onQueryChange,
+}: {
+  onAddVehicle: () => void;
+  /** What's typed in the header's search. */
+  query: string;
+  onQueryChange: (query: string) => void;
+}) {
   const { company, user } = useAuth();
   const { can, isSuperUser } = usePermissions();
   const canMove = isSuperUser || can("locations:move");
@@ -124,9 +154,14 @@ export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
   // Until a tab is clicked, the URL's (an old Locations link) picks it, once
   // the company's own places have loaded.
   const view = picked ?? Math.max(0, VIEWS.findIndex((vw) => vw.location === tabParam));
-  const [query, setQuery] = React.useState("");
   const [sort, setSort] = React.useState<Sort>({ index: ARRIVED, direction: "descending" });
   const [page, setPage] = React.useState(0);
+  // A new search starts at the first page (adjust-state-on-prop-change, in render).
+  const [pageQuery, setPageQuery] = React.useState(query);
+  if (query !== pageQuery) {
+    setPageQuery(query);
+    setPage(0);
+  }
 
   const companyId = company?.id;
   const loadStock = React.useCallback(async () => {
@@ -218,25 +253,6 @@ export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
       />
 
       <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="min-w-60 flex-1 sm:max-w-sm">
-            <TextField
-              label="Search vehicles"
-              labelHidden
-              type="search"
-              prefix="SearchMinor"
-              placeholder="Search by reg, stock ID, make or model"
-              value={query}
-              onChange={(value) => {
-                setQuery(value);
-                setPage(0);
-              }}
-              clearButton
-              onClearButtonClick={() => setQuery("")}
-            />
-          </div>
-        </div>
-
         {shown === null ? (
           <Card>
             <SkeletonBodyText lines={6} />
@@ -256,7 +272,7 @@ export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
                 action={{
                   content: "Clear search",
                   onAction: () => {
-                    setQuery("");
+                    onQueryChange("");
                     setView(0);
                   },
                 }}
@@ -267,7 +283,6 @@ export function VehicleIndex({ onAddVehicle }: { onAddVehicle: () => void }) {
           </Card>
         ) : (
           <IndexTable
-            condensed
             selectable={false}
             primaryColumn={column("Vehicle")}
             headings={HEADINGS}

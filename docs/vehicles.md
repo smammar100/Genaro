@@ -38,7 +38,8 @@ Density for scanning the whole stock many times a day.
 
 - Micro buttons drew a 20px icon in a 24px button; their icons are 16px now.
 - `IndexTable condensed` set 32px cells but kept 12px padding, so any badge grew the row
-  back to ~50px; condensed cells pad 4px.
+  back to ~50px; condensed cells pad 4px. (2026-11-07: every table is 32px now and the
+  `condensed` prop is gone.)
 - Right-aligned sortable headings kept their hidden sort arrow on the right, so the label
   never lined up with its numbers; the arrow sits on the left in those columns.
 - `formatDate` wrote "Sept"; it writes "Sep" like the other months.

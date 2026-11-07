@@ -237,25 +237,45 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 .p-choice__help, .p-choice > .p-inline-error { padding-left:var(--space-600); }
 .p-choice__control { position:relative; display:inline-flex; width:var(--space-400); height:var(--space-400); flex:none; }
 .p-checkbox__input, .p-radio__input { position:absolute; inset:0; margin:0; opacity:0; cursor:pointer; }
-.p-checkbox__box { width:100%; height:100%; border-radius:var(--radius-100); background:var(--bg-surface);
-  box-shadow:inset 0 0 0 var(--border-width-input) var(--input-border); display:flex; align-items:center; justify-content:center; box-sizing:border-box; }
-.p-checkbox__box .p-icon { color:var(--text-brand-on-bg-fill); opacity:0; }
+/* Checkbox and radio (after React Bits' Spring Check, 2026-11-07): checking swells the fill out of the centre on a
+   spring that overshoots ~20%, so the box itself seems to bulge for a moment, then the tick draws in (the radio's dot
+   springs in). Unchecking shrinks it straight back, no bounce. The springs are CSS linear() curves, so a table of
+   checkboxes costs nothing in script. */
+:root { --p-choice-spring:linear(0, 0.1, 0.331, 0.605, 0.854, 1.041, 1.154, 1.198, 1.189, 1.149, 1.095, 1.043, 1.001, 0.974, 0.962, 0.961, 0.967, 0.978, 0.989, 0.998, 1.004, 1.007, 1.008, 1.007, 1); --p-choice-spring-soft:linear(0, 0.083, 0.273, 0.496, 0.705, 0.873, 0.991, 1.062, 1.095, 1.099, 1.087, 1.066, 1.044, 1.024, 1.009, 0.998, 0.992, 0.99, 0.99, 0.992, 1); }
+.p-checkbox__box { position:relative; width:100%; height:100%; border-radius:var(--radius-100); background:var(--bg-surface);
+  box-shadow:inset 0 0 0 var(--border-width-input) var(--input-border); display:flex; align-items:center; justify-content:center; box-sizing:border-box;
+  transition:transform 160ms cubic-bezier(0.23, 1, 0.32, 1); }
+.p-checkbox__fill, .p-radio__fill { position:absolute; inset:0; border-radius:inherit; background:var(--bg-fill-brand-selected); transform:scale(0);
+  transition:transform 140ms cubic-bezier(0.4, 0, 1, 1); }
+.p-checkbox__input:checked + .p-checkbox__box .p-checkbox__fill, .p-checkbox__input:indeterminate + .p-checkbox__box .p-checkbox__fill,
+.p-radio__input:checked + .p-radio__ring .p-radio__fill { transform:scale(1); transition:transform 420ms var(--p-choice-spring); }
+.p-checkbox__mark { position:relative; width:100%; height:100%; overflow:visible; fill:none; stroke:var(--text-brand-on-bg-fill); stroke-width:2;
+  stroke-linecap:round; stroke-linejoin:round; }
+.p-checkbox__mark path { stroke-dasharray:1; stroke-dashoffset:1; transition:stroke-dashoffset 90ms ease-in; }
+.p-checkbox__input:checked + .p-checkbox__box .p-checkbox__mark path, .p-checkbox__input:indeterminate + .p-checkbox__box .p-checkbox__mark path {
+  stroke-dashoffset:0; transition:stroke-dashoffset 220ms cubic-bezier(0.23, 1, 0.32, 1) 70ms; }
+/* A press sinks the box a touch. */
+.p-choice__row:active .p-checkbox__box, .p-choice__row:active .p-radio__ring { transform:scale(0.92); }
 @media (hover: hover) and (pointer: fine) { .p-choice__row:hover .p-checkbox__box { background:var(--input-bg-surface-hover); box-shadow:inset 0 0 0 var(--border-width-input) var(--input-border-hover); } }
-.p-checkbox__input:checked + .p-checkbox__box, .p-checkbox__input:indeterminate + .p-checkbox__box { background:var(--bg-fill-brand-selected); box-shadow:none; }
-.p-checkbox__input:checked + .p-checkbox__box .p-icon, .p-checkbox__input:indeterminate + .p-checkbox__box .p-icon { opacity:1; }
 .p-checkbox__input:focus-visible + .p-checkbox__box, .p-radio__input:focus-visible + .p-radio__ring { outline:var(--border-width-050) solid var(--border-focus); outline-offset:var(--border-width-025); }
 .p-choice--error .p-checkbox__box { background:var(--bg-surface-critical); box-shadow:inset 0 0 0 var(--border-width-input) var(--border-critical-secondary); }
-.p-choice--error .p-checkbox__input:checked + .p-checkbox__box { background:var(--bg-fill-critical-selected); }
+.p-choice--error .p-checkbox__fill { background:var(--bg-fill-critical-selected); }
 .p-radio__ring { width:100%; height:100%; border-radius:var(--radius-full); background:var(--input-bg-surface);
-  box-shadow:inset 0 0 0 var(--border-width-input) var(--input-border); box-sizing:border-box; position:relative; }
+  box-shadow:inset 0 0 0 var(--border-width-input) var(--input-border); box-sizing:border-box; position:relative;
+  transition:transform 160ms cubic-bezier(0.23, 1, 0.32, 1); }
 @media (hover: hover) and (pointer: fine) { .p-choice__row:hover .p-radio__ring { background:var(--input-bg-surface-hover); box-shadow:inset 0 0 0 var(--border-width-input) var(--input-border-hover); } }
-.p-radio__input:checked + .p-radio__ring { background:var(--bg-fill-brand-selected); box-shadow:none; }
-.p-radio__input:checked + .p-radio__ring::after { content:""; position:absolute; inset:var(--space-100); border-radius:var(--radius-full); background:var(--text-brand-on-bg-fill); }
+/* The dot springs in just after the fill, a softer spring. */
+.p-radio__ring::after { content:""; position:absolute; inset:var(--space-100); border-radius:var(--radius-full); background:var(--text-brand-on-bg-fill);
+  transform:scale(0); transition:transform 90ms ease-in; }
+.p-radio__input:checked + .p-radio__ring::after { transform:scale(1); transition:transform 380ms var(--p-choice-spring-soft) 80ms; }
 .p-choice--disabled { color:var(--text-disabled); }
 .p-choice--disabled .p-choice__row { cursor:default; }
 .p-choice--disabled .p-checkbox__box { background:var(--checkbox-bg-surface-disabled); box-shadow:none; }
 @media (hover: hover) and (pointer: fine) { .p-choice--disabled .p-choice__row:hover .p-checkbox__box { background:var(--checkbox-bg-surface-disabled); box-shadow:none; } }
-.p-choice--disabled .p-checkbox__box .p-icon { color:var(--checkbox-icon-disabled); }
+.p-choice--disabled .p-checkbox__fill { background:var(--checkbox-bg-surface-disabled); }
+.p-choice--disabled .p-checkbox__mark { stroke:var(--checkbox-icon-disabled); }
+.p-choice--disabled .p-radio__fill { background:var(--bg-fill-brand-disabled); }
+.p-choice--disabled .p-choice__row:active .p-checkbox__box, .p-choice--disabled .p-choice__row:active .p-radio__ring { transform:none; }
 .p-choice--disabled .p-radio__ring { background:var(--bg-fill-brand-disabled); box-shadow:none; }
 @media (hover: hover) and (pointer: fine) { .p-choice--disabled .p-choice__row:hover .p-radio__ring { background:var(--bg-fill-brand-disabled); box-shadow:none; } }
 
@@ -321,14 +341,50 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 .p-page-actions__secondary { display:flex; gap:var(--space-200); }
 .p-page-actions > .p-btn:only-child { margin-left:auto; }
 
-/* Toast */
-.p-toast { display:inline-flex; align-items:center; gap:var(--space-200); padding:var(--space-300); background:var(--bg-inverse); color:var(--text-inverse);
-  border-radius:var(--radius-200); box-shadow:var(--shadow-400); font-family:var(--font-sans); font-size:var(--fs-body); line-height:var(--lh-body); font-weight:var(--fw-regular); }
-.p-toast--error { background:var(--bg-fill-critical); color:var(--text-critical-on-bg-fill); }
-.p-toast__action { border:0; background:transparent; color:inherit; font:inherit; font-weight:var(--fw-medium); text-decoration:underline; cursor:pointer; padding:0; }
-.p-toast__close { display:inline-flex; color:inherit; border:0; background:transparent; padding:0; cursor:pointer; border-radius:var(--radius-100); }
-.p-toast__close .p-icon { color:var(--icon-inverse); }
-.p-toast--error .p-toast__close .p-icon { color:inherit; }
+/* Toast (after React Bits' Swipe Toast, 2026-11-07): rises from the bottom on the brand fill, so it is dark in light
+   mode and white in dark mode; a line burns down along its foot while its timer runs; swipe it down to dismiss. The
+   slot's row collapses as it leaves, so the toasts above settle instead of jumping. */
+.p-toast-slot { display:grid; grid-template-rows:1fr; width:min(356px, 100%); transition:grid-template-rows 400ms cubic-bezier(0.23, 1, 0.32, 1); }
+.p-toast-slot[data-closing] { grid-template-rows:0fr; transition-duration:280ms; }
+.p-toast-slot__gate { min-height:0; }
+.p-toast-slot__lift { margin-top:var(--space-200); opacity:1; transform:translateY(0);
+  transition:transform 400ms cubic-bezier(0.23, 1, 0.32, 1), opacity 240ms ease; }
+@starting-style { .p-toast-slot { grid-template-rows:0fr; } .p-toast-slot__lift { opacity:0; transform:translateY(100%); } }
+.p-toast-slot[data-closing] .p-toast-slot__lift { opacity:0; transform:translateY(100%);
+  transition:transform 280ms cubic-bezier(0.23, 1, 0.32, 1), opacity 200ms ease; }
+.p-toast { --p-toast-fuse:var(--bg-fill-warning); position:relative; display:flex; align-items:center; gap:var(--space-200); width:100%; box-sizing:border-box;
+  padding:var(--space-300) var(--space-300) var(--space-300) var(--space-400); overflow:hidden;
+  background:var(--bg-fill-brand); color:var(--text-brand-on-bg-fill); border-radius:var(--radius-300); box-shadow:var(--shadow-400);
+  font-family:var(--font-sans); font-size:var(--fs-body); line-height:var(--lh-body); font-weight:var(--fw-medium);
+  cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; outline:none; }
+.p-toast[data-swiping] { cursor:grabbing; }
+.p-toast:focus-visible { outline:var(--border-width-050) solid var(--border-focus); outline-offset:var(--border-width-025); }
+.p-toast--error { --p-toast-fuse:var(--text-critical-on-bg-fill); background:var(--bg-fill-critical); color:var(--text-critical-on-bg-fill); }
+.p-toast__msg { flex:1 1 auto; min-width:0; }
+/* The action is the toast's colours swapped: a small inverted button. */
+.p-toast__action { flex:none; display:inline-flex; align-items:center; height:24px; padding:0 var(--space-200); border:0; border-radius:var(--radius-150);
+  background:var(--text-brand-on-bg-fill); color:var(--bg-fill-brand); font:inherit; font-size:var(--fs-caption); line-height:var(--lh-caption); font-weight:var(--fw-medium);
+  cursor:pointer; touch-action:manipulation; transition:transform 160ms cubic-bezier(0.23, 1, 0.32, 1), opacity 160ms ease; }
+.p-toast--error .p-toast__action { background:var(--text-critical-on-bg-fill); color:var(--bg-fill-critical); }
+.p-toast__close { position:relative; flex:none; display:inline-grid; place-items:center; width:24px; height:24px; color:inherit; border:0; background:transparent; padding:0;
+  cursor:pointer; border-radius:var(--radius-150); touch-action:manipulation; transition:transform 160ms cubic-bezier(0.23, 1, 0.32, 1), background-color 160ms ease; }
+/* A finger-sized target around the 24px cross. */
+.p-toast__close::before { content:''; position:absolute; inset:calc(-1 * var(--space-200)); }
+.p-toast__close .p-icon { color:inherit; }
+.p-toast__action:active, .p-toast__close:active { transform:scale(0.97); }
+@media (hover: hover) and (pointer: fine) {
+  .p-toast__action:hover { opacity:0.88; }
+  .p-toast__close:hover { background:color-mix(in srgb, currentColor 12%, transparent); }
+}
+/* The timer: a 2px line, brightest in the middle, that shrinks to nothing from the right. */
+.p-toast__fuse { position:absolute; left:0; right:0; bottom:0; height:2px; transform-origin:left center; pointer-events:none;
+  background:linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--p-toast-fuse) 18%, transparent) 9%, color-mix(in srgb, var(--p-toast-fuse) 50%, transparent) 18%,
+    color-mix(in srgb, var(--p-toast-fuse) 84%, transparent) 28%, var(--p-toast-fuse) 38%, var(--p-toast-fuse) 62%, color-mix(in srgb, var(--p-toast-fuse) 84%, transparent) 72%,
+    color-mix(in srgb, var(--p-toast-fuse) 50%, transparent) 82%, color-mix(in srgb, var(--p-toast-fuse) 18%, transparent) 91%, transparent 100%); }
+@media (prefers-reduced-motion: reduce) {
+  .p-toast-slot__lift { transform:none !important; transition:opacity 200ms ease; }
+  .p-toast__action:active, .p-toast__close:active { transform:none; }
+}
 .p-toast button:focus-visible { outline:var(--border-width-050) solid var(--border-focus); outline-offset:var(--border-width-025); }
 
 /* Tooltip */
@@ -747,6 +803,8 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 .p-datatable { overflow-x:auto; gap:0; }
 .p-datatable table, .p-indextable table { width:100%; border-collapse:collapse; font-family:var(--font-sans); font-size:var(--fs-body); line-height:var(--lh-body); font-weight:var(--fw-regular); color:var(--text); }
 .p-datatable th, .p-datatable td { padding:var(--space-200) var(--space-300); text-align:left; white-space:nowrap; }
+/* 32px rows, like IndexTable. */
+.p-datatable.p-datatable td { height:32px; box-sizing:border-box; padding-block:var(--space-100); }
 /* Table headers are caption, like IndexTable's. */
 .p-datatable th { font-size:var(--fs-caption); line-height:var(--lh-caption); font-weight:var(--fw-regular); color:var(--text-secondary); border-bottom:var(--border-width-025) solid var(--border); }
 .p-datatable tbody tr + tr td { border-top:var(--border-width-025) solid var(--border-secondary); }
@@ -761,6 +819,9 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 .p-indextable__filters { display:flex; align-items:center; justify-content:space-between; gap:var(--space-200); padding:var(--space-200); border-bottom:var(--border-width-025) solid var(--border); }
 .p-indextable__controls { display:flex; gap:var(--space-200); }
 .p-indextable__scroll { overflow-x:auto; }
+/* The scroll box clips the grey heading row to the card's corners where it touches them (no bar above, no footer below). */
+.p-indextable > .p-indextable__scroll:first-child { border-top-left-radius:inherit; border-top-right-radius:inherit; }
+.p-indextable > .p-indextable__scroll:last-child { border-bottom-left-radius:inherit; border-bottom-right-radius:inherit; }
 .p-indextable th { height:32px; padding:var(--space-150); text-align:left; white-space:nowrap; background:var(--bg-surface-secondary); border-bottom:var(--border-width-025) solid var(--border);
   font-size:var(--fs-caption); line-height:var(--lh-caption); font-weight:var(--fw-regular); color:var(--text-secondary); }
 .p-indextable td { padding:var(--space-150); white-space:nowrap; background:var(--bg-surface); border-bottom:var(--border-width-025) solid var(--border-secondary); vertical-align:middle; }
@@ -776,10 +837,10 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 
 .p-indextable__media { width:1%; padding-top:var(--space-150) !important; padding-bottom:var(--space-150) !important; }
 .p-indextable__media .p-thumb { display:flex; }
-.p-indextable td { height:52px; box-sizing:border-box; }
-/* Condensed rows hold 32px: without the tighter padding a 24px badge grew the row back to ~50px. Two classes, so the
-   app bridge's table padding (genaro-bridge.css) can't undo it. */
-.p-indextable.p-indextable--condensed td { height:32px; padding-block:var(--space-100); }
+/* Rows are 32px everywhere: the app is data heavy, so tables stay dense (call 2026-11-07). The tight padding keeps a
+   24px badge inside 32px; taller content (two lines, a thumbnail) still grows its row. Two classes, so the app
+   bridge's table padding (genaro-bridge.css) can't undo it. */
+.p-indextable.p-indextable td { height:32px; box-sizing:border-box; padding-block:var(--space-100); }
 .p-indextable__primary { font-weight:var(--fw-semibold); color:var(--text); }
 .p-indextable th.p-num, .p-indextable td.p-num { text-align:right; }
 /* In a right-aligned column the sort arrow goes on the label's left, so the label lines up with the numbers under it. */
@@ -950,8 +1011,18 @@ input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer
 .p-choice--magic .p-checkbox__box::before { border-radius:calc(var(--radius-100) + var(--border-width-050)); }
 .p-choice--magic .p-radio__ring::before { border-radius:var(--radius-full); }
 .p-field--magic .p-field__input, .p-select--magic .p-select__value, .p-filterpill--magic { color:var(--text-magic); }
-.p-choice--magic .p-checkbox__input:checked + .p-checkbox__box, .p-choice--magic .p-radio__input:checked + .p-radio__ring { background:var(--bg-fill-magic); box-shadow:none; }
+.p-choice--magic .p-checkbox__fill, .p-choice--magic .p-radio__fill { background:var(--bg-fill-magic); }
 .p-choice--magic .p-radio__input:checked + .p-radio__ring::after { background:var(--text-magic-on-bg-fill); }
+/* A to-do list's strike-through (Checkbox `strike`): checking wipes a rule across the words from the left and greys them. */
+.p-choice__words { position:relative; display:inline-block; transition:color 200ms ease; }
+.p-choice__rule { position:absolute; left:0; right:0; top:50%; height:var(--border-width-050); margin-top:calc(-0.5 * var(--border-width-050)); border-radius:var(--radius-full);
+  background:currentColor; transform:scaleX(0); transform-origin:left center; pointer-events:none; transition:transform 140ms ease-in; }
+.p-choice--strike:has(.p-checkbox__input:checked) .p-choice__words { color:var(--text-secondary); }
+.p-choice--strike:has(.p-checkbox__input:checked) .p-choice__rule { transform:scaleX(1); transition:transform 300ms cubic-bezier(0.23, 1, 0.32, 1) 60ms; }
+@media (prefers-reduced-motion: reduce) {
+  .p-checkbox__fill, .p-radio__fill, .p-radio__ring::after, .p-checkbox__mark path, .p-choice__rule { transition-duration:1ms !important; transition-delay:0s !important; }
+  .p-choice__row:active .p-checkbox__box, .p-choice__row:active .p-radio__ring { transform:none; }
+}
 @media (prefers-reduced-motion: reduce) { .p-field--magic::before, .p-select--magic::before, .p-choice--magic .p-checkbox__box::before, .p-choice--magic .p-radio__ring::before, .p-filterpill--magic::before, .p-tag--magic::before { animation:none; background-position:50% 50%, 0 0; } }
 
 /* Avatar + label */
@@ -988,7 +1059,8 @@ a.p-page__secondary, a.p-actionlist__item { text-decoration:none; box-sizing:bor
 @media (hover: hover) and (pointer: fine) { .p-indextable__link:hover { text-decoration:underline; } }
 .p-indextable__link:focus-visible { outline:var(--border-width-050) solid var(--border-focus); outline-offset:var(--border-width-025); }
 .p-toast-layer { position:fixed; left:0; right:0; bottom:calc(var(--space-800) + env(safe-area-inset-bottom, 0px)); z-index:520; display:flex; justify-content:center; padding:0 var(--space-400); pointer-events:none; }
-.p-toast-layer > .p-toast { pointer-events:auto; }
+.p-toast-layer { flex-direction:column; align-items:center; }
+.p-toast-layer .p-toast { pointer-events:auto; }
 .p-modal:focus { outline:none; }
 /* A link-styled button reads like a link: no padding, and its text starts where the text around it does (a button centres by default). */
 button.p-link { padding:0; border:0; background:none; text-align:inherit; }
@@ -1069,11 +1141,14 @@ a.p-toast__action { text-decoration:none; }
 .p-switch__track { position:relative; width:100%; height:100%; border-radius:var(--radius-full); background:var(--input-bg-surface);
   box-shadow:inset 0 0 0 var(--border-width-input) var(--input-border); box-sizing:border-box; transition:background-color 150ms ease-out, box-shadow 150ms ease-out; }
 .p-switch__thumb { position:absolute; top:var(--space-050); left:var(--space-050); width:var(--space-400); height:var(--space-400); border-radius:var(--radius-full);
-  background:var(--icon-secondary); transition:transform 150ms cubic-bezier(0.25, 0.1, 0.25, 1), background-color 150ms ease-out; }
+  background:var(--icon-secondary); transition:background-color 320ms ease; }
 @media (hover: hover) and (pointer: fine) { .p-switch__input:hover + .p-switch__track { background:var(--input-bg-surface-hover); box-shadow:inset 0 0 0 var(--border-width-input) var(--input-border-hover); } }
 .p-switch__input:checked + .p-switch__track { background:var(--bg-fill-brand-selected); box-shadow:none; }
 @media (hover: hover) and (pointer: fine) { .p-switch__input:checked:hover + .p-switch__track { background:var(--bg-fill-brand-hover); } }
-.p-switch__input:checked + .p-switch__track .p-switch__thumb { transform:translateX(var(--space-300)); background:var(--text-brand-on-bg-fill); }
+/* The thumb's travel, stretch and swell are framer-motion's (internal/useSquish.ts); CSS only cross-fades its colour. */
+.p-switch__input:checked + .p-switch__track .p-switch__thumb { background:var(--text-brand-on-bg-fill); }
+.p-switch__input { touch-action:pan-y; }
+.p-switch__track { transition:background-color 320ms ease, box-shadow 150ms ease-out; }
 .p-switch__input:focus-visible + .p-switch__track { outline:var(--border-width-050) solid var(--border-focus); outline-offset:var(--border-width-025); }
 .p-switch__text { display:flex; flex:1; flex-direction:column; min-width:0; }
 .p-switch__label { cursor:pointer; }

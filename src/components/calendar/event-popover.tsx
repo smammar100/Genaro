@@ -46,9 +46,7 @@ export function EventPopover({
   onMarkDone: (ev: CalEvent) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const pathname = usePathname();
   const meta = KIND_META[ev.kind];
-  const status = eventStatus(ev);
 
   const dismiss = useCallback(
     (returnFocus: boolean) => {
@@ -119,6 +117,52 @@ export function EventPopover({
     };
   }, [anchor, dismiss]);
 
+  return createPortal(
+    <div
+      ref={ref}
+      role="dialog"
+      aria-label={`${meta.singular}: ${ev.title}`}
+      tabIndex={-1}
+      className="fixed z-[400] max-w-[calc(100vw-24px)] rounded-(--radius-300) shadow-(--shadow-500) outline-none"
+      style={{ width: WIDTH, left: 0, top: 0, visibility: "hidden" }}
+    >
+      <Card padding="0">
+        <EventDetails
+          ev={ev}
+          busy={busy}
+          onEdit={onEdit}
+          onMarkDone={onMarkDone}
+          headerEnd={<Button variant="tertiary" icon={<X className="size-4" />} accessibilityLabel="Close" onClick={() => dismiss(true)} />}
+        />
+      </Card>
+    </div>,
+    document.body,
+  );
+}
+
+/**
+ * An event's details: what it is and its status, the name and job, when, the
+ * customer's contact, the car and the notes, then Edit, Mark as done and a
+ * link to the record. Shown in the popover beside an event, and in the day
+ * view's side panel (after Untitled UI, 2026-11-07).
+ */
+export function EventDetails({
+  ev,
+  busy,
+  onEdit,
+  onMarkDone,
+  headerEnd,
+}: {
+  ev: CalEvent;
+  busy: boolean;
+  onEdit: (ev: CalEvent) => void;
+  onMarkDone: (ev: CalEvent) => void;
+  /** At the end of the header row: the popover's close button. */
+  headerEnd?: ReactNode;
+}) {
+  const pathname = usePathname();
+  const meta = KIND_META[ev.kind];
+  const status = eventStatus(ev);
   const phone = ev.kind === "appt" || ev.kind === "workshop" ? ev.raw.customerPhone : null;
   const email = ev.kind === "appt" ? ev.raw.customerEmail : null;
   const notes = ev.kind === "appt" ? ev.raw.specialRequirements : ev.raw.notes;
@@ -130,70 +174,60 @@ export function EventPopover({
         ? { label: "Open workshop", url: "/maintenance/workshop" }
         : null;
 
-  return createPortal(
-    <div
-      ref={ref}
-      role="dialog"
-      aria-label={`${meta.singular}: ${ev.title}`}
-      tabIndex={-1}
-      className="fixed z-[400] max-w-[calc(100vw-24px)] rounded-(--radius-300) shadow-(--shadow-500) outline-none"
-      style={{ width: WIDTH, left: 0, top: 0, visibility: "hidden" }}
-    >
-      <Card padding="0">
-        <div className="flex items-center gap-2 border-b border-(--border-secondary) py-2 pr-2 pl-4">
-          <span aria-hidden className={`size-2.5 shrink-0 rounded-(--radius-full) ${meta.accent}`} />
-          <span className="min-w-0 flex-1 truncate body-md-semibold">{meta.singular}</span>
-          <Badge tone={status.tone}>{status.label}</Badge>
-          <Button variant="tertiary" icon={<X className="size-4" />} accessibilityLabel="Close" onClick={() => dismiss(true)} />
-        </div>
+  return (
+    <>
+      <div className="flex items-center gap-2 border-b border-(--border-secondary) py-2 pr-2 pl-4">
+        <span aria-hidden className={`size-2.5 shrink-0 rounded-(--radius-full) ${meta.accent}`} />
+        <span className="min-w-0 flex-1 truncate body-md-semibold">{meta.singular}</span>
+        <Badge tone={status.tone}>{status.label}</Badge>
+        {headerEnd}
+      </div>
 
-        <div className="flex flex-col gap-3 p-4">
-          <div className="flex flex-col gap-1">
-            <p className="heading-md">{ev.title}</p>
-            {ev.job ? <p className="body-md text-(--text-secondary)">{ev.job}</p> : null}
-          </div>
-          <Fact icon={CalendarDays}>{dayLabel(fromISO(ev.date))}</Fact>
-          <Fact icon={Clock}>{ev.allDay ? "All day · no time booked" : timeText(ev)}</Fact>
-          {ev.leadType ? <Fact icon={Tag}>{`Lead type: ${LEAD_TYPE_LABELS[ev.leadType]}`}</Fact> : null}
-          {phone ? <Fact icon={Phone}>{phone}</Fact> : null}
-          {email ? <Fact icon={Mail}>{email}</Fact> : null}
-          {ev.reg || ev.car ? (
-            <div className="flex items-center gap-2 rounded-(--radius-200) border border-(--border-secondary) p-2">
-              {ev.reg ? <RegPlate registration={ev.reg} size="sm" /> : null}
-              <span className="min-w-0 flex-1 truncate body-md">{ev.car}</span>
-              {ev.vehicleId ? (
-                <Button variant="plain" url={vehicleDetailHref(ev.vehicleId, pathname)}>
-                  Open vehicle
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
-          {notes ? (
-            <Fact icon={StickyNote}>
-              <span className="whitespace-pre-wrap">{notes}</span>
-            </Fact>
-          ) : null}
+      <div className="flex flex-col gap-3 p-4">
+        <div className="flex flex-col gap-1">
+          <p className="heading-md">{ev.title}</p>
+          {ev.job ? <p className="body-md text-(--text-secondary)">{ev.job}</p> : null}
         </div>
-
-        <div className="flex flex-wrap items-center gap-2 border-t border-(--border-secondary) px-4 py-3">
-          <Button variant="primary" onClick={() => onEdit(ev)}>
-            {ev.kind === "appt" ? "Edit appointment" : "Edit job"}
-          </Button>
-          {canMarkDone ? (
-            <Button loading={busy} onClick={() => onMarkDone(ev)}>
-              Mark as done
-            </Button>
-          ) : null}
-          {open ? (
-            <span className="ml-auto">
-              <Button variant="plain" url={open.url}>
-                {open.label}
+        <Fact icon={CalendarDays}>{dayLabel(fromISO(ev.date))}</Fact>
+        <Fact icon={Clock}>{ev.allDay ? "All day · no time booked" : timeText(ev)}</Fact>
+        {ev.leadType ? <Fact icon={Tag}>{`Lead type: ${LEAD_TYPE_LABELS[ev.leadType]}`}</Fact> : null}
+        {phone ? <Fact icon={Phone}>{phone}</Fact> : null}
+        {email ? <Fact icon={Mail}>{email}</Fact> : null}
+        {ev.reg || ev.car ? (
+          <div className="flex items-center gap-2 rounded-(--radius-200) bg-(--bg-surface-secondary) p-2">
+            {ev.reg ? <RegPlate registration={ev.reg} size="sm" /> : null}
+            <span className="min-w-0 flex-1 truncate body-md">{ev.car}</span>
+            {ev.vehicleId ? (
+              <Button variant="plain" url={vehicleDetailHref(ev.vehicleId, pathname)}>
+                Open vehicle
               </Button>
-            </span>
-          ) : null}
-        </div>
-      </Card>
-    </div>,
-    document.body,
+            ) : null}
+          </div>
+        ) : null}
+        {notes ? (
+          <Fact icon={StickyNote}>
+            <span className="whitespace-pre-wrap">{notes}</span>
+          </Fact>
+        ) : null}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 border-t border-(--border-secondary) px-4 py-3">
+        <Button variant="primary" onClick={() => onEdit(ev)}>
+          {ev.kind === "appt" ? "Edit appointment" : "Edit job"}
+        </Button>
+        {canMarkDone ? (
+          <Button loading={busy} onClick={() => onMarkDone(ev)}>
+            Mark as done
+          </Button>
+        ) : null}
+        {open ? (
+          <span className="ml-auto">
+            <Button variant="plain" url={open.url}>
+              {open.label}
+            </Button>
+          </span>
+        ) : null}
+      </div>
+    </>
   );
 }

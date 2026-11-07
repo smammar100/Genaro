@@ -41,14 +41,18 @@ function Radio({
         hitTarget,
         // Genaro RadioButton (.p-radio__ring): 16px ring in input tokens, brand
         // fill when checked, 2px focus outline.
-        "relative inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-(--input-border) bg-(--input-bg-surface) outline-none transition-[border-color,background-color] hover:border-(--input-border-hover) hover:bg-(--input-bg-surface-hover) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--border-focus) data-checked:border-transparent data-checked:bg-(--bg-fill-brand-selected) aria-invalid:border-(--border-critical-secondary) aria-invalid:bg-(--bg-surface-critical) data-disabled:cursor-not-allowed data-disabled:border-transparent data-disabled:bg-(--bg-fill-brand-disabled)",
+        "relative inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-(--input-border) bg-(--input-bg-surface) outline-none transition-[border-color,background-color,transform] active:scale-[0.92] data-disabled:active:scale-100 hover:border-(--input-border-hover) hover:bg-(--input-bg-surface-hover) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--border-focus) data-checked:border-transparent aria-invalid:border-(--border-critical-secondary) aria-invalid:bg-(--bg-surface-critical) data-disabled:cursor-not-allowed data-disabled:border-transparent data-disabled:bg-(--bg-fill-brand-disabled)",
         className,
       )}
       data-slot="radio"
       {...props}
     >
+      {/* Genaro's spring radio (genaro-bridge.css): the fill swells out of the
+          ring, then the dot springs in. Kept mounted so both can play out. */}
+      <span className="p-radio__fill" aria-hidden />
       <RadioPrimitive.Indicator
-        className="size-2 rounded-full bg-(--text-brand-on-bg-fill) data-unchecked:hidden"
+        keepMounted
+        className="relative size-2 rounded-full bg-(--text-brand-on-bg-fill)"
         data-slot="radio-indicator"
       />
     </RadioPrimitive.Root>

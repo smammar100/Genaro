@@ -97,3 +97,13 @@ export const Disabled: Story = {
     helpText: "Margin scheme vehicles don't show VAT.",
   },
 };
+
+/**
+ * A to-do list, where a ticked item is done: `strike` wipes a line through
+ * the words and greys them as the box fills, so what's finished reads as
+ * finished. Leave it off for ordinary options.
+ * @summary a checklist item that strikes through when done
+ */
+export const Checklist: Story = {
+  args: { label: "Check the V5C matches the VIN", strike: true, defaultChecked: true },
+};

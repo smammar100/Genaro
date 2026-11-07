@@ -22,6 +22,8 @@ import { AllDayChip, TimeGridEvent, type OpenEvent } from "./event-card";
 const MIN_CARD_PX = 20;
 // Free strip on the right of each day, so a busy slot can still be clicked.
 const SLOT_GUTTER_PX = 8;
+// Space around each card inside its slot (Untitled UI's breathing room).
+const CARD_INSET_PX = 4;
 const ALL_DAY_SHOWN = 2;
 
 interface GridFrame {
@@ -31,10 +33,12 @@ interface GridFrame {
 }
 
 /**
- * The day and week grids. The hours run from an hour before opening to an
- * hour after closing, with the closed part shaded. Rows grow to fill the card
- * and scroll once they reach their minimum height. The day headers and the
- * all-day row stay pinned while the hours scroll.
+ * The day and week grids, after Untitled UI (2026-11-07). The hours run from
+ * an hour before opening to an hour after closing, with the closed part
+ * shaded; each hour has a dashed half-hour line and books in half-hour slots
+ * (hover shows a "+"). A thin brand line marks now. Rows grow to fill the
+ * card and scroll once they reach their minimum height. The day headers and
+ * the all-day row stay pinned while the hours scroll.
  */
 export function TimeGrid({
   days,
@@ -176,13 +180,11 @@ function DayHeader({
 }) {
   const content = (
     <>
-      <span className={cn("body-sm", isToday ? "text-(--text)" : "text-(--text-secondary)")}>
-        {DOW[weekdayMon0(date)]}
-      </span>
+      <span className="body-sm text-(--text-secondary)">{DOW[weekdayMon0(date)]}</span>
       <span
         className={cn(
-          "grid h-6 min-w-6 place-items-center rounded-(--radius-full) px-1 heading-sm tabular-nums",
-          isToday && "bg-(--bg-fill-critical) text-(--text-critical-on-bg-fill)",
+          "grid h-6 min-w-6 place-items-center rounded-(--radius-full) px-1 body-sm-semibold tabular-nums",
+          isToday && "bg-(--bg-fill-brand) text-(--text-brand-on-bg-fill)",
         )}
       >
         {date.getDate()}
@@ -226,7 +228,7 @@ function HourGutter({ frame, end, nowHour }: { frame: GridFrame; end: number; no
       ))}
       {nowHour !== null ? (
         <span
-          className="absolute right-1 z-10 -translate-y-1/2 rounded-(--radius-100) bg-(--bg-fill-critical) px-1 py-px body-sm-semibold tabular-nums text-(--text-critical-on-bg-fill)"
+          className="absolute right-2 z-10 -translate-y-1/2 bg-(--bg-surface) body-sm-semibold tabular-nums text-(--text)"
           style={{ top: frame.pct(nowHour) }}
         >
           {fmtHour(nowHour)}
@@ -266,7 +268,8 @@ function DayColumn({
   const { start, total, pct } = frame;
   const timed = events.filter((e) => e.end > start && e.start < end);
   const lanes = layoutLanes(timed);
-  const rows = Array.from({ length: total }, (_, i) => start + i);
+  // Half-hour slots: two to an hour, the second under a dashed line.
+  const slots = Array.from({ length: total * 2 }, (_, i) => start + i / 2);
   const isToday = iso === todayISO;
 
   return (
@@ -275,9 +278,13 @@ function DayColumn({
       <div aria-hidden className="absolute inset-x-0 top-0 bg-(--bg-surface-secondary)" style={{ height: pct(hours.open) }} />
       <div aria-hidden className="absolute inset-x-0 bottom-0 bg-(--bg-surface-secondary)" style={{ top: pct(hours.close) }} />
 
-      {rows.map((h, i) => {
-        const cls = cn("relative block w-full flex-1", i > 0 && "border-t border-(--border-secondary)");
-        const bookable = h + 1 > hours.open && h < hours.close;
+      {slots.map((h, i) => {
+        const half = i % 2 === 1;
+        const cls = cn(
+          "relative block w-full flex-1",
+          half ? "border-t border-dashed border-(--border-secondary)" : i > 0 && "border-t border-(--border-secondary)",
+        );
+        const bookable = h + 0.5 > hours.open && h < hours.close;
         if (!bookable) return <div key={h} aria-hidden className={cls} />;
         const at = Math.max(h, hours.open);
         return (
@@ -286,12 +293,12 @@ function DayColumn({
             type="button"
             data-calendar-slot
             aria-label={`New event on ${dayLabel(date)} at ${fmtHour(at)}`}
+            title={`New event at ${fmtHour(at)}`}
             onClick={() => onCreateAt(iso, at)}
             className={cn(cls, "group/slot text-left transition-colors hover:bg-(--bg-surface-hover)")}
           >
-            <span className="invisible absolute top-1 left-1.5 inline-flex items-center gap-0.5 body-sm text-(--text-secondary) group-hover/slot:visible">
+            <span className="invisible absolute right-1.5 bottom-1 grid size-5 place-items-center rounded-(--radius-100) bg-(--bg-surface) text-(--icon-secondary) shadow-(--shadow-100) group-hover/slot:visible">
               <Plus className="size-3" />
-              {fmtHour(at)}
             </span>
           </button>
         );
@@ -303,7 +310,7 @@ function DayColumn({
           className="absolute z-30 flex items-start gap-1 rounded-(--radius-200) border-2 border-dashed border-(--border-focus) bg-(--bg-surface) px-2 py-1 body-sm-semibold shadow-(--shadow-300)"
           style={{
             top: `calc(${pct(draftHour)} + 1px)`,
-            height: `calc(${100 / total}% - 2px)`,
+            height: `calc(${50 / total}% - 2px)`,
             left: 2,
             right: SLOT_GUTTER_PX,
           }}
@@ -325,10 +332,10 @@ function DayColumn({
             selected={ev.key === selectedKey}
             onOpen={onOpenEvent}
             style={{
-              top: `calc(${pct(s)} + 1px)`,
-              height: `max(calc(${((e - s) / total) * 100}% - 2px), ${MIN_CARD_PX}px)`,
-              left: `calc((100% - ${SLOT_GUTTER_PX}px) * ${lane / count} + 2px)`,
-              width: `calc((100% - ${SLOT_GUTTER_PX}px) / ${count} - 2px)`,
+              top: `calc(${pct(s)} + ${CARD_INSET_PX / 2}px)`,
+              height: `max(calc(${((e - s) / total) * 100}% - ${CARD_INSET_PX}px), ${MIN_CARD_PX}px)`,
+              left: `calc((100% - ${SLOT_GUTTER_PX}px) * ${lane / count} + ${CARD_INSET_PX}px)`,
+              width: `calc((100% - ${SLOT_GUTTER_PX}px) / ${count} - ${CARD_INSET_PX}px)`,
             }}
           />
         );
@@ -336,8 +343,8 @@ function DayColumn({
 
       {isToday && nowHour !== null && nowHour >= start && nowHour <= end ? (
         <div aria-hidden className="pointer-events-none absolute inset-x-0 z-30" style={{ top: pct(nowHour) }}>
-          <div className="relative h-0.5 -translate-y-1/2 bg-(--bg-fill-critical)">
-            <span className="absolute top-1/2 -left-[5px] size-2.5 -translate-y-1/2 rounded-(--radius-full) bg-(--bg-fill-critical)" />
+          <div className="relative h-px -translate-y-1/2 bg-(--bg-fill-brand)">
+            <span className="absolute top-1/2 -left-1 size-2 -translate-y-1/2 rounded-(--radius-full) bg-(--bg-fill-brand)" />
           </div>
         </div>
       ) : null}

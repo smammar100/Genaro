@@ -41,8 +41,6 @@ export interface IndexTableProps {
   selectable?: boolean;
   /** The semibold name column; defaults to the first non-media column. */
   primaryColumn?: number;
-  /** 32px rows. */
-  condensed?: boolean;
   sortColumnIndex?: number;
   sortDirection?: SortDirection;
   onSort?: (index: number, direction: SortDirection) => void;
@@ -80,7 +78,7 @@ export interface IndexTableProps {
  */
 export function IndexTable(props: IndexTableProps) {
   const {
-    selectable, condensed, filters, promotedBulkActions, bulkActions, canCreateNewView, onCreateNewView, onSortButtonClick, tabs, selectedTab, onSelectTab,
+    selectable, filters, promotedBulkActions, bulkActions, canCreateNewView, onCreateNewView, onSortButtonClick, tabs, selectedTab, onSelectTab,
     pagination, className,
   } = props;
   const [bulkMenu, setBulkMenu] = React.useState(false);
@@ -106,7 +104,7 @@ export function IndexTable(props: IndexTableProps) {
   }
 
   return (
-    <div className={cx('p-card p-card--flush p-indextable', condensed && 'p-indextable--condensed', showBulk && 'p-indextable--bulk', className)}>
+    <div className={cx('p-card p-card--flush p-indextable', showBulk && 'p-indextable--bulk', className)}>
       {tabs || filters ? (
         searching && filters ? (
           <div className="p-indextable__searchbar">

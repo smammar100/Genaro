@@ -70,6 +70,13 @@ export function useRowGroups<T>(
   return { groups, isCollapsed, toggle };
 }
 
+/**
+ * Where each level's first cell starts: a year's chevron at 12px, a month's
+ * under the year's label, and a month's rows under the month's label, so the
+ * nesting reads at a glance (2026-11-07).
+ */
+export const GROUP_INDENT = ["var(--space-300)", "var(--space-800)", "calc(var(--space-800) + var(--space-500))"] as const;
+
 /** Collapsible group banner row spanning the whole table width. */
 export function DataGridGroupHeaderRow({
   label,
@@ -95,9 +102,13 @@ export function DataGridGroupHeaderRow({
         colSpan={span}
         className={
           level === 1
-            ? "sticky left-0 border-b bg-(--bg-surface) pr-3 pl-8"
+            ? "sticky left-0 border-b bg-(--bg-surface) pr-3"
             : "sticky left-0 border-b bg-(--bg-surface-secondary) px-3"
         }
+        // A nested group's chevron sits under its parent's label (12px inset +
+        // 14px chevron + 6px gap). Inline, so the app's first-cell padding
+        // (genaro-bridge.css) can't undo it, as it did the old pl-8.
+        style={level === 1 ? { paddingInlineStart: GROUP_INDENT[1] } : undefined}
       >
         <button
           type="button"

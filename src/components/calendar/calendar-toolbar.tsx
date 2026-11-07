@@ -1,70 +1,82 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
-import { Badge, Button, ButtonGroup } from "@/components/genaro";
-import { fmtHour, type BusinessHours, type Kind, type ViewKey } from "@/lib/calendar-model";
+import { Button, ButtonGroup, Select } from "@/components/genaro";
+import { MONTHS, fmtHour, viewHeading, type BusinessHours, type Kind, type ViewKey } from "@/lib/calendar-model";
 import { cn } from "@/lib/utils";
 import { KIND_META } from "./event-meta";
 
-const VIEWS: { key: ViewKey; label: string; shortcut: string }[] = [
-  { key: "day", label: "Day", shortcut: "D" },
-  { key: "week", label: "Week", shortcut: "W" },
-  { key: "month", label: "Month", shortcut: "M" },
+const VIEWS: { value: ViewKey; label: string }[] = [
+  { value: "day", label: "Day view" },
+  { value: "week", label: "Week view" },
+  { value: "month", label: "Month view" },
 ];
 
-/** Today, back and forward, the range and the view switch. The create action is the page header's primary button. */
+/**
+ * The calendar's header, after Untitled UI (2026-11-07): today as a tear-off
+ * date, the month and the range in view under it (no week number), then
+ * back / Today / forward as one control and the view picker. The create action
+ * is the page header's primary button. Shortcuts: T today, arrows to move,
+ * D / W / M for the views.
+ */
 export function CalendarToolbar({
-  label,
   view,
-  isToday,
+  anchor,
+  today,
   onToday,
   onStep,
   onView,
 }: {
-  label: string;
   view: ViewKey;
-  /** Day view is showing today. */
-  isToday: boolean;
+  /** The date the view is on. */
+  anchor: Date;
+  /** Today, once the clock has started (null on the server). */
+  today: Date | null;
   onToday: () => void;
   onStep: (dir: -1 | 1) => void;
   onView: (view: ViewKey) => void;
 }) {
+  const { title, detail } = viewHeading(view, anchor);
+  const tile = today ?? anchor;
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-(--border-secondary) px-4 py-3">
-      <Button onClick={onToday} title="Today (T)">
-        Today
-      </Button>
-      <ButtonGroup gap="tight">
-        <Button
-          variant="tertiary"
-          icon={<ChevronLeft className="size-4" />}
-          accessibilityLabel={`Previous ${view}`}
-          title={`Previous ${view} (←)`}
-          onClick={() => onStep(-1)}
-        />
-        <Button
-          variant="tertiary"
-          icon={<ChevronRight className="size-4" />}
-          accessibilityLabel={`Next ${view}`}
-          title={`Next ${view} (→)`}
-          onClick={() => onStep(1)}
-        />
-      </ButtonGroup>
-      <h2 className="min-w-0 truncate heading-md">{label}</h2>
-      {view === "day" && isToday ? <Badge tone="info">Today</Badge> : null}
+    <div className="flex flex-wrap items-center gap-3 border-b border-(--border-secondary) px-4 py-3">
+      {/* Today as a tear-off date: the month over the day. */}
+      <div
+        aria-hidden
+        className="flex w-12 shrink-0 flex-col items-center overflow-hidden rounded-(--radius-200) ring-1 ring-inset ring-(--border-secondary)"
+      >
+        <span className="w-full bg-(--bg-surface-secondary) py-0.5 text-center body-sm text-(--text-secondary)" suppressHydrationWarning>
+          {MONTHS[tile.getMonth()].slice(0, 3)}
+        </span>
+        <span className="py-0.5 heading-md tabular-nums" suppressHydrationWarning>
+          {tile.getDate()}
+        </span>
+      </div>
+      <div className="min-w-0">
+        <h2 className="truncate heading-md">{title}</h2>
+        <p className="truncate body-sm text-(--text-secondary)">{detail}</p>
+      </div>
       <div className="ml-auto flex flex-wrap items-center gap-2">
         <ButtonGroup variant="segmented">
-          {VIEWS.map((v) => (
-            <Button
-              key={v.key}
-              pressed={view === v.key}
-              title={`${v.label} view (${v.shortcut})`}
-              onClick={() => onView(v.key)}
-            >
-              {v.label}
-            </Button>
-          ))}
+          <Button
+            icon={<ChevronLeft className="size-4" />}
+            accessibilityLabel={`Previous ${view}`}
+            title={`Previous ${view} (←)`}
+            onClick={() => onStep(-1)}
+          />
+          <Button onClick={onToday} title="Today (T)">
+            Today
+          </Button>
+          <Button
+            icon={<ChevronRight className="size-4" />}
+            accessibilityLabel={`Next ${view}`}
+            title={`Next ${view} (→)`}
+            onClick={() => onStep(1)}
+          />
         </ButtonGroup>
+        <div className="w-36">
+          <Select label="View" labelHidden options={VIEWS} value={view} onChange={(v) => onView(v as ViewKey)} />
+        </div>
       </div>
     </div>
   );

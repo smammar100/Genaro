@@ -56,9 +56,10 @@ export const Error: Story = {
 };
 
 /**
- * Plain confirmations can go by themselves: `duration` calls `onDismiss` after
- * that many milliseconds, and you remove the toast there.
- * @summary goes by itself after `duration` ms
+ * Plain confirmations can go by themselves: a line burns down along the foot
+ * for `duration` milliseconds (hover to pause it), then `onDismiss` runs and
+ * you remove the toast there. Swipe it down to dismiss it sooner.
+ * @summary goes by itself after `duration` ms, with a timer line
  */
 export const AutoDismiss: Story = {
   args: { content: "Appointment booked", duration: 4000 },

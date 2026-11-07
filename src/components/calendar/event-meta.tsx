@@ -33,6 +33,8 @@ export const KIND_META: Record<
     tint: string;
     /** Solid fill while the event's details are open. */
     selected: string;
+    /** The card's 1px inner border, a step darker than its fill (after Untitled UI, 2026-11-07). */
+    ring: string;
   }
 > = {
   appt: {
@@ -42,6 +44,7 @@ export const KIND_META: Record<
     surface: "bg-(--bg-surface-info) hover:bg-(--bg-surface-info-hover)",
     tint: "text-(--text-info)",
     selected: "bg-(--bg-fill-emphasis) text-(--text-emphasis-on-bg-fill)",
+    ring: "ring-(--border-info)",
   },
   workshop: {
     label: "Workshop",
@@ -50,6 +53,7 @@ export const KIND_META: Record<
     surface: "bg-(--bg-surface-warning) hover:bg-(--bg-surface-warning-hover)",
     tint: "text-(--text-warning)",
     selected: "bg-(--bg-fill-warning) text-(--text-warning-on-bg-fill)",
+    ring: "ring-(--border-warning)",
   },
   maint: {
     label: "Maintenance",
@@ -58,6 +62,7 @@ export const KIND_META: Record<
     surface: "bg-(--bg-surface-magic) hover:bg-(--bg-surface-magic-hover)",
     tint: "text-(--text-magic)",
     selected: "bg-(--bg-fill-magic) text-(--text-magic-on-bg-fill)",
+    ring: "ring-(--border-magic)",
   },
 };
 

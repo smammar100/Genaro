@@ -225,14 +225,6 @@ export const ClickableRows: Story = {
 };
 
 /**
- * 32px rows for dense lists people scan, such as the master sheet.
- * @summary 32px rows for dense lists
- */
-export const Condensed: Story = {
-  args: { condensed: true },
-};
-
-/**
  * A thumbnail column helps people recognise a car at a glance. Mark the
  * heading `media` and put a small Thumbnail in each cell.
  * @summary a photo column of small thumbnails

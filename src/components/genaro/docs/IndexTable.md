@@ -11,7 +11,7 @@ import { IndexTable } from '@/components/genaro';
 - `headings`: `media: true` marks a thumbnail column (cells hold a 40px `<Thumbnail size="small">`), `alignment: 'end'` right-aligns numbers such as totals, and `sortable` turns the heading into a sort button.
 - `rows` are `{ id, cells, url }`, with one cell per heading. The primary cell is semibold; it defaults to the first non-media column, or you can set `primaryColumn`. When a row has a `url`, that cell links to the detail page (`/orders/1020`).
 - Status cells use Badge: product status is Active = `success`, Draft = `info`, Archived = neutral; payment and fulfillment badges get `progress` pips.
-- Rows are 52px tall (32px with `condensed`). Hover uses `bg-surface-hover` and selection `bg-surface-selected`.
+- Rows are 32px tall everywhere: the app is data heavy, so tables stay dense. A cell with two lines or a thumbnail grows its row. Hover uses `bg-surface-hover` and selection `bg-surface-selected`.
 - The table scrolls sideways when its columns overflow, a phone included: rows keep their columns rather than stacking one value per line, so each value stays under its heading.
 - Rows are selectable by default; `selectable={false}` removes the checkboxes. While rows are selected, the heading row shows "N selected". If you pass `promotedBulkActions` or `bulkActions`, a bulk-actions bar floats at the bottom of the card. `bulkActions` as `MenuItem[]` puts those items in a menu that opens above the ••• button.
 - The top bar only renders when you pass `tabs` or `filters`. It holds the tabs, a search and filter button, and a sort button. The search button swaps the tabs for the `Filters` bar and a Cancel button.
@@ -135,7 +135,6 @@ const [selected, setSelected] = React.useState<string[]>([]);
 | `rows` | `IndexTableRow[]` | — | Required. `{ id, cells: ReactNode[], url? }`. |
 | `selectable` | `boolean` | `true` | Row checkboxes plus a select-all checkbox. |
 | `primaryColumn` | `number` | first non-media column | The semibold column. It becomes the link when the row has a `url`. |
-| `condensed` | `boolean` | — | 32px rows. |
 | `sortColumnIndex` | `number` | — | Initially sorted column. |
 | `sortDirection` | `SortDirection` | `'descending'` | Initial direction. |
 | `onSort` | `(index: number, direction: SortDirection) => void` | — | Clicking a new column sorts it descending; clicking the active column toggles it. Sort `rows` yourself. |
